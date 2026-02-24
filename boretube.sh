@@ -51,8 +51,25 @@ get_whitelist_count() {
     get_whitelist_ids | wc -l | tr -d ' '
 }
 
+# Cache for lock loops — avoids re-reading file every 10s
+_WL_CACHE=""
+
+load_whitelist_cache() {
+    _WL_CACHE=$(get_whitelist_ids | tr '\n' '|')
+}
+
+clear_whitelist_cache() {
+    _WL_CACHE=""
+}
+
 is_whitelisted() {
     local id="$1"
+    # Use cache if loaded (during lock/volume-lock loops)
+    if [[ -n "$_WL_CACHE" ]]; then
+        [[ "|${_WL_CACHE}" == *"|${id}|"* ]] && return 0
+        return 1
+    fi
+    # Fallback: read from file (for one-off checks like status panel)
     local wid
     while IFS= read -r wid; do
         [[ "$wid" == "$id" ]] && return 0
@@ -164,11 +181,12 @@ try:
     if action == "status":
         send_cmd(ssock, {"type": "GET_STATUS"})
         # Read until we get a RECEIVER_STATUS response (skip CONNECT ack etc)
+        resp = None
         for _ in range(5):
             resp = read_msg(ssock)
             if resp and resp.get('type') == 'RECEIVER_STATUS':
                 break
-        if resp and 'status' in resp:
+        if resp and resp.get('type') == 'RECEIVER_STATUS' and 'status' in resp:
             vol = resp['status'].get('volume', {})
             apps = resp['status'].get('applications', [])
             result = {"volume": round(vol.get('level', 0) * 100), "muted": vol.get('muted', False),
@@ -219,19 +237,18 @@ has_error() {
     [[ "$1" == *'"_error"'* ]]
 }
 
-# Parse multiple fields in one python call. Prints one field per line.
-json_fields() {
-    local json_str="$1"
-    shift
-    local fields_arg=""
-    local f
-    for f in "$@"; do fields_arg+="\"$f\","; done
-    "$VENV_PYTHON" -c "
-import sys, json
-d = json.loads(sys.argv[1])
-for k in [${fields_arg}]:
-    print(d.get(k, ''))
-" "$json_str"
+# Extract a value from cast_command JSON output using bash only.
+# Usage: json_val "$json" "key"
+# Handles simple string/number/bool values (sufficient for our flat JSON).
+json_val() {
+    local json="$1" key="$2"
+    local val
+    # Match "key": "string_value" or "key": number or "key": true/false
+    val=$(echo "$json" | grep -oP "\"${key}\"\\s*:\\s*\\K(\"[^\"]*\"|[0-9]+|true|false|null)" | head -1)
+    # Strip surrounding quotes if present
+    val="${val%\"}"
+    val="${val#\"}"
+    echo "$val"
 }
 
 # ── TV reachability ─────────────────────────────────────
@@ -257,9 +274,12 @@ do_bore() {
     # Single CastV2 connection: STOP + MUTE
     cast_command "bore" > /dev/null 2>&1 || true
     # Also kill via DIAL (more reliable for specific apps)
+    local _dial_pids=()
     timeout 2 curl -s -o /dev/null -X DELETE "http://$TV_IP:$DIAL_PORT/apps/YouTube/run" 2>/dev/null &
+    _dial_pids+=($!)
     timeout 2 curl -s -o /dev/null -X DELETE "http://$TV_IP:$DIAL_PORT/apps/Netflix/run" 2>/dev/null &
-    wait  # parallel DIAL kills
+    _dial_pids+=($!)
+    wait "${_dial_pids[@]}" 2>/dev/null
 }
 
 # ── Ctrl+C / exit trap ─────────────────────────────────
@@ -321,17 +341,18 @@ show_status_panel() {
         return 1
     fi
 
-    local parsed
-    parsed=$(json_fields "$sj" volume muted app_name app_id idle)
-
     local vol muted app_name app_id is_idle
-    { read -r vol; read -r muted; read -r app_name; read -r app_id; read -r is_idle; } <<< "$parsed"
+    vol=$(json_val "$sj" "volume")
+    muted=$(json_val "$sj" "muted")
+    app_name=$(json_val "$sj" "app_name")
+    app_id=$(json_val "$sj" "app_id")
+    is_idle=$(json_val "$sj" "idle")
 
     # Connection
     echo -e "  ${BOLD}Status:${RESET}  ${GREEN}● Connected${RESET}"
 
     # Running app
-    if [[ "$is_idle" == "True" ]]; then
+    if [[ "$is_idle" == "true" ]]; then
         echo -e "  ${BOLD}Running:${RESET} ${DIM}Home Screen (idle)${RESET}"
     elif is_whitelisted "$app_id"; then
         echo -e "  ${BOLD}Running:${RESET} ${BOLD}${app_name}${RESET} ${DIM}(whitelisted)${RESET}"
@@ -348,7 +369,7 @@ show_status_panel() {
     for ((i=0; i<bar_filled; i++)); do bar+="█"; done
     for ((i=0; i<bar_empty; i++)); do bar+="░"; done
 
-    if [[ "$muted" == "True" ]]; then
+    if [[ "$muted" == "true" ]]; then
         echo -e "  ${BOLD}Volume:${RESET}  ${RED}${bar} ${vol_int}% MUTED${RESET}"
     else
         echo -e "  ${BOLD}Volume:${RESET}  ${GREEN}${bar}${RESET} ${vol_int}%"
@@ -408,6 +429,7 @@ action_lock() {
 
     log_action "LOCK started for $lock_mins min (interval=${LOCK_INTERVAL}s)"
     LOCK_ACTIVE=true
+    load_whitelist_cache
 
     while [[ "$LOCK_ACTIVE" == true ]] && [[ $(date +%s) -lt $end_time ]]; do
         local now
@@ -430,13 +452,12 @@ action_lock() {
             continue
         fi
 
-        local parsed
-        parsed=$(json_fields "$sj" app_id app_name idle)
-
         local app_id app_name is_idle
-        { read -r app_id; read -r app_name; read -r is_idle; } <<< "$parsed"
+        app_id=$(json_val "$sj" "app_id")
+        app_name=$(json_val "$sj" "app_name")
+        is_idle=$(json_val "$sj" "idle")
 
-        if [[ "$is_idle" == "True" ]]; then
+        if [[ "$is_idle" == "true" ]]; then
             echo -e "  ${GREEN}[$(date '+%H:%M:%S')]${RESET} Home screen (idle) ${DIM}(${remaining_display} left)${RESET}"
         elif is_whitelisted "$app_id"; then
             echo -e "  ${GREEN}[$(date '+%H:%M:%S')]${RESET} ${app_name} ${DIM}(whitelisted) (${remaining_display} left)${RESET}"
@@ -449,6 +470,7 @@ action_lock() {
         sleep "$LOCK_INTERVAL" || break
     done
 
+    clear_whitelist_cache
     if [[ "$LOCK_ACTIVE" == true ]]; then
         LOCK_ACTIVE=false
         log_action "LOCK ended (timer expired)"
@@ -513,15 +535,14 @@ action_volume_lock() {
             continue
         fi
 
-        local parsed
-        parsed=$(json_fields "$sj" volume muted app_name)
-
         local vol muted app_name
-        { read -r vol; read -r muted; read -r app_name; } <<< "$parsed"
+        vol=$(json_val "$sj" "volume")
+        muted=$(json_val "$sj" "muted")
+        app_name=$(json_val "$sj" "app_name")
 
         local vol_int="${vol:-0}"
 
-        if [[ "$muted" == "True" ]]; then
+        if [[ "$muted" == "true" ]]; then
             echo -e "  ${GREEN}[$(date '+%H:%M:%S')]${RESET} ${app_name:-idle} ${DIM}vol=${vol_int}% MUTED (${remaining_display} left)${RESET}"
         elif [[ "$vol_int" -gt "$max_vol" ]]; then
             cast_command "volume" "$max_vol" > /dev/null 2>&1 || true
@@ -616,14 +637,14 @@ action_whitelist() {
                 if has_error "$sj"; then
                     echo -e "  ${RED}Could not read TV status.${RESET}"
                 else
-                    local id_parsed
-                    id_parsed=$(json_fields "$sj" app_name app_id idle)
                     local ci_name ci_id ci_idle
-                    { read -r ci_name; read -r ci_id; read -r ci_idle; } <<< "$id_parsed"
+                    ci_name=$(json_val "$sj" "app_name")
+                    ci_id=$(json_val "$sj" "app_id")
+                    ci_idle=$(json_val "$sj" "idle")
                     echo ""
                     echo -e "  ${BOLD}Running now:${RESET} ${ci_name}"
                     echo -e "  ${BOLD}App ID:${RESET}      ${ci_id}"
-                    if [[ "$ci_idle" == "True" ]]; then
+                    if [[ "$ci_idle" == "true" ]]; then
                         echo -e "  ${DIM}Home screen (idle) — always allowed.${RESET}"
                     elif is_whitelisted "$ci_id"; then
                         echo -e "  ${GREEN}This app is in the whitelist.${RESET}"
@@ -647,7 +668,7 @@ action_log() {
     echo ""
     if [[ -f "$LOG_FILE" ]] && [[ -s "$LOG_FILE" ]]; then
         tail -20 "$LOG_FILE" | while IFS= read -r logline; do
-            if echo "$logline" | grep -qE "KILLED|STOPPED"; then
+            if echo "$logline" | grep -qE "STOPPED"; then
                 echo -e "  ${RED}${logline}${RESET}"
             else
                 echo -e "  ${DIM}${logline}${RESET}"
@@ -669,8 +690,8 @@ do_quit() {
         sj=$(cast_command "status" 2>/dev/null) || sj='{"_error":"x"}'
         if ! has_error "$sj"; then
             local muted
-            muted=$(json_fields "$sj" muted)
-            [[ "$muted" == "True" ]] && should_ask=true
+            muted=$(json_val "$sj" "muted")
+            [[ "$muted" == "true" ]] && should_ask=true
         fi
     fi
 
@@ -744,28 +765,36 @@ cli_mode() {
             echo "Enforcing whitelist for ${lock_mins}m, checking every ${LOCK_INTERVAL}s. Ctrl+C to stop."
             log_action "LOCK started for $lock_mins min (interval=${LOCK_INTERVAL}s)"
             LOCK_ACTIVE=true
+            load_whitelist_cache
             while [[ "$LOCK_ACTIVE" == true ]] && [[ $(date +%s) -lt $end_time ]]; do
-                local remaining=$(( (end_time - $(date +%s)) / 60 ))
+                local remaining_s=$(( end_time - $(date +%s) ))
+                local remaining
+                if [[ $remaining_s -lt 60 ]]; then
+                    remaining="${remaining_s}s"
+                else
+                    remaining="$((remaining_s / 60))m"
+                fi
                 local sj
                 sj=$(cast_command "status" 2>/dev/null) || sj='{"_error":"x"}'
                 if has_error "$sj"; then
-                    echo "[$(date '+%H:%M:%S')] TV off/standby (${remaining}m left)"
+                    echo "[$(date '+%H:%M:%S')] TV off/standby (${remaining} left)"
                     sleep "$LOCK_INTERVAL" || break; continue
                 fi
-                local parsed
-                parsed=$(json_fields "$sj" app_id app_name idle)
                 local app_id app_name is_idle
-                { read -r app_id; read -r app_name; read -r is_idle; } <<< "$parsed"
-                if [[ "$is_idle" == "True" ]]; then
-                    echo "[$(date '+%H:%M:%S')] Home (idle) (${remaining}m)"
+                app_id=$(json_val "$sj" "app_id")
+                app_name=$(json_val "$sj" "app_name")
+                is_idle=$(json_val "$sj" "idle")
+                if [[ "$is_idle" == "true" ]]; then
+                    echo "[$(date '+%H:%M:%S')] Home (idle) (${remaining} left)"
                 elif is_whitelisted "$app_id"; then
-                    echo "[$(date '+%H:%M:%S')] $app_name (whitelisted) (${remaining}m)"
+                    echo "[$(date '+%H:%M:%S')] $app_name (whitelisted) (${remaining} left)"
                 else
-                    echo "[$(date '+%H:%M:%S')] Stopped: $app_name (not whitelisted) (${remaining}m)"
+                    echo "[$(date '+%H:%M:%S')] Stopped: $app_name (not whitelisted) (${remaining} left)"
                     log_action "STOPPED: $app_name ($app_id)"; do_bore
                 fi
                 sleep "$LOCK_INTERVAL" || break
             done
+            clear_whitelist_cache
             if [[ "$LOCK_ACTIVE" == true ]]; then
                 LOCK_ACTIVE=false; log_action "LOCK ended"; echo "Lock ended."
             fi

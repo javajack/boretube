@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="og-image.png" alt="boretube" width="640" />
+</p>
+
 # boretube
 
 **A parental control tool for Sony Bravia Google TV, built from scratch using reverse-engineered Cast protocols.**

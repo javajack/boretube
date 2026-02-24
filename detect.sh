@@ -97,7 +97,7 @@ discover_subnets() {
             base=$(subnet_base "$ip")
             local already=false
             local s
-            for s in "${subnets[@]}"; do
+            for s in ${subnets[@]+"${subnets[@]}"}; do
                 [[ "$s" == "$base" ]] && already=true
             done
             if [[ "$already" == false ]]; then
@@ -119,7 +119,7 @@ discover_subnets() {
         # Skip if already in our list
         local already=false
         local s
-        for s in "${subnets[@]}"; do
+        for s in ${subnets[@]+"${subnets[@]}"}; do
             [[ "$s" == "$base" ]] && already=true
         done
         [[ "$already" == true ]] && continue
@@ -150,17 +150,7 @@ scan_for_cast_devices() {
     for subnet in "${SUBNETS_SCANNED[@]}"; do
         dim "Scanning ${subnet}.1-254 ..."
 
-        # Parallel ping sweep first (fast host discovery)
-        local alive_hosts=()
-        local ip_suffix
-        for ip_suffix in $(seq 1 254); do
-            ping -c 1 -W 1 "${subnet}.${ip_suffix}" &>/dev/null &
-        done
-        # Wait for all pings but with a ceiling so we don't hang
-        # We use a different approach: scan in batches
-        wait 2>/dev/null
-
-        # Now check Cast ports on alive hosts (parallel, batched)
+        # Check Cast ports on all hosts (parallel, batched)
         local pids=()
         local tmpdir
         tmpdir=$(mktemp -d)
@@ -234,7 +224,7 @@ try_mdns() {
         # Check if we already found this IP
         local already=false
         local d
-        for d in "${FOUND_DEVICES[@]}"; do
+        for d in ${FOUND_DEVICES[@]+"${FOUND_DEVICES[@]}"}; do
             [[ "$d" == "${ip}|"* ]] && already=true
         done
         [[ "$already" == true ]] && continue

@@ -2,7 +2,13 @@
 
 **A parental control tool for Sony Bravia Google TV, built from scratch using reverse-engineered Cast protocols.**
 
-Your kid is glued to YouTube Shorts on the living room TV. The remote is "lost" (under the couch cushion, obviously). You need a way to kill apps, mute the TV, and cap the volume — all from your laptop on the other side of the house. No root access on the TV. No ADB. No special apps installed. Just raw network packets and stubbornness.
+**You can't control your kid. But you can control their TV.**
+
+Here's the thing about screen addiction: lectures don't work, screen time apps get uninstalled, and hiding the remote just starts a treasure hunt. But what if the TV itself became... annoying? What if YouTube randomly died every 10 seconds? What if the volume kept crawling back to a whisper no matter how many times they cranked it up? What if the TV just... muted itself for no apparent reason?
+
+That's boretube. It doesn't block the TV — it makes the TV experience so full of mysterious, unexplainable frustration that your kid eventually gives up and goes outside. "Dad, the TV is broken again!" No it isn't, sweetie. It's just haunted. By a bash script. Running on daddy's laptop. They'll never figure out why YouTube keeps crashing. They'll blame the WiFi. They'll blame the remote. They'll blame solar flares. And after a few days of a TV that seemingly has a mind of its own, they'll just... stop trying. That's the boretube promise: **victory through confusion**.
+
+No root access on the TV. No ADB. No special apps installed. Just raw network packets and stubbornness.
 
 ```
   ╔═══════════════════════════════════════════╗

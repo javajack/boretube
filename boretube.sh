@@ -282,7 +282,7 @@ do_bore() {
     wait "${_dial_pids[@]}" 2>/dev/null
 }
 
-# ── Ctrl+C / exit trap ─────────────────────────────────
+# ── Signal handling ────────────────────────────────────
 LOCK_ACTIVE=false
 VOLLLOCK_ACTIVE=false
 
@@ -303,7 +303,11 @@ cleanup() {
     VOLLLOCK_ACTIVE=false
 }
 
-trap cleanup INT TERM
+# Block Ctrl+Z (SIGTSTP) — suspending would leave TV in a bad state
+trap '' TSTP
+
+# Ctrl+C, Ctrl+\, terminal hangup, kill — all run cleanup
+trap cleanup INT TERM QUIT HUP
 
 # ── Draw banner ─────────────────────────────────────────
 draw_banner() {
@@ -402,7 +406,17 @@ show_status_panel() {
 pause() {
     echo ""
     echo -e "  ${DIM}Press Enter to continue...${RESET}"
-    read -r
+    read -r || true
+}
+
+# ── Safe read: returns default on EOF instead of breaking ─
+safe_read() {
+    local prompt="$1" varname="$2" default="${3:-}"
+    if ! read -rp "$prompt" "$varname"; then
+        # EOF (Ctrl+D) — use default
+        printf -v "$varname" '%s' "$default"
+        echo ""  # newline since Ctrl+D doesn't print one
+    fi
 }
 
 # ── Action: Lock mode ───────────────────────────────────
@@ -411,7 +425,7 @@ action_lock() {
     echo -e "  ${DIM}Only whitelisted apps can run. Everything else gets stopped and TV muted.${RESET}"
     echo -e "  ${DIM}Checks every ${LOCK_INTERVAL}s. Kid has at most ~${LOCK_INTERVAL}s before app is stopped.${RESET}"
     echo ""
-    read -rp "  Duration in minutes [60]: " lock_mins
+    safe_read "  Duration in minutes [60]: " lock_mins "60"
     lock_mins="${lock_mins:-60}"
 
     if ! [[ "$lock_mins" =~ ^[0-9]+$ ]] || [[ "$lock_mins" -eq 0 ]]; then
@@ -487,7 +501,7 @@ action_volume_lock() {
     echo -e "  ${DIM}Kid can watch TV, but volume is capped at a max you set.${RESET}"
     echo -e "  ${DIM}If they turn it up, it gets pushed back down within ~${LOCK_INTERVAL}s.${RESET}"
     echo ""
-    read -rp "  Max volume % [15]: " max_vol
+    safe_read "  Max volume % [15]: " max_vol "15"
     max_vol="${max_vol:-15}"
 
     if ! [[ "$max_vol" =~ ^[0-9]+$ ]] || [[ "$max_vol" -eq 0 ]] || [[ "$max_vol" -gt 100 ]]; then
@@ -496,7 +510,7 @@ action_volume_lock() {
     fi
 
     echo ""
-    read -rp "  Duration in minutes [60]: " lock_mins
+    safe_read "  Duration in minutes [60]: " lock_mins "60"
     lock_mins="${lock_mins:-60}"
 
     if ! [[ "$lock_mins" =~ ^[0-9]+$ ]] || [[ "$lock_mins" -eq 0 ]]; then
@@ -590,26 +604,26 @@ action_whitelist() {
         echo -e "  ${BOLD}i)${RESET} What app is running on TV now?"
         echo -e "  ${BOLD}b)${RESET} Back"
         echo ""
-        read -rp "  Choice: " wl_choice
+        safe_read "  Choice: " wl_choice "b"
 
         case "$wl_choice" in
             a|A)
                 echo ""
-                read -rp "  App ID: " new_id
+                safe_read "  App ID: " new_id ""
                 if [[ -z "$new_id" ]]; then
                     echo -e "  ${RED}No ID entered.${RESET}"; sleep 1; continue
                 fi
                 if grep -q "^${new_id}|" "$WHITELIST_FILE" 2>/dev/null; then
                     echo -e "  ${YELLOW}This app is already in the whitelist.${RESET}"; sleep 1; continue
                 fi
-                read -rp "  App name: " new_name
+                safe_read "  App name: " new_name "Unknown"
                 echo "${new_id}|${new_name:-Unknown}" >> "$WHITELIST_FILE"
                 echo -e "  ${GREEN}Added: ${new_id} (${new_name:-Unknown})${RESET}"
                 sleep 1
                 ;;
             d|D)
                 echo ""
-                read -rp "  App ID to remove: " rm_id
+                safe_read "  App ID to remove: " rm_id ""
                 if [[ -z "$rm_id" ]]; then
                     echo -e "  ${RED}No ID entered.${RESET}"; sleep 1; continue
                 fi
@@ -697,7 +711,7 @@ do_quit() {
 
     if [[ "$should_ask" == true ]]; then
         echo -e "  ${YELLOW}TV is still muted from a previous action.${RESET}"
-        read -rp "  Unmute TV before quitting? (Y/n): " restore_choice
+        safe_read "  Unmute TV before quitting? (Y/n): " restore_choice "Y"
         if [[ "$restore_choice" != "n" && "$restore_choice" != "N" ]]; then
             do_restore
             echo -e "  ${GREEN}TV unmuted.${RESET}"
@@ -724,6 +738,11 @@ main_menu() {
         echo ""
         # Auto-refresh status every 10s while waiting for input
         if ! read -rp "  Choose [1-5, q]: " -t 10 choice; then
+            # Distinguish timeout (empty choice) from EOF (Ctrl+D: stdin closed)
+            if [[ ! -t 0 ]]; then
+                # stdin is gone (Ctrl+D or pipe ended) — treat as quit
+                do_quit
+            fi
             continue  # timeout — redraw menu with fresh status
         fi
 

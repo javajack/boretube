@@ -4,9 +4,11 @@
 
 **You can't control your kid. But you can control their TV.**
 
-Here's the thing about screen addiction: lectures don't work, screen time apps get uninstalled, and hiding the remote just starts a treasure hunt. But what if the TV itself became... annoying? What if YouTube randomly died every 10 seconds? What if the volume kept crawling back to a whisper no matter how many times they cranked it up? What if the TV just... muted itself for no apparent reason?
+Telling kids to stop watching TV doesn't work. They nod, say "five more minutes," and three hours later they're still there. You can't win that argument. But you know what you *can* do? Make the TV annoying.
 
-That's boretube. It doesn't block the TV — it makes the TV experience so full of mysterious, unexplainable frustration that your kid eventually gives up and goes outside. "Dad, the TV is broken again!" No it isn't, sweetie. It's just haunted. By a bash script. Running on daddy's laptop. They'll never figure out why YouTube keeps crashing. They'll blame the WiFi. They'll blame the remote. They'll blame solar flares. And after a few days of a TV that seemingly has a mind of its own, they'll just... stop trying. That's the boretube promise: **victory through confusion**.
+Kid opens YouTube — it closes by itself. They open it again — gone. They turn up the volume — it goes back down. The TV randomly goes silent. Nothing works the way it should. After a while, the kid just gives up. "This TV is so broken!" They go find something else to do.
+
+That's boretube. You're not blocking the TV. You're just making it so boring and frustrating that the kid walks away on their own. They'll think it's a WiFi problem. They'll think the TV is old. They won't know it's a script running quietly on your laptop. **Problem solved.**
 
 No root access on the TV. No ADB. No special apps installed. Just raw network packets and stubbornness.
 

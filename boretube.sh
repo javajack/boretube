@@ -252,8 +252,14 @@ json_val() {
 }
 
 # ── TV reachability ─────────────────────────────────────
+# Silent check: returns 0/1 without printing anything
+is_tv_reachable() {
+    timeout 2 bash -c "echo >/dev/tcp/$TV_IP/$DIAL_PORT" 2>/dev/null
+}
+
+# Verbose check: prints error message on failure (for interactive use)
 check_tv() {
-    if ! timeout 2 bash -c "echo >/dev/tcp/$TV_IP/$DIAL_PORT" 2>/dev/null; then
+    if ! is_tv_reachable; then
         echo -e "${RED}  TV at $TV_IP is not reachable (is it turned on?)${RESET}"
         return 1
     fi
@@ -289,10 +295,15 @@ VOLLLOCK_ACTIVE=false
 cleanup() {
     if [[ "$LOCK_ACTIVE" == true ]]; then
         echo ""
-        echo -e "  ${YELLOW}Lock stopped. Unmuting TV...${RESET}"
-        do_restore
-        log_action "LOCK stopped by user, TV unmuted"
-        echo -e "  ${GREEN}Done — TV unmuted.${RESET}"
+        if is_tv_reachable; then
+            echo -e "  ${YELLOW}Lock stopped. Unmuting TV...${RESET}"
+            do_restore
+            log_action "LOCK stopped by user, TV unmuted"
+            echo -e "  ${GREEN}Done — TV unmuted.${RESET}"
+        else
+            echo -e "  ${YELLOW}Lock stopped.${RESET} ${DIM}TV is unreachable — skipping unmute.${RESET}"
+            log_action "LOCK stopped by user (TV unreachable, skipped unmute)"
+        fi
     fi
     if [[ "$VOLLLOCK_ACTIVE" == true ]]; then
         echo ""
@@ -699,7 +710,7 @@ action_log() {
 do_quit() {
     echo ""
     local should_ask=false
-    if check_tv 2>/dev/null; then
+    if is_tv_reachable; then
         local sj
         sj=$(cast_command "status" 2>/dev/null) || sj='{"_error":"x"}'
         if ! has_error "$sj"; then

@@ -5,11 +5,10 @@ import '../protocols/castv2_client.dart';
 import '../protocols/dial_client.dart';
 
 /// High-level TV operations combining CastV2 + DIAL protocols.
-/// Matches the bash boretube.sh action functions.
 ///
-/// Each operation opens a fresh CastV2 connection (matching
-/// the bash pattern where each cast_command() spawns a new
-/// python process with its own TLS connection).
+/// Every public method is safe to call when the TV is off
+/// or unreachable — they catch all errors internally and
+/// return null / false as appropriate.
 class TvService {
   final String host;
   final int castPort;
@@ -20,29 +19,65 @@ class TvService {
     required this.host,
     this.castPort = 8009,
     this.dialPort = 8008,
-  }) : _dialClient = DialClient(host: host, port: dialPort);
+  }) : _dialClient =
+            DialClient(host: host, port: dialPort);
 
-  /// Create a fresh CastV2 client for one-shot use.
   CastV2Client _newCastClient() =>
       CastV2Client(host: host, port: castPort);
 
   /// Get current TV status. Returns null if unreachable.
+  ///
+  /// Fetches CastV2 status (app info) and Sony Bravia
+  /// hardware volume in parallel. Hardware volume
+  /// overrides CastV2 volume (always 0 on BRAVIA).
+  /// Each call is independently error-tolerant so a
+  /// timeout on one doesn't kill the other.
   Future<TvStatus?> getStatus() async {
     final client = _newCastClient();
     try {
-      final json = await client.getStatus();
+      // Launch both in parallel
+      final castFuture = client.getStatus();
+      final hwVolFuture = _safeGetHardwareVolume();
+
+      final json = await castFuture;
       if (json == null) return null;
-      return TvStatus.fromJson(json);
+
+      final hwVol = await hwVolFuture;
+      final status = TvStatus.fromJson(json);
+
+      if (hwVol != null) {
+        return TvStatus(
+          volume: hwVol.volume,
+          muted: hwVol.muted,
+          appId: status.appId,
+          appName: status.appName,
+          isIdle: status.isIdle,
+        );
+      }
+      return status;
     } catch (e) {
       debugPrint('[TvService] getStatus error: $e');
       return null;
     } finally {
-      await client.disconnect();
+      try {
+        await client.disconnect();
+      } catch (_) {}
     }
   }
 
-  /// Kill current app + mute TV. Matches bash do_bore():
-  /// CastV2 STOP + MUTE + DIAL kill YouTube/Netflix.
+  /// Wrapper that never throws.
+  Future<({int volume, bool muted})?> _safeGetHardwareVolume() async {
+    try {
+      return await _dialClient.getHardwareVolume();
+    } catch (e) {
+      debugPrint(
+        '[TvService] hardware volume unavailable: $e',
+      );
+      return null;
+    }
+  }
+
+  /// Kill current app + mute TV.
   Future<void> bore() async {
     final client = _newCastClient();
     try {
@@ -50,16 +85,16 @@ class TvService {
     } catch (e) {
       debugPrint('[TvService] bore CastV2 error: $e');
     } finally {
-      await client.disconnect();
+      try {
+        await client.disconnect();
+      } catch (_) {}
     }
     try {
       await _dialClient.killApps();
-    } catch (_) {
-      // DIAL kill failed
-    }
+    } catch (_) {}
   }
 
-  /// Unmute TV. Matches bash do_restore().
+  /// Unmute TV.
   Future<void> restore() async {
     final client = _newCastClient();
     try {
@@ -67,37 +102,71 @@ class TvService {
     } catch (e) {
       debugPrint('[TvService] restore error: $e');
     } finally {
-      await client.disconnect();
+      try {
+        await client.disconnect();
+      } catch (_) {}
     }
   }
 
-  /// Set volume (0-100).
-  Future<void> setVolume(int percent) async {
+  /// Set volume (0-100) via Sony Bravia REST API.
+  /// Falls back to CastV2 if hardware API fails.
+  Future<bool> setVolume(int percent) async {
+    try {
+      final ok =
+          await _dialClient.setHardwareVolume(percent);
+      if (ok) return true;
+    } catch (e) {
+      debugPrint(
+        '[TvService] setHardwareVolume error: $e',
+      );
+    }
+
+    // Fallback to CastV2
     final client = _newCastClient();
     try {
       await client.setVolume(percent);
+      return true;
+    } catch (e) {
+      debugPrint(
+        '[TvService] setVolume CastV2 error: $e',
+      );
+      return false;
     } finally {
-      await client.disconnect();
+      try {
+        await client.disconnect();
+      } catch (_) {}
     }
   }
 
   /// Mute TV.
-  Future<void> mute() async {
+  Future<bool> mute() async {
     final client = _newCastClient();
     try {
       await client.mute();
+      return true;
+    } catch (e) {
+      debugPrint('[TvService] mute error: $e');
+      return false;
     } finally {
-      await client.disconnect();
+      try {
+        await client.disconnect();
+      } catch (_) {}
     }
   }
 
   /// Unmute TV.
-  Future<void> unmute() async {
+  Future<bool> unmute() async {
     final client = _newCastClient();
     try {
       await client.unmute();
+      return true;
+    } catch (e) {
+      debugPrint('[TvService] unmute error: $e');
+      return false;
     } finally {
-      await client.disconnect();
+      try {
+        await client.disconnect();
+      } catch (_) {}
     }
   }
 
@@ -107,24 +176,31 @@ class TvService {
     try {
       await client.stop();
     } catch (_) {
-      // Ignore
     } finally {
-      await client.disconnect();
+      try {
+        await client.disconnect();
+      } catch (_) {}
     }
     try {
       await _dialClient.killApps();
-    } catch (_) {
-      // Ignore
-    }
+    } catch (_) {}
   }
 
   /// Check if TV is reachable via DIAL.
   Future<bool> isReachable() async {
-    return _dialClient.isReachable();
+    try {
+      return await _dialClient.isReachable();
+    } catch (_) {
+      return false;
+    }
   }
 
   /// Get device name via DIAL.
   Future<String?> getDeviceName() async {
-    return _dialClient.getDeviceName();
+    try {
+      return await _dialClient.getDeviceName();
+    } catch (_) {
+      return null;
+    }
   }
 }

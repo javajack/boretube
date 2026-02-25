@@ -128,15 +128,9 @@ class BoretubeTaskHandler extends TaskHandler {
       'seconds': remaining,
     });
 
-    // Get TV status
-    TvStatus? status;
-    try {
-      status = await _tvService!.getStatus();
-    } catch (e) {
-      _sendLog('TV unreachable: $e');
-      return;
-    }
-
+    // Get TV status (never throws, returns null
+    // when TV is off or unreachable)
+    final status = await _tvService!.getStatus();
     if (status == null) {
       _sendLog('TV off/standby');
       return;
@@ -167,14 +161,18 @@ class BoretubeTaskHandler extends TaskHandler {
         !status.muted &&
         status.volume > _maxVolume) {
       final label = _appLabel(status);
-      try {
-        await _tvService!.setVolume(_maxVolume);
+      final ok =
+          await _tvService!.setVolume(_maxVolume);
+      if (ok) {
         _sendLog(
           '$label vol=${status.volume}%'
           ' \u2192 capped to $_maxVolume%',
         );
-      } catch (e) {
-        _sendLog('Volume cap failed: $e');
+      } else {
+        _sendLog(
+          '$label vol=${status.volume}%'
+          ' \u2192 cap failed (TV unreachable?)',
+        );
       }
       return;
     }

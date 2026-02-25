@@ -16,10 +16,16 @@ class WhitelistEntry {
   String toStorageString() => '$appId|$friendlyName';
 
   factory WhitelistEntry.fromStorageString(String s) {
-    final parts = s.split('|');
+    final idx = s.indexOf('|');
+    if (idx < 0) {
+      return WhitelistEntry(
+        appId: s,
+        friendlyName: 'Unknown',
+      );
+    }
     return WhitelistEntry(
-      appId: parts[0],
-      friendlyName: parts.length > 1 ? parts[1] : 'Unknown',
+      appId: s.substring(0, idx),
+      friendlyName: s.substring(idx + 1),
     );
   }
 

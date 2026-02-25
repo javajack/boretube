@@ -14,16 +14,20 @@ class TvService {
   final int castPort;
   final int dialPort;
   final DialClient _dialClient;
+  final CastV2Client Function() _castFactory;
 
   TvService({
     required this.host,
     this.castPort = 8009,
     this.dialPort = 8008,
-  }) : _dialClient =
-            DialClient(host: host, port: dialPort);
-
-  CastV2Client _newCastClient() =>
-      CastV2Client(host: host, port: castPort);
+    @visibleForTesting DialClient? dialClient,
+    @visibleForTesting
+    CastV2Client Function()? castFactory,
+  })  : _dialClient = dialClient ??
+            DialClient(host: host, port: dialPort),
+        _castFactory = castFactory ??
+            (() =>
+                CastV2Client(host: host, port: castPort));
 
   /// Get current TV status. Returns null if unreachable.
   ///
@@ -33,7 +37,7 @@ class TvService {
   /// Each call is independently error-tolerant so a
   /// timeout on one doesn't kill the other.
   Future<TvStatus?> getStatus() async {
-    final client = _newCastClient();
+    final client = _castFactory();
     try {
       // Launch both in parallel
       final castFuture = client.getStatus();
@@ -79,7 +83,7 @@ class TvService {
 
   /// Kill current app + mute TV.
   Future<void> bore() async {
-    final client = _newCastClient();
+    final client = _castFactory();
     try {
       await client.bore();
     } catch (e) {
@@ -96,7 +100,7 @@ class TvService {
 
   /// Unmute TV.
   Future<void> restore() async {
-    final client = _newCastClient();
+    final client = _castFactory();
     try {
       await client.unmute();
     } catch (e) {
@@ -122,7 +126,7 @@ class TvService {
     }
 
     // Fallback to CastV2
-    final client = _newCastClient();
+    final client = _castFactory();
     try {
       await client.setVolume(percent);
       return true;
@@ -140,7 +144,7 @@ class TvService {
 
   /// Mute TV.
   Future<bool> mute() async {
-    final client = _newCastClient();
+    final client = _castFactory();
     try {
       await client.mute();
       return true;
@@ -156,7 +160,7 @@ class TvService {
 
   /// Unmute TV.
   Future<bool> unmute() async {
-    final client = _newCastClient();
+    final client = _castFactory();
     try {
       await client.unmute();
       return true;
@@ -172,7 +176,7 @@ class TvService {
 
   /// Stop current app without muting.
   Future<void> killApp() async {
-    final client = _newCastClient();
+    final client = _castFactory();
     try {
       await client.stop();
     } catch (_) {

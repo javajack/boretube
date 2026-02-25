@@ -5,8 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
 import '../models/log_entry.dart';
-import '../models/tv_status.dart';
 import '../models/whitelist_entry.dart';
+import 'lock_decision.dart';
 import 'tv_service.dart';
 
 // ── Foreground Task Callback ──
@@ -105,80 +105,74 @@ class BoretubeTaskHandler extends TaskHandler {
 
   Future<void> _doPoll() async {
     final remaining = _remainingSeconds();
-    if (remaining <= 0) {
-      _expired = true;
-      _sendLog('Lock ended (timer expired)');
-      await FlutterForegroundTask.stopService();
-      return;
-    }
 
     // Update notification + send remaining to UI
-    final remText = _formatRemaining(remaining);
-    try {
-      await FlutterForegroundTask.updateService(
-        notificationTitle: 'Boretube Lock',
-        notificationText: '$remText left',
-      );
-    } catch (_) {
-      // Notification update can fail if service
-      // is being torn down — safe to ignore.
-    }
-    FlutterForegroundTask.sendDataToMain({
-      'type': 'remaining',
-      'seconds': remaining,
-    });
-
-    // Get TV status (never throws, returns null
-    // when TV is off or unreachable)
-    final status = await _tvService!.getStatus();
-    if (status == null) {
-      _sendLog('TV off/standby');
-      return;
-    }
-
-    // Check whitelist enforcement
-    final appId = status.appId;
-    if (_lockApps && !status.isIdle) {
-      final allowed = _whitelist.any(
-        (e) => e.appId == appId,
-      );
-      if (!allowed) {
-        _sendLog(
-          'STOPPED: ${status.appName}'
-          ' (${status.appId})',
+    if (remaining > 0) {
+      final remText = _formatRemaining(remaining);
+      try {
+        await FlutterForegroundTask.updateService(
+          notificationTitle: 'Boretube Lock',
+          notificationText: '$remText left',
         );
+      } catch (_) {
+        // Notification update can fail if service
+        // is being torn down — safe to ignore.
+      }
+      FlutterForegroundTask.sendDataToMain({
+        'type': 'remaining',
+        'seconds': remaining,
+      });
+    }
+
+    // Skip network call if timer already expired
+    final status =
+        remaining > 0 ? await _tvService!.getStatus() : null;
+
+    // Evaluate lock rules via pure decision logic
+    final decision = LockDecision.evaluate(
+      remainingSeconds: remaining,
+      status: status,
+      lockApps: _lockApps,
+      lockVolume: _lockVolume,
+      maxVolume: _maxVolume,
+      whitelist: _whitelist,
+    );
+
+    switch (decision.action) {
+      case LockAction.expired:
+        _expired = true;
+        _sendLog(decision.message);
+        await FlutterForegroundTask.stopService();
+
+      case LockAction.tvOffline:
+        _sendLog(decision.message);
+
+      case LockAction.bore:
+        _sendLog(decision.message);
         try {
           await _tvService!.bore();
         } catch (e) {
           _sendLog('Bore failed: $e');
         }
-        return;
-      }
-    }
 
-    // Check volume cap
-    if (_lockVolume &&
-        !status.muted &&
-        status.volume > _maxVolume) {
-      final label = _appLabel(status);
-      final ok =
-          await _tvService!.setVolume(_maxVolume);
-      if (ok) {
-        _sendLog(
-          '$label vol=${status.volume}%'
-          ' \u2192 capped to $_maxVolume%',
-        );
-      } else {
-        _sendLog(
-          '$label vol=${status.volume}%'
-          ' \u2192 cap failed (TV unreachable?)',
-        );
-      }
-      return;
-    }
+      case LockAction.capVolume:
+        final ok =
+            await _tvService!.setVolume(_maxVolume);
+        if (ok) {
+          _sendLog(
+            '${decision.message}'
+            ' \u2192 capped to $_maxVolume%',
+          );
+        } else {
+          _sendLog(
+            '${decision.message}'
+            ' \u2192 cap failed (TV unreachable?)',
+          );
+        }
 
-    // All OK — report status
-    _sendStatusLog(status);
+      case LockAction.ok:
+        _sendLog(decision.message);
+    }
   }
 
   @override
@@ -215,23 +209,6 @@ class BoretubeTaskHandler extends TaskHandler {
   @override
   void onNotificationDismissed() {}
 
-  void _sendStatusLog(TvStatus status) {
-    final label = _appLabel(status);
-    final vol =
-        '${status.volume}%'
-        '${status.muted ? ' MUTED' : ''}';
-
-    if (status.isIdle) {
-      _sendLog('Home screen (idle) $vol');
-    } else {
-      final wl = _whitelist.any(
-        (e) => e.appId == status.appId,
-      );
-      final tag = wl ? ' (whitelisted)' : '';
-      _sendLog('$label$tag $vol');
-    }
-  }
-
   int _remainingSeconds() {
     if (_endTime == null) return 0;
     final diff =
@@ -243,9 +220,6 @@ class BoretubeTaskHandler extends TaskHandler {
     if (seconds < 60) return '${seconds}s';
     return '${seconds ~/ 60}m';
   }
-
-  String _appLabel(TvStatus status) =>
-      status.appName.isEmpty ? 'idle' : status.appName;
 
   void _sendLog(String message) {
     debugPrint('[Boretube] $message');

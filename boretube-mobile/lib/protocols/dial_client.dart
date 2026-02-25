@@ -107,28 +107,38 @@ class DialClient {
 
       final json = jsonDecode(response.body)
           as Map<String, dynamic>;
-      final result = json['result'] as List?;
-      if (result == null || result.isEmpty) {
-        return null;
-      }
-
-      final volumes = result[0] as List;
-      for (final v in volumes) {
-        if (v is Map<String, dynamic>) {
-          final target = v['target'] as String?;
-          if (target == 'speaker' ||
-              target == 'headphone') {
-            return (
-              volume: v['volume'] as int? ?? 0,
-              muted: v['mute'] as bool? ?? false,
-            );
-          }
-        }
-      }
+      return parseVolumeResponse(json);
     } catch (e) {
       debugPrint(
         '[DialClient] getHardwareVolume error: $e',
       );
+    }
+    return null;
+  }
+
+  /// Parse Sony getVolumeInformation JSON response.
+  /// Exposed for testing.
+  @visibleForTesting
+  static ({int volume, bool muted})? parseVolumeResponse(
+    Map<String, dynamic> json,
+  ) {
+    final result = json['result'] as List?;
+    if (result == null || result.isEmpty) {
+      return null;
+    }
+
+    final volumes = result[0] as List;
+    for (final v in volumes) {
+      if (v is Map<String, dynamic>) {
+        final target = v['target'] as String?;
+        if (target == 'speaker' ||
+            target == 'headphone') {
+          return (
+            volume: v['volume'] as int? ?? 0,
+            muted: v['mute'] as bool? ?? false,
+          );
+        }
+      }
     }
     return null;
   }

@@ -77,9 +77,7 @@ final tvStatusProvider = StateNotifierProvider<
     TvStatusNotifier, AsyncValue<TvStatus>>(
   (ref) {
     final service = ref.watch(tvServiceProvider);
-    final notifier = TvStatusNotifier(service);
-    ref.onDispose(notifier.dispose);
-    return notifier;
+    return TvStatusNotifier(service);
   },
 );
 
@@ -87,20 +85,22 @@ class TvStatusNotifier
     extends StateNotifier<AsyncValue<TvStatus>> {
   final TvService _service;
   Timer? _timer;
+  bool _disposed = false;
 
   TvStatusNotifier(this._service)
       : super(const AsyncValue.loading()) {
-    refresh();
+    _refresh();
     _timer = Timer.periodic(
       const Duration(seconds: 10),
-      (_) => refresh(),
+      (_) => _refresh(),
     );
   }
 
-  Future<void> refresh() async {
+  Future<void> _refresh() async {
+    if (_disposed) return;
     try {
       final status = await _service.getStatus();
-      if (!mounted) return;
+      if (_disposed) return;
       if (status != null) {
         state = AsyncValue.data(status);
       } else {
@@ -110,13 +110,14 @@ class TvStatusNotifier
         );
       }
     } catch (e, st) {
-      if (!mounted) return;
+      if (_disposed) return;
       state = AsyncValue.error(e, st);
     }
   }
 
   @override
   void dispose() {
+    _disposed = true;
     _timer?.cancel();
     super.dispose();
   }

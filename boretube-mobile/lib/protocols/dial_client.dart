@@ -13,6 +13,7 @@ class DialClient {
   final int port;
 
   static const _timeout = Duration(seconds: 2);
+  static const _sonyTimeout = Duration(seconds: 5);
 
   DialClient({required this.host, this.port = 8008});
 
@@ -101,7 +102,7 @@ class DialClient {
               'version': '1.0',
             }),
           )
-          .timeout(_timeout);
+          .timeout(_sonyTimeout);
 
       if (response.statusCode != 200) return null;
 
@@ -164,7 +165,7 @@ class DialClient {
               'version': '1.0',
             }),
           )
-          .timeout(_timeout);
+          .timeout(_sonyTimeout);
       return response.statusCode == 200;
     } catch (e) {
       debugPrint(
@@ -192,7 +193,7 @@ class DialClient {
               'version': '1.0',
             }),
           )
-          .timeout(_timeout);
+          .timeout(_sonyTimeout);
       return response.statusCode == 200;
     } catch (e) {
       debugPrint(

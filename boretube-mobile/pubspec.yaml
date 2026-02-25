@@ -1,0 +1,40 @@
+name: boretube_mobile
+description: "Boretube — Parental control for Sony Bravia Google TV."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.6.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State management
+  flutter_riverpod: ^2.6.1
+
+  # Navigation
+  go_router: ^14.8.1
+
+  # Local storage
+  shared_preferences: ^2.3.4
+
+  # CastV2 protobuf runtime
+  protobuf: ^4.1.0
+
+  # DIAL HTTP client
+  http: ^1.2.0
+
+  # DIAL XML parsing
+  xml: ^6.5.0
+
+  # Background service
+  flutter_foreground_task: ^8.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true

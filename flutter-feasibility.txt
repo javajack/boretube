@@ -1,0 +1,117 @@
+Boretube Flutter App — Feasibility Report                                
+                                                                                                                                                                                              
+  What We're Replacing                                                                                                                                                                        
+                                                                                                                                                                                              
+  Your bash script (boretube.sh + detect.sh) controls a Sony Bravia Google TV via:                                                                                                            
+  - CastV2 (port 8009) — TLS + protobuf-framed JSON for status, kill app, mute/unmute, volume                                                                                                 
+  - DIAL (port 8008) — plain HTTP DELETE to kill YouTube/Netflix specifically
+  - Background polling — lock mode polls every 10s, kills non-whitelisted apps + mutes                                                                                                        
+                                                                                                                                                                                              
+  ---                                                                                                                                                                                         
+  Feasibility by Technical Area                                                                                                                                                               
+                                                                                                                                                                                              
+  1. CastV2 Protocol (TLS + Protobuf) — FULLY FEASIBLE
+
+  - Dart's SecureSocket.connect() opens raw TLS connections exactly like your Python subprocess
+  - onBadCertificate: (_) => true handles the TV's self-signed cert (equivalent to your ctx.verify_mode = ssl.CERT_NONE)
+  - Works on both Android and iOS with no special permissions for outbound TCP
+  - The protobuf Dart package (Google-maintained, v4.x) can compile cast_channel.proto to typed Dart classes — cleaner than your current manual varint encoding
+  - Estimated effort: ~200 lines of Dart replaces your ~140-line inline Python
+
+  2. DIAL HTTP (Cleartext) — FEASIBLE, minor config
+
+  - Dart's HttpClient handles plain HTTP DELETE/GET/POST
+  - Android: needs android:usesCleartextTraffic="true" in manifest (one line)
+  - iOS: needs NSAllowsLocalNetworking = true in Info.plist (one line)
+
+3. Protobuf — FULLY FEASIBLE
+
+  - Two options: compile cast_channel.proto with protoc_plugin (recommended, type-safe), or manual varint encoding via CodedBufferWriter/CodedBufferReader
+  - The 4-byte big-endian length prefix is trivial with ByteData.setUint32()
+
+  4. Background Polling — THE CRITICAL QUESTION
+
+  ┌──────────────────┬───────────────────────────────────────────────────────────────────────────────────────────────┬────────────────────────────────────────────────────────────────────┐
+  │                  │                                            Android                                            │                                iOS                                 │
+  ├──────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────────────┤
+  │ 10-second        │ YES — via foreground service                                                                  │ NO — iOS kills background apps in seconds                          │
+  │ polling          │                                                                                               │                                                                    │
+  ├──────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────────────┤
+  │ Mechanism        │ flutter_background_service or flutter_foreground_task runs a Dart isolate as a persistent     │ Background Fetch is OS-controlled, minimum ~15 min intervals,      │
+  │                  │ Android service                                                                               │ 15-30s windows                                                     │
+  ├──────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────────────┤
+  │ Requirements     │ Persistent notification (mandatory), WAKE_LOCK + FOREGROUND_SERVICE permissions               │ No workaround exists that passes App Store review                  │
+  ├──────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────────────┤
+  │ Battery          │ Moderate drain — consider keeping TLS socket open between polls instead of reconnecting every │ N/A                                                                │
+  │                  │  10s                                                                                          │                                                                    │
+  ├──────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────────────┤
+  │ OEM quirks       │ Xiaomi/Samsung/Huawei may require user to manually whitelist app from battery optimization    │ N/A                                                                │
+  └──────────────────┴───────────────────────────────────────────────────────────────────────────────────────────────┴────────────────────────────────────────────────────────────────────┘
+
+  Bottom line: Lock mode and volume lock are Android-only features. iOS can only work as a foreground "remote control" (tap to kill/mute while app is open).
+
+  5. Existing Dart Cast Libraries
+
+  - cast package (pub.dev, v2.1.0, Aug 2024) — implements CastV2 in pure Dart with SecureSocket. Semi-maintained. Good reference code.
+  - dart_chromecast — abandoned (2022), but its source shows the CastV2 Dart pattern
+  - Recommendation: write your own ~200-line CastV2 client. Your usage is simple (4 commands) and you avoid depending on semi-maintained packages.
+
+6. Network Discovery
+
+  - mDNS: nsd or bonsoir packages work on both platforms (Chromecast advertises as _googlecast._tcp)
+  - Your cross-subnet setup doesn't use mDNS — just a saved IP. Manual IP entry in Flutter is trivial (SharedPreferences to persist)
+  - Recommendation: manual IP entry as primary (matches current flow), optional mDNS scan for convenience
+
+  7. UX Opportunities a Mobile App Unlocks
+
+  ┌───────────────────────────────────────────────────────────────────┬───────────────────────────────────────────────────────────┐
+  │                              Feature                              │                        Feasibility                        │
+  ├───────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────┤
+  │ Persistent notification showing lock status + time remaining      │ Android: built-in requirement for foreground service      │
+  ├───────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────┤
+  │ Quick Settings tile (one-tap lock toggle from notification shade) │ Android 7+, via quick_settings plugin                     │
+  ├───────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────┤
+  │ Home screen widget (status at a glance)                           │ Both platforms, but requires native code (Kotlin/SwiftUI) │
+  ├───────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────┤
+  │ Haptic feedback on kill/mute                                      │ Trivial                                                   │
+  ├───────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────┤
+  │ Lock mode timer with countdown                                    │ Trivial                                                   │
+  ├───────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────┤
+  │ Multiple TV profiles                                              │ Trivial (just multiple saved IPs)                         │
+  └───────────────────────────────────────────────────────────────────┴───────────────────────────────────────────────────────────┘
+
+  ---
+Summary Matrix
+
+  ┌─────────────────────────────────┬─────────┬──────────────────────────────┬────────┐
+  │             Feature             │ Android │             iOS              │ Effort │
+  ├─────────────────────────────────┼─────────┼──────────────────────────────┼────────┤
+  │ Kill app (CastV2 STOP)          │ Yes     │ Yes                          │ Low    │
+  ├─────────────────────────────────┼─────────┼──────────────────────────────┼────────┤
+  │ Mute/Unmute/Volume              │ Yes     │ Yes                          │ Low    │
+  ├─────────────────────────────────┼─────────┼──────────────────────────────┼────────┤
+  │ Get status                      │ Yes     │ Yes                          │ Low    │
+  ├─────────────────────────────────┼─────────┼──────────────────────────────┼────────┤
+  │ DIAL app kill                   │ Yes     │ Yes                          │ Low    │
+  ├─────────────────────────────────┼─────────┼──────────────────────────────┼────────┤
+  │ Lock mode (background 10s poll) │ Yes     │ No                           │ Medium │
+  ├─────────────────────────────────┼─────────┼──────────────────────────────┼────────┤
+  │ Volume lock (background poll)   │ Yes     │ No                           │ Medium │
+  ├─────────────────────────────────┼─────────┼──────────────────────────────┼────────┤
+  │ TV discovery (mDNS)             │ Yes     │ Yes (with permission prompt) │ Low    │
+  ├─────────────────────────────────┼─────────┼──────────────────────────────┼────────┤
+  │ Cross-subnet (manual IP)        │ Yes     │ Yes                          │ Low    │
+  └─────────────────────────────────┴─────────┴──────────────────────────────┴────────┘
+
+  Verdict
+
+  Android: Fully feasible. Every feature of boretube.sh can be replicated, including persistent background enforcement. The foreground service with a persistent notification is actually
+  better UX than the terminal — you get status at a glance, quick settings tile, and it runs without a laptop.
+
+  iOS: Feasible as a remote control only. You can kill apps, mute, check status — but lock mode won't work in the background. This is a hard iOS platform limitation, not a Flutter
+  limitation. No clean workaround exists.
+
+  Recommended approach: Build Android-first. The core CastV2 client is ~200 lines of Dart, DIAL is ~50 lines, background service is well-supported by existing packages. The biggest
+  engineering effort is getting the foreground service reliable across OEM Android variants (battery optimization whitelisting). iOS can be a stretch goal as a foreground-only controller.
+
+

@@ -85,3 +85,22 @@ Disabled and verified OK (TV viewing, HDMI, Wi-Fi, Input menu, remote and castin
 
 - On this home network, `mogambo` Wi-Fi and the 192.168.1.0/24 subnet: Cast mDNS, `_adb._tcp` mDNS and SSDP DIAL all answer from the phone and the laptop.
 - See [performance-and-latency.md](performance-and-latency.md) for the phone Wi-Fi power-save finding.
+
+## Guided clean-up wizard run (verified, 2026-10-29)
+
+Setup:
+- TV Guard was paused first. Otherwise its watchdog re-disables re-enabled apps within seconds.
+- The 18 apps were re-enabled with `debloat/restore.sh`.
+
+The app's wizard then ran 3 groups:
+
+| Group | Off at | Save + restart | Result |
+|---|---|---|---|
+| Sony promos (7) | 04:35:52–57 | 60 s save → `reboot` 04:37:01 (TV back ~33 s) | all survived |
+| Ads and tracking (4) | 04:38:18–25 | → `reboot` 04:39:28 | all survived |
+| Google leftovers (7) | 04:40:33–42 | 60 s save, restart skipped by the user | all off |
+
+Final state:
+- 0 of 18 re-enabled.
+- After resuming, the watchdog dry run had nothing to do.
+- An `adb reboot` sent over ADB returns after ~31 s, when the connection drops. Monitors must use timeouts on every adb call: a bare `adb shell` can hang across a reboot.

@@ -68,7 +68,7 @@ class RuleEngineTest {
         val hit = decide(r.copy(style = "explicit"), usedMs = 60 * 60_000L)
         val c = closes(hit).single()
         assertEquals("dailyLimit", c.reason)
-        assertEquals("00:00", c.card!!.backAt)
+        assertEquals("12:00 am", c.card!!.backAt)
         assertTrue("dailyLimit" in hit.active)
         // 0 = no limit.
         assertEquals(0, closes(decide(Rules(), usedMs = 999 * 60_000L)).size)
@@ -141,13 +141,13 @@ class RuleEngineTest {
         val base = Rules(allowedApps = AllowedApps("blocklist", listOf(netflix)))
         assertNull(closes(decide(base, fg = netflix)).single().card)
         val explicit = closes(decide(base.copy(style = "explicit"), fg = netflix)).single()
-        assertEquals("This app isn't allowed", explicit.card!!.message)
+        assertEquals("This app isn't allowed.", explicit.card!!.message)
         assertTrue(explicit.forceStop)
         val sched = closes(decide(Rules(style = "explicit", tvTime = nightly), now = at(26, 22))).single()
-        assertEquals("TV time is over · back at 07:00", sched.card!!.text)
+        assertEquals("TV time is over · back at 7:00 am", sched.card!!.text)
         assertEquals(CardMood.guard, explicit.card!!.mood)
         assertEquals(CardMood.asleep, sched.card!!.mood)
-        assertEquals("Back at 07:00.", sched.card!!.subLine)
+        assertEquals("Back at 7:00 am.", sched.card!!.subLine)
     }
 
     // ── sound ──

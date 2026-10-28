@@ -219,7 +219,7 @@ class MediaGuard(
         return was
     }
 
-    private fun hhmm(epochMs: Long): String = HHMM.format(Instant.ofEpochMilli(epochMs).atZone(zone))
+    private fun hhmm(epochMs: Long): String = HHMM.format(Instant.ofEpochMilli(epochMs).atZone(zone)).lowercase()
 
     fun cancelEndAfter(): Boolean {
         val was = endAfter.armed
@@ -269,6 +269,6 @@ class MediaGuard(
         /** A cool-down re-closes the same app at most this often. */
         const val COOLDOWN_RECLOSE_MS = 5_000L
         private const val MAX_COOLDOWN_AHEAD_MS = 121 * 60_000L
-        private val HHMM: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+        private val HHMM: DateTimeFormatter = DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)
     }
 }

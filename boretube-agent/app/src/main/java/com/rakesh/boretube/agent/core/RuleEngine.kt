@@ -28,7 +28,7 @@ data class Card(val message: String, val backAt: String?, val sub: String? = nul
         fun preview(mood: CardMood): Card = when (mood) {
             CardMood.asleep -> Card("That's all for tonight.", "07:00", "The TV is resting.", CardMood.asleep)
             CardMood.calm -> Card(MediaGuard.HOP_TITLE, null, MediaGuard.HOP_SUB, CardMood.calm)
-            CardMood.guard -> Card("This app isn't allowed", null, "Ask a grown-up to unlock it.", CardMood.guard)
+            CardMood.guard -> Card("This app isn't allowed.", null, "Ask a grown-up to unlock it.", CardMood.guard)
         }
     }
 }
@@ -53,7 +53,7 @@ data class EngineResult(
 
 /** Pure rule evaluation. No Android, no I/O. */
 object RuleEngine {
-    private val HHMM = DateTimeFormatter.ofPattern("HH:mm")
+    private val HHMM = DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US)
 
     /** Never closed by any rule. */
     private val NEVER_ENFORCE = setOf(TvShell.AGENT_PACKAGE, "android", "com.android.systemui")
@@ -94,7 +94,7 @@ object RuleEngine {
         // ── app / TV-time ──
         val fg = observed.foreground
         val explicit = rules.style == "explicit"
-        fun backAt(ms: Long) = HHMM.format(Instant.ofEpochMilli(ms).atZone(zone))
+        fun backAt(ms: Long) = HHMM.format(Instant.ofEpochMilli(ms).atZone(zone)).lowercase()
         val scheduleEnd = Schedule.activeWindowEnd(rules.tvTime.schedule, now)
         val limitMs = rules.tvTime.dailyLimitMin * 60_000L
         val limitHit = rules.tvTime.dailyLimitMin > 0 && observed.tvTimeUsedMs >= limitMs
@@ -105,13 +105,13 @@ object RuleEngine {
             val close: Pair<String, Card>? = when {
                 breakEnd != null -> "break" to Card("Break time", backAt(breakEnd), mood = CardMood.asleep)
                 fg in allowNow -> null
-                scheduleEnd != null -> "tvTimeSchedule" to Card("TV time is over", HHMM.format(scheduleEnd), mood = CardMood.asleep)
+                scheduleEnd != null -> "tvTimeSchedule" to Card("TV time is over", HHMM.format(scheduleEnd).lowercase(), mood = CardMood.asleep)
                 limitHit -> "dailyLimit" to Card(
                     "Today's TV time is used up",
-                    HHMM.format(now.toLocalDate().plusDays(1).atStartOfDay(zone)),
+                    HHMM.format(now.toLocalDate().plusDays(1).atStartOfDay(zone)).lowercase(),
                     mood = CardMood.asleep,
                 )
-                appRuleBlocks(rules.allowedApps, fg, guard) -> "appNotAllowed" to Card("This app isn't allowed", null, mood = CardMood.guard)
+                appRuleBlocks(rules.allowedApps, fg, guard) -> "appNotAllowed" to Card("This app isn't allowed.", null, mood = CardMood.guard)
                 else -> null
             }
             if (close != null) {

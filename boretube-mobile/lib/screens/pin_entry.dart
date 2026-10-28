@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../security/pin_store.dart';
+import '../ui/components.dart';
 import '../ui/tokens.dart';
 
 /// Result of submitting a PIN: null = accepted, otherwise the error text.
@@ -42,7 +43,7 @@ class PinEntryState extends State<PinEntry>
   bool _busy = false;
   late final AnimationController _shake = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 420),
+    duration: Motion.sheet,
   );
 
   @override
@@ -126,8 +127,9 @@ class PinEntryState extends State<PinEntry>
         AnimatedBuilder(
           animation: _shake,
           builder: (context, child) {
-            final t = _shake.value;
-            final dx = math.sin(t * math.pi * 6) * 14 * (1 - t);
+            // Three damped swings, no bounce past rest.
+            final t = Motion.enter.transform(_shake.value);
+            final dx = math.sin(t * math.pi * 6) * Gap.f13 * (1 - t);
             return Transform.translate(offset: Offset(dx, 0), child: child);
           },
           child: Row(
@@ -136,20 +138,21 @@ class PinEntryState extends State<PinEntry>
             children: [
               for (var i = 0; i < slots; i++)
                 AnimatedContainer(
-                  duration: const Duration(milliseconds: 160),
-                  margin: const EdgeInsets.symmetric(horizontal: 7),
-                  width: 16,
-                  height: 16,
+                  duration: Motion.of(context, Motion.flip),
+                  curve: Motion.enter,
+                  margin: const EdgeInsets.symmetric(horizontal: Gap.f13 / 2),
+                  width: Gap.f13,
+                  height: Gap.f13,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: i < _pin.length
-                        ? (_error != null ? bt.berryFill : bt.coral)
+                        ? (_error != null ? bt.berryFill : bt.ink)
                         : Colors.transparent,
                     border: Border.all(
                       color: i < _pin.length
                           ? Colors.transparent
                           : bt.borderStrong,
-                      width: 2,
+                      width: Sizes.hairline,
                     ),
                   ),
                 ),
@@ -158,9 +161,9 @@ class PinEntryState extends State<PinEntry>
         ),
         const SizedBox(height: Gap.f13),
         SizedBox(
-          height: 22,
+          height: TypeSize.body * TypeSize.bodyLeading,
           child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 180),
+            duration: Motion.of(context, Motion.flip),
             child: Text(
               _error ?? '',
               key: ValueKey(_error),
@@ -171,7 +174,7 @@ class PinEntryState extends State<PinEntry>
             ),
           ),
         ),
-        const SizedBox(height: Gap.f13),
+        const SizedBox(height: Gap.f21),
         _Keypad(
           onDigit: _digit,
           onBack: _back,
@@ -179,7 +182,7 @@ class PinEntryState extends State<PinEntry>
           busy: _busy,
         ),
         if (widget.footer != null) ...[
-          const SizedBox(height: Gap.f13),
+          const SizedBox(height: Gap.f21),
           widget.footer!,
         ],
       ],
@@ -187,6 +190,7 @@ class PinEntryState extends State<PinEntry>
   }
 }
 
+/// A 3 × 4 keypad on the φ grid: 89 keys, 13 apart.
 class _Keypad extends StatelessWidget {
   final void Function(String) onDigit;
   final VoidCallback onBack;
@@ -208,51 +212,60 @@ class _Keypad extends StatelessWidget {
           semantics: d,
           onTap: () => onDigit(d),
         );
+    Widget row(List<Widget> keys) => Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (var i = 0; i < keys.length; i++) ...[
+              if (i > 0) const SizedBox(width: Gap.f13),
+              keys[i],
+            ],
+          ],
+        );
+    final rows = [
+      for (final r in const [
+        ['1', '2', '3'],
+        ['4', '5', '6'],
+        ['7', '8', '9'],
+      ])
+        row([for (final d in r) key(d)]),
+      row([
+        _Key(
+          icon: Icons.backspace_outlined,
+          semantics: 'Delete',
+          onTap: onBack,
+          subtle: true,
+        ),
+        key('0'),
+        _Key(
+          icon: busy ? null : Icons.arrow_forward_rounded,
+          semantics: 'Enter',
+          onTap: onSubmit,
+          filled: true,
+          child: busy
+              ? SizedBox.square(
+                  dimension: Sizes.iconControl,
+                  child: CircularProgressIndicator(
+                    strokeWidth: Sizes.focus,
+                    color: bt.onInkFill,
+                  ),
+                )
+              : null,
+        ),
+      ]),
+    ];
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        for (final row in const [
-          ['1', '2', '3'],
-          ['4', '5', '6'],
-          ['7', '8', '9'],
-        ])
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [for (final d in row) key(d)],
-          ),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _Key(
-              icon: Icons.backspace_outlined,
-              semantics: 'Delete',
-              onTap: onBack,
-              subtle: true,
-            ),
-            key('0'),
-            _Key(
-              icon: busy ? null : Icons.arrow_forward_rounded,
-              semantics: 'Enter',
-              onTap: onSubmit,
-              filled: true,
-              child: busy
-                  ? SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.4,
-                        color: bt.onInkFill,
-                      ),
-                    )
-                  : null,
-            ),
-          ],
-        ),
+        for (var i = 0; i < rows.length; i++) ...[
+          if (i > 0) const SizedBox(height: Gap.f13),
+          rows[i],
+        ],
       ],
     );
   }
 }
 
+/// One key: a quiet tonal circle (no outline), ink for Enter.
 class _Key extends StatelessWidget {
   final String? label;
   final IconData? icon;
@@ -279,41 +292,36 @@ class _Key extends StatelessWidget {
         ? bt.inkFill
         : subtle
             ? Colors.transparent
-            : bt.surface;
+            : bt.wash;
     final fg = filled ? bt.onInkFill : bt.ink;
-    return Padding(
-      padding: const EdgeInsets.all(Gap.f8),
-      child: Semantics(
-        button: true,
-        label: semantics,
-        excludeSemantics: true,
+    return Semantics(
+      button: true,
+      label: semantics,
+      excludeSemantics: true,
+      child: Pressable(
         child: Material(
           color: bg,
-          shape: CircleBorder(
-            side: filled || subtle
-                ? BorderSide.none
-                : BorderSide(color: bt.border),
-          ),
+          shape: const CircleBorder(),
+          clipBehavior: Clip.antiAlias,
           child: InkWell(
             key: Key('pin-key-$semantics'),
-            customBorder: const CircleBorder(),
             onTap: onTap,
-            child: SizedBox(
-              width: 72,
-              height: 72,
+            child: SizedBox.square(
+              dimension: _keySize,
               child: Center(
                 child: child ??
                     (label != null
                         ? Text(
                             label!,
                             style: Fonts.bricolage(
-                              28,
+                              TypeSize.title,
                               weight: FontWeight.w700,
                               color: fg,
-                              height: 1,
+                              height: TypeSize.tightLeading,
+                              tabularFigures: true,
                             ),
                           )
-                        : Icon(icon, color: fg, size: 26)),
+                        : Icon(icon, color: fg, size: Sizes.iconControl)),
               ),
             ),
           ),
@@ -322,6 +330,10 @@ class _Key extends StatelessWidget {
     );
   }
 }
+
+/// φ × a list row: 89 when the screen has room for three keys and two
+/// gaps inside the gutters.
+const _keySize = Sizes.band;
 
 /// Two-step "choose, then confirm" PIN flow.
 class PinSetup extends StatefulWidget {
@@ -346,7 +358,7 @@ class _PinSetupState extends State<PinSetup> {
   Widget build(BuildContext context) {
     final confirming = _first != null;
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 250),
+      duration: Motion.of(context, Motion.flip),
       child: PinEntry(
         key: ValueKey('$confirming$_mismatch'),
         initialError: confirming ? null : _mismatch,

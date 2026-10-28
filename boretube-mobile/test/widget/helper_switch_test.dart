@@ -55,7 +55,7 @@ void main() {
     await settle(tester);
 
     expect(find.byKey(const Key('helper-open-about')), findsOneWidget);
-    expect(find.text('DO THIS ON THE TV NOW'), findsOneWidget);
+    expect(find.text('Do this on the TV now'), findsOneWidget);
     expect(find.text('← here'), findsOneWidget);
     expect(find.byKey(const Key('helper-watching')), findsOneWidget);
     // Progress is saved per TV.

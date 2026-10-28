@@ -837,11 +837,12 @@ void main() {
     await shot(tester, 'onboarding_welcome$sfx');
   });
 
-  testWidgets('Onboarding · find your TV', (tester) async {
+  both('Onboarding · find your TV', (tester, dark, sfx) async {
     final env = await TestEnv.create();
     await pumpScreen(
       tester,
       const OnboardingScreen(addMode: true),
+      dark: dark,
       overrides: env.overrides(
         discovery: FakeDiscovery(
           const [
@@ -864,7 +865,7 @@ void main() {
         ),
       ),
     );
-    await shot(tester, 'onboarding_find_light');
+    await shot(tester, 'onboarding_find$sfx');
   });
 
   both('Onboarding · first win', (tester, dark, sfx) async {
@@ -952,9 +953,9 @@ void main() {
     await settle(tester);
   }
 
-  testWidgets('Home mode guide · why', (tester) async {
-    await guideAt(tester, step: 0);
-    await shot(tester, 'helper_why_light');
+  both('Home mode guide · why', (tester, dark, sfx) async {
+    await guideAt(tester, step: 0, dark: dark);
+    await shot(tester, 'helper_why$sfx');
   });
 
   both('Home mode guide · press OK 7 times', (tester, dark, sfx) async {
@@ -962,9 +963,9 @@ void main() {
     await shot(tester, 'helper_press_ok$sfx');
   });
 
-  testWidgets('Home mode guide · rehearse the prompt', (tester) async {
-    await guideAt(tester, step: 4);
-    await shot(tester, 'helper_rehearse_light');
+  both('Home mode guide · rehearse the prompt', (tester, dark, sfx) async {
+    await guideAt(tester, step: 4, dark: dark);
+    await shot(tester, 'helper_rehearse$sfx');
   });
 
   both('Home mode guide · look at your TV', (tester, dark, sfx) async {

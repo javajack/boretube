@@ -57,3 +57,39 @@
 - **Today line:** "Video hopping stopped N× today" (from the journal).
 - **Status sentence:** "YouTube without Shorts" instead of "Shorts off" unless hopping mode is on, in which case "Hopping guard on".
 - **End-after chip:** when `remainingMs` > cap, show "In 45 min (55 left in this video)".
+
+## Proportion system: one ratio for everything (user direction, 2026-10-29)
+
+Everything below is derived from φ = 1.618 and its square root √φ ≈ 1.272. **Nothing is sized by eye.** Each value lives as a named token in `lib/ui/tokens.dart`, and screens reference tokens only.
+
+- **Spacing (Fibonacci): 4 · 8 · 13 · 21 · 34 · 55.**
+  - 13 is the gap inside a component.
+  - 21 is between related components.
+  - 34 is between sections.
+  - 55 is around the hero.
+  - Screen gutter: 21.
+- **Type (√φ modular scale from 13):** 13 caption · 16.5 body · 21 headline · 26.5 title · 34 display · 43 hero numerals (countdown/clock) · 55 TV-card headline.
+  - Bricolage for ≥ 21, Figtree below.
+  - Line-height 1.3 on display, 1.5 on body.
+- **Component heights (φ steps):** 34 small chip/badge · 44 secondary control (min touch 48 with padding) · 55 row / tile · 89 primary hero action band (Pause TV visual band; the button itself is 55–60).
+  - A primary is φ× a secondary, and a secondary is φ× a chip. The hierarchy is visible by size alone.
+- **Widths and proportions:**
+  - The hero surface aspect is ≈ 1.618:1.
+  - Split layouts are 61.8% / 38.2% (e.g. hero text vs TV illustration).
+  - Equal siblings are equal width (quick-action row: 4 equal cells; chips: equal width in a row).
+- **Radii (φ steps, reduced):** 8 chip · 13 control and row surface · 21 hero and sheet top.
+- **Symmetry and alignment:**
+  - Everything snaps to the 21 gutter and a 4-column grid.
+  - Icons are optically centred (24 in a 44 control).
+  - Text baselines in a row align.
+  - Trailing values right-align to one edge across a list.
+  - No orphaned single-width items in a row.
+- **Hierarchy per screen:** exactly **one** primary (coral) action, ≤ 3 secondary actions at φ⁻¹ visual weight, everything else tertiary (text buttons, rows).
+- **Motion (durations on φ steps): 120 · 200 · 320 · 520 ms.**
+  - 120: press feedback (scale 0.97, opacity).
+  - 200: state flips (tile → muted).
+  - 320: sheets and hero state changes (calm → paused), easing `easeOutCubic` in, `easeInCubic` out.
+  - 520: only the pause "dimming" and Tubby falling asleep.
+  - List entrance stagger 34 ms, max 5 items.
+  - No bounce on UI. No animate-on-scroll. Reduced motion → 120 ms crossfades.
+  - Numbers tween over 320 ms with tabular figures.

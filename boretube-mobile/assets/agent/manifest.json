@@ -1,0 +1,10 @@
+{
+  "versionName": "1.0.0",
+  "versionCode": 1,
+  "sha256": "41be3211a05b2217bf592b3ad6dc329a9fbbc13867a4d78d8d6448ac8ab3228b",
+  "certSha256": "a833b38182d99ad47ec945e73234b312d787136cf8ac8a4039c33e9522a58bc0",
+  "signingCertSha256": "a833b38182d99ad47ec945e73234b312d787136cf8ac8a4039c33e9522a58bc0",
+  "package": "com.rakesh.boretube.agent",
+  "service": ".GuardService",
+  "apk": "boretube-agent.apk"
+}

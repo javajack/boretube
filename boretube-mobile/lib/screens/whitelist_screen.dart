@@ -4,272 +4,253 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/whitelist_entry.dart';
 import '../providers/providers.dart';
 import '../ui/components.dart';
+import '../ui/controls.dart';
 import '../ui/tokens.dart';
 
-class WhitelistScreen extends ConsumerStatefulWidget {
-  const WhitelistScreen({super.key});
+const kBackdropId = 'E8C28D3C';
 
-  @override
-  ConsumerState<WhitelistScreen> createState() =>
-      _WhitelistScreenState();
-}
-
-class _WhitelistScreenState
-    extends ConsumerState<WhitelistScreen> {
-  Future<void> _addEntry() async {
-    final idController = TextEditingController();
-    final nameController = TextEditingController();
-
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add App to Whitelist'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: idController,
-              decoration: const InputDecoration(
-                labelText: 'App ID',
-                hintText: 'e.g. 233637DE',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'App Name',
-                hintText: 'e.g. YouTube',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Add'),
-          ),
-        ],
-      ),
+/// Asks the TV what's on and offers to allow it in Lock for a while.
+Future<void> allowWhatsPlaying(BuildContext context, WidgetRef ref) async {
+  final tvService = ref.read(tvServiceProvider);
+  final status = await tvService?.getStatus();
+  if (!context.mounted) return;
+  if (status == null) {
+    showStatusSnack(
+      context,
+      'The TV didn\'t answer. Is it on and on this Wi-Fi?',
+      ok: false,
     );
-
-    if (result == true && idController.text.isNotEmpty) {
-      await ref.read(whitelistProvider.notifier).add(
-            WhitelistEntry(
-              appId: idController.text.trim(),
-              friendlyName: nameController.text.trim().isEmpty
-                  ? 'Unknown'
-                  : nameController.text.trim(),
-            ),
-          );
-    }
-
-    idController.dispose();
-    nameController.dispose();
+    return;
   }
-
-  Future<void> _queryCurrentApp() async {
-    final tvService = ref.read(tvServiceProvider);
-    final status = await tvService?.getStatus();
-    if (!mounted) return;
-
-    if (status == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('TV not reachable'),
-        ),
-      );
-      return;
-    }
-
-    final whitelist = ref.read(whitelistProvider);
-    final isWhitelisted = whitelist.any(
-      (e) => e.appId == status.appId,
-    );
-
-    if (!mounted) return;
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("What's Playing Now"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _infoRow('App', status.appName),
-            _infoRow('App ID', status.appId),
-            _infoRow(
-              'Idle',
-              status.isIdle ? 'Yes' : 'No',
-            ),
-            const SizedBox(height: 8),
-            if (status.isIdle)
-              Text(
-                'Home screen — always allowed.',
-                style: TextStyle(
-                  color: Colors.grey.shade500,
+  final allowed =
+      ref.read(whitelistProvider).any((e) => e.appId == status.appId);
+  await showBtSheet<void>(
+    context,
+    builder: (sheet) {
+      final text = Theme.of(sheet).textTheme;
+      final (title, line, tone) = status.isIdle
+          ? (
+              'The home screen',
+              'Nothing is playing. The home screen is always allowed.',
+              Tone.idle,
+            )
+          : allowed
+              ? (
+                  status.appName,
+                  'Already allowed. It keeps playing during the lock.',
+                  Tone.ok,
+                )
+              : (
+                  status.appName,
+                  'Not allowed yet: the lock would stop it.',
+                  Tone.warn,
+                );
+      return SheetScaffold(
+        key: const Key('whats-playing'),
+        title: 'On the TV now',
+        children: [
+          InfoCard(
+            child: Row(
+              children: [
+                IconBadge(
+                  icon: status.isIdle ? Icons.home_rounded : Icons.live_tv,
+                  color: tone.color(sheet),
+                  size: 48,
                 ),
-              )
-            else if (isWhitelisted)
-              const Text(
-                'This app is in the whitelist.',
-                style: TextStyle(color: Colors.green),
-              )
-            else
-              const Text(
-                'Not in whitelist — will be stopped '
-                'during lock mode.',
-                style: TextStyle(color: Colors.orange),
-              ),
-          ],
-        ),
-        actions: [
-          if (!status.isIdle && !isWhitelisted)
-            ElevatedButton(
-              onPressed: () {
-                ref.read(whitelistProvider.notifier).add(
+                const SizedBox(width: Gap.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: text.titleMedium),
+                      Text(line, style: text.bodySmall),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: Gap.lg),
+          if (!status.isIdle && !allowed)
+            PrimaryButton(
+              key: const Key('whats-playing-allow'),
+              label: 'Allow ${status.appName}',
+              icon: Icons.check_rounded,
+              kind: ButtonKind.ink,
+              onPressed: () async {
+                await ref.read(whitelistProvider.notifier).add(
                       WhitelistEntry(
                         appId: status.appId,
                         friendlyName: status.appName,
                       ),
                     );
-                Navigator.pop(context);
-                ScaffoldMessenger.of(this.context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Added ${status.appName}',
-                    ),
-                  ),
-                );
+                if (sheet.mounted) Navigator.pop(sheet);
+                if (context.mounted) {
+                  showStatusSnack(context, '${status.appName} allowed');
+                }
               },
-              child: const Text('Add to Whitelist'),
+            )
+          else
+            PrimaryButton(
+              label: 'Done',
+              kind: ButtonKind.outline,
+              onPressed: () => Navigator.pop(sheet),
             ),
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
         ],
-      ),
-    );
-  }
+      );
+    },
+  );
+}
 
-  Widget _infoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 60,
-            child: Text(
-              '$label:',
-              style: TextStyle(
-                color: Colors.grey.shade500,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value.isEmpty ? '—' : value,
-              style: const TextStyle(
-                fontFamily: 'monospace',
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+/// Adds an app by its Cast app ID (for apps that aren't on right now).
+Future<void> addWhitelistById(BuildContext context, WidgetRef ref) async {
+  final entry = await showBtSheet<WhitelistEntry>(
+    context,
+    builder: (_) => const _AddByIdSheet(),
+  );
+  if (entry != null) await ref.read(whitelistProvider.notifier).add(entry);
+}
+
+class _AddByIdSheet extends StatefulWidget {
+  const _AddByIdSheet();
+
+  @override
+  State<_AddByIdSheet> createState() => _AddByIdSheetState();
+}
+
+class _AddByIdSheetState extends State<_AddByIdSheet> {
+  final _id = TextEditingController();
+  final _name = TextEditingController();
+
+  @override
+  void dispose() {
+    _id.dispose();
+    _name.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final whitelist = ref.watch(whitelistProvider);
-    final text = Theme.of(context).textTheme;
-
-    return Scaffold(
-      appBar: AppBar(title: const Text('Classic lock whitelist')),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _addEntry,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Add app'),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          Gap.page,
-          Gap.sm,
-          Gap.page,
-          96,
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: SheetScaffold(
+        title: 'Allow an app by its ID',
+        lead: const Text(
+          'Easier: play the app on the TV and use "What\'s playing". Use '
+          'this when you know its Cast app ID.',
         ),
         children: [
-          Text(
-            'Apps not listed here will be stopped and muted during lock '
-            'mode.',
-            style: text.bodyMedium,
+          TextField(
+            key: const Key('whitelist-id'),
+            controller: _id,
+            autofocus: true,
+            textCapitalization: TextCapitalization.characters,
+            decoration: const InputDecoration(
+              labelText: 'App ID',
+              hintText: 'e.g. 233637DE',
+            ),
+          ),
+          const SizedBox(height: Gap.md),
+          TextField(
+            key: const Key('whitelist-name'),
+            controller: _name,
+            textCapitalization: TextCapitalization.words,
+            decoration: const InputDecoration(
+              labelText: 'Name',
+              hintText: 'e.g. YouTube',
+            ),
           ),
           const SizedBox(height: Gap.lg),
-          InfoCard(
-            padding: EdgeInsets.zero,
-            onTap: _queryCurrentApp,
-            child: const StatusRow(
-              tone: Tone.accent,
-              icon: Icons.live_tv_rounded,
-              title: "What's playing now?",
-              detail: 'Check the TV and add the current app',
-              trailing: Icon(Icons.chevron_right_rounded),
+          ListenableBuilder(
+            listenable: _id,
+            builder: (context, _) => PrimaryButton(
+              key: const Key('whitelist-add'),
+              label: 'Allow',
+              kind: ButtonKind.ink,
+              onPressed: _id.text.trim().isEmpty
+                  ? null
+                  : () => Navigator.pop(
+                        context,
+                        WhitelistEntry(
+                          appId: _id.text.trim(),
+                          friendlyName: _name.text.trim().isEmpty
+                              ? 'Unknown app'
+                              : _name.text.trim(),
+                        ),
+                      ),
             ),
           ),
-          SectionHeader('Allowed · ${whitelist.length}'),
-          if (whitelist.isEmpty)
-            const InfoCard(
-              child: EmptyState(
-                icon: Icons.block_rounded,
-                title: 'No apps whitelisted',
-                message: 'All apps will be stopped in lock mode.',
-              ),
-            )
-          else
-            GroupCard(
-              children: [
-                for (final entry in whitelist)
-                  StatusRow(
-                    tone: entry.appId == 'E8C28D3C' ? Tone.idle : Tone.ok,
-                    icon: entry.appId == 'E8C28D3C'
-                        ? Icons.home_rounded
-                        : Icons.apps_rounded,
-                    title: entry.friendlyName,
-                    detail: entry.appId,
-                    trailing: entry.appId == 'E8C28D3C'
-                        ? Tooltip(
-                            message: 'Cannot remove Home Screen',
-                            child: Icon(
-                              Icons.lock_outline_rounded,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                            ),
-                          )
-                        : IconButton(
-                            tooltip: 'Remove',
-                            icon: Icon(
-                              Icons.delete_outline_rounded,
-                              color: Theme.of(context).colorScheme.error,
-                            ),
-                            onPressed: () => ref
-                                .read(whitelistProvider.notifier)
-                                .remove(entry.appId),
-                          ),
-                  ),
-              ],
-            ),
         ],
       ),
+    );
+  }
+}
+
+/// The allowed apps of Lock for a while, as rows (the full page).
+class WhitelistScreen extends ConsumerWidget {
+  const WhitelistScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final whitelist = ref.watch(whitelistProvider);
+    final bt = context.bt;
+    return DetailPage(
+      title: 'Allowed apps',
+      subtitle: 'During Lock for a while, anything not here is stopped and '
+          'muted.',
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: PrimaryButton(
+                key: const Key('whitelist-whats-playing'),
+                label: 'What\'s playing?',
+                icon: Icons.live_tv_rounded,
+                kind: ButtonKind.ink,
+                height: 52,
+                onPressed: () => allowWhatsPlaying(context, ref),
+              ),
+            ),
+            const SizedBox(width: Gap.sm),
+            Expanded(
+              child: PrimaryButton(
+                label: 'Add by ID',
+                icon: Icons.add_rounded,
+                kind: ButtonKind.outline,
+                height: 52,
+                onPressed: () => addWhitelistById(context, ref),
+              ),
+            ),
+          ],
+        ),
+        SectionHeader('Allowed · ${whitelist.length}'),
+        GroupCard(
+          children: [
+            for (final entry in whitelist)
+              StatusRow(
+                tone: entry.appId == kBackdropId ? Tone.idle : Tone.ok,
+                icon: entry.appId == kBackdropId
+                    ? Icons.home_rounded
+                    : Icons.check_circle_rounded,
+                title: entry.appId == kBackdropId
+                    ? 'Home screen'
+                    : entry.friendlyName,
+                detail: entry.appId == kBackdropId
+                    ? 'Always allowed'
+                    : 'App ID ${entry.appId}',
+                trailing: entry.appId == kBackdropId
+                    ? Icon(Icons.lock_outline_rounded, color: bt.faint)
+                    : IconButton(
+                        tooltip: 'Remove ${entry.friendlyName}',
+                        icon: Icon(Icons.close_rounded, color: bt.muted),
+                        onPressed: () => ref
+                            .read(whitelistProvider.notifier)
+                            .remove(entry.appId),
+                      ),
+              ),
+          ],
+        ),
+      ],
     );
   }
 }

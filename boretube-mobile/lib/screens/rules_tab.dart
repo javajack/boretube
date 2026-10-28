@@ -6,6 +6,7 @@ import '../agent/agent_client.dart';
 import '../providers/agent_providers.dart';
 import '../providers/tv_providers.dart';
 import '../ui/components.dart';
+import '../ui/learn.dart';
 import '../ui/tokens.dart';
 import '../ui/tubby.dart';
 import 'rules/rules_editor.dart';
@@ -145,6 +146,8 @@ class AlwaysOnPreview extends ConsumerWidget {
               ),
               const SizedBox(height: Gap.lg),
               Text('Bedtimes that stick', style: text.headlineMedium),
+              const SizedBox(height: Gap.xs),
+              const TermTitle('With Always On', LearnTerm.alwaysOn),
               const SizedBox(height: Gap.sm),
               Text(
                 'Always On is a tiny helper on the TV. Routines live there '

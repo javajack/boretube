@@ -10,8 +10,13 @@ import '../../providers/agent_providers.dart';
 import '../../providers/now_playing.dart';
 import '../../providers/tv_providers.dart';
 import '../../ui/components.dart';
+import '../../ui/controls.dart';
 import '../../ui/format.dart';
 import '../../ui/tokens.dart';
+import '../../ui/tubby.dart';
+import '../home/home_logic.dart';
+import 'presets.dart';
+import 'tv_says_no.dart';
 
 /// Shown as `updatedBy` on the TV ("by Parent phone at 19:30").
 final rulesAuthorProvider = Provider<String>((ref) => 'Parent phone');
@@ -23,10 +28,21 @@ final rulesClockProvider = Provider<DateTime Function()>(
 
 const kStockYouTube = 'com.google.android.youtube.tv';
 
-const _dayLetters = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+/// Sunday first, the way most family calendars read.
+const _dayOrder = [7, 1, 2, 3, 4, 5, 6];
+const _dayLetter = {1: 'M', 2: 'T', 3: 'W', 4: 'T', 5: 'F', 6: 'S', 7: 'S'};
+const _dayWord = {
+  1: 'Monday',
+  2: 'Tuesday',
+  3: 'Wednesday',
+  4: 'Thursday',
+  5: 'Friday',
+  6: 'Saturday',
+  7: 'Sunday',
+};
 
 /// Edits the rules document as a draft; Save sends it with its version
-/// and handles "the TV has newer rules" (409).
+/// and handles "the TV has newer rules" (409) with a friendly sheet.
 class RulesEditor extends ConsumerStatefulWidget {
   final AgentRules initial;
   const RulesEditor({super.key, required this.initial});
@@ -68,12 +84,12 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
     try {
       final saved = await c.putRules(toSend);
       if (!mounted) return;
-      unawaited(HapticFeedback.lightImpact());
+      unawaited(HapticFeedback.mediumImpact());
       setState(() {
         _base = saved;
         _draft = saved;
       });
-      showStatusSnack(context, 'Saved to the TV');
+      showStatusSnack(context, 'Saved to the TV ✓');
       unawaited(ref.read(agentStatusProvider.notifier).refresh());
     } on AgentConflict catch (e) {
       if (!mounted) return;
@@ -81,7 +97,11 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
       await _conflict(e.current, draft ?? _draft);
     } on AgentException catch (e) {
       if (mounted) {
-        showStatusSnack(context, 'Not saved: ${e.message}', ok: false);
+        showStatusSnack(
+          context,
+          'Not saved: ${e.message}. Your changes are still here.',
+          ok: false,
+        );
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -89,41 +109,18 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
   }
 
   Future<void> _conflict(AgentRules current, AgentRules mine) async {
-    final when = current.updatedAtTime;
-    final by = current.updatedBy.isEmpty ? 'another phone' : current.updatedBy;
-    final choice = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        key: const Key('rules-conflict'),
-        icon: const Icon(Icons.sync_problem_rounded, size: 32),
-        title: const Text('TV has newer rules', textAlign: TextAlign.center),
-        content: Text(
-          'Changed by $by'
-          '${when == null ? '' : ' at ${clockTime(when.toLocal())}'} '
-          '(version ${current.version}).\n\n'
-          'Reload to see them, or overwrite them with yours.',
-        ),
-        actions: [
-          TextButton(
-            key: const Key('rules-overwrite'),
-            onPressed: () => Navigator.pop(context, 'overwrite'),
-            child: const Text('Overwrite'),
-          ),
-          FilledButton(
-            key: const Key('rules-reload'),
-            onPressed: () => Navigator.pop(context, 'reload'),
-            child: const Text('Reload'),
-          ),
-        ],
-      ),
+    final choice = await showBtSheet<String>(
+      context,
+      builder: (_) => ConflictSheet(theirs: current, mine: mine),
     );
     if (!mounted) return;
-    if (choice == 'reload') {
+    if (choice == 'theirs') {
       setState(() {
         _base = current;
         _draft = current;
       });
-    } else if (choice == 'overwrite') {
+      showStatusSnack(context, 'Showing what\'s on the TV');
+    } else if (choice == 'mine') {
       await _save(draft: mine, overwriteVersion: current.version);
     }
   }
@@ -153,9 +150,8 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
   }
 
   Future<void> _pickApps() async {
-    final picked = await showModalBottomSheet<List<String>>(
-      context: context,
-      isScrollControlled: true,
+    final picked = await showBtSheet<List<String>>(
+      context,
       builder: (_) => AppPickerSheet(
         selected: _draft.allowedApps.packages,
         blocklist: _draft.allowedApps.mode == AppsMode.blocklist,
@@ -170,32 +166,59 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
     }
   }
 
+  /// Shows what [p] sets; on confirm fills the draft and saves it.
+  Future<void> _choosePreset(RulePreset p) async {
+    final h24 = MediaQuery.alwaysUse24HourFormatOf(context);
+    final ok = await showBtSheet<bool>(
+      context,
+      builder: (_) => PresetSheet(preset: p, h24: h24),
+    );
+    if (ok != true || !mounted) return;
+    final next = applyPreset(_draft, p);
+    setState(() => _draft = next);
+    await _save(draft: next);
+  }
+
   @override
   Widget build(BuildContext context) {
     final r = _draft;
-    final tv = ref.watch(activeTvProvider);
+    final active = detectPreset(r);
     return Column(
       children: [
         Expanded(
           child: ListView(
+            key: const Key('rules-list'),
             padding: const EdgeInsets.fromLTRB(
               Gap.page,
-              Gap.sm,
+              0,
               Gap.page,
               Gap.xxl,
             ),
             children: [
-              _Header(rules: _base, tvName: tv?.name ?? 'TV'),
-              const SectionHeader('Allowed apps'),
+              _StatusLine(rules: _base, dirty: _dirty),
+              const SizedBox(height: Gap.md),
+              _PresetChips(
+                active: active,
+                onPick: _saving ? null : _choosePreset,
+              ),
+              if (isBlankRoutine(r)) ...[
+                const SizedBox(height: Gap.md),
+                _Templates(onPick: _saving ? null : _choosePreset),
+              ],
+              const SizedBox(height: Gap.md),
+              _bedtimeCard(context, r),
+              const SizedBox(height: Gap.md),
+              _dailyCard(context, r),
+              const SizedBox(height: Gap.md),
               _appsCard(context, r),
-              const SectionHeader('Sound'),
-              _soundCard(context, r),
-              const SectionHeader('TV time'),
-              _tvTimeCard(context, r),
-              const SectionHeader('When a rule kicks in'),
+              const SizedBox(height: Gap.md),
+              _volumeCard(context, r),
+              const SizedBox(height: Gap.md),
+              _silentCard(context, r),
+              const SizedBox(height: Gap.md),
               _styleCard(context, r),
-              const SectionHeader('Temporary'),
-              _overridesCard(context, r),
+              const SectionHeader('Tonight only'),
+              _tonightCard(context, r),
             ],
           ),
         ),
@@ -209,329 +232,379 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
     );
   }
 
-  // ── sections ──
+  // ── cards ──
+
+  Widget _bedtimeCard(BuildContext context, AgentRules r) {
+    final text = Theme.of(context).textTheme;
+    final t = r.tvTime;
+    void setRows(List<ScheduleRow> rows) =>
+        _edit((r) => r.copyWith(tvTime: t.copyWith(schedule: rows)));
+    return SettingCard(
+      key: const Key('rules-tv-time'),
+      icon: Icons.bedtime_rounded,
+      tone: Tone.warn,
+      title: const Text('Bedtime and quiet hours'),
+      children: [
+        if (t.schedule.isEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: Gap.md),
+            child: Text(
+              'No quiet hours yet. In these windows the TV says no, even '
+              'when nobody is home to say it.',
+              style: text.bodySmall,
+            ),
+          ),
+        for (var i = 0; i < t.schedule.length; i++) ...[
+          _WindowEditor(
+            key: Key('rules-schedule-$i'),
+            row: t.schedule[i],
+            onChanged: (row) => setRows([...t.schedule]..[i] = row),
+            onRemove: () => setRows([...t.schedule]..removeAt(i)),
+          ),
+          const SizedBox(height: Gap.sm),
+        ],
+        DashedAdd(
+          key: const Key('rules-add-schedule'),
+          label: t.schedule.isEmpty ? 'Add a bedtime' : 'Add quiet hours',
+          expand: true,
+          onTap: () => setRows([
+            ...t.schedule,
+            ScheduleRow(
+              days: t.schedule.isEmpty ? const [1, 2, 3, 4, 7] : const [5, 6],
+              from: t.schedule.isEmpty ? '21:00' : '22:30',
+              to: t.schedule.isEmpty ? '07:00' : '08:30',
+            ),
+          ]),
+        ),
+      ],
+    );
+  }
+
+  Widget _dailyCard(BuildContext context, AgentRules r) {
+    final text = Theme.of(context).textTheme;
+    final t = r.tvTime;
+    final limit = t.dailyLimitMin;
+    return SettingCard(
+      key: const Key('rules-daily'),
+      icon: Icons.timer_rounded,
+      tone: Tone.info,
+      title: const Text('Daily TV time'),
+      value: limit == 0 ? 'No limit' : minutesLabel(limit),
+      dim: limit == 0,
+      children: [
+        Slider(
+          key: const Key('rules-daily-slider'),
+          value: limit.clamp(0, 300).toDouble(),
+          max: 300,
+          divisions: 20,
+          label: limit == 0 ? 'No limit' : minutesLabel(limit),
+          semanticFormatterCallback: (x) =>
+              x == 0 ? 'No limit' : minutesLabel(x.round()),
+          onChanged: (x) => _edit(
+            (r) => r.copyWith(tvTime: t.copyWith(dailyLimitMin: x.round())),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: Gap.xs),
+          child: Text(
+            limit == 0
+                ? 'Slide to set how much TV a day. Bedtime still applies.'
+                : 'Counts screen-on time only, on the TV\'s clock. Resets '
+                    'at midnight.',
+            style: text.bodySmall,
+          ),
+        ),
+      ],
+    );
+  }
 
   Widget _appsCard(BuildContext context, AgentRules r) {
     final text = Theme.of(context).textTheme;
     final a = r.allowedApps;
-    return InfoCard(
-      key: const Key('rules-apps'),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SegmentedButton<AppsMode>(
-            showSelectedIcon: false,
-            segments: const [
-              ButtonSegment(value: AppsMode.off, label: Text('Any')),
-              ButtonSegment(
-                value: AppsMode.allowlist,
-                label: Text('Allow only'),
-              ),
-              ButtonSegment(
-                value: AppsMode.blocklist,
-                label: Text('Block'),
-              ),
-            ],
-            selected: {a.mode},
-            onSelectionChanged: (s) => _edit(
-              (r) => r.copyWith(allowedApps: a.copyWith(mode: s.first)),
+    void remove(String p) => _edit(
+          (r) => r.copyWith(
+            allowedApps: a.copyWith(
+              packages: [
+                for (final x in a.packages)
+                  if (x != p) x,
+              ],
             ),
           ),
-          const SizedBox(height: Gap.md),
-          Text(
-            switch (a.mode) {
-              AppsMode.off => 'Every app can open.',
-              AppsMode.allowlist => 'Only the apps below open. Anything '
-                  'else is closed.',
-              AppsMode.blocklist => 'The apps below are closed when they '
-                  'open.',
-            },
-            style: text.bodySmall,
-          ),
-          if (a.mode != AppsMode.off) ...[
-            const SizedBox(height: Gap.md),
-            if (a.packages.isEmpty)
-              Text(
-                a.mode == AppsMode.allowlist
-                    ? 'No apps picked yet: nothing would open.'
-                    : 'No apps picked yet.',
-                style: text.bodySmall?.copyWith(
-                  color: Tone.warn.color(context),
-                ),
-              )
-            else
-              Wrap(
-                spacing: Gap.sm,
-                runSpacing: Gap.sm,
-                children: [
-                  for (final p in a.packages)
-                    InputChip(
-                      avatar: AppAvatar(pkg: p, size: 22),
-                      label: Text(appLabel(p)),
-                      onDeleted: () => _edit(
-                        (r) => r.copyWith(
-                          allowedApps: a.copyWith(
-                            packages: [
-                              for (final x in a.packages)
-                                if (x != p) x,
+        );
+    return SettingCard(
+      key: const Key('rules-apps'),
+      icon: Icons.apps_rounded,
+      tone: Tone.ok,
+      title: const Text('Allowed apps'),
+      children: [
+        SegmentChoice<AppsMode>(
+          keyPrefix: 'rules-apps',
+          options: const [
+            (AppsMode.off, 'Any'),
+            (AppsMode.allowlist, 'Only these'),
+            (AppsMode.blocklist, 'Block these'),
+          ],
+          value: a.mode,
+          onChanged: (m) =>
+              _edit((r) => r.copyWith(allowedApps: a.copyWith(mode: m))),
+        ),
+        const SizedBox(height: Gap.md),
+        Text(
+          switch (a.mode) {
+            AppsMode.off => 'Every app can open.',
+            AppsMode.allowlist => 'Only the apps below open. Anything else '
+                'closes and the TV goes Home.',
+            AppsMode.blocklist => 'The apps below close as soon as they '
+                'open.',
+          },
+          style: text.bodySmall,
+        ),
+        AnimatedSize(
+          duration: Motion.of(context, Motion.medium),
+          curve: Motion.settle,
+          alignment: Alignment.topCenter,
+          child: a.mode == AppsMode.off
+              ? const SizedBox(width: double.infinity)
+              : Padding(
+                  padding: const EdgeInsets.only(top: Gap.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (a.packages.isEmpty && a.mode == AppsMode.allowlist)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: Gap.sm),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.warning_amber_rounded,
+                                size: 18,
+                                color: Tone.warn.color(context),
+                              ),
+                              const SizedBox(width: Gap.sm),
+                              Expanded(
+                                child: Text(
+                                  'Nothing picked yet, so no app would open.',
+                                  style: text.bodySmall!.copyWith(
+                                    color: Tone.warn.color(context),
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                         ),
+                      Wrap(
+                        spacing: Gap.sm,
+                        runSpacing: Gap.sm,
+                        children: [
+                          for (final p in a.packages)
+                            AppPill(pkg: p, onRemove: () => remove(p)),
+                          DashedAdd(
+                            key: const Key('rules-pick-apps'),
+                            label: a.packages.isEmpty ? 'Choose apps' : 'Add',
+                            onTap: _pickApps,
+                          ),
+                        ],
                       ),
-                    ),
-                ],
-              ),
-            const SizedBox(height: Gap.md),
-            OutlinedButton.icon(
-              key: const Key('rules-pick-apps'),
-              onPressed: _pickApps,
-              icon: const Icon(Icons.playlist_add_rounded),
-              label: const Text('Choose apps'),
-            ),
-          ],
-          const Divider(height: Gap.xl),
-          _SwitchRow(
-            key: const Key('rules-stock-youtube'),
-            icon: Icons.smart_display_rounded,
-            title: 'Let stock YouTube stay',
-            subtitle: r.stockYouTubeAllowed
-                ? 'Always On leaves YouTube installed'
-                : 'Always On removes YouTube if it comes back',
-            value: r.stockYouTubeAllowed,
-            onChanged: (v) => _edit((r) => r.copyWith(stockYouTubeAllowed: v)),
-          ),
-        ],
-      ),
+                    ],
+                  ),
+                ),
+        ),
+      ],
     );
   }
 
-  Widget _soundCard(BuildContext context, AgentRules r) {
-    final text = Theme.of(context).textTheme;
+  Widget _volumeCard(BuildContext context, AgentRules r) {
     final v = r.volumeLimit;
+    final bt = context.bt;
     return InfoCard(
       key: const Key('rules-sound'),
       padding: const EdgeInsets.fromLTRB(Gap.lg, Gap.sm, Gap.lg, Gap.sm),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _SwitchRow(
+          SwitchLine(
             key: const Key('rules-volume-limit'),
-            icon: Icons.volume_down_rounded,
+            leading: IconBadge(
+              icon: Icons.volume_down_rounded,
+              color: v.enabled ? Tone.info.color(context) : bt.muted,
+              size: 40,
+            ),
             title: 'Volume limit',
             subtitle: v.enabled
-                ? 'Capped at ${v.maxPercent}% — turning it up snaps back'
-                : 'Off',
+                ? 'Turning it up past ${v.maxPercent}% snaps back'
+                : 'Any volume',
             value: v.enabled,
             onChanged: (on) => _edit(
               (r) => r.copyWith(volumeLimit: v.copyWith(enabled: on)),
             ),
           ),
-          AnimatedCrossFade(
-            duration: const Duration(milliseconds: 200),
-            crossFadeState: v.enabled
-                ? CrossFadeState.showFirst
-                : CrossFadeState.showSecond,
-            firstChild: Row(
-              children: [
-                const SizedBox(width: Gap.xs),
-                Expanded(
-                  child: Slider(
-                    key: const Key('rules-volume-slider'),
-                    value: v.maxPercent.clamp(5, 100).toDouble(),
-                    min: 5,
-                    max: 100,
-                    divisions: 19,
-                    label: '${v.maxPercent}%',
-                    onChanged: (x) => _edit(
-                      (r) => r.copyWith(
-                        volumeLimit: v.copyWith(maxPercent: x.round()),
+          AnimatedSize(
+            duration: Motion.of(context, Motion.medium),
+            curve: Motion.settle,
+            alignment: Alignment.topCenter,
+            child: !v.enabled
+                ? const SizedBox(width: double.infinity)
+                : Row(
+                    children: [
+                      Expanded(
+                        child: Slider(
+                          key: const Key('rules-volume-slider'),
+                          value: v.maxPercent.clamp(5, 100).toDouble(),
+                          min: 5,
+                          max: 100,
+                          divisions: 19,
+                          label: '${v.maxPercent}%',
+                          onChanged: (x) => _edit(
+                            (r) => r.copyWith(
+                              volumeLimit: v.copyWith(maxPercent: x.round()),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
+                      SizedBox(
+                        width: 60,
+                        child: Text(
+                          '${v.maxPercent}%',
+                          textAlign: TextAlign.right,
+                          style: Fonts.bricolage(
+                            20,
+                            color: bt.ink,
+                            tabularFigures: true,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                SizedBox(
-                  width: 44,
-                  child: Text(
-                    '${v.maxPercent}%',
-                    textAlign: TextAlign.right,
-                    style: text.titleSmall,
-                  ),
-                ),
-              ],
-            ),
-            secondChild: const SizedBox(width: double.infinity),
-          ),
-          const Divider(),
-          _SwitchRow(
-            key: const Key('rules-always-mute'),
-            icon: Icons.volume_off_rounded,
-            title: 'Always mute',
-            subtitle: r.alwaysMute ? 'The TV stays silent' : 'Off',
-            value: r.alwaysMute,
-            onChanged: (on) => _edit((r) => r.copyWith(alwaysMute: on)),
           ),
         ],
       ),
     );
   }
 
-  Widget _tvTimeCard(BuildContext context, AgentRules r) {
-    final text = Theme.of(context).textTheme;
-    final t = r.tvTime;
-    void setRows(List<ScheduleRow> rows) =>
-        _edit((r) => r.copyWith(tvTime: t.copyWith(schedule: rows)));
-    final limit = t.dailyLimitMin;
+  Widget _silentCard(BuildContext context, AgentRules r) {
+    final bt = context.bt;
     return InfoCard(
-      key: const Key('rules-tv-time'),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('Quiet hours', style: text.titleSmall),
-          Text(
-            'The TV is off-limits in these windows.',
-            style: text.bodySmall,
-          ),
-          const SizedBox(height: Gap.md),
-          for (var i = 0; i < t.schedule.length; i++) ...[
-            _ScheduleRowEditor(
-              key: Key('rules-schedule-$i'),
-              row: t.schedule[i],
-              onChanged: (row) => setRows([...t.schedule]..[i] = row),
-              onRemove: () => setRows([...t.schedule]..removeAt(i)),
-            ),
-            const SizedBox(height: Gap.sm),
-          ],
-          OutlinedButton.icon(
-            key: const Key('rules-add-schedule'),
-            onPressed: () => setRows([...t.schedule, const ScheduleRow()]),
-            icon: const Icon(Icons.add_rounded),
-            label: const Text('Add quiet hours'),
-          ),
-          const Divider(height: Gap.xl),
-          Row(
-            children: [
-              Expanded(child: Text('Daily limit', style: text.titleSmall)),
-              Text(
-                limit == 0 ? 'Off' : _minutes(limit),
-                key: const Key('rules-daily-label'),
-                style: text.titleSmall,
-              ),
-            ],
-          ),
-          Slider(
-            key: const Key('rules-daily-slider'),
-            value: limit.clamp(0, 300).toDouble(),
-            max: 300,
-            divisions: 20,
-            label: limit == 0 ? 'Off' : _minutes(limit),
-            onChanged: (x) => _edit(
-              (r) => r.copyWith(tvTime: t.copyWith(dailyLimitMin: x.round())),
-            ),
-          ),
-          Text(
-            'Counts screen-on time only, on the TV\'s clock.',
-            style: text.bodySmall,
-          ),
-        ],
+      key: const Key('rules-silent'),
+      padding: const EdgeInsets.fromLTRB(Gap.lg, Gap.sm, Gap.lg, Gap.sm),
+      child: SwitchLine(
+        key: const Key('rules-always-mute'),
+        leading: IconBadge(
+          icon: Icons.volume_off_rounded,
+          color: r.alwaysMute ? Tone.warn.color(context) : bt.muted,
+          size: 40,
+        ),
+        title: 'Keep it silent',
+        subtitle: r.alwaysMute
+            ? 'The TV stays muted, whatever the remote does'
+            : 'Off. Handy for early mornings',
+        value: r.alwaysMute,
+        onChanged: (on) => _edit((r) => r.copyWith(alwaysMute: on)),
       ),
     );
   }
 
   Widget _styleCard(BuildContext context, AgentRules r) {
     final text = Theme.of(context).textTheme;
-    return InfoCard(
+    final bed = nextBedtime(r.tvTime.schedule, _now());
+    return SettingCard(
       key: const Key('rules-style'),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SegmentedButton<RuleStyle>(
-            showSelectedIcon: false,
-            segments: const [
-              ButtonSegment(
-                value: RuleStyle.sneaky,
-                icon: Icon(Icons.visibility_off_rounded),
-                label: Text('Sneaky'),
-              ),
-              ButtonSegment(
-                value: RuleStyle.explicit,
-                icon: Icon(Icons.campaign_rounded),
-                label: Text('Explicit'),
-              ),
-            ],
-            selected: {r.style},
-            onSelectionChanged: (s) => _edit((r) => r.copyWith(style: s.first)),
+      icon: Icons.chat_bubble_rounded,
+      tone: Tone.accent,
+      title: const Text('How the TV says no'),
+      children: [
+        SegmentChoice<RuleStyle>(
+          keyPrefix: 'rules-style',
+          options: const [
+            (RuleStyle.sneaky, 'Quietly'),
+            (RuleStyle.explicit, 'Friendly message'),
+          ],
+          value: r.style,
+          onChanged: (s) => _edit((r) => r.copyWith(style: s)),
+        ),
+        const SizedBox(height: Gap.lg),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: Gap.lg),
+          child: TvSaysNoPreview(
+            style: r.style,
+            backAt: bed == null ? null : friendlyTime(context, bed.end),
           ),
-          const SizedBox(height: Gap.md),
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
-            child: Text(
-              r.style == RuleStyle.sneaky
-                  ? 'The app just closes and the TV goes Home, as if it '
-                      'crashed. No message.'
-                  : 'A friendly card says "TV time is over" and when it '
-                      'comes back, then the TV goes Home.',
-              key: ValueKey(r.style),
-              style: text.bodySmall,
-            ),
+        ),
+        const SizedBox(height: Gap.md),
+        AnimatedSwitcher(
+          duration: Motion.of(context, Motion.fast),
+          child: Text(
+            r.style == RuleStyle.sneaky
+                ? 'The app just closes and the TV goes Home, as if the '
+                    'show ended. No message, nothing to argue with.'
+                : 'A friendly card from Tubby says TV time is over and when '
+                    'it comes back. The TV says no, not you.',
+            key: ValueKey(r.style),
+            textAlign: TextAlign.center,
+            style: text.bodySmall,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  Widget _overridesCard(BuildContext context, AgentRules r) {
+  Widget _tonightCard(BuildContext context, AgentRules r) {
     final text = Theme.of(context).textTheme;
+    final bt = context.bt;
     final now = _now();
     final active = [
       for (final o in r.overrides)
         if (o.activeAt(now)) o,
     ];
     final tonight = DateTime(now.year, now.month, now.day, 23, 59);
+    final ytAllowed = active.any(
+      (o) => o.kind == OverrideKind.allowApp && o.pkg == kStockYouTube,
+    );
+    final quiet = active.any((o) => o.kind == OverrideKind.muteUntil);
     return InfoCard(
       key: const Key('rules-overrides'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+          Row(
             children: [
-              FilledButton.tonalIcon(
-                key: const Key('rules-allow-youtube'),
-                onPressed: _saving
-                    ? null
-                    : () => _override(
-                          RuleOverride(
-                            kind: OverrideKind.allowApp,
-                            pkg: kStockYouTube,
-                            until: tonight.toUtc().toIso8601String(),
+              Expanded(
+                child: _TonightTile(
+                  key: const Key('rules-allow-youtube'),
+                  icon: Icons.smart_display_rounded,
+                  label: 'Allow YouTube tonight',
+                  on: ytAllowed,
+                  onTap: _saving
+                      ? null
+                      : () => _override(
+                            RuleOverride(
+                              kind: OverrideKind.allowApp,
+                              pkg: kStockYouTube,
+                              until: tonight.toUtc().toIso8601String(),
+                            ),
                           ),
-                        ),
-                icon: const Icon(Icons.smart_display_rounded),
-                label: const Text('Allow YouTube tonight'),
+                ),
               ),
-              const SizedBox(height: Gap.sm),
-              FilledButton.tonalIcon(
-                key: const Key('rules-mute-30'),
-                onPressed: _saving
-                    ? null
-                    : () => _override(
-                          RuleOverride(
-                            kind: OverrideKind.muteUntil,
-                            until: now
-                                .add(const Duration(minutes: 30))
-                                .toUtc()
-                                .toIso8601String(),
+              const SizedBox(width: Gap.sm),
+              Expanded(
+                child: _TonightTile(
+                  key: const Key('rules-mute-30'),
+                  icon: Icons.volume_off_rounded,
+                  label: 'Quiet for 30 min',
+                  on: quiet,
+                  onTap: _saving
+                      ? null
+                      : () => _override(
+                            RuleOverride(
+                              kind: OverrideKind.muteUntil,
+                              until: now
+                                  .add(const Duration(minutes: 30))
+                                  .toUtc()
+                                  .toIso8601String(),
+                            ),
                           ),
-                        ),
-                icon: const Icon(Icons.volume_off_rounded),
-                label: const Text('Mute for 30 min'),
+                ),
               ),
             ],
-          ),
-          const SizedBox(height: Gap.sm),
-          Text(
-            'These save to the TV right away and end by themselves.',
-            style: text.bodySmall,
           ),
           if (active.isNotEmpty) ...[
             const SizedBox(height: Gap.md),
@@ -542,154 +615,209 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
                   children: [
                     Icon(
                       switch (o.kind) {
-                        OverrideKind.allowApp => Icons.check_circle_outline,
-                        OverrideKind.muteUntil => Icons.volume_off_outlined,
-                        OverrideKind.breakUntil => Icons.coffee_outlined,
+                        OverrideKind.allowApp => Icons.check_circle_rounded,
+                        OverrideKind.muteUntil => Icons.volume_off_rounded,
+                        OverrideKind.breakUntil => Icons.pause_circle_rounded,
                       },
                       size: 20,
-                      color: Tone.ok.color(context),
+                      color: bt.mint,
                     ),
                     const SizedBox(width: Gap.md),
                     Expanded(
                       child: Text(
                         '${switch (o.kind) {
                           OverrideKind.allowApp =>
-                            'Allowed: ${appLabel(o.pkg ?? '')}',
-                          OverrideKind.muteUntil => 'Muted',
-                          OverrideKind.breakUntil => 'Break',
+                            '${appLabel(o.pkg ?? '')} allowed',
+                          OverrideKind.muteUntil => 'Quiet',
+                          OverrideKind.breakUntil => 'Paused',
                         }} · until '
-                        '${clockTime(o.untilTime!.toLocal())}',
-                        style: text.bodyMedium,
+                        '${friendlyTime(context, o.untilTime!.toLocal())}',
+                        style: text.bodyMedium!.copyWith(color: bt.ink),
                       ),
                     ),
-                    IconButton(
-                      tooltip: 'End now',
+                    TextButton(
                       onPressed: _saving ? null : () => _removeOverride(o),
-                      icon: const Icon(Icons.close_rounded),
+                      child: const Text('End now'),
                     ),
                   ],
                 ),
               ),
           ],
+          const SizedBox(height: Gap.sm),
+          Text(
+            'These go to the TV right away and end by themselves.',
+            style: text.bodySmall,
+          ),
         ],
       ),
     );
   }
-
-  static String _minutes(int m) {
-    final h = m ~/ 60;
-    final rest = m % 60;
-    if (h == 0) return '$rest min';
-    return rest == 0 ? '$h h' : '$h h $rest min';
-  }
 }
 
-class _Header extends StatelessWidget {
+// ── pieces ──
+
+class _StatusLine extends ConsumerWidget {
   final AgentRules rules;
-  final String tvName;
+  final bool dirty;
 
-  const _Header({required this.rules, required this.tvName});
+  const _StatusLine({required this.rules, required this.dirty});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final text = Theme.of(context).textTheme;
-    final scheme = Theme.of(context).colorScheme;
-    final ok = StatusColors.of(context).ok;
+    final bt = context.bt;
+    final tv = ref.watch(activeTvProvider)?.name ?? 'the TV';
     final when = rules.updatedAtTime;
-    return InfoCard(
+    final c = dirty ? bt.sunInk : bt.mintInk;
+    return Column(
       key: const Key('rules-header'),
-      gradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [
-          Color.alphaBlend(
-            ok.withValues(alpha: 0.12),
-            scheme.surfaceContainerLow,
-          ),
-          scheme.surfaceContainerLow,
-        ],
-      ),
-      child: Row(
-        children: [
-          IconBadge(icon: Icons.shield_rounded, color: ok, size: 44),
-          const SizedBox(width: Gap.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Rules on $tvName', style: text.titleMedium),
-                Text(
-                  rules.updatedBy.isEmpty
-                      ? 'Enforced by Always On, 24/7'
-                      : '${rules.updatedBy}'
-                          '${when == null ? '' : ' · ${relativeTime(when)}'}',
-                  key: const Key('rules-updated'),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: text.bodySmall,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AnimatedSwitcher(
+          duration: Motion.of(context, Motion.fast),
+          child: Row(
+            key: ValueKey(dirty),
+            children: [
+              Icon(
+                dirty ? Icons.edit_rounded : Icons.shield_rounded,
+                size: 16,
+                color: c,
+              ),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  dirty
+                      ? 'Not saved yet · $tv still runs the old rules'
+                      : 'Saved to $tv · runs even when you\'re away',
+                  style: text.labelLarge!.copyWith(fontSize: 14, color: c),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          TagChip('v${rules.version}', tone: Tone.ok),
+        ),
+        if (rules.updatedBy.isNotEmpty) ...[
+          const SizedBox(height: 2),
+          Text(
+            'Last changed by ${rules.updatedBy}'
+            '${when == null ? '' : ' · ${relativeTime(when)}'}',
+            key: const Key('rules-updated'),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: text.bodySmall,
+          ),
         ],
-      ),
+      ],
     );
   }
 }
 
-class _SwitchRow extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final bool value;
-  final ValueChanged<bool> onChanged;
+class _PresetChips extends StatelessWidget {
+  final RulePreset? active;
+  final ValueChanged<RulePreset>? onPick;
 
-  const _SwitchRow({
-    super.key,
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.value,
-    required this.onChanged,
-  });
+  const _PresetChips({required this.active, required this.onPick});
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: Gap.sm,
+      runSpacing: Gap.sm,
+      children: [
+        for (final p in RulePreset.values)
+          InkPill(
+            key: Key('preset-${p.name}'),
+            label: p.label,
+            selected: active == p,
+            onTap: active == p || onPick == null ? null : () => onPick!(p),
+          ),
+        Tooltip(
+          message: 'Change anything below and it becomes your own routine',
+          child: InkPill(
+            key: const Key('preset-custom'),
+            label: 'Custom',
+            icon: Icons.tune_rounded,
+            selected: active == null,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The empty state that teaches: three starting points.
+class _Templates extends StatelessWidget {
+  final ValueChanged<RulePreset>? onPick;
+  const _Templates({required this.onPick});
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final c = value ? Tone.accent.color(context) : Tone.idle.color(context);
-    return InkWell(
-      borderRadius: Radii.tile,
-      onTap: () => onChanged(!value),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: Gap.sm),
-        child: Row(
-          children: [
-            IconBadge(icon: icon, color: c, size: 36),
-            const SizedBox(width: Gap.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    final bt = context.bt;
+    return InfoCard(
+      key: const Key('rules-templates'),
+      color: bt.sunTint,
+      borderColor: bt.sunTint,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Tubby(mood: TubbyMood.asleep, size: 52, animate: false),
+              const SizedBox(width: Gap.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Pick a starting point', style: text.titleMedium),
+                    Text(
+                      'One tap fills in bedtime, TV time and volume. Tweak '
+                      'anything after.',
+                      style: text.bodySmall!.copyWith(color: bt.inkSoft),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: Gap.md),
+          for (final p in RulePreset.values) ...[
+            if (p != RulePreset.schoolNight) const SizedBox(height: Gap.sm),
+            InfoCard(
+              key: Key('template-${p.name}'),
+              padding: const EdgeInsets.symmetric(
+                horizontal: Gap.lg,
+                vertical: Gap.md,
+              ),
+              onTap: onPick == null ? null : () => onPick!(p),
+              child: Row(
                 children: [
-                  Text(title, style: text.titleSmall),
-                  Text(subtitle, style: text.bodySmall),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(p.label, style: text.titleSmall),
+                        Text(p.blurb, style: text.bodySmall),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.chevron_right_rounded, color: bt.muted),
                 ],
               ),
             ),
-            Switch(value: value, onChanged: onChanged),
           ],
-        ),
+        ],
       ),
     );
   }
 }
 
-class _ScheduleRowEditor extends StatelessWidget {
+/// One quiet-hours window: the times big, the days as dots.
+class _WindowEditor extends StatelessWidget {
   final ScheduleRow row;
   final ValueChanged<ScheduleRow> onChanged;
   final VoidCallback onRemove;
 
-  const _ScheduleRowEditor({
+  const _WindowEditor({
     super.key,
     required this.row,
     required this.onChanged,
@@ -710,11 +838,8 @@ class _ScheduleRowEditor extends StatelessWidget {
   Future<void> _pick(BuildContext context, bool from) async {
     final t = await showTimePicker(
       context: context,
+      helpText: from ? 'TV OFF FROM' : 'TV BACK AT',
       initialTime: _parse(from ? row.from : row.to),
-      builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
-        child: child!,
-      ),
     );
     if (t == null) return;
     onChanged(from ? row.copyWith(from: _fmt(t)) : row.copyWith(to: _fmt(t)));
@@ -722,68 +847,110 @@ class _ScheduleRowEditor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final bt = context.bt;
     final text = Theme.of(context).textTheme;
-    Widget time(String label, String v, bool from) => Expanded(
-          child: OutlinedButton(
+    final h24 = MediaQuery.alwaysUse24HourFormatOf(context);
+    Widget time(String v, bool from) => Semantics(
+          button: true,
+          label: '${from ? 'From' : 'Until'} ${hhmmLabel(v, h24: h24)}',
+          excludeSemantics: true,
+          child: InkWell(
             key: Key(from ? 'schedule-from' : 'schedule-to'),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: Gap.sm),
-            ),
-            onPressed: () => _pick(context, from),
-            child: Column(
-              children: [
-                Text(label, style: text.labelSmall),
-                Text(v, style: text.titleMedium),
-              ],
+            borderRadius: Radii.field,
+            onTap: () => _pick(context, from),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 6,
+                vertical: Gap.sm,
+              ),
+              child: Text(
+                hhmmLabel(v, h24: h24),
+                softWrap: false,
+                style: Fonts.bricolage(
+                  20,
+                  color: bt.ink,
+                  tabularFigures: true,
+                ).copyWith(
+                  decoration: TextDecoration.underline,
+                  decorationColor: bt.borderStrong,
+                  decorationThickness: 2,
+                ),
+              ),
             ),
           ),
         );
     return Container(
-      padding: const EdgeInsets.all(Gap.md),
+      padding: const EdgeInsets.fromLTRB(Gap.sm, Gap.xs, Gap.xs, Gap.md),
       decoration: BoxDecoration(
-        color: scheme.surfaceContainer,
+        color: bt.canvas,
         borderRadius: Radii.tile,
+        border: Border.all(color: bt.hairline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              for (var d = 1; d <= 7; d++)
-                _DayChip(
-                  letter: _dayLetters[d - 1],
-                  on: row.days.contains(d),
-                  onTap: () {
-                    final days = {...row.days};
-                    days.contains(d) ? days.remove(d) : days.add(d);
-                    onChanged(row.copyWith(days: days.toList()..sort()));
-                  },
-                ),
-            ],
-          ),
-          const SizedBox(height: Gap.md),
-          Row(
-            children: [
-              time('FROM', row.from, true),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: Gap.sm),
-                child: Icon(
-                  Icons.arrow_forward_rounded,
-                  size: 18,
-                  color: scheme.onSurfaceVariant,
+              Expanded(
+                child: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    time(row.from, true),
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      size: 18,
+                      color: bt.muted,
+                    ),
+                    time(row.to, false),
+                    if (row.crossesMidnight)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 2),
+                        child: Text('next day', style: text.bodySmall),
+                      ),
+                  ],
                 ),
               ),
-              time(row.crossesMidnight ? 'NEXT DAY' : 'TO', row.to, false),
-              const SizedBox(width: Gap.xs),
               IconButton(
                 key: const Key('schedule-remove'),
-                tooltip: 'Remove',
+                tooltip: 'Remove these quiet hours',
                 onPressed: onRemove,
-                icon: const Icon(Icons.delete_outline_rounded),
+                icon: Icon(Icons.close_rounded, color: bt.muted),
               ),
             ],
+          ),
+          Padding(
+            padding: const EdgeInsets.only(left: Gap.xs, right: Gap.sm),
+            child: LayoutBuilder(
+              builder: (context, c) {
+                final dot = (c.maxWidth / 7 - 3).clamp(28.0, 36.0);
+                return Row(
+                  children: [
+                    for (final d in _dayOrder)
+                      Expanded(
+                        child: _DayDot(
+                          key: Key('day-$d'),
+                          letter: _dayLetter[d]!,
+                          word: _dayWord[d]!,
+                          size: dot,
+                          on: row.days.contains(d),
+                          onTap: () {
+                            final days = {...row.days};
+                            days.contains(d) ? days.remove(d) : days.add(d);
+                            onChanged(
+                              row.copyWith(days: days.toList()..sort()),
+                            );
+                          },
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: Gap.sm),
+          Padding(
+            padding: const EdgeInsets.only(left: Gap.sm),
+            child: Text(daysLabel(row.days), style: text.bodySmall),
           ),
         ],
       ),
@@ -791,43 +958,116 @@ class _ScheduleRowEditor extends StatelessWidget {
   }
 }
 
-class _DayChip extends StatelessWidget {
+class _DayDot extends StatelessWidget {
   final String letter;
+  final String word;
   final bool on;
+  final double size;
   final VoidCallback onTap;
 
-  const _DayChip({
+  const _DayDot({
+    super.key,
     required this.letter,
+    required this.word,
+    this.size = 36,
     required this.on,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final bt = context.bt;
     return Semantics(
       button: true,
       selected: on,
+      label: word,
+      excludeSemantics: true,
       child: InkResponse(
-        onTap: onTap,
-        radius: 22,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          width: 34,
-          height: 34,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: on ? scheme.primary : Colors.transparent,
-            border: Border.all(
-              color: on ? scheme.primary : scheme.outlineVariant,
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        radius: 24,
+        child: SizedBox(
+          height: 48,
+          child: Center(
+            child: AnimatedContainer(
+              duration: Motion.of(context, Motion.fast),
+              curve: Motion.settle,
+              width: size,
+              height: size,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: on ? bt.sun : bt.hairline,
+              ),
+              child: Text(
+                letter,
+                style: Theme.of(context).textTheme.labelLarge!.copyWith(
+                      fontSize: 14,
+                      color: on ? const Color(0xFF3D2700) : bt.muted,
+                    ),
+              ),
             ),
           ),
-          child: Text(
-            letter,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: on ? scheme.onPrimary : scheme.onSurfaceVariant,
-                ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TonightTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool on;
+  final VoidCallback? onTap;
+
+  const _TonightTile({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.on,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bt = context.bt;
+    final text = Theme.of(context).textTheme;
+    return Semantics(
+      button: true,
+      selected: on,
+      child: Material(
+        color: on ? bt.mintTint : bt.canvas,
+        shape: RoundedRectangleBorder(
+          borderRadius: Radii.tile,
+          side: BorderSide(color: on ? bt.mint : bt.border),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap == null
+              ? null
+              : () {
+                  HapticFeedback.lightImpact();
+                  onTap!();
+                },
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 88),
+            child: Padding(
+              padding: const EdgeInsets.all(Gap.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Icon(icon, color: on ? bt.mintInk : bt.skyInk, size: 24),
+                  const SizedBox(height: Gap.sm),
+                  Text(
+                    label,
+                    style: text.labelLarge!.copyWith(fontSize: 14),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -850,55 +1090,226 @@ class _SaveBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final bt = context.bt;
     final text = Theme.of(context).textTheme;
     return AnimatedSize(
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeOut,
+      duration: Motion.of(context, Motion.medium),
+      curve: Motion.settle,
       child: !visible
           ? const SizedBox(width: double.infinity)
-          : Container(
-              key: const Key('rules-save-bar'),
+          : Padding(
               padding: const EdgeInsets.fromLTRB(
-                Gap.page,
                 Gap.md,
-                Gap.page,
+                Gap.xs,
+                Gap.md,
                 Gap.md,
               ),
-              decoration: BoxDecoration(
-                color: scheme.surfaceContainer,
-                border: Border(top: BorderSide(color: scheme.outlineVariant)),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Unsaved changes',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: text.titleSmall,
+              child: Container(
+                key: const Key('rules-save-bar'),
+                padding: const EdgeInsets.fromLTRB(Gap.lg, 6, 6, 6),
+                decoration: BoxDecoration(
+                  color: bt.inkFill,
+                  borderRadius: Radii.card,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Not saved yet',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: text.titleSmall!.copyWith(color: bt.onInkFill),
+                      ),
                     ),
-                  ),
-                  TextButton(
-                    onPressed: saving ? null : onDiscard,
-                    child: const Text('Discard'),
-                  ),
-                  const SizedBox(width: Gap.xs),
-                  FilledButton.icon(
-                    key: const Key('rules-save'),
-                    onPressed: saving ? null : onSave,
-                    icon: saving
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.upload_rounded),
-                    label: const Text('Save'),
-                  ),
-                ],
+                    TextButton(
+                      key: const Key('rules-discard'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: bt.onInkFill.withValues(alpha: 0.8),
+                      ),
+                      onPressed: saving ? null : onDiscard,
+                      child: const Text('Discard'),
+                    ),
+                    const SizedBox(width: Gap.xs),
+                    SizedBox(
+                      width: 112,
+                      child: PrimaryButton(
+                        key: const Key('rules-save'),
+                        icon: saving ? null : Icons.upload_rounded,
+                        label: saving ? 'Saving…' : 'Save',
+                        height: 48,
+                        onPressed: saving ? null : onSave,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
+    );
+  }
+}
+
+/// "School night: here's what it sets", then Use or Not now.
+class PresetSheet extends StatelessWidget {
+  final RulePreset preset;
+  final bool h24;
+
+  const PresetSheet({super.key, required this.preset, this.h24 = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final bt = context.bt;
+    final text = Theme.of(context).textTheme;
+    return SheetScaffold(
+      key: const Key('preset-sheet'),
+      title: preset.label,
+      lead: Text(preset.blurb),
+      children: [
+        InfoCard(
+          child: Column(
+            children: [
+              for (final l in shapeSummary(preset.shape, h24: h24))
+                CheckLine(l, done: true, minHeight: 32),
+            ],
+          ),
+        ),
+        const SizedBox(height: Gap.md),
+        Row(
+          children: [
+            Icon(Icons.apps_rounded, size: 16, color: bt.muted),
+            const SizedBox(width: Gap.sm),
+            Expanded(
+              child: Text(
+                'Your allowed apps and Tonight only stay as they are.',
+                style: text.bodySmall,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: Gap.lg),
+        PrimaryButton(
+          key: const Key('preset-confirm'),
+          label: 'Use ${preset.label}',
+          onPressed: () => Navigator.pop(context, true),
+        ),
+        const SizedBox(height: Gap.sm),
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text('Keep my settings'),
+        ),
+      ],
+    );
+  }
+}
+
+/// Someone else changed the rules while you edited: keep theirs or mine.
+class ConflictSheet extends StatelessWidget {
+  final AgentRules theirs;
+  final AgentRules mine;
+
+  const ConflictSheet({super.key, required this.theirs, required this.mine});
+
+  @override
+  Widget build(BuildContext context) {
+    final bt = context.bt;
+    final text = Theme.of(context).textTheme;
+    final when = theirs.updatedAtTime;
+    final by = theirs.updatedBy.isEmpty ? 'Another phone' : theirs.updatedBy;
+    final diff = rulesDiff(theirs, mine);
+    return SheetScaffold(
+      key: const Key('rules-conflict'),
+      title: 'The TV has newer rules',
+      lead: Text(
+        '$by changed them'
+        '${when == null ? '' : ' at ${friendlyTime(context, when.toLocal())}'}'
+        ' while you were editing. Which should the TV keep?',
+      ),
+      children: [
+        if (diff.isNotEmpty) ...[
+          Text('WHAT\'S DIFFERENT', style: text.labelSmall),
+          const SizedBox(height: Gap.sm),
+          Wrap(
+            spacing: Gap.sm,
+            runSpacing: Gap.sm,
+            children: [
+              for (final d in diff) BtBadge(d, tone: Tone.warn),
+            ],
+          ),
+          const SizedBox(height: Gap.lg),
+        ],
+        ChoiceCard(
+          key: const Key('rules-reload'),
+          selected: false,
+          tone: Tone.info,
+          icon: Icons.tv_rounded,
+          title: 'Theirs',
+          body: 'Keep what\'s on the TV now. Your edits here are dropped.',
+          onTap: () => Navigator.pop(context, 'theirs'),
+        ),
+        const SizedBox(height: Gap.sm),
+        ChoiceCard(
+          key: const Key('rules-overwrite'),
+          selected: false,
+          icon: Icons.phone_android_rounded,
+          title: 'Mine',
+          body: 'Send my changes. They replace what $by set.',
+          onTap: () => Navigator.pop(context, 'mine'),
+        ),
+        const SizedBox(height: Gap.md),
+        Text(
+          'Either way, the TV keeps running a routine the whole time.',
+          textAlign: TextAlign.center,
+          style: text.bodySmall!.copyWith(color: bt.muted),
+        ),
+      ],
+    );
+  }
+}
+
+/// An app as a removable pill: its tile, its name, ×.
+class AppPill extends StatelessWidget {
+  final String pkg;
+  final VoidCallback? onRemove;
+
+  const AppPill({super.key, required this.pkg, this.onRemove});
+
+  @override
+  Widget build(BuildContext context) {
+    final bt = context.bt;
+    final text = Theme.of(context).textTheme;
+    final name = appLabel(pkg);
+    return Container(
+      key: Key('app-pill-$pkg'),
+      constraints: const BoxConstraints(minHeight: 44),
+      padding: const EdgeInsets.only(left: 6),
+      decoration: ShapeDecoration(
+        color: bt.hairline,
+        shape: const StadiumBorder(),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AppAvatar(pkg: pkg, size: 28),
+          const SizedBox(width: Gap.sm),
+          Text(name, style: text.labelLarge!.copyWith(fontSize: 14)),
+          if (onRemove != null)
+            Semantics(
+              button: true,
+              label: 'Remove $name',
+              excludeSemantics: true,
+              child: InkResponse(
+                radius: 20,
+                onTap: onRemove,
+                child: SizedBox(
+                  width: 40,
+                  height: 44,
+                  child: Icon(Icons.close_rounded, size: 16, color: bt.muted),
+                ),
+              ),
+            )
+          else
+            const SizedBox(width: Gap.md),
+        ],
+      ),
     );
   }
 }
@@ -910,41 +1321,54 @@ class AppAvatar extends StatelessWidget {
 
   const AppAvatar({super.key, required this.pkg, this.size = 36});
 
+  static const _known = {
+    'org.smarttube.stable': Color(0xFFFF3D2E),
+    'org.smarttube.beta': Color(0xFFFF3D2E),
+    'com.teamsmart.videomanager.tv': Color(0xFFFF3D2E),
+    'com.google.android.youtube.tv': Color(0xFFFF0033),
+    'com.google.android.youtube.tvkids': Color(0xFFE62117),
+    'com.netflix.ninja': Color(0xFF141414),
+    'com.amazon.amazonvideo.livingroom': Color(0xFF1A98FF),
+    'com.disney.disneyplus': Color(0xFF113CCF),
+    'com.spotify.tv.android': Color(0xFF1DB954),
+  };
+
   static const _tones = [
     Color(0xFFE5735A),
-    Color(0xFF6FA8DC),
-    Color(0xFF5CC2A5),
-    Color(0xFFE8C468),
-    Color(0xFFB48EE0),
+    Color(0xFF3A8DFF),
+    Color(0xFF1FBF8F),
+    Color(0xFFC98200),
+    Color(0xFF8C7CFF),
     Color(0xFFF2A65A),
   ];
 
   @override
   Widget build(BuildContext context) {
     final label = appLabel(pkg);
-    final c =
+    final known = _known[pkg];
+    final c = known ??
         _tones[pkg.codeUnits.fold<int>(0, (a, b) => a + b) % _tones.length];
     return Container(
       width: size,
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: c.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(size * 0.3),
+        color: known ?? c.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(size * 0.28),
       ),
       child: Text(
         label.isEmpty ? '?' : label[0].toUpperCase(),
-        style: TextStyle(
-          color: c,
-          fontWeight: FontWeight.w700,
-          fontSize: size * 0.45,
+        style: Fonts.bricolage(
+          size * 0.46,
+          color: known != null ? Colors.white : c,
+          height: 1,
         ),
       ),
     );
   }
 }
 
-/// Picks TV apps (from `TvOps.listApps`) for the allow/block list.
+/// Picks TV apps (from `TvOps.listApps`) for the allow or block list.
 class AppPickerSheet extends ConsumerStatefulWidget {
   final List<String> selected;
   final bool blocklist;
@@ -961,29 +1385,40 @@ class AppPickerSheet extends ConsumerStatefulWidget {
 
 class _AppPickerSheetState extends ConsumerState<AppPickerSheet> {
   late final Set<String> _picked = {...widget.selected};
+  String _q = '';
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final bt = context.bt;
     final apps = ref.watch(appsProvider);
     final launcher =
         ref.watch(tvOpsProvider).valueOrNull?.profile.launcher?.pkg;
     return SafeArea(
       child: SizedBox(
-        height: MediaQuery.sizeOf(context).height * 0.8,
+        height: MediaQuery.sizeOf(context).height * 0.82,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(
-                Gap.xl,
-                Gap.sm,
-                Gap.xl,
-                Gap.sm,
-              ),
-              child: Text(
-                widget.blocklist ? 'Apps to block' : 'Apps allowed',
-                style: text.titleLarge,
+              padding: const EdgeInsets.fromLTRB(Gap.xl, 0, Gap.xl, Gap.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.blocklist ? 'Apps to block' : 'Apps that can open',
+                    style: text.headlineMedium,
+                  ),
+                  const SizedBox(height: Gap.md),
+                  TextField(
+                    key: const Key('pick-search'),
+                    onChanged: (v) => setState(() => _q = v.toLowerCase()),
+                    decoration: const InputDecoration(
+                      hintText: 'Find an app',
+                      prefixIcon: Icon(Icons.search_rounded),
+                    ),
+                  ),
+                ],
               ),
             ),
             Expanded(
@@ -992,41 +1427,51 @@ class _AppPickerSheetState extends ConsumerState<AppPickerSheet> {
                   padding: EdgeInsets.all(Gap.lg),
                   child: SkeletonCard(rows: 5),
                 ),
-                error: (e, _) => EmptyState(
+                error: (e, _) => const EmptyState(
                   icon: Icons.apps_outage_rounded,
                   title: 'Couldn\'t list the TV\'s apps',
-                  message: '$e',
+                  message: 'Check the TV is on, then try again.',
                 ),
                 data: (list) {
-                  final shown = [
+                  final all = [
                     for (final a in list)
                       if (a.launchable && a.pkg != launcher) a.pkg,
                     for (final p in widget.selected)
                       if (!list.any((a) => a.pkg == p)) p,
                   ]..sort((a, b) => appLabel(a).compareTo(appLabel(b)));
-                  if (shown.isEmpty) {
+                  final shown = [
+                    for (final p in all)
+                      if (_q.isEmpty || appLabel(p).toLowerCase().contains(_q))
+                        p,
+                  ];
+                  if (all.isEmpty) {
                     return const EmptyState(
                       icon: Icons.apps_rounded,
                       title: 'No apps found',
-                      message: 'Listing apps needs Home mode.',
+                      message: 'Listing the TV\'s apps needs Home mode.',
                     );
                   }
                   return ListView(
+                    padding: const EdgeInsets.symmetric(horizontal: Gap.md),
                     children: [
                       for (final p in shown)
-                        CheckboxListTile(
+                        _PickRow(
                           key: Key('pick-$p'),
-                          value: _picked.contains(p),
-                          onChanged: (v) => setState(
-                            () =>
-                                v == true ? _picked.add(p) : _picked.remove(p),
+                          pkg: p,
+                          on: _picked.contains(p),
+                          onTap: () => setState(
+                            () => _picked.contains(p)
+                                ? _picked.remove(p)
+                                : _picked.add(p),
                           ),
-                          secondary: AppAvatar(pkg: p),
-                          title: Text(appLabel(p)),
-                          subtitle: Text(
-                            p,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                        ),
+                      if (shown.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.all(Gap.xl),
+                          child: Text(
+                            'No app called "$_q" on this TV.',
+                            textAlign: TextAlign.center,
+                            style: text.bodyMedium!.copyWith(color: bt.muted),
                           ),
                         ),
                     ],
@@ -1035,15 +1480,80 @@ class _AppPickerSheetState extends ConsumerState<AppPickerSheet> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(Gap.lg),
-              child: FilledButton(
+              padding: const EdgeInsets.fromLTRB(Gap.xl, Gap.md, Gap.xl, 0),
+              child: PrimaryButton(
                 key: const Key('pick-done'),
+                kind: ButtonKind.ink,
+                label: _picked.isEmpty
+                    ? 'Done'
+                    : 'Use ${_picked.length} '
+                        'app${_picked.length == 1 ? '' : 's'}',
                 onPressed: () => Navigator.pop(context, _picked.toList()),
-                child: Text('Use ${_picked.length} '
-                    'app${_picked.length == 1 ? '' : 's'}'),
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PickRow extends StatelessWidget {
+  final String pkg;
+  final bool on;
+  final VoidCallback onTap;
+
+  const _PickRow({
+    super.key,
+    required this.pkg,
+    required this.on,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bt = context.bt;
+    final text = Theme.of(context).textTheme;
+    return Semantics(
+      checked: on,
+      label: appLabel(pkg),
+      excludeSemantics: true,
+      button: true,
+      child: InkWell(
+        borderRadius: Radii.tile,
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 60),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: Gap.md),
+            child: Row(
+              children: [
+                AppAvatar(pkg: pkg, size: 40),
+                const SizedBox(width: Gap.md),
+                Expanded(child: Text(appLabel(pkg), style: text.titleSmall)),
+                AnimatedContainer(
+                  duration: Motion.of(context, Motion.fast),
+                  width: 26,
+                  height: 26,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: on ? bt.mintInk : Colors.transparent,
+                    border: Border.all(
+                      color: on ? bt.mintInk : bt.borderStrong,
+                      width: 2,
+                    ),
+                  ),
+                  child: on
+                      ? const Icon(Icons.check_rounded,
+                          size: 16, color: Colors.white)
+                      : null,
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

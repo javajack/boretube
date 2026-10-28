@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/agent_providers.dart';
 import '../ui/components.dart';
+import '../ui/learn.dart';
 import '../ui/tokens.dart';
 import 'now/classic_lock_card.dart';
 import 'rules_tab.dart';
@@ -10,8 +11,6 @@ import 'tab_header.dart';
 
 /// Routines: the Always On rules, or "Lock for a while" from this phone.
 ///
-/// PART A hosts the existing editors restyled; PART B redesigns them
-/// (presets, cards, conflict sheet).
 class RoutinesTab extends ConsumerWidget {
   const RoutinesTab({super.key});
 
@@ -24,7 +23,7 @@ class RoutinesTab extends ConsumerWidget {
         children: [
           TabHeader(
             title: 'Routines',
-            subtitle: 'Kept by the TV, even when you\'re out.',
+            subtitle: 'Bedtime, TV time and apps, kept by the TV.',
           ),
           Expanded(child: RulesTab()),
         ],
@@ -37,6 +36,7 @@ class RoutinesTab extends ConsumerWidget {
         TabHeader(
           title: 'Routines',
           subtitle: 'Lock the TV for a while from this phone.',
+          trailing: InfoDot(LearnTerm.alwaysOn),
         ),
         Padding(
           padding: EdgeInsets.symmetric(horizontal: Gap.page),
@@ -48,7 +48,7 @@ class RoutinesTab extends ConsumerWidget {
                 padding: EdgeInsets.fromLTRB(Gap.xs, Gap.sm, Gap.xs, Gap.sm),
               ),
               ClassicLockCard(),
-              SectionHeader('With Always On'),
+              SectionHeader('Routines that run by themselves'),
               AlwaysOnPreview(),
             ],
           ),

@@ -9,15 +9,18 @@ import '../../models/log_entry.dart';
 import '../../providers/providers.dart';
 import '../../providers/tv_providers.dart';
 import '../../ui/components.dart';
+import '../../ui/controls.dart';
 import '../../ui/format.dart';
 import '../../ui/tokens.dart';
+import '../whitelist_screen.dart';
 
 /// Lock mode — mutually exclusive (as in v1).
 enum ClassicMode { none, apps, volume }
 
-/// The v1 timed lock, ported: mode, check interval (5–300 s), max volume
-/// (1–100 %), duration (1–1440 min), start/stop, countdown and live
-/// feed. Runs in the foreground service via [LockService].
+/// Lock for a while: the v1 timed lock, every field kept: mode, duration
+/// (1–1440 min), max volume (1–100 %), whitelist, and the check interval
+/// (5–300 s) under Advanced options. Runs in the foreground service via
+/// [LockService], so this phone has to stay on the Wi-Fi.
 class ClassicLockCard extends ConsumerStatefulWidget {
   const ClassicLockCard({super.key});
 
@@ -26,10 +29,14 @@ class ClassicLockCard extends ConsumerStatefulWidget {
 }
 
 class _ClassicLockCardState extends ConsumerState<ClassicLockCard> {
+  static const durations = [15, 30, 60, 120];
+
   ClassicMode _mode = ClassicMode.none;
   final _intervalCtrl = TextEditingController(text: '10');
-  final _maxVolCtrl = TextEditingController(text: '15');
   final _durationCtrl = TextEditingController(text: '60');
+  int _maxVol = 15;
+  bool _customDuration = false;
+  bool _advanced = false;
 
   final List<LogEntry> _feed = [];
   int _remaining = 0;
@@ -55,18 +62,20 @@ class _ClassicLockCardState extends ConsumerState<ClassicLockCard> {
     _activeSub = ls.activeStream.listen((a) {
       if (mounted) setState(() => _active = a);
     });
+    _durationCtrl.addListener(() => setState(() {}));
   }
 
   @override
   void dispose() {
     _intervalCtrl.dispose();
-    _maxVolCtrl.dispose();
     _durationCtrl.dispose();
     _logSub?.cancel();
     _remainingSub?.cancel();
     _activeSub?.cancel();
     super.dispose();
   }
+
+  int get _duration => (int.tryParse(_durationCtrl.text) ?? 60).clamp(1, 1440);
 
   Future<void> _start() async {
     if (_mode == ClassicMode.none) return;
@@ -75,12 +84,11 @@ class _ClassicLockCardState extends ConsumerState<ClassicLockCard> {
     final whitelist = ref.read(whitelistProvider);
     final ls = ref.read(lockServiceProvider);
     final interval = (int.tryParse(_intervalCtrl.text) ?? 10).clamp(5, 300);
-    final maxVol = (int.tryParse(_maxVolCtrl.text) ?? 15).clamp(1, 100);
-    final duration = (int.tryParse(_durationCtrl.text) ?? 60).clamp(1, 1440);
+    final maxVol = _maxVol.clamp(1, 100);
+    final duration = _duration;
     _intervalCtrl.text = '$interval';
-    _maxVolCtrl.text = '$maxVol';
     _durationCtrl.text = '$duration';
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
     setState(() => _feed.clear());
     await ls.start(
       host: tv.ip,
@@ -96,18 +104,19 @@ class _ClassicLockCardState extends ConsumerState<ClassicLockCard> {
   }
 
   Future<void> _stop() async {
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
     await ref.read(lockServiceProvider).stop();
   }
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final scheme = Theme.of(context).colorScheme;
-    final status = StatusColors.of(context);
-    final disabled = _active;
+    final bt = context.bt;
+    final locked = _active;
     return InfoCard(
-      borderColor: _active ? status.info.withValues(alpha: 0.6) : null,
+      key: const Key('classic-lock'),
+      borderColor: locked ? bt.sky : null,
+      radius: Radii.hero,
       padding: const EdgeInsets.all(Gap.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -115,8 +124,9 @@ class _ClassicLockCardState extends ConsumerState<ClassicLockCard> {
           Row(
             children: [
               IconBadge(
-                icon: _active ? Icons.lock_rounded : Icons.lock_clock_rounded,
-                color: _active ? status.info : scheme.primary,
+                icon: locked ? Icons.lock_rounded : Icons.lock_clock_rounded,
+                color: locked ? bt.skyInk : bt.coralInk,
+                size: 44,
               ),
               const SizedBox(width: Gap.md),
               Expanded(
@@ -124,146 +134,301 @@ class _ClassicLockCardState extends ConsumerState<ClassicLockCard> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _active ? 'Lock running' : 'Timed lock',
-                      style: text.titleMedium,
+                      locked ? 'Locked for a while' : 'Lock for a while',
+                      style: text.titleLarge,
                     ),
                     Text(
-                      'This phone checks the TV and steps in.',
+                      locked
+                          ? 'Keep this phone on the Wi-Fi until it ends.'
+                          : 'This phone watches the TV and steps in.',
                       style: text.bodySmall,
                     ),
                   ],
                 ),
               ),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 250),
-                child: _active && _remaining > 0
-                    ? TagChip(
-                        '${formatRemaining(_remaining)} left',
-                        key: const ValueKey('remaining'),
-                        tone: Tone.info,
-                      )
-                    : const SizedBox.shrink(),
-              ),
             ],
           ),
-          const SizedBox(height: Gap.lg),
-          _ModeOption(
-            mode: ClassicMode.none,
-            selected: _mode,
-            icon: Icons.lock_open_rounded,
-            label: 'No lock',
-            subtitle: 'TV is unrestricted',
-            disabled: disabled,
-            onSelect: _select,
-          ),
-          const SizedBox(height: Gap.sm),
-          _ModeOption(
-            mode: ClassicMode.apps,
-            selected: _mode,
-            icon: Icons.block_rounded,
-            label: 'Lock apps',
-            subtitle: 'Only whitelisted apps allowed',
-            disabled: disabled,
-            onSelect: _select,
-          ),
-          const SizedBox(height: Gap.sm),
-          _ModeOption(
-            mode: ClassicMode.volume,
-            selected: _mode,
-            icon: Icons.volume_down_rounded,
-            label: 'Lock volume',
-            subtitle: 'Cap max volume',
-            disabled: disabled,
-            onSelect: _select,
-          ),
           AnimatedSize(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOut,
+            duration: Motion.of(context, Motion.medium),
+            curve: Motion.settle,
             alignment: Alignment.topCenter,
-            child: _mode == ClassicMode.none
-                ? const SizedBox(width: double.infinity)
+            child: locked
+                ? _running(context)
                 : Padding(
                     padding: const EdgeInsets.only(top: Gap.lg),
-                    child: _options(disabled),
+                    child: _setup(context),
                   ),
           ),
           const SizedBox(height: Gap.lg),
-          FilledButton.icon(
+          PrimaryButton(
             key: const Key('classic-start-stop'),
+            label: locked
+                ? 'Stop the lock'
+                : _mode == ClassicMode.none
+                    ? 'Pick what to lock'
+                    : 'Lock for ${_durationWords(_duration)}',
+            icon: locked ? Icons.stop_rounded : Icons.lock_rounded,
+            kind: locked ? ButtonKind.berry : ButtonKind.coral,
             onPressed:
-                _active ? _stop : (_mode == ClassicMode.none ? null : _start),
-            style: _active
-                ? FilledButton.styleFrom(
-                    backgroundColor: context.bt.berryFill,
-                    foregroundColor: Colors.white,
-                  )
-                : null,
-            icon: Icon(_active ? Icons.stop_rounded : Icons.lock_rounded),
-            label: Text(_active ? 'Stop lock' : 'Start lock'),
+                locked ? _stop : (_mode == ClassicMode.none ? null : _start),
           ),
-          const SizedBox(height: Gap.lg),
-          _feedView(context),
+          if (_feed.isNotEmpty || locked) ...[
+            const SizedBox(height: Gap.lg),
+            _feedView(context),
+          ],
         ],
       ),
     );
   }
 
-  void _select(ClassicMode m) => setState(() => _mode = m);
-
-  Widget _options(bool disabled) {
-    final interval = _NumberField(
-      label: 'Check every',
-      suffix: 'sec',
-      controller: _intervalCtrl,
-      enabled: !disabled,
-      hint: '5–300',
+  Widget _running(BuildContext context) {
+    final bt = context.bt;
+    final text = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.only(top: Gap.lg),
+      child: Container(
+        padding: const EdgeInsets.all(Gap.lg),
+        decoration: BoxDecoration(
+          color: bt.skyTint,
+          borderRadius: Radii.tile,
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _remaining > 0 ? formatRemaining(_remaining) : '…',
+                    key: const Key('classic-remaining'),
+                    style: Fonts.bricolage(
+                      34,
+                      color: bt.skyInk,
+                      tabularFigures: true,
+                    ),
+                  ),
+                  Text(
+                    _mode == ClassicMode.volume
+                        ? 'left · volume kept at $_maxVol% or less'
+                        : 'left · only allowed apps play',
+                    style: text.bodySmall!.copyWith(color: bt.inkSoft),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.lock_rounded, color: bt.sky, size: 32),
+          ],
+        ),
+      ),
     );
+  }
+
+  Widget _setup(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final bt = context.bt;
+    final whitelist = ref.watch(whitelistProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (_mode == ClassicMode.volume) ...[
-          _NumberField(
-            label: 'Max volume',
-            suffix: '%',
-            controller: _maxVolCtrl,
-            enabled: !disabled,
-            hint: '1–100',
+        Text('WHAT TO LOCK', style: text.labelSmall),
+        const SizedBox(height: Gap.sm),
+        ChoiceCard(
+          key: const Key('classic-mode-apps'),
+          selected: _mode == ClassicMode.apps,
+          icon: Icons.apps_rounded,
+          title: 'Only allowed apps',
+          body: 'Anything else is stopped and muted.',
+          onTap: () => setState(
+            () => _mode =
+                _mode == ClassicMode.apps ? ClassicMode.none : ClassicMode.apps,
           ),
-          const SizedBox(height: Gap.md),
-        ],
-        interval,
-        const SizedBox(height: Gap.md),
-        _NumberField(
-          label: 'Duration',
-          suffix: 'min',
-          controller: _durationCtrl,
-          enabled: !disabled,
-          hint: '1–1440',
-          icon: Icons.timer_outlined,
         ),
-        if (_mode == ClassicMode.apps) ...[
-          const SizedBox(height: Gap.sm),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: () => context.push('/whitelist'),
-              icon: const Icon(Icons.checklist_rounded),
-              label: const Text('Whitelist'),
-            ),
+        const SizedBox(height: Gap.sm),
+        ChoiceCard(
+          key: const Key('classic-mode-volume'),
+          selected: _mode == ClassicMode.volume,
+          icon: Icons.volume_down_rounded,
+          title: 'Cap the volume',
+          body: 'Turning it up snaps back down.',
+          onTap: () => setState(
+            () => _mode = _mode == ClassicMode.volume
+                ? ClassicMode.none
+                : ClassicMode.volume,
           ),
-        ],
+        ),
+        AnimatedSize(
+          duration: Motion.of(context, Motion.medium),
+          curve: Motion.settle,
+          alignment: Alignment.topCenter,
+          child: _mode == ClassicMode.none
+              ? const SizedBox(width: double.infinity)
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (_mode == ClassicMode.apps) ...[
+                      const SizedBox(height: Gap.lg),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'ALLOWED · ${whitelist.length}',
+                              style: text.labelSmall,
+                            ),
+                          ),
+                          TextButton(
+                            key: const Key('classic-whitelist'),
+                            onPressed: () => context.push('/whitelist'),
+                            child: const Text('Edit'),
+                          ),
+                        ],
+                      ),
+                      Wrap(
+                        spacing: Gap.sm,
+                        runSpacing: Gap.sm,
+                        children: [
+                          for (final e in whitelist)
+                            _AllowedPill(
+                              label: e.appId == kBackdropId
+                                  ? 'Home screen'
+                                  : e.friendlyName,
+                              home: e.appId == kBackdropId,
+                            ),
+                          DashedAdd(
+                            key: const Key('classic-whats-playing'),
+                            label: 'What\'s playing',
+                            onTap: () => allowWhatsPlaying(context, ref),
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (_mode == ClassicMode.volume) ...[
+                      const SizedBox(height: Gap.lg),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text('LOUDEST', style: text.labelSmall),
+                          ),
+                          Text(
+                            '$_maxVol%',
+                            key: const Key('classic-max-volume'),
+                            style: Fonts.bricolage(
+                              20,
+                              color: bt.ink,
+                              tabularFigures: true,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Slider(
+                        key: const Key('classic-volume-slider'),
+                        value: _maxVol.toDouble(),
+                        min: 1,
+                        max: 100,
+                        label: '$_maxVol%',
+                        onChanged: (v) => setState(() => _maxVol = v.round()),
+                      ),
+                    ],
+                  ],
+                ),
+        ),
+        const SizedBox(height: Gap.lg),
+        Text('FOR HOW LONG', style: text.labelSmall),
+        const SizedBox(height: Gap.sm),
+        Wrap(
+          spacing: Gap.sm,
+          runSpacing: Gap.sm,
+          children: [
+            for (final m in durations)
+              InkPill(
+                key: Key('classic-duration-$m'),
+                label: _durationShort(m),
+                selected: !_customDuration && _duration == m,
+                onTap: () => setState(() {
+                  _customDuration = false;
+                  _durationCtrl.text = '$m';
+                }),
+              ),
+            InkPill(
+              key: const Key('classic-duration-other'),
+              label: 'Other',
+              selected: _customDuration || !durations.contains(_duration),
+              onTap: () => setState(() => _customDuration = true),
+            ),
+          ],
+        ),
+        AnimatedSize(
+          duration: Motion.of(context, Motion.medium),
+          curve: Motion.settle,
+          alignment: Alignment.topCenter,
+          child: !(_customDuration || !durations.contains(_duration))
+              ? const SizedBox(width: double.infinity)
+              : Padding(
+                  padding: const EdgeInsets.only(top: Gap.md),
+                  child: _NumberField(
+                    key: const Key('classic-duration'),
+                    label: 'Minutes',
+                    suffix: 'min',
+                    hint: '1–1440',
+                    controller: _durationCtrl,
+                  ),
+                ),
+        ),
+        const SizedBox(height: Gap.md),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            key: const Key('classic-advanced'),
+            style: TextButton.styleFrom(
+              foregroundColor: bt.muted,
+              padding: const EdgeInsets.symmetric(horizontal: Gap.sm),
+            ),
+            onPressed: () => setState(() => _advanced = !_advanced),
+            icon: AnimatedRotation(
+              turns: _advanced ? 0.5 : 0,
+              duration: Motion.of(context, Motion.fast),
+              child: const Icon(Icons.expand_more_rounded, size: 20),
+            ),
+            label: const Text('Advanced options'),
+          ),
+        ),
+        AnimatedSize(
+          duration: Motion.of(context, Motion.medium),
+          curve: Motion.settle,
+          alignment: Alignment.topCenter,
+          child: !_advanced
+              ? const SizedBox(width: double.infinity)
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _NumberField(
+                      key: const Key('classic-interval'),
+                      label: 'Check the TV every',
+                      suffix: 'sec',
+                      hint: '5–300',
+                      controller: _intervalCtrl,
+                    ),
+                    const SizedBox(height: Gap.xs),
+                    Text(
+                      'Shorter catches apps sooner but uses more battery.',
+                      style: text.bodySmall,
+                    ),
+                  ],
+                ),
+        ),
       ],
     );
   }
 
   Widget _feedView(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final scheme = Theme.of(context).colorScheme;
+    final bt = context.bt;
     final status = StatusColors.of(context);
     return Container(
+      key: const Key('classic-feed'),
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerLowest,
+        color: bt.canvas,
         borderRadius: Radii.tile,
+        border: Border.all(color: bt.hairline),
       ),
       padding: const EdgeInsets.all(Gap.md),
       child: Column(
@@ -271,14 +436,14 @@ class _ClassicLockCardState extends ConsumerState<ClassicLockCard> {
         children: [
           Row(
             children: [
-              Text('LIVE FEED', style: text.labelSmall),
+              Text('WHAT THE LOCK DID', style: text.labelSmall),
               const Spacer(),
               if (_active)
                 Container(
                   width: 8,
                   height: 8,
                   decoration: BoxDecoration(
-                    color: status.info,
+                    color: bt.sky,
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -287,13 +452,9 @@ class _ClassicLockCardState extends ConsumerState<ClassicLockCard> {
           const SizedBox(height: Gap.sm),
           if (_feed.isEmpty)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: Gap.md),
-              child: Text(
-                _active
-                    ? 'Waiting for first check…'
-                    : 'Start a lock to see activity',
-                style: text.bodySmall,
-              ),
+              padding: const EdgeInsets.symmetric(vertical: Gap.sm),
+              child:
+                  Text('Waiting for the first check…', style: text.bodySmall),
             )
           else
             ConstrainedBox(
@@ -303,24 +464,32 @@ class _ClassicLockCardState extends ConsumerState<ClassicLockCard> {
                 itemCount: _feed.length,
                 itemBuilder: (context, i) {
                   final e = _feed[_feed.length - 1 - i];
-                  final t = e.timestamp;
-                  final ts = '${t.hour.toString().padLeft(2, '0')}:'
-                      '${t.minute.toString().padLeft(2, '0')}:'
-                      '${t.second.toString().padLeft(2, '0')}';
                   final color = e.isStopped
                       ? status.bad
                       : e.message.contains('whitelisted')
                           ? status.ok
-                          : scheme.onSurfaceVariant;
+                          : bt.inkSoft;
                   return Padding(
-                    padding: const EdgeInsets.only(bottom: 3),
-                    child: Text(
-                      '[$ts] ${e.message}',
-                      style: TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 12.5,
-                        color: color,
-                      ),
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: 64,
+                          child: Text(
+                            clockTime(e.timestamp),
+                            style: text.bodySmall!.copyWith(
+                              fontFeatures: Fonts.tabular,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            e.message,
+                            style: text.bodySmall!.copyWith(color: color),
+                          ),
+                        ),
+                      ],
                     ),
                   );
                 },
@@ -330,95 +499,49 @@ class _ClassicLockCardState extends ConsumerState<ClassicLockCard> {
       ),
     );
   }
+
+  static String _durationShort(int m) =>
+      m < 60 ? '${m}m' : (m % 60 == 0 ? '${m ~/ 60}h' : '${m}m');
+
+  static String _durationWords(int m) {
+    if (m < 60) return '$m min';
+    final h = m ~/ 60;
+    final r = m % 60;
+    final hs = h == 1 ? '1 hour' : '$h hours';
+    return r == 0 ? hs : '$hs $r min';
+  }
 }
 
-class _ModeOption extends StatelessWidget {
-  final ClassicMode mode;
-  final ClassicMode selected;
-  final IconData icon;
+class _AllowedPill extends StatelessWidget {
   final String label;
-  final String subtitle;
-  final bool disabled;
-  final ValueChanged<ClassicMode> onSelect;
-
-  const _ModeOption({
-    required this.mode,
-    required this.selected,
-    required this.icon,
-    required this.label,
-    required this.subtitle,
-    required this.disabled,
-    required this.onSelect,
-  });
+  final bool home;
+  const _AllowedPill({required this.label, required this.home});
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final text = Theme.of(context).textTheme;
-    final on = mode == selected;
-    return Semantics(
-      selected: on,
-      button: true,
-      enabled: !disabled,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        decoration: BoxDecoration(
-          color: on
-              ? scheme.primary.withValues(alpha: 0.12)
-              : scheme.surfaceContainer,
-          borderRadius: Radii.tile,
-          border: Border.all(
-            color: on ? scheme.primary : Colors.transparent,
-            width: 1.5,
+    final bt = context.bt;
+    return Container(
+      constraints: const BoxConstraints(minHeight: 44),
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: ShapeDecoration(
+        color: bt.hairline,
+        shape: const StadiumBorder(),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            home ? Icons.home_rounded : Icons.check_rounded,
+            size: 16,
+            color: home ? bt.muted : bt.mintInk,
           ),
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            key: Key('classic-mode-${mode.name}'),
-            borderRadius: Radii.tile,
-            onTap: disabled ? null : () => onSelect(mode),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: Gap.md,
-                vertical: Gap.md,
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    icon,
-                    color: on ? scheme.primary : scheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: Gap.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          label,
-                          style: text.titleSmall?.copyWith(
-                            color: disabled && !on
-                                ? scheme.onSurfaceVariant
-                                : null,
-                          ),
-                        ),
-                        Text(subtitle, style: text.bodySmall),
-                      ],
-                    ),
-                  ),
-                  AnimatedOpacity(
-                    duration: const Duration(milliseconds: 200),
-                    opacity: on ? 1 : 0,
-                    child: Icon(
-                      Icons.check_circle_rounded,
-                      color: scheme.primary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style:
+                Theme.of(context).textTheme.labelLarge!.copyWith(fontSize: 14),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -429,16 +552,13 @@ class _NumberField extends StatelessWidget {
   final String suffix;
   final String hint;
   final TextEditingController controller;
-  final bool enabled;
-  final IconData? icon;
 
   const _NumberField({
+    super.key,
     required this.label,
     required this.suffix,
     required this.hint,
     required this.controller,
-    required this.enabled,
-    this.icon,
   });
 
   @override
@@ -446,20 +566,15 @@ class _NumberField extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     return Row(
       children: [
-        if (icon != null) ...[
-          Icon(icon, size: 18),
-          const SizedBox(width: Gap.sm),
-        ],
         Expanded(child: Text(label, style: text.bodyMedium)),
         SizedBox(
-          width: 120,
+          width: 128,
           child: TextField(
             controller: controller,
-            enabled: enabled,
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             textAlign: TextAlign.center,
-            style: text.titleSmall,
+            style: text.titleSmall!.copyWith(fontFeatures: Fonts.tabular),
             decoration: InputDecoration(
               isDense: true,
               hintText: hint,

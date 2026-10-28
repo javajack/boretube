@@ -6,7 +6,7 @@ The phone app ([`../boretube-mobile`](../boretube-mobile/README.md)) installs TV
 [`docs/superpowers/specs/2026-10-28-boretube-v2-design.md`](../docs/superpowers/specs/2026-10-28-boretube-v2-design.md) §6,
 [`docs/superpowers/plans/2026-10-28-boretube-v2-p2.md`](../docs/superpowers/plans/2026-10-28-boretube-v2-p2.md).
 
-minSdk 26, targetSdk/compileSdk 34. Current version: `1.0.1` (versionCode 2).
+minSdk 26, targetSdk/compileSdk 34. Current version: `1.1.0` (versionCode 3).
 
 ## What runs
 
@@ -32,11 +32,36 @@ minSdk 26, targetSdk/compileSdk 34. Current version: `1.0.1` (versionCode 2).
   appops set com.rakesh.boretube.agent GET_USAGE_STATS allow
   appops set com.rakesh.boretube.agent SYSTEM_ALERT_WINDOW allow
   pm grant com.rakesh.boretube.agent android.permission.POST_NOTIFICATIONS
+  cmd notification allow_listener com.rakesh.boretube.agent/com.rakesh.boretube.agent.android.MediaListenerService
   ```
+
+  The last one (1.1.0+) gives notification-listener access, which media sessions need (see **Media**). It's verified with `NotificationManager.isNotificationListenerAccessGranted` and reported as health `mediaAccess`. It's optional: without it the agent falls back to dumpsys and never sets `needsPhoneGrant` for it.
 
   If self-ADB is also down, `/v1/status` reports `needsPhoneGrant: true` and the phone re-grants over its own ADB.
 - **Foreground app.** Read from `UsageStatsManager.queryEvents` (ACTIVITY_RESUMED). Falls back to `dumpsys activity activities` over self-ADB when usage access is missing. There is **no accessibility service** on purpose: one would break the launcher's Home helper and volume-hold repeat.
 - **Sound.** `AudioManager.adjustStreamVolume` comes first. On the VU3, ADJUST_MUTE/UNMUTE are idempotent and LOWER/RAISE step by one. A runtime self-test reads the result back. If the TV ignored it, the agent switches to `input keyevent` over self-ADB for good (`soundPath` in status).
+- **Media** (1.1.0+), on its own `media` thread:
+  - **Listener path** (preferred): `MediaListenerService` is a `NotificationListenerService` that exists only for its access. With it, `MediaSessionManager.getActiveSessions` + `MediaController` callbacks give title, artist, `METADATA_KEY_DURATION`, playback state and position.
+  - **Fallback**: `dumpsys media_session` over self-ADB every 2 s gives title, subtitle, state, position and `updated`. No duration.
+  - The followed session is the foreground app's. Live position = `position + (elapsedRealtime − updated) × speed`.
+- **Shorts detection** (`core/ShortsDetector.kt`). Nothing marks a Short, so detection goes by rhythm, per video app (SmartTube, YouTube, YouTube Kids):
+  - A **play clock** runs only while PLAYING, so paused time never counts.
+  - A track is *short* if its known duration is ≤ 180 s (it counts right away, even while it loops). Without a known duration, it is short while it has played < 90 s. A known duration > 180 s is never short.
+  - A **Shorts session** is ≥ 3 distinct titles whose play time falls in the last 120 s, all of them short. Titles that played < 1 s are ignored.
+  - Seeking keeps the title, so it is never a new track. One short-ish normal video never triggers.
+  - Rules `shorts.mode`:
+    - `block`: force-stop + HOME, with the explicit card "Shorts aren't on in this house. Pick a full video instead."
+    - `budget`: counts Shorts today (reset at local midnight) and blocks once the count is over `perDay` (card: "That's all the Shorts for today.").
+    - `report`: journal only.
+    - `off` (default): nothing; the count still shows in status.
+  - Each session start is journaled (op `shorts`). Nothing is enforced while paused or in safe mode.
+- **End after this one** (`core/EndAfter.kt`). `endAfter` follows the foreground video. It starts a break of `breakMin` (default 60) when one of these happens first:
+  - the title changes (`nextVideo`)
+  - playback is STOPPED/ERROR, NONE for 3 s, or the session is gone for 5 s (`stopped`)
+  - the position is ≥ duration − 2 s, when the duration is known (`ended`)
+  - the cap passes (`cap`, default 45 min)
+
+  A pause is not an end; the cap covers a paused video. The armed state persists across agent restarts. `cancelEndAfter` and `restore` cancel it.
 - **Explicit card.** A `TYPE_APPLICATION_OVERLAY` window ("TV time is over · back at 07:00"), not focusable, so it never traps the remote.
 - **Watchdog** (maintenance) runs:
   - on boot
@@ -66,7 +91,7 @@ The phone may send `X-Phone-Time` (epoch ms or ISO) with a request. If the TV cl
 | `GET /v1/status` | — | Status document; see below |
 | `GET /v1/rules` | — | Rules document |
 | `PUT /v1/rules` | The full rules document; its `version` must equal the current one | 200 + stored doc (`version+1`, `updatedAt` filled in if empty) · **409** + current doc on version mismatch · 400 if invalid |
-| `POST /v1/action` | `{"action": "mute"\|"unmute"\|"stop"\|"bore"\|"restore"\|"endBreak"}`, `{"action":"volume","value":0..100}`, `{"action":"break"\|"muteFor","minutes":1..1440}` | `{ok, detail}`. `break`/`muteFor` are then enforced by the TV until they expire. `restore` ends breaks and timed mutes and unmutes. In safe mode only `unmute`, `restore` and `endBreak` run |
+| `POST /v1/action` | `{"action": "mute"\|"unmute"\|"stop"\|"bore"\|"restore"\|"endBreak"\|"cancelEndAfter"}`, `{"action":"volume","value":0..100}`, `{"action":"break"\|"muteFor","minutes":1..1440}`, `{"action":"endAfter","capMin"?:1..1440 (45),"breakMin"?:1..1440 (60)}` | `{ok, detail}`. `break`/`muteFor` are then enforced by the TV until they expire. `restore` ends breaks and timed mutes, cancels `endAfter`, and unmutes. `endAfter` returns `ok:false` ("no foreground video to follow") when no media session can be read; the phone should then offer its timer path. In safe mode only `unmute`, `restore` and `endBreak` run |
 | `GET /v1/journal?since=<epochMs>` | — | `[{time, op, target, before, after, ok, source: agent\|watchdog\|rule, undo?}]`, a ring buffer of 1000 entries |
 | `POST /v1/mode` | `{"mode": "normal"\|"paused"\|"safe"}` | `{ok, detail}` |
 | `POST /v1/approveBuild` | — | Approves the current `ro.build.fingerprint` for high-risk watchdog writes |
@@ -90,6 +115,19 @@ The phone may send `X-Phone-Time` (epoch ms or ISO) with a request. If the TV cl
 - `soundPath`: `audioManager|adbKeys|untested`
 - watchdog: `watchdogPending`, `lastWatchdogAt`
 - `profileId`
+- 1.1.0+, all additive:
+  - `media`: absent when there is no session or no media access. Shape: `{pkg, title?, artist?, state: none|stopped|paused|playing|buffering|error|other, positionMs, durationMs?, remainingMs?, source: listener|dumpsys}`. `durationMs`/`remainingMs` come only from the listener path. Show "about N min left" only when `remainingMs` is present.
+  - `endAfter`: `{armed, startedAt?, capAt?, title?, pkg?, breakMin?}`
+  - `shorts`: `{mode, todayCount, lastDetectedAt?, active, perDay?}`
+  - health gains `mediaAccess`: `ok` (listener) or `warn` (dumpsys fallback, or no access)
+
+```json
+"media": {"pkg": "org.smarttube.stable", "title": "Episode 4", "artist": "Kids Channel • 2M views", "state": "playing",
+          "positionMs": 312000, "durationMs": 1260000, "remainingMs": 948000, "source": "listener"},
+"endAfter": {"armed": true, "startedAt": 1793260800000, "capAt": 1793263500000, "title": "Episode 4",
+             "pkg": "org.smarttube.stable", "breakMin": 60},
+"shorts": {"mode": "budget", "todayCount": 7, "lastDetectedAt": 1793260500000, "active": false, "perDay": 10}
+```
 
 ## Rules document
 
@@ -109,7 +147,8 @@ The phone may send `X-Phone-Time` (epoch ms or ISO) with a request. If the TV cl
   "overrides": [
     { "kind": "allowApp", "pkg": "com.google.android.youtube.tv", "until": "2026-10-28T22:00:00+05:30" }
   ],
-  "stockYouTubeAllowed": false
+  "stockYouTubeAllowed": false,
+  "shorts": { "mode": "budget", "perDay": 10 }
 }
 ```
 
@@ -120,6 +159,7 @@ Validation rules:
 - `maxPercent`: 0..100.
 - `days`: ISO weekdays (1 = Mon … 7 = Sun) on which the window *starts*. Windows may cross midnight. `from`/`to` are `HH:mm`.
 - `dailyLimitMin`: 0..1440 (0 = no limit). TV time counts only while the screen is on and not on an input package (HDMI passthrough, tuner).
+- `shorts` (optional, 1.1.0+; absent = off): `mode` is `off|block|budget|report`, and `perDay` is 0..1000 (used only by `budget`). An absent `shorts` stays absent on GET. Because PUT replaces the whole document, a phone that doesn't know `shorts` drops it when it saves.
 - `overrides[].kind`: `allowApp|muteUntil|breakUntil`. `allowApp` needs a `pkg`. `until` is ISO.
 - App rules never close settings, system or setup packages, and they don't apply to inputs. Volume and TV-time rules still apply on inputs.
 
@@ -157,7 +197,11 @@ app/src/main/java/com/rakesh/boretube/agent/
 │   ├── Watchdog.kt          maintenance planner + OpExecutor (journals each op)
 │   ├── RestorePlanner.kt    undoBoretube / stock plans
 │   ├── SafetyGuard.kt       modes, boot-loop guard, fingerprint gate
-│   ├── PermissionHeal.kt    app-op self-heal planner, limited reasons, health items
+│   ├── PermissionHeal.kt    app-op + notification-listener self-heal planner, limited reasons, health items
+│   ├── Media.kt             MediaTrack/MediaSample, dumpsys media_session parser, MediaTimeline (play clock)
+│   ├── ShortsDetector.kt    Shorts rhythm rule, ShortsRules, daily ShortsCount
+│   ├── EndAfter.kt          end-after-this-one state + triggers
+│   ├── MediaGuard.kt        timeline + Shorts + budget + endAfter → decisions, status docs
 │   ├── Profile.kt           DeviceProfile, never-touch / never-stop sets, PackageGuard
 │   ├── TvShell.kt           shell command builders and output parsers
 │   └── Journal.kt           1000-entry ring buffer
@@ -166,12 +210,14 @@ app/src/main/java/com/rakesh/boretube/agent/
     ├── Shell.kt             self-ADB via dadb (two lanes, approval state)
     ├── ForegroundWatcher.kt UsageStatsManager polling (+ dumpsys fallback)
     ├── SoundController.kt   STREAM_MUSIC via AudioManager or key events
+    ├── MediaWatcher.kt      media sessions: listener path (getActiveSessions) or dumpsys fallback
+    ├── MediaListenerService.kt  NotificationListenerService that only holds the listener access
     ├── Overlay.kt           explicit card
     ├── Net.kt               ServerSocket HTTP server (:8790) + NsdAnnouncer
     └── AgentStore.kt        SharedPreferences + files (token, agent_id, journal)
 ```
 
-Tests are in `app/src/test/.../core/`: ContractTest, RuleEngineTest, StateTest, TvShellTest and WatchdogTest, with the `sony-bravia-vu3.json` fixture.
+Tests are in `app/src/test/.../core/`: ContractTest, RuleEngineTest, StateTest, TvShellTest, WatchdogTest and MediaTest (Shorts, timeline, endAfter, media JSON). Fixtures: `sony-bravia-vu3.json` and `media_session_vu3.txt` (a real `dumpsys media_session`).
 
 ## Build
 
@@ -232,6 +278,7 @@ adb -s $TV:5555 shell appops set com.rakesh.boretube.agent GET_USAGE_STATS allow
 adb -s $TV:5555 shell appops set com.rakesh.boretube.agent SYSTEM_ALERT_WINDOW allow
 adb -s $TV:5555 shell pm grant com.rakesh.boretube.agent android.permission.WRITE_SECURE_SETTINGS
 adb -s $TV:5555 shell pm grant com.rakesh.boretube.agent android.permission.POST_NOTIFICATIONS
+adb -s $TV:5555 shell cmd notification allow_listener com.rakesh.boretube.agent/com.rakesh.boretube.agent.android.MediaListenerService
 
 # Start (only the shell can: the service is DUMP-protected)
 adb -s $TV:5555 shell am start-foreground-service -n com.rakesh.boretube.agent/.GuardService
@@ -244,10 +291,11 @@ curl -s -H "Authorization: Bearer $TOKEN" -X POST http://$TV:8790/v1/profile \
   --data-binary @../boretube-mobile/assets/profiles/sony-bravia-vu3.json
 curl -s -H "Authorization: Bearer $TOKEN" http://$TV:8790/v1/watchdog          # dry-run plan
 curl -s -H "Authorization: Bearer $TOKEN" -X POST http://$TV:8790/v1/action -d '{"action":"muteFor","minutes":5}'
+curl -s -H "Authorization: Bearer $TOKEN" -X POST http://$TV:8790/v1/action -d '{"action":"endAfter","capMin":45,"breakMin":60}'
 curl -s -H "Authorization: Bearer $TOKEN" "http://$TV:8790/v1/journal?since=0"
 
 # Logs
-adb -s $TV:5555 logcat -s BoretubeGuard BoretubeService BoretubeShell BoretubeHttp BoretubeNsd
+adb -s $TV:5555 logcat -s BoretubeGuard BoretubeService BoretubeShell BoretubeHttp BoretubeNsd BoretubeMedia
 
 # Remove
 adb -s $TV:5555 shell pm uninstall com.rakesh.boretube.agent

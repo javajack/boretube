@@ -6,10 +6,12 @@ import '../agent/agent_client.dart';
 import '../providers/agent_providers.dart';
 import '../providers/tv_providers.dart';
 import '../ui/components.dart';
+import '../ui/controls.dart';
 import '../ui/learn.dart';
 import '../ui/tokens.dart';
 import '../ui/tubby.dart';
 import 'rules/rules_editor.dart';
+import 'tab_header.dart';
 import 'tv/tv_guard_card.dart';
 
 /// The rules document on the active TV's agent.
@@ -18,6 +20,8 @@ final rulesProvider = FutureProvider.autoDispose<AgentRules?>((ref) async {
   if (c == null) return null;
   return c.rules();
 });
+
+const _subtitle = 'Bedtime, TV time and apps, kept by the TV.';
 
 /// Routines on Always On TVs; a preview and the way there elsewhere.
 class RulesTab extends ConsumerWidget {
@@ -30,19 +34,34 @@ class RulesTab extends ConsumerWidget {
     return rules.when(
       skipLoadingOnRefresh: true,
       loading: () => ListView(
-        padding: rulesListPadding,
+        padding: const EdgeInsets.only(bottom: Gap.section),
         children: const [
-          SkeletonCard(rows: 1),
-          SizedBox(height: Gap.f13),
-          SkeletonCard(rows: 3),
-          SizedBox(height: Gap.f13),
-          SkeletonCard(rows: 3),
+          TabHeader(title: 'Routines', subtitle: _subtitle),
+          Padding(
+            padding: rulesListPadding,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Skeleton(height: Sizes.band + Gap.hero, radius: Radii.hero),
+                SizedBox(height: Gap.related),
+                Skeleton(height: Sizes.chip),
+                SizedBox(height: Gap.related),
+                Skeleton(height: Sizes.row),
+                SizedBox(height: Gap.f8),
+                Skeleton(height: Sizes.row),
+                SizedBox(height: Gap.f8),
+                Skeleton(height: Sizes.row),
+              ],
+            ),
+          ),
         ],
       ),
       error: (e, _) => ListView(
-        padding: rulesListPadding,
+        padding: const EdgeInsets.only(bottom: Gap.section),
         children: [
-          Surface(
+          const TabHeader(title: 'Routines', subtitle: _subtitle),
+          Padding(
+            padding: rulesListPadding,
             child: EmptyState(
               icon: Icons.portable_wifi_off_rounded,
               tone: Tone.bad,
@@ -67,9 +86,9 @@ class RulesTab extends ConsumerWidget {
 
 const rulesListPadding = EdgeInsets.fromLTRB(
   Gap.gutter,
-  Gap.f8,
+  Gap.related,
   Gap.gutter,
-  Gap.f34,
+  0,
 );
 
 class _RulesExplainer extends StatelessWidget {
@@ -77,122 +96,149 @@ class _RulesExplainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListView(
-        padding: rulesListPadding,
-        children: const [AlwaysOnPreview()],
+        padding: const EdgeInsets.only(bottom: Gap.section),
+        children: const [
+          TabHeader(title: 'Routines', subtitle: _subtitle),
+          Padding(padding: rulesListPadding, child: AlwaysOnPitch()),
+        ],
       );
 }
 
-/// What Always On adds, with the one button that gets there.
-class AlwaysOnPreview extends ConsumerWidget {
-  const AlwaysOnPreview({super.key});
+/// What Always On adds, as a plain list:
+/// `(icon, title, one line)`.
+const _whatYouCanSet = [
+  (
+    Icons.bedtime_rounded,
+    'Bedtime and quiet hours',
+    'The TV switches off on time, every night.',
+  ),
+  (
+    Icons.timer_rounded,
+    'Daily TV time',
+    'A limit per day that the TV keeps by itself.',
+  ),
+  (Icons.apps_rounded, 'Allowed apps', 'Only the apps you pick open.'),
+  (
+    Icons.swipe_vertical_rounded,
+    'Video hopping',
+    'A gentle stop to endless quick videos.',
+  ),
+  (Icons.volume_down_rounded, 'Volume limit', 'A cap the remote can\'t beat.'),
+  (
+    Icons.chat_bubble_rounded,
+    'How the TV says no',
+    'Quietly, or with a friendly card.',
+  ),
+];
+
+/// The Always On pitch: Tubby, one line, the button that gets there, and
+/// what you can set. Plain on the canvas (or inside a sheet).
+class AlwaysOnPitch extends ConsumerWidget {
+  /// Runs before the install or guide opens (e.g. closing a sheet).
+  final VoidCallback? onLeave;
+
+  /// The context to start setup from, when this sits in a sheet.
+  final BuildContext? host;
+
+  const AlwaysOnPitch({super.key, this.onLeave, this.host});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final text = Theme.of(context).textTheme;
-    final bt = context.bt;
     final hasAdb = ref.watch(activeHasAdbProvider);
-    const items = [
-      (
-        Icons.bedtime_rounded,
-        'Bedtime and quiet hours',
-        'The TV switches '
-            'off on time, every night.'
-      ),
-      (
-        Icons.timer_rounded,
-        'Daily TV time',
-        'A limit per day that the TV '
-            'keeps by itself.'
-      ),
-      (Icons.apps_rounded, 'Allowed apps', 'Only the apps you pick open.'),
-      (
-        Icons.swipe_vertical_rounded,
-        'Shorts',
-        'Stop them, allow a few a day, or just count them.',
-      ),
-      (
-        Icons.volume_down_rounded,
-        'Volume limit',
-        'A cap the remote can\'t '
-            'beat.'
-      ),
-      (
-        Icons.chat_bubble_rounded,
-        'How the TV says no',
-        'Quietly, or with a friendly "TV time is over" card.',
-      ),
-    ];
+    void go() {
+      final c = host ?? context;
+      onLeave?.call();
+      if (hasAdb) {
+        runAgentSetup(c, ref, repair: false);
+      } else {
+        c.push('/adb-guide');
+      }
+    }
+
     return Column(
+      key: const Key('always-on-pitch'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Surface(
-          key: const Key('always-on-preview'),
-          padding: const EdgeInsets.all(Gap.f21),
-          radius: Radii.hero,
-          gradient: LinearGradient(
-            begin: const Alignment(-0.6, -1),
-            end: const Alignment(0.6, 1),
-            stops: const [0, 0.75],
-            colors: [bt.mintTint, bt.surface],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
+        Row(
+          children: [
+            const Tubby(mood: TubbyMood.guard, size: Sizes.tubby),
+            const SizedBox(width: Gap.inside),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Tubby(mood: TubbyMood.guard, size: 64),
-                  const Spacer(),
-                  BtBadge(
-                    hasAdb ? 'One step away' : 'Two steps away',
-                    tone: Tone.ok,
-                    icon: Icons.shield_rounded,
-                  ),
+                  Text('Bedtimes that stick', style: text.headlineMedium),
+                  const TermTitle('With Always On', LearnTerm.alwaysOn),
                 ],
               ),
-              const SizedBox(height: Gap.f13),
-              Text('Bedtimes that stick', style: text.headlineMedium),
-              const SizedBox(height: Gap.f4),
-              const TermTitle('With Always On', LearnTerm.alwaysOn),
-              const SizedBox(height: Gap.f8),
-              Text(
-                'Always On is a tiny helper on the TV. Routines live there '
-                'and keep working when your phone is away or switched off.',
-                style: text.bodyMedium,
-              ),
-              const SizedBox(height: Gap.f13),
-              PrimaryButton(
-                key: const Key('rules-install'),
-                label: hasAdb ? 'Make it Always On' : 'Unlock Home mode first',
-                icon: hasAdb ? Icons.shield_rounded : Icons.home_rounded,
-                kind: hasAdb ? ButtonKind.mint : ButtonKind.ink,
-                onPressed: hasAdb
-                    ? () => runAgentSetup(context, ref, repair: false)
-                    : () => context.push('/adb-guide'),
-              ),
-              const SizedBox(height: Gap.f8),
-              Text(
-                hasAdb
-                    ? 'One tap here, one OK on the TV. Remove it any time.'
-                    : 'Always On needs Home mode on the TV first. About 3 '
-                        'minutes.',
-                textAlign: TextAlign.center,
-                style: text.bodySmall,
-              ),
-            ],
-          ),
+            ),
+          ],
+        ),
+        const SizedBox(height: Gap.inside),
+        Text(
+          'A tiny helper on the TV keeps routines running, even when your '
+          'phone is away.',
+          style: text.bodyMedium,
+        ),
+        const SizedBox(height: Gap.related),
+        PrimaryButton(
+          key: const Key('rules-install'),
+          label: hasAdb ? 'Make it Always On' : 'Unlock Home mode first',
+          icon: hasAdb ? Icons.shield_rounded : Icons.home_rounded,
+          kind: hasAdb ? ButtonKind.mint : ButtonKind.ink,
+          onPressed: go,
+        ),
+        const SizedBox(height: Gap.f8),
+        Text(
+          hasAdb
+              ? 'One tap here, one OK on the TV. Remove it any time.'
+              : 'Always On needs Home mode on the TV first. About 3 min.',
+          textAlign: TextAlign.center,
+          style: text.bodySmall,
         ),
         const GroupHeading('What you can set'),
         RowList(
           children: [
-            for (final (icon, title, body) in items)
-              StatusRow(
-                tone: Tone.ok,
-                icon: icon,
-                title: title,
-                detail: body,
-                detailLines: 2,
-              ),
+            for (final (icon, title, body) in _whatYouCanSet)
+              StatusRow(tone: Tone.ok, icon: icon, title: title, detail: body),
           ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Always On as one slim row; the pitch opens in a sheet.
+class AlwaysOnRow extends ConsumerWidget {
+  const AlwaysOnRow({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final hasAdb = ref.watch(activeHasAdbProvider);
+    return RowList(
+      edges: true,
+      children: [
+        NavRow(
+          key: const Key('always-on-preview'),
+          icon: Icons.shield_rounded,
+          tone: Tone.ok,
+          title: 'Routines that run by themselves',
+          detail: 'Bedtimes that stick · '
+              '${hasAdb ? 'one step away' : 'two steps away'}',
+          onTap: () => showBtSheet<void>(
+            context,
+            builder: (sheet) => SheetScaffold(
+              key: const Key('always-on-sheet'),
+              title: 'Always On',
+              children: [
+                AlwaysOnPitch(
+                  host: context,
+                  onLeave: () => Navigator.pop(sheet),
+                ),
+              ],
+            ),
+          ),
         ),
       ],
     );

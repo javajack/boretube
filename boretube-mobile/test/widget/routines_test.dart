@@ -176,12 +176,20 @@ void main() {
     bool selected(WidgetTester tester, String key) =>
         tester.widget<BtChip>(find.byKey(Key(key))).selected;
 
+    Future<void> tapKey(WidgetTester tester, String key) async {
+      await tester.ensureVisible(find.byKey(Key(key)));
+      await tester.tap(find.byKey(Key(key)));
+      await settle(tester);
+    }
+
+    Future<void> done(WidgetTester tester) =>
+        tapKey(tester, 'rules-sheet-done');
+
     testWidgets('picking a preset shows a summary, then saves it',
         (tester) async {
       await pump(tester, {...contractRules});
       expect(selected(tester, 'preset-custom'), isTrue);
-      await tester.tap(find.byKey(const Key('preset-schoolNight')));
-      await settle(tester);
+      await tapKey(tester, 'preset-schoolNight');
       expect(find.byKey(const Key('preset-sheet')), findsOneWidget);
       expect(find.text('Daily TV time: 2 h'), findsOneWidget);
       await tester.tap(find.byKey(const Key('preset-confirm')));
@@ -205,8 +213,7 @@ void main() {
 
     testWidgets('Keep my settings changes nothing', (tester) async {
       await pump(tester, {...contractRules});
-      await tester.tap(find.byKey(const Key('preset-movieNight')));
-      await settle(tester);
+      await tapKey(tester, 'preset-movieNight');
       await tester.tap(find.text('Keep my settings'));
       await settle(tester);
       expect(sent.where((r) => r.method == 'PUT'), isEmpty);
@@ -227,12 +234,56 @@ void main() {
       expect(selected(tester, 'preset-weekend'), isTrue);
     });
 
+    testWidgets('the hero sums up today', (tester) async {
+      await pump(tester, {
+        ...contractRules,
+        'tvTime': {
+          ...contractRules['tvTime'] as Map<String, dynamic>,
+          'dailyLimitMin': 120,
+        },
+      });
+      expect(find.byKey(const Key('rules-hero')), findsOneWidget);
+      expect(find.text('TV time 2 h · Volume ≤ 30%'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('rules-hero')),
+          matching: find.textContaining('Quiet '),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Saved to the TV · runs even when you\'re away'),
+          findsOneWidget);
+    });
+
+    testWidgets('each row opens its own sheet', (tester) async {
+      await pump(tester, {...contractRules});
+      for (final (row, sheet) in const [
+        ('rules-tv-time', 'rules-sheet-tv-time'),
+        ('rules-daily', 'rules-sheet-daily'),
+        ('rules-apps', 'rules-sheet-apps'),
+        ('rules-shorts', 'rules-sheet-shorts'),
+        ('rules-sound', 'rules-sheet-sound'),
+        ('rules-style', 'rules-sheet-style'),
+        ('rules-overrides', 'rules-sheet-overrides'),
+      ]) {
+        await tapKey(tester, row);
+        expect(find.byKey(Key(sheet)), findsOneWidget, reason: row);
+        await done(tester);
+        expect(find.byKey(Key(sheet)), findsNothing, reason: row);
+      }
+      expect(find.byKey(const Key('rules-save-bar')), findsNothing);
+    });
+
     testWidgets('apps mode, days and the TV preview', (tester) async {
       await pump(tester, {...contractRules});
+      await tapKey(tester, 'rules-apps');
       await tester.tap(find.byKey(const Key('rules-apps-blocklist')));
       await settle(tester);
       expect(find.textContaining('close as soon as they open'), findsOneWidget);
+      await done(tester);
+      expect(find.text('Block these'), findsOneWidget);
       // Toggle Saturday on the first window.
+      await tapKey(tester, 'rules-tv-time');
       await tester.tap(
         find.descendant(
           of: find.byKey(const Key('rules-schedule-0')),
@@ -241,9 +292,13 @@ void main() {
       );
       await settle(tester);
       expect(find.text('Mon–Sat'), findsOneWidget);
+      await done(tester);
+      await tapKey(tester, 'rules-style');
       await tester.tap(find.byKey(const Key('rules-style-explicit')));
       await settle(tester);
-      expect(find.textContaining('A friendly card from Tubby'), findsOneWidget);
+      expect(find.textContaining('Tubby says TV time is over'), findsOneWidget);
+      await done(tester);
+      expect(find.text('Friendly'), findsOneWidget);
       await tester.ensureVisible(find.byKey(const Key('rules-save')));
       await tester.tap(find.byKey(const Key('rules-save')));
       await settle(tester);
@@ -257,6 +312,11 @@ void main() {
     testWidgets('fits 360 dp at 1.3× text', (tester) async {
       await pump(tester, {...contractRules}, textScale: 1.3);
       expect(tester.takeException(), isNull);
+      for (final row in ['rules-tv-time', 'rules-apps', 'rules-overrides']) {
+        await tapKey(tester, row);
+        expect(tester.takeException(), isNull, reason: row);
+        await done(tester);
+      }
     });
   });
 
@@ -284,16 +344,34 @@ void main() {
       return ls;
     }
 
+    Future<void> tap(WidgetTester tester, String key) async {
+      await tester.ensureVisible(find.byKey(Key(key)));
+      await tester.tap(find.byKey(Key(key)));
+      await settle(tester);
+    }
+
+    testWidgets('the hero shows what and how long; setup is a sheet',
+        (tester) async {
+      await pump(tester);
+      expect(find.byKey(const Key('classic-sheet')), findsNothing);
+      expect(find.text('Pick what to lock'), findsOneWidget);
+      // With nothing picked, the primary opens the setup sheet.
+      await tap(tester, 'classic-start-stop');
+      expect(find.byKey(const Key('classic-sheet')), findsOneWidget);
+      await tap(tester, 'classic-mode-volume');
+      await tap(tester, 'classic-sheet-done');
+      expect(find.text('Volume ≤ 15%'), findsOneWidget);
+      expect(find.text('Lock for 1 hour'), findsOneWidget);
+    });
+
     testWidgets('apps lock sends every field, interval from Advanced',
         (tester) async {
       final ls = await pump(tester);
-      await tester.tap(find.byKey(const Key('classic-mode-apps')));
-      await settle(tester);
-      await tester.tap(find.byKey(const Key('classic-duration-120')));
-      await settle(tester);
+      await tap(tester, 'classic-what');
+      await tap(tester, 'classic-mode-apps');
+      await tap(tester, 'classic-duration-120');
       expect(find.text('Lock for 2 hours'), findsOneWidget);
-      await tester.tap(find.byKey(const Key('classic-advanced')));
-      await settle(tester);
+      await tap(tester, 'classic-advanced');
       await tester.enterText(
         find.descendant(
           of: find.byKey(const Key('classic-interval')),
@@ -301,8 +379,8 @@ void main() {
         ),
         '999',
       );
-      await tester.tap(find.byKey(const Key('classic-start-stop')));
-      await settle(tester);
+      await tap(tester, 'classic-sheet-done');
+      await tap(tester, 'classic-start-stop');
       expect(ls.started, {
         'host': adbSony.ip,
         'lockApps': true,
@@ -316,11 +394,10 @@ void main() {
 
     testWidgets('volume lock with a custom duration', (tester) async {
       final ls = await pump(tester);
-      await tester.tap(find.byKey(const Key('classic-mode-volume')));
-      await settle(tester);
+      await tap(tester, 'classic-how-long');
+      await tap(tester, 'classic-mode-volume');
       expect(find.text('15%'), findsOneWidget);
-      await tester.tap(find.byKey(const Key('classic-duration-other')));
-      await settle(tester);
+      await tap(tester, 'classic-duration-other');
       await tester.enterText(
         find.descendant(
           of: find.byKey(const Key('classic-duration')),
@@ -330,8 +407,8 @@ void main() {
       );
       await settle(tester);
       expect(find.text('Lock for 45 min'), findsOneWidget);
-      await tester.tap(find.byKey(const Key('classic-start-stop')));
-      await settle(tester);
+      await tap(tester, 'classic-sheet-done');
+      await tap(tester, 'classic-start-stop');
       expect(ls.started!['lockVolume'], isTrue);
       expect(ls.started!['lockApps'], isFalse);
       expect(ls.started!['duration'], 45);
@@ -351,10 +428,9 @@ void main() {
           isIdle: false,
         ),
       );
-      await tester.tap(find.byKey(const Key('classic-mode-apps')));
-      await settle(tester);
-      await tester.tap(find.byKey(const Key('classic-whats-playing')));
-      await settle(tester);
+      await tap(tester, 'classic-what');
+      await tap(tester, 'classic-mode-apps');
+      await tap(tester, 'classic-whats-playing');
       expect(find.text('Not allowed yet: the lock would stop it.'),
           findsOneWidget);
       await tester.tap(find.byKey(const Key('whats-playing-allow')));
@@ -364,8 +440,9 @@ void main() {
 
     testWidgets('fits 360 dp at 1.3× text', (tester) async {
       await pump(tester, textScale: 1.3);
-      await tester.tap(find.byKey(const Key('classic-mode-apps')));
-      await settle(tester);
+      expect(tester.takeException(), isNull);
+      await tap(tester, 'classic-what');
+      await tap(tester, 'classic-mode-apps');
       expect(tester.takeException(), isNull);
     });
   });

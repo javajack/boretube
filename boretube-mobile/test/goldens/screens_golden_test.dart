@@ -505,7 +505,7 @@ void main() {
       tester,
       const ShellScreen(),
       dark: dark,
-      size: const Size(360, 1800),
+      size: const Size(360, 800),
       overrides: [
         ...env.overrides(now: playing, probeCaps: adbSony.capabilities),
         ...guardOverrides(AgentLink.none),
@@ -514,7 +514,13 @@ void main() {
     await settle(tester);
     await tester.tap(find.byKey(const Key('tab-Routines')));
     await settle(tester);
+    await tester.tap(find.byKey(const Key('classic-what')));
+    await settle(tester);
     await tester.tap(find.byKey(const Key('classic-mode-apps')));
+    await settle(tester);
+    await shot(tester, 'routines_lock_sheet$sfx');
+    await tester.tap(find.byKey(const Key('classic-sheet-done')));
+    await settle(tester);
     await shot(tester, 'routines_lock$sfx');
   });
 
@@ -525,7 +531,7 @@ void main() {
       tester,
       const ShellScreen(),
       dark: dark,
-      size: const Size(360, 2600),
+      size: const Size(360, 1000),
       overrides: [
         ...env.overrides(now: playing, probeCaps: adbSony.capabilities),
         ...guardOverrides(guardLink()),
@@ -537,15 +543,19 @@ void main() {
     await tester.tap(find.byKey(const Key('tab-Routines')));
     await settle(tester);
     await tester.tap(find.byKey(const Key('rules-always-mute')));
+    await settle(tester);
     await shot(tester, 'routines_rules$sfx');
+    await tester.tap(find.byKey(const Key('rules-tv-time')));
+    await settle(tester);
+    await shot(tester, 'routines_bedtime$sfx');
   });
 
-  both('Routines · Shorts', (tester, dark, sfx) async {
+  both('Routines · Video hopping', (tester, dark, sfx) async {
     final now = DateTime(2026, 10, 28, 19, 5);
     final env = await TestEnv.create(tvs: [adbSony]);
     final rules = goldenRules(now).copyWith(
       style: RuleStyle.explicit,
-      shorts: const ShortsRule(mode: ShortsMode.budget, perDay: 5),
+      shorts: const ShortsRule(mode: ShortsMode.cooldown),
     );
     final link = guardLink();
     await pumpScreen(
@@ -561,11 +571,10 @@ void main() {
             lastOk: link.lastOk,
             status: AgentStatus(
               agentId: 'agent-1',
-              version: '1.1.0',
+              version: '1.3.0',
               shorts: AgentShorts(
-                mode: ShortsMode.budget,
+                mode: ShortsMode.cooldown,
                 todayCount: 4,
-                perDay: 5,
                 lastDetectedAt: DateTime(2026, 10, 28, 18, 42),
               ),
             ),

@@ -2,8 +2,8 @@ import '../../agent/agent_models.dart';
 
 /// A ready-made routine. A preset fills the "shape" of the rules: quiet
 /// hours, daily TV time, the volume limit, keeping it silent and how the
-/// TV says no. Allowed apps, stock YouTube and Tonight-only overrides are
-/// the family's own choices and are never touched by a preset.
+/// TV says no. Allowed apps, stock YouTube, video hopping and Tonight-only
+/// overrides are the family's own choices and are never touched by a preset.
 enum RulePreset { schoolNight, weekend, movieNight }
 
 /// What the preset sets, kept as a small value so it can be shown,
@@ -31,13 +31,11 @@ extension RulePresetInfo on RulePreset {
         RulePreset.movieNight => 'Movie night',
       };
 
-  /// One line for the template cards.
+  /// One line for the template rows.
   String get blurb => switch (this) {
-        RulePreset.schoolNight => 'Early bedtimes Sunday to Thursday, 2 h a '
-            'day, gentle volume.',
-        RulePreset.weekend => 'A little later at the weekend, 3 h a day.',
-        RulePreset.movieNight => 'Late night, no daily limit. For a special '
-            'evening.',
+        RulePreset.schoolNight => 'Early bedtimes Sun–Thu, 2 h a day.',
+        RulePreset.weekend => 'A little later at night, 3 h a day.',
+        RulePreset.movieNight => 'A late night with no daily limit.',
       };
 
   PresetShape get shape => switch (this) {
@@ -211,8 +209,9 @@ List<String> rulesDiff(AgentRules a, AgentRules b) {
   final sa = a.shortsRule;
   final sb = b.shortsRule;
   if (sa.mode != sb.mode ||
-      (sa.mode == ShortsMode.budget && sa.perDay != sb.perDay)) {
-    out.add('Shorts');
+      (sa.mode == ShortsMode.budget && sa.perDay != sb.perDay) ||
+      (sa.mode == ShortsMode.cooldown && sa.cooldownMin != sb.cooldownMin)) {
+    out.add('Video hopping');
   }
   String ov(AgentRules r) => ([
         for (final o in r.overrides) '${o.kind.name}${o.pkg}${o.until}'

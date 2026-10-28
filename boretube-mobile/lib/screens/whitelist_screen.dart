@@ -27,7 +27,6 @@ Future<void> allowWhatsPlaying(BuildContext context, WidgetRef ref) async {
   await showBtSheet<void>(
     context,
     builder: (sheet) {
-      final text = Theme.of(sheet).textTheme;
       final (title, line, tone) = status.isIdle
           ? (
               'The home screen',
@@ -49,28 +48,19 @@ Future<void> allowWhatsPlaying(BuildContext context, WidgetRef ref) async {
         key: const Key('whats-playing'),
         title: 'On the TV now',
         children: [
-          Surface(
-            child: Row(
-              children: [
-                IconTile(
-                  icon: status.isIdle ? Icons.home_rounded : Icons.live_tv,
-                  color: tone.color(sheet),
-                  size: 48,
-                ),
-                const SizedBox(width: Gap.f13),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(title, style: text.titleMedium),
-                      Text(line, style: text.bodySmall),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+          RowList(
+            edges: true,
+            children: [
+              StatusRow(
+                tone: tone,
+                icon: status.isIdle ? Icons.home_rounded : Icons.live_tv,
+                title: title,
+                detail: line,
+                detailLines: 2,
+              ),
+            ],
           ),
-          const SizedBox(height: Gap.f13),
+          const SizedBox(height: Gap.related),
           if (!status.isIdle && !allowed)
             PrimaryButton(
               key: const Key('whats-playing-allow'),
@@ -196,34 +186,38 @@ class WhitelistScreen extends ConsumerWidget {
     final bt = context.bt;
     return DetailPage(
       title: 'Allowed apps',
-      subtitle: 'During Lock for a while, anything not here is stopped and '
-          'muted.',
+      subtitle: 'Anything else stops during Lock for a while.',
       children: [
-        Row(
+        RowList(
+          edges: true,
           children: [
-            Expanded(
-              child: PrimaryButton(
-                key: const Key('whitelist-whats-playing'),
-                label: 'What\'s playing?',
-                icon: Icons.live_tv_rounded,
-                kind: ButtonKind.ink,
-                height: 52,
-                onPressed: () => allowWhatsPlaying(context, ref),
-              ),
+            ListRow(
+              key: const Key('whitelist-whats-playing'),
+              icon: Icons.live_tv_rounded,
+              title: 'What\'s playing?',
+              subtitle: 'Allow the app that\'s on the TV now',
+              onTap: () => allowWhatsPlaying(context, ref),
             ),
-            const SizedBox(width: Gap.f8),
-            Expanded(
-              child: PrimaryButton(
-                label: 'Add by ID',
-                icon: Icons.add_rounded,
-                kind: ButtonKind.outline,
-                height: 52,
-                onPressed: () => addWhitelistById(context, ref),
-              ),
+            ListRow(
+              key: const Key('whitelist-add-by-id'),
+              icon: Icons.add_rounded,
+              title: 'Add by ID',
+              subtitle: 'For an app that isn\'t on right now',
+              onTap: () => addWhitelistById(context, ref),
             ),
           ],
         ),
-        GroupHeading('Allowed · ${whitelist.length}'),
+        GroupHeading(
+          'Allowed',
+          trailing: Text(
+            '${whitelist.length}',
+            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                  color: bt.muted,
+                  fontWeight: FontWeight.w600,
+                  fontFeatures: Fonts.tabular,
+                ),
+          ),
+        ),
         RowList(
           children: [
             for (final entry in whitelist)
@@ -239,10 +233,18 @@ class WhitelistScreen extends ConsumerWidget {
                     ? 'Always allowed'
                     : 'App ID ${entry.appId}',
                 trailing: entry.appId == kBackdropId
-                    ? Icon(Icons.lock_outline_rounded, color: bt.faint)
+                    ? Icon(
+                        Icons.lock_outline_rounded,
+                        size: Sizes.icon,
+                        color: bt.faint,
+                      )
                     : IconButton(
                         tooltip: 'Remove ${entry.friendlyName}',
-                        icon: Icon(Icons.close_rounded, color: bt.muted),
+                        icon: Icon(
+                          Icons.close_rounded,
+                          size: Sizes.icon,
+                          color: bt.muted,
+                        ),
                         onPressed: () => ref
                             .read(whitelistProvider.notifier)
                             .remove(entry.appId),

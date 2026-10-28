@@ -75,6 +75,9 @@ class DeviceProfile {
   final LauncherSpec? launcher;
   final List<String> quirks;
 
+  /// The JSON this profile was loaded from (pushed to TV Guard as-is).
+  final Map<String, dynamic> raw;
+
   const DeviceProfile({
     required this.id,
     this.name = '',
@@ -89,6 +92,7 @@ class DeviceProfile {
     this.stockYouTube,
     this.launcher,
     this.quirks = const [],
+    this.raw = const {},
   });
 
   bool get isGeneric => matchManufacturer == null && matchDevices.isEmpty;
@@ -151,6 +155,7 @@ class DeviceProfile {
               la['a11yService'] as String,
             ),
       quirks: strings(j['quirks']),
+      raw: j,
     );
   }
 

@@ -3,7 +3,17 @@
 @Tags(['golden'])
 library;
 
+import 'dart:async';
+
 import 'package:boretube_mobile/adb/adb_session.dart';
+import 'package:boretube_mobile/agent/agent_client.dart';
+import 'package:boretube_mobile/agent/agent_installer.dart';
+import 'package:boretube_mobile/ops/tv_ops.dart';
+import 'package:boretube_mobile/providers/agent_providers.dart';
+import 'package:boretube_mobile/screens/restore_screen.dart';
+import 'package:boretube_mobile/screens/rules_tab.dart';
+import 'package:boretube_mobile/screens/rules/rules_editor.dart';
+import 'package:boretube_mobile/screens/tv/tv_guard_card.dart';
 import 'package:boretube_mobile/ops/health.dart';
 import 'package:boretube_mobile/ops/journal.dart';
 import 'package:boretube_mobile/providers/break_provider.dart';
@@ -16,9 +26,80 @@ import 'package:boretube_mobile/screens/shell_screen.dart';
 import 'package:boretube_mobile/security/pin_store.dart';
 import 'package:boretube_mobile/tv/tv.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../agent/fake_agent.dart' show fakeBundle;
+import '../ops/fake_tv.dart';
 import '../widget/helpers.dart';
+
+AgentLink guardLink({
+  bool buildChanged = false,
+  bool breakActive = false,
+  DateTime? endsAt,
+}) =>
+    AgentLink(
+      AgentLinkKind.up,
+      lastOk: DateTime.now(),
+      status: AgentStatus(
+        agentId: 'agent-1',
+        version: '1.0.0',
+        uptimeSec: 5 * 3600,
+        activeRulesVersion: 7,
+        soundPath: 'audioManager',
+        buildFingerprint:
+            'Sony/BRAVIA_VU3/BRAVIA_VU3:14/UKR1.240726.002/2411:user',
+        buildChangedSinceApproval: buildChanged,
+        watchdogPending: buildChanged ? 3 : 0,
+        activeReasons: const ['Volume capped at 30%'],
+        breakState: AgentBreak(active: breakActive, endsAt: endsAt),
+        health: const [
+          AgentHealth(
+            id: 'usageAccess',
+            status: AgentHealthStatus.ok,
+            detail: 'Granted',
+          ),
+          AgentHealth(
+            id: 'watchdog',
+            status: AgentHealthStatus.warn,
+            detail: '3 clean-up changes wait for approval',
+          ),
+        ],
+      ),
+    );
+
+List<Override> guardOverrides(AgentLink link) => [
+      agentStatusProvider
+          .overrideWith((ref) => AgentStatusNotifier.fixed(link)),
+      agentBundleLoaderProvider.overrideWithValue(() async => fakeBundle()),
+    ];
+
+AgentRules goldenRules(DateTime now) => AgentRules(
+      version: 7,
+      updatedBy: 'Rakesh\'s Pixel',
+      updatedAt: DateTime.now()
+          .subtract(const Duration(hours: 2))
+          .toUtc()
+          .toIso8601String(),
+      allowedApps: const AllowedApps(
+        mode: AppsMode.allowlist,
+        packages: ['org.smarttube.stable', 'com.netflix.ninja'],
+      ),
+      volumeLimit: const VolumeLimit(maxPercent: 30, enabled: true),
+      tvTime: const TvTime(
+        schedule: [
+          ScheduleRow(days: [1, 2, 3, 4, 5], from: '21:00', to: '07:00'),
+          ScheduleRow(days: [6, 7], from: '22:30', to: '08:00'),
+        ],
+        dailyLimitMin: 120,
+      ),
+      overrides: [
+        RuleOverride(
+          kind: OverrideKind.muteUntil,
+          until: now.add(const Duration(minutes: 25)).toUtc().toIso8601String(),
+        ),
+      ],
+    );
 
 const playing = NowPlaying(
   online: true,
@@ -114,9 +195,8 @@ void main() {
     final env = await TestEnv.create(
       tvs: [adbSony],
       prefs: {
-        BreakController.keyFor(adbSony.id): t0
-            .add(const Duration(minutes: 12, seconds: 40))
-            .toIso8601String(),
+        BreakController.keyFor(adbSony.id):
+            t0.add(const Duration(minutes: 12, seconds: 40)).toIso8601String(),
       },
     );
     await pumpScreen(
@@ -212,16 +292,174 @@ void main() {
     await shot(tester, 'tv_settings');
   });
 
-  testWidgets('Rules placeholder', (tester) async {
+  testWidgets('Rules without TV Guard', (tester) async {
     final env = await TestEnv.create(tvs: [adbSony]);
     await pumpScreen(
       tester,
       const ShellScreen(),
-      overrides: env.overrides(now: playing, probeCaps: adbSony.capabilities),
+      overrides: [
+        ...env.overrides(now: playing, probeCaps: adbSony.capabilities),
+        ...guardOverrides(AgentLink.none),
+      ],
     );
     await settle(tester);
     await tester.tap(find.text('Rules'));
+    await shot(tester, 'rules_no_guard');
+  });
+
+  testWidgets('Rules editor (TV Guard)', (tester) async {
+    final now = DateTime(2026, 10, 28, 19, 5);
+    final env = await TestEnv.create(tvs: [adbSony]);
+    await pumpScreen(
+      tester,
+      const ShellScreen(),
+      size: const Size(360, 2300),
+      overrides: [
+        ...env.overrides(now: playing, probeCaps: adbSony.capabilities),
+        ...guardOverrides(guardLink()),
+        rulesProvider.overrideWith((ref) async => goldenRules(now)),
+        rulesClockProvider.overrideWithValue(() => now),
+      ],
+    );
+    await settle(tester);
+    await tester.tap(find.text('Rules'));
+    await settle(tester);
+    // An unsaved edit shows the save bar.
+    await tester.tap(find.byKey(const Key('rules-always-mute')));
     await shot(tester, 'rules');
+  });
+
+  testWidgets('TV › Health with TV Guard', (tester) async {
+    final env = await TestEnv.create(tvs: [adbSony]);
+    await pumpScreen(
+      tester,
+      const ShellScreen(),
+      size: const Size(360, 1500),
+      overrides: [
+        ...env.overrides(now: playing, probeCaps: adbSony.capabilities),
+        ...guardOverrides(guardLink(buildChanged: true)),
+        healthProvider.overrideWith((ref) async => checks),
+      ],
+    );
+    await settle(tester);
+    await tester.tap(find.text('TV'));
+    await shot(tester, 'tv_guard_card');
+  });
+
+  testWidgets('TV Guard install stepper', (tester) async {
+    final env = await TestEnv.create(tvs: [adbSony]);
+    final c = StreamController<InstallProgress>();
+    await pumpScreen(
+      tester,
+      Builder(
+        builder: (context) => Center(
+          child: FilledButton(
+            onPressed: () => showAgentSetupSheet(
+              context,
+              title: 'Installing TV Guard',
+              start: () => c.stream,
+            ),
+            child: const Text('open'),
+          ),
+        ),
+      ),
+      scaffold: true,
+      overrides: env.overrides(),
+    );
+    await tester.tap(find.text('open'));
+    await settle(tester, 4);
+    c.add(
+      InstallProgress(
+        steps: [
+          for (final id in AgentInstaller.installSteps)
+            InstallStep(
+              id,
+              switch (id) {
+                InstallStepId.approve => SetupStepState.waiting,
+                InstallStepId.profile ||
+                InstallStepId.check =>
+                  SetupStepState.pending,
+                InstallStepId.grant => SetupStepState.warn,
+                _ => SetupStepState.done,
+              },
+              switch (id) {
+                InstallStepId.verify => 'v1.0.0 · 1016 KB · checksum OK',
+                InstallStepId.push => '1016 KB copied',
+                InstallStepId.install => 'Installed',
+                InstallStepId.grant => 'Not granted: WRITE_SECURE_SETTINGS',
+                InstallStepId.start => 'Running',
+                InstallStepId.token => 'Paired',
+                InstallStepId.approve =>
+                  'Look at the TV and choose "Always allow"',
+                _ => '',
+              },
+            ),
+        ],
+      ),
+    );
+    await shot(tester, 'tv_guard_install');
+    await c.close();
+  });
+
+  testWidgets('Restore TV', (tester) async {
+    final env = await TestEnv.create(tvs: [adbSony]);
+    final fake = FakeTv();
+    await pumpScreen(
+      tester,
+      const RestoreScreen(),
+      size: const Size(360, 2600),
+      overrides: [
+        ...env.overrides(
+          ops: TvOps(
+            adb: fake,
+            profile: loadProfile('sony-bravia-vu3'),
+            tvId: adbSony.id,
+            clock: () => DateTime(2026, 10, 28, 12),
+          ),
+        ),
+        ...guardOverrides(AgentLink.none),
+      ],
+    );
+    await settle(tester);
+    await tester.tap(find.byKey(const Key('restore-stock')));
+    await settle(tester);
+    await tester.tap(find.byKey(const Key('restore-helper')));
+    await settle(tester);
+    await tester.tap(find.byKey(const Key('restore-show-commands')));
+    await shot(tester, 'restore');
+  });
+
+  testWidgets('Now tab: break enforced by TV Guard', (tester) async {
+    final t0 = DateTime(2026, 10, 28, 19);
+    final env = await TestEnv.create(
+      tvs: [adbSony],
+      prefs: {
+        BreakController.keyFor(adbSony.id):
+            t0.add(const Duration(minutes: 24, seconds: 10)).toIso8601String(),
+        BreakController.flagsKeyFor(adbSony.id): 'tv',
+      },
+    );
+    await pumpScreen(
+      tester,
+      const ShellScreen(),
+      overrides: [
+        ...env.overrides(
+          now: const NowPlaying(
+            online: true,
+            appName: 'Home screen',
+            isHome: true,
+            volume: 24,
+            muted: true,
+            source: 'adb',
+          ),
+          probeCaps: adbSony.capabilities,
+          clock: () => t0,
+        ),
+        ...guardOverrides(guardLink()),
+        journalEntriesProvider.overrideWith((ref) async => journal),
+      ],
+    );
+    await shot(tester, 'now_break_tv');
   });
 
   testWidgets('Lock screen', (tester) async {

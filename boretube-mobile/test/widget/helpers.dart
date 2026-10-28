@@ -254,6 +254,8 @@ Future<void> loadAppFonts() async {
     'Roboto-Light.ttf',
   ]);
   await load('MaterialIcons', ['MaterialIcons-Regular.otf']);
+  // Commands and JSON use the platform monospace font; stand in Roboto.
+  await load('monospace', ['Roboto-Regular.ttf']);
 }
 
 /// Actions that wait for the test to answer, so in-flight UI can be

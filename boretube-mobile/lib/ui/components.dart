@@ -317,9 +317,9 @@ class PrimaryButton extends StatelessWidget {
               boxShadow: shadow && enabled
                   ? [
                       BoxShadow(
-                        color: bt.coral.withValues(alpha: 0.24),
-                        blurRadius: Gap.f21,
-                        spreadRadius: -Gap.f8,
+                        color: bt.coral.withValues(alpha: 0.2),
+                        blurRadius: Gap.f34,
+                        spreadRadius: -Gap.f13,
                         offset: const Offset(0, Gap.f13),
                       ),
                     ]
@@ -350,7 +350,7 @@ class PrimaryButton extends StatelessWidget {
                       horizontal: Gap.related,
                       vertical: Gap.f4,
                     ),
-                    child: Center(child: content),
+                    child: Center(heightFactor: 1, child: content),
                   ),
                 ),
               ),
@@ -421,7 +421,7 @@ class BtChip extends StatelessWidget {
                       onTap!();
                     },
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: Gap.f13),
+                padding: const EdgeInsets.symmetric(horizontal: Gap.f8),
                 child: Center(
                   widthFactor: 1,
                   heightFactor: 1,
@@ -1066,8 +1066,8 @@ class BtBadge extends StatelessWidget {
           fontWeight: FontWeight.w700,
         );
     final body = Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: chip ? Gap.f13 : Gap.f8,
+      padding: const EdgeInsets.symmetric(
+        horizontal: Gap.f8,
         vertical: Gap.f4,
       ),
       child: Row(
@@ -1085,10 +1085,6 @@ class BtBadge extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          if (onTap != null) ...[
-            const SizedBox(width: Gap.f4),
-            Icon(Icons.expand_more_rounded, size: Sizes.iconSmall, color: c),
-          ],
         ],
       ),
     );

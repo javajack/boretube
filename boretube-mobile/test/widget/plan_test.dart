@@ -78,6 +78,11 @@ void main() {
     await settle(tester);
     expect(find.byKey(const Key('plan-card')), findsOneWidget);
     expect(find.text('1 of 6 done'), findsOneWidget);
+    // Slim until asked: only the next step, the rest open in place.
+    expect(find.byKey(const Key('plan-unlockHome')), findsOneWidget);
+    expect(find.byKey(const Key('plan-cleanTv')), findsNothing);
+    await tester.tap(find.byKey(const Key('plan-toggle')));
+    await settle(tester);
     final ys = [
       for (final s in [
         PlanStep.remote,
@@ -91,7 +96,7 @@ void main() {
     expect(
       find.descendant(
         of: find.byKey(const Key('plan-unlockHome')),
-        matching: find.text('Next'),
+        matching: find.textContaining('Next · '),
       ),
       findsOneWidget,
     );

@@ -135,7 +135,7 @@ void main() {
     );
     expect(find.text('Unmute'), findsOneWidget);
     expect(find.text('Muted'), findsOneWidget);
-    expect(find.textContaining('Sound off'), findsOneWidget);
+    expect(find.textContaining('Sound\u00A0off'), findsOneWidget);
   });
 
   testWidgets('offline: "is off · last seen", controls dimmed', (tester) async {

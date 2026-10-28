@@ -5,7 +5,7 @@ import '../../ui/tokens.dart';
 import 'home_logic.dart';
 import 'plan.dart';
 
-/// One row of the Today strip: an icon, rich text with a bold part.
+/// One line of Today: an icon, rich text with a bold part.
 typedef TodayLine = ({
   IconData icon,
   Color color,
@@ -14,7 +14,8 @@ typedef TodayLine = ({
   String after,
 });
 
-/// Today: next routine, TV time, what was stopped, and History.
+/// Today as plain lines on the canvas: next routine, TV time, what was
+/// stopped, and a way into History. No card.
 class TodayStrip extends StatelessWidget {
   final List<TodayLine> lines;
   final VoidCallback onHistory;
@@ -36,144 +37,153 @@ class TodayStrip extends StatelessWidget {
             ),
           ]
         : lines;
-    Widget line(TodayLine l, {bool last = false, VoidCallback? onTap}) {
-      final row = ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 48),
-        child: Row(
-          children: [
-            Icon(l.icon, size: 20, color: l.color),
-            const SizedBox(width: Gap.f13),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: Gap.f8),
-                child: Text.rich(
-                  TextSpan(
-                    style: text.bodyMedium!.copyWith(color: bt.ink),
-                    children: [
-                      TextSpan(text: l.before),
-                      TextSpan(
-                        text: l.bold,
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                      TextSpan(text: l.after),
-                    ],
-                  ),
+    Widget line(int i, TodayLine l, {VoidCallback? onTap}) {
+      final row = ListRow(
+        leading: Icon(l.icon, size: Sizes.icon, color: l.color),
+        title: '${l.before}${l.bold}${l.after}',
+        titleWidget: Text.rich(
+          TextSpan(
+            style: text.bodyMedium!.copyWith(color: bt.ink),
+            children: [
+              TextSpan(text: l.before),
+              TextSpan(
+                text: l.bold,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontFeatures: Fonts.tabular,
                 ),
               ),
-            ),
-            if (onTap != null)
-              Text(
-                'History ›',
-                style: text.labelLarge!.copyWith(
-                  fontSize: 14,
-                  color: bt.skyInk,
-                ),
-              ),
-          ],
+              TextSpan(text: l.after),
+            ],
+          ),
         ),
+        chevron: false,
+        onTap: onTap,
+        trailing: onTap == null
+            ? null
+            : Text(
+                'History',
+                style: text.labelLarge!.copyWith(color: bt.skyInk),
+              ),
       );
-      return onTap == null
-          ? row
-          : Semantics(
-              button: true,
-              label: 'Open History',
-              child: InkWell(onTap: onTap, child: row),
-            );
+      return StaggerIn(
+        index: i,
+        child: onTap == null
+            ? row
+            : Semantics(button: true, label: 'Open History', child: row),
+      );
     }
 
     return Column(
+      key: const Key('today-strip'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const GroupHeading(
-          'Today',
-        ),
-        Surface(
-          key: const Key('today-strip'),
-          padding: const EdgeInsets.symmetric(
-            horizontal: Gap.f13 + 2,
-            vertical: Gap.f4,
-          ),
-          child: Column(
-            children: [
-              for (var i = 0; i < shown.length; i++) ...[
-                if (i > 0) const Divider(),
-                line(
-                  shown[i],
-                  onTap: i == shown.length - 1 ? onHistory : null,
-                ),
-              ],
-            ],
-          ),
+        const GroupHeading('Today'),
+        RowList(
+          children: [
+            for (var i = 0; i < shown.length; i++)
+              line(
+                i,
+                shown[i],
+                onTap: i == shown.length - 1 ? onHistory : null,
+              ),
+          ],
         ),
       ],
     );
   }
 }
 
-/// The calm-TV plan, until it is done.
-class PlanCard extends StatelessWidget {
+/// The calm-TV plan as a slim card, until it is done: one thin bar,
+/// "4 of 6", and the next step. The rest open in place.
+class PlanCard extends StatefulWidget {
   final List<PlanItem> items;
   final void Function(PlanStep step) onStep;
 
   const PlanCard({super.key, required this.items, required this.onStep});
 
   @override
+  State<PlanCard> createState() => _PlanCardState();
+}
+
+class _PlanCardState extends State<PlanCard> {
+  bool _all = false;
+
+  @override
   Widget build(BuildContext context) {
     final bt = context.bt;
     final text = Theme.of(context).textTheme;
+    final items = widget.items;
     final done = items.where((i) => i.done).length;
     final next = items.where((i) => !i.done).firstOrNull;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        GroupHeading(
-          'Your calm-TV plan',
-          trailing: Text(
-            '$done of ${items.length} done',
-            style: text.labelMedium,
-          ),
+    return Padding(
+      padding: const EdgeInsets.only(top: Gap.section),
+      child: Surface(
+        key: const Key('plan-card'),
+        padding: const EdgeInsets.fromLTRB(
+          Gap.related,
+          Gap.related,
+          Gap.related,
+          Gap.f4,
         ),
-        Surface(
-          key: const Key('plan-card'),
-          padding: EdgeInsets.zero,
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  Gap.f13,
-                  Gap.f13,
-                  Gap.f13,
-                  Gap.f8,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Semantics(
+                    header: true,
+                    child: Text(
+                      'Your calm-TV plan',
+                      style: text.titleMedium,
+                    ),
+                  ),
                 ),
-                child: Row(
-                  children: [
-                    for (var i = 0; i < items.length; i++) ...[
-                      if (i > 0) const SizedBox(width: Gap.f4),
-                      Expanded(
-                        child: AnimatedContainer(
-                          duration: Motion.of(context, Motion.sheet),
-                          height: 6,
-                          decoration: BoxDecoration(
-                            color: items[i].done ? bt.mint : bt.border,
-                            borderRadius: BorderRadius.circular(3),
-                          ),
-                        ),
+                Text(
+                  '$done of ${items.length} done',
+                  style: text.labelMedium!.copyWith(
+                    fontFeatures: Fonts.tabular,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: Gap.f13),
+            ThinProgress(value: done / items.length),
+            const SizedBox(height: Gap.f4),
+            AnimatedSize(
+              duration: Motion.of(context, Motion.sheet),
+              curve: Motion.enter,
+              alignment: Alignment.topCenter,
+              child: RowList(
+                children: [
+                  for (final item in items)
+                    if (_all || identical(item, next))
+                      _PlanRow(
+                        item: item,
+                        isNext: identical(item, next),
+                        onTap:
+                            item.done ? null : () => widget.onStep(item.step),
                       ),
-                    ],
-                  ],
+                ],
+              ),
+            ),
+            if (items.length > 1)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  key: const Key('plan-toggle'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: bt.muted,
+                    padding: EdgeInsets.zero,
+                  ),
+                  onPressed: () => setState(() => _all = !_all),
+                  child: Text(_all ? 'Show less' : 'See all steps'),
                 ),
               ),
-              for (final item in items)
-                _PlanRow(
-                  item: item,
-                  isNext: identical(item, next),
-                  onTap: item.done ? null : () => onStep(item.step),
-                ),
-              const SizedBox(height: Gap.f4),
-            ],
-          ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
@@ -188,90 +198,54 @@ class _PlanRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bt = context.bt;
-    final text = Theme.of(context).textTheme;
     final s = item.step;
     return Semantics(
       button: onTap != null,
       label: '${s.title}${item.done ? ', done' : ''}',
       excludeSemantics: true,
-      child: InkWell(
+      child: ListRow(
         key: Key('plan-${s.name}'),
-        onTap: onTap,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 60),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: Gap.f13,
-              vertical: Gap.f8,
-            ),
-            child: Row(
-              children: [
-                AnimatedContainer(
-                  duration: Motion.of(context, Motion.sheet),
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: item.done ? bt.mint : Colors.transparent,
-                    border: item.done
-                        ? null
-                        : Border.all(
-                            color: isNext ? bt.coral : bt.borderStrong,
-                            width: 2,
-                          ),
-                  ),
-                  child: item.done
-                      ? const Icon(
-                          Icons.check_rounded,
-                          size: 18,
-                          color: Colors.white,
-                        )
-                      : Icon(
-                          s.icon,
-                          size: 14,
-                          color: isNext ? bt.coralInk : bt.muted,
-                        ),
-                ),
-                const SizedBox(width: Gap.f13),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        s.title,
-                        style: text.titleSmall!.copyWith(
-                          fontWeight:
-                              isNext ? FontWeight.w700 : FontWeight.w600,
-                          color: item.done ? bt.muted : bt.ink,
-                        ),
-                      ),
-                      if (!item.done)
-                        Text(
-                          s.hint,
-                          style: text.bodySmall,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                    ],
-                  ),
-                ),
-                if (isNext)
-                  const Padding(
-                    padding: EdgeInsets.only(left: Gap.f8),
-                    child: BtBadge('Next', tone: Tone.accent),
-                  )
-                else if (!item.done)
-                  Icon(Icons.chevron_right_rounded, color: bt.faint),
-              ],
-            ),
+        leading: AnimatedSwitcher(
+          duration: Motion.of(context, Motion.flip),
+          child: Icon(
+            item.done ? Icons.check_circle_rounded : s.icon,
+            key: ValueKey(item.done),
+            size: Sizes.icon,
+            color: item.done
+                ? bt.mint
+                : isNext
+                    ? bt.coralInk
+                    : bt.muted,
           ),
         ),
+        title: s.title,
+        titleWidget: Text(
+          s.title,
+          style: Theme.of(context).textTheme.titleSmall!.copyWith(
+                fontWeight: isNext ? FontWeight.w700 : FontWeight.w600,
+                color: item.done ? bt.muted : bt.ink,
+              ),
+        ),
+        subtitle: item.done
+            ? null
+            : isNext
+                ? 'Next · ${s.hint}'
+                : s.hint,
+        onTap: onTap,
+        chevron: false,
+        trailing: item.done
+            ? null
+            : Icon(
+                Icons.chevron_right_rounded,
+                size: Sizes.icon,
+                color: bt.faint,
+              ),
       ),
     );
   }
 }
 
-/// "During this break": what the TV stopped while paused.
+/// "During this break": what the TV stopped while paused, as plain lines.
 class DuringBreakCard extends StatelessWidget {
   final List<String> lines;
 
@@ -280,32 +254,25 @@ class DuringBreakCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    return Surface(
+    return Column(
       key: const Key('during-break'),
-      padding: const EdgeInsets.fromLTRB(Gap.f13, Gap.f13 + 2, Gap.f13, Gap.f8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('DURING THIS BREAK', style: text.labelSmall),
-          const SizedBox(height: Gap.f4),
-          if (lines.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: Gap.f8),
-              child: Text(
-                'Nothing to stop so far. Anything the TV closes shows up '
-                'here.',
-                style: text.bodyMedium,
-              ),
-            )
-          else
-            for (final l in lines) CheckLine(l, done: true, minHeight: 36),
-        ],
-      ),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const GroupHeading('During this break'),
+        if (lines.isEmpty)
+          Text(
+            'Nothing to stop so far. Anything the TV closes shows up here.',
+            style: text.bodySmall,
+          )
+        else
+          for (var i = 0; i < lines.length; i++)
+            StaggerIn(index: i, child: CheckLine(lines[i], done: true)),
+      ],
     );
   }
 }
 
-/// While something is broken: what still works, honestly.
+/// While something is broken: what still works, honestly, as plain lines.
 class StillWorkingCard extends StatelessWidget {
   final List<(String, bool)> lines;
   final Protection protection;
@@ -320,34 +287,23 @@ class StillWorkingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    return Surface(
+    return Column(
       key: const Key('still-working'),
-      padding: const EdgeInsets.fromLTRB(Gap.f13, Gap.f13, Gap.f13, Gap.f8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Still working',
-                  style: text.labelMedium!.copyWith(fontSize: 13),
-                ),
-              ),
-              // Grey, not mint: the level is what's broken right now.
-              BtBadge(
-                protection.label,
-                tone: Tone.idle,
-                icon: protection.icon,
-                onTap: onBadge,
-              ),
-            ],
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        GroupHeading(
+          'Still working',
+          first: true,
+          // Grey, not mint: the level is what's broken right now.
+          trailing: BtBadge(
+            protection.label,
+            tone: Tone.idle,
+            icon: protection.icon,
+            onTap: onBadge,
           ),
-          const SizedBox(height: Gap.f4),
-          for (final (l, ok) in lines) CheckLine(l, done: ok, minHeight: 36),
-        ],
-      ),
+        ),
+        for (final (l, ok) in lines) CheckLine(l, done: ok),
+      ],
     );
   }
 }

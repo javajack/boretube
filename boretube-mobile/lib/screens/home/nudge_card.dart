@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../providers/nudges.dart';
-import '../../ui/components.dart';
 import '../../ui/tokens.dart';
 import '../../ui/tubby.dart';
 
@@ -13,8 +12,9 @@ TubbyMood nudgeMood(NudgeId id) => switch (id) {
       _ => TubbyMood.calm,
     };
 
-/// One gentle suggestion at the top of Home: a small Tubby, a line, the
-/// one thing to do, and "Not now". Swiping it away also means "Not now".
+/// One gentle suggestion at the top of Home, as a slim inline banner: a
+/// small Tubby, one line, the one thing to do, and a quiet close ("Not
+/// now"). Swiping it away also means "Not now".
 class NudgeCard extends StatelessWidget {
   final Nudge nudge;
   final VoidCallback onAct;
@@ -31,71 +31,63 @@ class NudgeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final bt = context.bt;
     final text = Theme.of(context).textTheme;
-    final card = Container(
+    final banner = Container(
       decoration: BoxDecoration(
+        color: bt.coralWash,
         borderRadius: Radii.control,
-        border: Border.all(color: bt.border),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          stops: const [0, 0.7],
-          colors: [bt.coralWash, bt.surface],
-        ),
       ),
-      padding: const EdgeInsets.fromLTRB(Gap.f13, Gap.f13, Gap.f8, Gap.f13),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      padding: const EdgeInsets.fromLTRB(Gap.f13, Gap.f8, Gap.f4, Gap.f8),
+      child: Row(
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Tubby(
-                mood: nudgeMood(nudge.id),
-                size: 44,
-                antennas: false,
-                legs: false,
-                animate: false,
-              ),
-              const SizedBox(width: Gap.f13),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(nudge.title, style: text.titleMedium),
-                    const SizedBox(height: 2),
-                    Text(
-                      nudge.message,
-                      style: text.bodyMedium!.copyWith(fontSize: 14),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          Tubby(
+            mood: nudgeMood(nudge.id),
+            size: Sizes.tubbySmall,
+            antennas: false,
+            legs: false,
+            animate: false,
           ),
-          const SizedBox(height: Gap.f13),
-          Padding(
-            padding: const EdgeInsets.only(left: 44 + Gap.f13),
-            child: Wrap(
-              spacing: Gap.f4,
-              runSpacing: Gap.f4,
-              crossAxisAlignment: WrapCrossAlignment.center,
+          const SizedBox(width: Gap.f13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                IntrinsicWidth(
-                  child: PrimaryButton(
+                Text(
+                  nudge.title,
+                  style: text.titleSmall!.copyWith(fontWeight: FontWeight.w700),
+                ),
+                Text(
+                  nudge.message,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: text.bodySmall,
+                ),
+                const SizedBox(height: Gap.f4),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
                     key: const Key('nudge-act'),
-                    label: nudge.action,
-                    kind: ButtonKind.ink,
-                    height: 48,
+                    style: TextButton.styleFrom(
+                      foregroundColor: bt.coralInk,
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(Sizes.touch, Sizes.chip),
+                      tapTargetSize: MaterialTapTargetSize.padded,
+                    ),
                     onPressed: onAct,
+                    child: Text(nudge.action),
                   ),
                 ),
-                TextButton(
-                  key: const Key('nudge-not-now'),
-                  style: TextButton.styleFrom(foregroundColor: bt.muted),
-                  onPressed: onNotNow,
-                  child: const Text('Not now'),
-                ),
               ],
+            ),
+          ),
+          Semantics(
+            button: true,
+            label: 'Not now',
+            excludeSemantics: true,
+            child: IconButton(
+              key: const Key('nudge-not-now'),
+              onPressed: onNotNow,
+              icon:
+                  Icon(Icons.close_rounded, size: Sizes.icon, color: bt.muted),
             ),
           ),
         ],
@@ -108,7 +100,7 @@ class NudgeCard extends StatelessWidget {
         key: ValueKey('nudge-${nudge.id.name}'),
         direction: DismissDirection.horizontal,
         onDismissed: (_) => onNotNow(),
-        child: card,
+        child: banner,
       ),
     );
   }

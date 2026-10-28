@@ -497,6 +497,17 @@ class _HomeTabState extends ConsumerState<HomeTab> {
       _armedAt = null;
     }
 
+    // Video hopping: the TV's rule, and a cool-down in progress (agent
+    // 1.3.0+; both absent on older agents).
+    final shorts = link.up ? link.status!.shorts : null;
+    final hoppingMode = rules?.shortsRule.mode ?? shorts?.mode;
+    final hopping = hoppingMode == ShortsMode.block ||
+        hoppingMode == ShortsMode.cooldown ||
+        hoppingMode == ShortsMode.budget;
+    final coolEnd = shorts?.cooldownUntil;
+    final cooldownUntil =
+        coolEnd != null && coolEnd.isAfter(t) ? coolEnd : null;
+
     // Status sentence.
     final parts = <String>[
       if (problem?.serious ?? false)
@@ -510,10 +521,18 @@ class _HomeTabState extends ConsumerState<HomeTab> {
       else if (bedtime != null &&
           bedtime.start.difference(t) < const Duration(hours: 18))
         'Bedtime ${friendlyTime(context, bedtime.start)}',
-      if (yt == AppState.disabled || yt == AppState.notInstalled) 'Shorts off',
+      if (cooldownUntil != null)
+        'Video break until ${friendlyTime(context, cooldownUntil)}'
+      else if (hopping)
+        'Hopping guard on'
+      else if (yt == AppState.disabled || yt == AppState.notInstalled)
+        'YouTube without Shorts',
     ];
-    final sentence =
-        offline ? 'Controls come back when it\'s on' : parts.join(' · ');
+    // Each part keeps its words together, so a wrap only ever falls at a
+    // " · " (never an orphaned "pm").
+    final sentence = offline
+        ? 'Controls come back when it\'s on'
+        : parts.map((p) => p.replaceAll(' ', '\u00A0')).join(' · ');
     final sentenceTone = offline
         ? Tone.idle
         : (problem?.serious ?? false)
@@ -524,7 +543,6 @@ class _HomeTabState extends ConsumerState<HomeTab> {
 
     // Today.
     final stops = stopsToday(activity, t);
-    final shorts = link.up ? link.status!.shorts : null;
     final shortsStops = shortsStopsToday(activity, t);
     final TodayLine? shortsLine =
         shorts == null || shorts.mode == ShortsMode.off
@@ -533,10 +551,10 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                 icon: Icons.swipe_vertical_rounded,
                 color: bt.coralInk,
                 before: shortsStops > 0
-                    ? 'Shorts stopped '
+                    ? 'Video hopping stopped '
                     : shorts.todayCount == 0
-                        ? 'No Shorts today'
-                        : 'Shorts today: ',
+                        ? 'No video hopping today'
+                        : 'Video hopping today: ',
                 bold: shortsStops > 0
                     ? '$shortsStops×'
                     : shorts.todayCount == 0
@@ -632,7 +650,7 @@ class _HomeTabState extends ConsumerState<HomeTab> {
             ? const SizedBox(key: ValueKey('no-nudge'), width: double.infinity)
             : Padding(
                 key: ValueKey('nudge-${nudge.id.name}'),
-                padding: const EdgeInsets.only(top: Gap.f8),
+                padding: const EdgeInsets.only(top: Gap.f13),
                 child: NudgeCard(
                   key: const Key('home-nudge'),
                   nudge: nudge,
@@ -643,17 +661,13 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                 ),
               ),
       ),
-      const SizedBox(height: Gap.f13 + 2),
+      const SizedBox(height: Gap.related),
+      // Calm → paused swaps the hero over 320 ms; inside, the screen dims
+      // and Tubby falls asleep over 520.
       AnimatedSwitcher(
-        duration: Motion.of(context, Motion.slow),
+        duration: Motion.of(context, Motion.sheet),
         switchInCurve: Motion.enter,
-        transitionBuilder: (child, a) => FadeTransition(
-          opacity: a,
-          child: ScaleTransition(
-            scale: Tween(begin: 0.98, end: 1.0).animate(a),
-            child: child,
-          ),
-        ),
+        switchOutCurve: Motion.exit,
         child: brk.active
             ? PausedHero(
                 key: const ValueKey('paused'),
@@ -713,8 +727,8 @@ class _HomeTabState extends ConsumerState<HomeTab> {
           onAction: () => _fix(problem.fix),
         ),
       ],
-      const SizedBox(height: Gap.f13 + 2),
       if (brk.active) ...[
+        const SizedBox(height: Gap.related),
         Row(
           children: [
             Expanded(
@@ -736,11 +750,11 @@ class _HomeTabState extends ConsumerState<HomeTab> {
             ),
           ],
         ),
-        const SizedBox(height: Gap.f13 + 2),
         DuringBreakCard(lines: breakLines),
       ] else ...[
         if (supported.isEmpty)
-          Surface(
+          Padding(
+            padding: const EdgeInsets.only(top: Gap.related),
             child: EmptyState(
               icon: Icons.settings_remote_rounded,
               tubby: TubbyMood.calm,
@@ -752,51 +766,50 @@ class _HomeTabState extends ConsumerState<HomeTab> {
             ),
           )
         else ...[
-          PrimaryButton(
-            key: const Key('action-break'),
-            label: 'Pause TV',
-            icon: Icons.pause_rounded,
-            display: true,
-            shadow: true,
-            height: 72,
-            semanticLabel: chosen == 0
-                ? 'Pause TV until bedtime'
-                : 'Pause TV for ${_minutesWords(chosen)}',
-            onPressed: canPause && !_blocked(QuickAction.takeBreak)
-                ? () => _pause(chosen == 0 ? untilBed! : chosen)
-                : null,
+          // The primary sits centred in an 89 band: φ × the 55 row.
+          SizedBox(
+            height: Sizes.band,
+            child: Center(
+              child: SizedBox(
+                width: double.infinity,
+                child: PrimaryButton(
+                  key: const Key('action-break'),
+                  label: 'Pause TV',
+                  icon: Icons.pause_rounded,
+                  display: true,
+                  shadow: true,
+                  semanticLabel: chosen == 0
+                      ? 'Pause TV until bedtime'
+                      : 'Pause TV for ${_minutesWords(chosen)}',
+                  onPressed: canPause && !_blocked(QuickAction.takeBreak)
+                      ? () => _pause(chosen == 0 ? untilBed! : chosen)
+                      : null,
+                ),
+              ),
+            ),
           ),
-          const SizedBox(height: Gap.f13),
-          Row(
+          ChipRow(
             children: [
-              for (final m in PauseChoiceNotifier.choices) ...[
-                if (m != 15) const SizedBox(width: Gap.f8),
-                Expanded(
-                  child: BtChip(
-                    key: Key('pause-$m'),
-                    label: m == 60 ? '1h' : '${m}m',
-                    semanticLabel: _minutesWords(m),
-                    selected: chosen == m,
-                    onTap: canPause
-                        ? () => ref.read(pauseChoiceProvider.notifier).set(m)
-                        : null,
-                  ),
+              for (final m in PauseChoiceNotifier.choices)
+                BtChip(
+                  key: Key('pause-$m'),
+                  label: m == 60 ? '1 h' : '$m min',
+                  semanticLabel: _minutesWords(m),
+                  selected: chosen == m,
+                  onTap: canPause
+                      ? () => ref.read(pauseChoiceProvider.notifier).set(m)
+                      : null,
                 ),
-              ],
-              if (untilBed != null) ...[
-                const SizedBox(width: Gap.f8),
-                Expanded(
-                  child: BtChip(
-                    key: const Key('pause-bedtime'),
-                    label: 'Bedtime',
-                    semanticLabel: 'Until bedtime',
-                    selected: chosen == 0,
-                    onTap: canPause
-                        ? () => ref.read(pauseChoiceProvider.notifier).set(0)
-                        : null,
-                  ),
+              if (untilBed != null)
+                BtChip(
+                  key: const Key('pause-bedtime'),
+                  label: 'Bedtime',
+                  semanticLabel: 'Until bedtime',
+                  selected: chosen == 0,
+                  onTap: canPause
+                      ? () => ref.read(pauseChoiceProvider.notifier).set(0)
+                      : null,
                 ),
-              ],
             ],
           ),
           // §8 "End after this one": only with Always On reading the
@@ -827,7 +840,7 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                   )
                 : const SizedBox(width: double.infinity),
           ),
-          const SizedBox(height: Gap.f13 + 2),
+          const SizedBox(height: Gap.related),
           _SecondaryRow(
             supported: supported,
             muted: muted,
@@ -851,12 +864,12 @@ class _HomeTabState extends ConsumerState<HomeTab> {
         ],
       ],
       if (away != null) ...[
-        const SizedBox(height: Gap.f13 + 2),
+        const SizedBox(height: Gap.related),
         NoticeBanner(
           key: const Key('away-digest'),
           kind: BannerKind.digest,
           leading: const Tubby(
-            size: 46,
+            size: Sizes.iconControl,
             body: Color(0xFF8C7CFF),
             antennas: false,
             legs: false,
@@ -961,16 +974,10 @@ class _SecondaryRow extends StatelessWidget {
         onTap: disabled ? null : onMore,
       ),
     ];
+    // Four equal 55 cells, no card behind them.
     return SizedBox(
-      height: 84 * scale,
-      child: Row(
-        children: [
-          for (var i = 0; i < tiles.length; i++) ...[
-            if (i > 0) const SizedBox(width: Gap.f8 + 2),
-            Expanded(child: tiles[i]),
-          ],
-        ],
-      ),
+      height: Sizes.row * scale,
+      child: ChipRow(children: tiles),
     );
   }
 }
@@ -990,17 +997,25 @@ class HomeHeader extends StatelessWidget {
           button: true,
           label: 'Settings',
           excludeSemantics: true,
-          child: Material(
-            color: bt.coralTint,
-            shape: const CircleBorder(),
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              key: const Key('open-settings'),
-              onTap: () => context.push('/settings'),
-              child: SizedBox(
-                width: 48,
-                height: 48,
-                child: Icon(Icons.person_rounded, color: bt.coralInk),
+          child: SizedBox.square(
+            dimension: Sizes.touch,
+            child: Center(
+              child: Material(
+                color: bt.coralTint,
+                shape: const CircleBorder(),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  key: const Key('open-settings'),
+                  onTap: () => context.push('/settings'),
+                  child: SizedBox.square(
+                    dimension: Sizes.avatar,
+                    child: Icon(
+                      Icons.person_rounded,
+                      size: Sizes.iconControl,
+                      color: bt.coralInk,
+                    ),
+                  ),
+                ),
               ),
             ),
           ),

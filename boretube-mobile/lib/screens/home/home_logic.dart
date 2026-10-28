@@ -386,11 +386,16 @@ String aboutMinutes(Duration d) {
 
 /// The "When this ends" chip in honest words: a time only when the TV
 /// knows how long the video is.
+/// Past the [kEndAfterCapMin] cap it says when the break really starts:
+/// "In 45 min (55 left in this video)".
 String endAfterLabel(AgentMedia m) {
   final left = m.timed ? m.left : null;
-  return left == null
-      ? 'After this one'
-      : 'When this ends · ${aboutMinutes(left)}';
+  if (left == null) return 'After this one';
+  final mins = (left.inSeconds / 60).ceil().clamp(1, 24 * 60);
+  if (mins > kEndAfterCapMin) {
+    return 'In $kEndAfterCapMin min ($mins left in this video)';
+  }
+  return 'When this ends · ${aboutMinutes(left)}';
 }
 
 /// Longest wait for the video to end before the break starts anyway.

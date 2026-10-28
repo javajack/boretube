@@ -95,26 +95,18 @@ class WhatWorksSheet extends StatelessWidget {
           ],
         ),
         const SizedBox(height: Gap.f8),
-        Surface(
-          padding: const EdgeInsets.symmetric(
-            horizontal: Gap.f13,
-            vertical: Gap.f4,
-          ),
-          child: Column(
-            children: [
-              for (var i = 0; i < worksLines.length; i++) ...[
-                if (i > 0) const Divider(),
-                CheckLine(
-                  worksLines[i].label,
-                  key: Key('works-$i'),
-                  done: _works(worksLines[i].needs),
-                  minHeight: 48,
-                ),
-              ],
-            ],
-          ),
+        RowList(
+          children: [
+            for (var i = 0; i < worksLines.length; i++)
+              CheckLine(
+                worksLines[i].label,
+                key: Key('works-$i'),
+                done: _works(worksLines[i].needs),
+                minHeight: Sizes.control,
+              ),
+          ],
         ),
-        const SizedBox(height: Gap.f13),
+        const SizedBox(height: Gap.related),
         switch (level) {
           Protection.remote => PrimaryButton(
               key: const Key('works-unlock'),
@@ -136,7 +128,7 @@ class WhatWorksSheet extends StatelessWidget {
                 Icon(
                   degraded ? Icons.error_rounded : Icons.verified_rounded,
                   color: degraded ? bt.berryFill : bt.mintInk,
-                  size: 20,
+                  size: Sizes.icon,
                 ),
                 const SizedBox(width: Gap.f8),
                 Flexible(
@@ -182,7 +174,7 @@ class _LearnLink extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: Gap.f8),
       ),
       onPressed: () => showLearnSheet(context, term),
-      icon: const Icon(Icons.info_outline_rounded, size: 18),
+      icon: const Icon(Icons.info_outline_rounded, size: Sizes.iconSmall),
       label: Text(label),
     );
   }
@@ -213,12 +205,16 @@ class _LevelTile extends StatelessWidget {
       label: '${level.label}: $state',
       excludeSemantics: true,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: Gap.f13),
+        padding: const EdgeInsets.symmetric(
+          horizontal: Gap.f4,
+          vertical: Gap.f13,
+        ),
         decoration: BoxDecoration(
-          color: here ? level.tone.tint(context) : bt.surface,
+          color: here ? level.tone.tint(context) : Colors.transparent,
           borderRadius: Radii.control,
           border: here
-              ? Border.all(color: level.tone.hue(context), width: 2)
+              ? Border.all(
+                  color: level.tone.hue(context).withValues(alpha: 0.6))
               : Border.all(
                   color: next
                       ? level.tone.hue(context).withValues(
@@ -231,7 +227,7 @@ class _LevelTile extends StatelessWidget {
           children: [
             Icon(
               done ? Icons.check_rounded : level.icon,
-              size: 22,
+              size: Sizes.iconControl,
               color: done ? bt.mint : (here || next ? ink : bt.faint),
             ),
             const SizedBox(height: Gap.f4),
@@ -239,8 +235,8 @@ class _LevelTile extends StatelessWidget {
               level.label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: text.labelLarge!.copyWith(
-                fontSize: 14,
+              style: text.labelMedium!.copyWith(
+                fontWeight: FontWeight.w700,
                 color: here ? ink : bt.ink,
               ),
             ),
@@ -249,7 +245,6 @@ class _LevelTile extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: text.bodySmall!.copyWith(
-                fontSize: 12,
                 color: here ? ink : bt.muted,
               ),
             ),
@@ -372,7 +367,6 @@ class MoreSheet extends StatelessWidget {
                 icon: Icons.bedtime_rounded,
                 title: 'Make it boring',
                 detail: 'Closes the app and mutes. The TV just sits there.',
-                detailLines: 2,
                 trailing: const InfoDot(LearnTerm.makeItBoring),
                 onTap: () => pop(onBore!),
               ),
@@ -390,27 +384,22 @@ class MoreSheet extends StatelessWidget {
         if (onQuietFor != null) ...[
           const GroupHeading('Quiet for a while'),
           Text(
-            'Mutes now; whatever is on keeps playing. Sound comes back by '
-            'itself.',
-            style: text.bodyMedium,
+            'Mutes now; the show keeps playing. Sound comes back by itself.',
+            style: text.bodySmall,
           ),
           const SizedBox(height: Gap.f13),
-          Row(
+          ChipRow(
             children: [
-              for (final m in const [15, 30, 60]) ...[
-                if (m != 15) const SizedBox(width: Gap.f8),
-                Expanded(
-                  child: BtChip(
-                    key: Key('quiet-$m'),
-                    label: m == 60 ? '1 hour' : '$m min',
-                    selected: false,
-                    onTap: () {
-                      Navigator.pop(context);
-                      onQuietFor!(m);
-                    },
-                  ),
+              for (final m in const [15, 30, 60])
+                BtChip(
+                  key: Key('quiet-$m'),
+                  label: m == 60 ? '1 hour' : '$m min',
+                  selected: false,
+                  onTap: () {
+                    Navigator.pop(context);
+                    onQuietFor!(m);
+                  },
                 ),
-              ],
             ],
           ),
         ],

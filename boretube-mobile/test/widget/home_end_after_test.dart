@@ -133,7 +133,7 @@ void main() {
       expect(find.text('Watching on SmartTube'), findsOneWidget);
       expect(find.text('Bluey Official • 2M views'), findsOneWidget);
       expect(key('hero-progress'), findsOneWidget);
-      expect(find.text('about 16 min left'), findsOneWidget);
+      expect(find.text('16 min left'), findsOneWidget);
     });
 
     testWidgets('no duration: no progress line and no time', (tester) async {
@@ -315,7 +315,7 @@ void main() {
           shorts: const AgentShorts(mode: ShortsMode.report, todayCount: 7),
         ),
       );
-      expect(find.text('Shorts today: 7'), findsOneWidget);
+      expect(find.text('Video hopping today: 7'), findsOneWidget);
     });
 
     testWidgets('budget shows the allowance', (tester) async {
@@ -329,7 +329,7 @@ void main() {
           ),
         ),
       );
-      expect(find.text('Shorts today: 3 of 5'), findsOneWidget);
+      expect(find.text('Video hopping today: 3 of 5'), findsOneWidget);
     });
 
     testWidgets('stops come from the TV\'s journal', (tester) async {
@@ -354,7 +354,7 @@ void main() {
           ),
         ],
       );
-      expect(find.text('Shorts stopped 3× today'), findsOneWidget);
+      expect(find.text('Video hopping stopped 3× today'), findsOneWidget);
     });
 
     testWidgets('off: no Shorts line', (tester) async {
@@ -364,7 +364,7 @@ void main() {
           shorts: const AgentShorts(todayCount: 4),
         ),
       );
-      expect(find.textContaining('Shorts today:'), findsNothing);
+      expect(find.textContaining('Video hopping today:'), findsNothing);
       expect(find.textContaining('Shorts stopped'), findsNothing);
       expect(find.text('No Shorts today'), findsNothing);
     });

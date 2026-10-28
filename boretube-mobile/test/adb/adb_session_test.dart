@@ -217,4 +217,34 @@ void main() {
     );
     await s.dispose();
   });
+
+  test('urgent commands jump queued background ones', () async {
+    final w = FakeWorld();
+    final s = _session(w);
+    await s.connect();
+    final bg = [s.shell('poll1'), s.shell('poll2'), s.shell('poll3')];
+    final u1 = s.shellUrgent('mute');
+    final u2 = s.shellUrgent('stop');
+    final r = await Future.wait([...bg, u1, u2]);
+    expect(r.map((e) => e.stdout), contains('out:mute'));
+    // poll1 was already on the wire; the actions go next, in order.
+    expect(w.log.where((l) => l.startsWith('start')), [
+      'start poll1',
+      'start mute',
+      'start stop',
+      'start poll2',
+      'start poll3',
+    ]);
+    await s.dispose();
+  });
+
+  test('a failing urgent command does not stall the queue', () async {
+    final w = FakeWorld();
+    final s = _session(w);
+    await s.connect();
+    w.failNextShell = 2;
+    await expectLater(s.shellUrgent('x'), throwsStateError);
+    expect((await s.shell('y')).ok, isTrue);
+    await s.dispose();
+  });
 }

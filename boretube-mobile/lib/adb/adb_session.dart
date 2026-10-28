@@ -56,7 +56,8 @@ class AdbUnavailableException implements Exception {
 
 /// A managed ADB connection to one [Tv]: connect + auth-pending state,
 /// auto-reconnect with backoff, keep-alive, and one-at-a-time commands.
-class AdbSession implements AdbShell {
+/// Urgent commands (user actions) run before queued background ones.
+class AdbSession implements PriorityAdbShell {
   final Tv tv;
   final AdbKey key;
   final String keyName;
@@ -75,7 +76,9 @@ class AdbSession implements AdbShell {
   AdbSessionState _state = const AdbDisconnected();
   AdbConnection? _conn;
   Future<void>? _connecting;
-  Future<void> _queue = Future<void>.value();
+  final _urgent = <_Job>[];
+  final _background = <_Job>[];
+  bool _running = false;
   Timer? _reconnectTimer;
   Timer? _keepAliveTimer;
   int _attempt = 0;
@@ -198,10 +201,34 @@ class AdbSession implements AdbShell {
   /// Runs [command] after any queued commands. Connects if needed and, if
   /// the command fails at the transport level, reconnects once and retries.
   @override
-  Future<AdbShellResult> shell(String command) {
-    final result = _queue.then((_) => _run(command));
-    _queue = result.then((_) {}, onError: (Object _) {});
-    return result;
+  Future<AdbShellResult> shell(String command) =>
+      _enqueue(command, _background);
+
+  /// Like [shell], but jumps ahead of every queued background command. A
+  /// command already on the wire still finishes first.
+  @override
+  Future<AdbShellResult> shellUrgent(String command) =>
+      _enqueue(command, _urgent);
+
+  Future<AdbShellResult> _enqueue(String command, List<_Job> lane) {
+    final job = _Job(command);
+    lane.add(job);
+    _pump();
+    return job.done.future;
+  }
+
+  void _pump() {
+    if (_running) return;
+    final lane = _urgent.isNotEmpty ? _urgent : _background;
+    if (lane.isEmpty) return;
+    final job = lane.removeAt(0);
+    _running = true;
+    _run(job.command)
+        .then(job.done.complete, onError: job.done.completeError)
+        .whenComplete(() {
+      _running = false;
+      _pump();
+    });
   }
 
   Future<AdbShellResult> _run(String command) async {
@@ -241,4 +268,10 @@ class AdbSession implements AdbShell {
     await close();
     await _states.close();
   }
+}
+
+class _Job {
+  final String command;
+  final done = Completer<AdbShellResult>();
+  _Job(this.command);
 }

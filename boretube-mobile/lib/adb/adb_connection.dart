@@ -9,6 +9,12 @@ abstract interface class AdbShell {
   Future<AdbShellResult> shell(String command);
 }
 
+/// An [AdbShell] with a fast lane: [shellUrgent] commands run before any
+/// queued [shell] commands, so a tap never waits behind the poll.
+abstract interface class PriorityAdbShell implements AdbShell {
+  Future<AdbShellResult> shellUrgent(String command);
+}
+
 /// One ADB transport connection. [AdbClient] is the real implementation;
 /// tests inject fakes through [AdbConnectionFactory].
 abstract interface class AdbConnection {

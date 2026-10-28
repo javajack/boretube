@@ -430,20 +430,21 @@ class BtChip extends StatelessWidget {
                     children: [
                       if (icon != null) ...[
                         Icon(icon, size: Sizes.iconSmall, color: fg),
-                        const SizedBox(width: Gap.f4),
+                        if (label.isNotEmpty) const SizedBox(width: Gap.f4),
                       ],
-                      Flexible(
-                        child: Text(
-                          label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: text.labelMedium!.copyWith(
-                            color: fg,
-                            fontWeight:
-                                selected ? FontWeight.w700 : FontWeight.w600,
+                      if (label.isNotEmpty)
+                        Flexible(
+                          child: Text(
+                            label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: text.labelMedium!.copyWith(
+                              color: fg,
+                              fontWeight:
+                                  selected ? FontWeight.w700 : FontWeight.w600,
+                            ),
                           ),
                         ),
-                      ),
                     ],
                   ),
                 ),
@@ -655,6 +656,8 @@ class ListRow extends StatelessWidget {
                 size: Sizes.icon,
                 color: dim ? bt.faint : iconColor ?? bt.inkSoft,
               ));
+    final valueMax =
+        (MediaQuery.sizeOf(context).width - Gap.gutter * 2) * Phi.minor;
     return InkWell(
       onTap: onTap,
       child: ConstrainedBox(
@@ -698,16 +701,23 @@ class ListRow extends StatelessWidget {
               ),
               if (value != null) ...[
                 const SizedBox(width: Gap.f13),
-                AnimatedSwitcher(
-                  duration: Motion.of(context, Motion.flip),
-                  child: Text(
-                    value!,
-                    key: ValueKey(value),
-                    textAlign: TextAlign.right,
-                    style: text.bodyMedium!.copyWith(
-                      color: valueColor ?? (dim ? bt.faint : bt.muted),
-                      fontWeight: FontWeight.w600,
-                      fontFeatures: Fonts.tabular,
+                // The value keeps its own width, up to the 38.2 % side of
+                // the row, so values share one right edge down a list.
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: valueMax),
+                  child: AnimatedSwitcher(
+                    duration: Motion.of(context, Motion.flip),
+                    child: Text(
+                      value!,
+                      key: ValueKey(value),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.right,
+                      style: text.bodyMedium!.copyWith(
+                        color: valueColor ?? (dim ? bt.faint : bt.muted),
+                        fontWeight: FontWeight.w600,
+                        fontFeatures: Fonts.tabular,
+                      ),
                     ),
                   ),
                 ),

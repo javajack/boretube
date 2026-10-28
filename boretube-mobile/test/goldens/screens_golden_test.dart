@@ -39,6 +39,7 @@ import 'package:flutter_test/flutter_test.dart';
 import '../agent/fake_agent.dart' show fakeBundle;
 import '../ops/fake_tv.dart';
 import '../widget/helpers.dart';
+import '../widget/structure.dart';
 
 AgentLink guardLink({
   bool buildChanged = false,
@@ -215,6 +216,9 @@ void main() {
 
   Future<void> shot(WidgetTester tester, String name) async {
     await settle(tester, 8);
+    // Every screen in the gallery keeps the calm structure: ≤ 2 raised
+    // surfaces, ≤ 1 coral primary, no uppercase eyebrows.
+    expectCalmStructure(tester);
     await expectLater(
       find.byType(MaterialApp),
       matchesGoldenFile('$name.png'),

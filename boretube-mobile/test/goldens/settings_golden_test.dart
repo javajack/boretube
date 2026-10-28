@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../widget/helpers.dart';
+import '../widget/structure.dart';
 import '../watch/fakes.dart';
 
 void main() {
@@ -51,6 +52,7 @@ void main() {
   for (final dark in [false, true]) {
     testWidgets('Settings (${dark ? 'dark' : 'light'})', (tester) async {
       await pumpSettings(tester, dark);
+      expectCalmStructure(tester);
       await expectLater(
         find.byType(MaterialApp),
         matchesGoldenFile('settings_${dark ? 'dark' : 'light'}.png'),
@@ -62,6 +64,7 @@ void main() {
     await pumpSettings(tester, false);
     await tester.tap(find.byKey(const Key('settings-advanced')));
     await settle(tester, 8);
+    expectCalmStructure(tester);
     await expectLater(
       find.byType(MaterialApp),
       matchesGoldenFile('settings_advanced_light.png'),

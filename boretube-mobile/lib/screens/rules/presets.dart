@@ -31,6 +31,14 @@ extension RulePresetInfo on RulePreset {
         RulePreset.movieNight => 'Movie night',
       };
 
+  /// The chip label: one word, so three presets sit in equal widths at
+  /// 360 dp ([label] is still what screen readers hear).
+  String get chip => switch (this) {
+        RulePreset.schoolNight => 'School',
+        RulePreset.weekend => 'Weekend',
+        RulePreset.movieNight => 'Movie',
+      };
+
   /// One line for the template rows.
   String get blurb => switch (this) {
         RulePreset.schoolNight => 'Early bedtimes Sun–Thu, 2 h a day.',

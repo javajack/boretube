@@ -804,13 +804,13 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
     ];
   }
 
-  /// "Today: 7 Shorts · last at 6:42 pm".
+  /// "Video hopping today: 7 · last at 6:42 pm".
   String _shortsToday(BuildContext context, AgentShorts s) {
     final n = s.todayCount;
     final last = s.lastDetectedAt;
     final sameDay = last != null && DateUtils.isSameDay(last.toLocal(), _now());
     return [
-      'Today: ${n == 0 ? 'no Shorts' : n == 1 ? '1 Short' : '$n Shorts'}',
+      'Video hopping today: ${n == 0 ? 'none' : '$n'}',
       if (s.active)
         'on now'
       else if (n > 0 && sameDay)
@@ -1136,90 +1136,46 @@ class _DayHero extends StatelessWidget {
   }
 }
 
-/// Presets as one compact chip row, scrolling sideways past the gutter;
-/// the selected chip is kept in view.
-class _PresetChips extends StatefulWidget {
+/// The presets as one equal-width chip row on the gutter, with a compact
+/// "Custom" mark at the end (lit when the rules are your own).
+class _PresetChips extends StatelessWidget {
   final RulePreset? active;
   final ValueChanged<RulePreset>? onPick;
 
   const _PresetChips({required this.active, required this.onPick});
 
   @override
-  State<_PresetChips> createState() => _PresetChipsState();
-}
-
-class _PresetChipsState extends State<_PresetChips> {
-  final _selected = GlobalKey();
-  bool _first = true;
-
-  void _reveal() {
-    final c = _selected.currentContext;
-    if (c == null || !c.mounted) return;
-    final ro = c.findRenderObject();
-    if (ro == null) return;
-    // Only the chip row scrolls; the page stays where it is.
-    Scrollable.of(c).position.ensureVisible(
-          ro,
-          alignment: Phi.minor,
-          duration: _first ? Duration.zero : Motion.of(c, Motion.sheet),
-          curve: Motion.enter,
-        );
-    _first = false;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _reveal());
-  }
-
-  @override
-  void didUpdateWidget(_PresetChips old) {
-    super.didUpdateWidget(old);
-    if (old.active != widget.active) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _reveal());
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final active = widget.active;
-    final onPick = widget.onPick;
-    Widget keep(bool on, Widget child) =>
-        on ? KeyedSubtree(key: _selected, child: child) : child;
-    final chips = [
-      for (final p in RulePreset.values)
-        keep(
-          active == p,
-          BtChip(
-            key: Key('preset-${p.name}'),
-            label: p.label,
-            selected: active == p,
-            onTap: active == p || onPick == null ? null : () => onPick(p),
-          ),
-        ),
-      keep(
-        active == null,
-        Tooltip(
-          message: 'Change any rule and it becomes your own routine',
-          child: BtChip(
-            key: const Key('preset-custom'),
-            label: 'Custom',
-            icon: Icons.tune_rounded,
-            selected: active == null,
-          ),
-        ),
-      ),
-    ];
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
+    final pick = onPick;
+    return Padding(
       padding: const EdgeInsets.symmetric(horizontal: Gap.gutter),
       child: Row(
         children: [
-          for (var i = 0; i < chips.length; i++) ...[
-            if (i > 0) const SizedBox(width: Gap.f8),
-            chips[i],
-          ],
+          Expanded(
+            child: ChipRow(
+              children: [
+                for (final p in RulePreset.values)
+                  BtChip(
+                    key: Key('preset-${p.name}'),
+                    label: p.chip,
+                    semanticLabel: p.label,
+                    selected: active == p,
+                    onTap: active == p || pick == null ? null : () => pick(p),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: Gap.f8),
+          Tooltip(
+            message: 'Change any rule and it becomes your own routine',
+            child: BtChip(
+              key: const Key('preset-custom'),
+              label: '',
+              semanticLabel: 'Custom',
+              icon: Icons.tune_rounded,
+              selected: active == null,
+            ),
+          ),
         ],
       ),
     );

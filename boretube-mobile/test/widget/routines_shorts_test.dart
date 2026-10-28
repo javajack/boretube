@@ -293,7 +293,7 @@ void main() {
     expect(find.text('7 today'), findsOneWidget);
     await open(tester);
     await show(tester, 'rules-shorts-today');
-    expect(find.text('Today: 7 Shorts · last at 6:42 pm'), findsOneWidget);
+    expect(find.text('Video hopping today: 7 · last at 6:42 pm'), findsOneWidget);
   });
 
   testWidgets('a nudge opens the Video hopping sheet', (tester) async {

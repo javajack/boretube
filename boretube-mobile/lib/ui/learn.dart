@@ -78,17 +78,18 @@ extension LearnTermCopy on LearnTerm {
             ],
           ),
         LearnTerm.shorts => (
-            title: 'Shorts',
+            title: 'Video hopping',
             icon: Icons.swipe_vertical_rounded,
             tone: Tone.accent,
-            sentence: 'The TV spots Shorts by their rhythm: three or more '
-                'quick videos in a row. Then it can stop them, allow a few a '
-                'day, or just tell you.',
+            sentence: 'The TV spots hopping by its rhythm: three or more '
+                'quick videos in a row. Then it can nudge, rest the video '
+                'apps for a while, or just tell you.',
             more: [
               'It works in SmartTube and the YouTube apps. One short video '
                   'on its own isn\'t Shorts, and a long video never counts.',
-              'Stopping means the app closes and the TV goes Home. With '
-                  '"Friendly message" on, Tubby says why.',
+              'A gentle nudge closes the app and the TV goes Home; with '
+                  '"Friendly message" on, Tubby says why. Cool-down also '
+                  'keeps the video apps closed for a few minutes.',
               'Nothing is stopped while Always On is paused or hands off. '
                   'Presets never change this setting.',
             ],

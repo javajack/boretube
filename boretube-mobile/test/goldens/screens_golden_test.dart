@@ -262,6 +262,65 @@ void main() {
     await shot(tester, 'home_calm$sfx');
   });
 
+  AgentLink mediaLink({bool armed = false}) {
+    final base = guardLink().status!;
+    return AgentLink(
+      AgentLinkKind.up,
+      lastOk: DateTime.now(),
+      status: AgentStatus(
+        agentId: base.agentId,
+        version: '1.1.0',
+        uptimeSec: base.uptimeSec,
+        activeRulesVersion: base.activeRulesVersion,
+        health: base.health,
+        media: const AgentMedia(
+          pkg: 'org.smarttube.stable',
+          title: 'Bluey · The Creek | Full Episode',
+          artist: 'Bluey - Official Channel',
+          state: MediaState.playing,
+          positionMs: 312000,
+          durationMs: 1260000,
+          remainingMs: 948000,
+          source: MediaSource.listener,
+        ),
+        endAfter: armed
+            ? AgentEndAfter(
+                armed: true,
+                title: 'Bluey · The Creek | Full Episode',
+                pkg: 'org.smarttube.stable',
+                capAt: evening.add(const Duration(minutes: 45)),
+                breakMin: 60,
+              )
+            : const AgentEndAfter(),
+        shorts: const AgentShorts(mode: ShortsMode.budget, todayCount: 3),
+      ),
+    );
+  }
+
+  both('Home · what\'s playing, When this ends', (tester, dark, sfx) async {
+    final env = await TestEnv.create(tvs: [adbSony]);
+    await pumpScreen(
+      tester,
+      const ShellScreen(),
+      dark: dark,
+      size: const Size(360, 1100),
+      overrides: homeOverrides(env, link: mediaLink()),
+    );
+    await shot(tester, 'home_media_playing$sfx');
+  });
+
+  both('Home · pausing after this one', (tester, dark, sfx) async {
+    final env = await TestEnv.create(tvs: [adbSony]);
+    await pumpScreen(
+      tester,
+      const ShellScreen(),
+      dark: dark,
+      size: const Size(360, 1100),
+      overrides: homeOverrides(env, link: mediaLink(armed: true)),
+    );
+    await shot(tester, 'home_end_after_armed$sfx');
+  });
+
   testWidgets('Home · Home mode with the plan', (tester) async {
     final env = await TestEnv.create(
       tvs: [adbSony],
@@ -479,6 +538,48 @@ void main() {
     await settle(tester);
     await tester.tap(find.byKey(const Key('rules-always-mute')));
     await shot(tester, 'routines_rules$sfx');
+  });
+
+  both('Routines · Shorts', (tester, dark, sfx) async {
+    final now = DateTime(2026, 10, 28, 19, 5);
+    final env = await TestEnv.create(tvs: [adbSony]);
+    final rules = goldenRules(now).copyWith(
+      style: RuleStyle.explicit,
+      shorts: const ShortsRule(mode: ShortsMode.budget, perDay: 5),
+    );
+    final link = guardLink();
+    await pumpScreen(
+      tester,
+      const ShellScreen(),
+      dark: dark,
+      size: const Size(360, 1000),
+      overrides: [
+        ...env.overrides(now: playing, probeCaps: adbSony.capabilities),
+        ...guardOverrides(
+          AgentLink(
+            AgentLinkKind.up,
+            lastOk: link.lastOk,
+            status: AgentStatus(
+              agentId: 'agent-1',
+              version: '1.1.0',
+              shorts: AgentShorts(
+                mode: ShortsMode.budget,
+                todayCount: 4,
+                perDay: 5,
+                lastDetectedAt: DateTime(2026, 10, 28, 18, 42),
+              ),
+            ),
+          ),
+        ),
+        rulesProvider.overrideWith((ref) async => rules),
+        rulesClockProvider.overrideWithValue(() => now),
+        routinesFocusProvider.overrideWith((ref) => 'shorts'),
+      ],
+    );
+    await settle(tester);
+    await tester.tap(find.byKey(const Key('tab-Routines')));
+    await settle(tester);
+    await shot(tester, 'routines_shorts$sfx');
   });
 
   both('Better TV · health with Always On', (tester, dark, sfx) async {

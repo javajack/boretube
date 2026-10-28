@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
+
 import '../tv/tv.dart';
 import 'adb_connection.dart';
 import 'adb_identity.dart';
@@ -135,6 +137,7 @@ class AdbSession implements PriorityAdbShell {
     _set(const AdbConnecting());
     final conn = _factory(tv.ip, tv.adbPort, key, keyName);
     var prompted = false;
+    final csw = Stopwatch()..start();
     try {
       await conn.connect(
         timeout: connectTimeout,
@@ -152,6 +155,9 @@ class AdbSession implements PriorityAdbShell {
         authRejected: rejected,
       ));
       rethrow;
+    }
+    if (kDebugMode) {
+      debugPrint('BTIME adb CONNECT ${csw.elapsedMilliseconds}ms');
     }
     if (_closedByUser) {
       await conn.close();
@@ -223,9 +229,17 @@ class AdbSession implements PriorityAdbShell {
     if (lane.isEmpty) return;
     final job = lane.removeAt(0);
     _running = true;
+    final waited = DateTime.now().difference(job.queuedAt).inMilliseconds;
+    final sw = Stopwatch()..start();
     _run(job.command)
         .then(job.done.complete, onError: job.done.completeError)
         .whenComplete(() {
+      if (kDebugMode) {
+        final c = job.command;
+        debugPrint('BTIME adb ${identical(lane, _urgent) ? 'U' : 'B'} '
+            'wait=${waited}ms run=${sw.elapsedMilliseconds}ms '
+            '${c.length > 60 ? c.substring(0, 60) : c}');
+      }
       _running = false;
       _pump();
     });
@@ -243,6 +257,7 @@ class AdbSession implements PriorityAdbShell {
       try {
         return await conn.shell(command, timeout: commandTimeout);
       } catch (e) {
+        if (kDebugMode) debugPrint('BTIME adb SHELL-ERROR $e');
         if (attempt >= 1 || _closedByUser) rethrow;
         _conn = null;
         _keepAliveTimer?.cancel();
@@ -273,5 +288,6 @@ class AdbSession implements PriorityAdbShell {
 class _Job {
   final String command;
   final done = Completer<AdbShellResult>();
+  final queuedAt = DateTime.now();
   _Job(this.command);
 }

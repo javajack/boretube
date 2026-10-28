@@ -51,6 +51,9 @@ void main() {
     expect(inTile('action-mute', 'Unmute'), findsOneWidget);
     expect(inTile('action-mute', 'Muted'), findsOneWidget);
     expect(find.byIcon(Icons.volume_off_rounded), findsWidgets);
+    // The ring only appears once the action has run for 400 ms.
+    expect(ring('action-mute'), findsNothing);
+    await tester.pump(const Duration(milliseconds: 450));
     expect(ring('action-mute'), findsOneWidget);
     // Unrelated tiles stay usable; conflicting ones wait.
     await tester.tap(find.byKey(const Key('action-stop')));
@@ -65,6 +68,8 @@ void main() {
     await tester.pump();
     actions.answer(ok);
     await tester.pump();
+    // Let the ring cross-fade out.
+    await tester.pump(const Duration(milliseconds: 250));
     expect(ring('action-mute'), findsNothing);
     expect(inTile('action-mute', 'Unmute'), findsOneWidget);
     expect(find.byIcon(Icons.check_rounded), findsWidgets);

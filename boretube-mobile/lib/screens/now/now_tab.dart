@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -271,6 +272,7 @@ class _QuickActionsState extends ConsumerState<QuickActionsPanel> {
     final undo = optimistic == null ? null : now.patch(optimistic);
     now.hold();
     ActionResult? r;
+    final sw = Stopwatch()..start();
     try {
       r = await run();
     } catch (e) {
@@ -279,6 +281,10 @@ class _QuickActionsState extends ConsumerState<QuickActionsPanel> {
       now.release();
     }
     final ok = r != null && r.ok;
+    if (kDebugMode) {
+      debugPrint('BTIME action ${action.name} ${sw.elapsedMilliseconds}ms '
+          'ok=$ok via=${r?.via.name} ${r?.detail ?? ''}');
+    }
     if (!ok && undo != null) now.revert(undo);
     if (!mounted) return;
     ref.invalidate(journalEntriesProvider);

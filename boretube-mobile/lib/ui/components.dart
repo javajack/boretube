@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -206,14 +208,9 @@ class ActionTile extends StatelessWidget {
                       AnimatedSwitcher(
                         duration: const Duration(milliseconds: 200),
                         child: busy
-                            ? SizedBox(
+                            ? _DelayedSpinner(
                                 key: const ValueKey('busy'),
-                                width: 14,
-                                height: 14,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: fg,
-                                ),
+                                color: fg,
                               )
                             : done
                                 ? Icon(
@@ -821,4 +818,45 @@ void showStatusSnack(
         ),
       ),
     );
+}
+
+/// A small progress ring that only appears once an action has taken longer
+/// than [delay], so quick actions just flip without a flash of spinner.
+class _DelayedSpinner extends StatefulWidget {
+  static const delay = Duration(milliseconds: 400);
+
+  final Color color;
+
+  const _DelayedSpinner({super.key, required this.color});
+
+  @override
+  State<_DelayedSpinner> createState() => _DelayedSpinnerState();
+}
+
+class _DelayedSpinnerState extends State<_DelayedSpinner> {
+  Timer? _timer;
+  bool _show = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer(_DelayedSpinner.delay, () {
+      if (mounted) setState(() => _show = true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        width: 14,
+        height: 14,
+        child: _show
+            ? CircularProgressIndicator(strokeWidth: 2, color: widget.color)
+            : null,
+      );
 }

@@ -93,8 +93,14 @@ class AdbClient implements AdbConnection {
       }
       if (!sentSignature) {
         sentSignature = true;
-        _send(AdbMessage(AdbCommand.auth, AdbAuthType.signature, 0,
-            key.sign(msg.payload)));
+        final ssw = Stopwatch()..start();
+        final sig = key.sign(msg.payload);
+        assert(() {
+          // ignore: avoid_print
+          print('BTIME adb SIGN ${ssw.elapsedMilliseconds}ms');
+          return true;
+        }());
+        _send(AdbMessage(AdbCommand.auth, AdbAuthType.signature, 0, sig));
       } else if (!sentPublicKey) {
         sentPublicKey = true;
         _send(AdbMessage.text(AdbCommand.auth, AdbAuthType.rsaPublicKey, 0,

@@ -1,0 +1,387 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../providers/now_playing.dart';
+import '../../ui/components.dart';
+import '../../ui/tokens.dart';
+import 'home_logic.dart';
+
+/// One line in "What works right now" and the level it needs.
+typedef WorksLine = ({String label, Protection needs});
+
+const worksLines = <WorksLine>[
+  (
+    label: 'Pause, Quiet and End app from your phone',
+    needs: Protection.remote,
+  ),
+  (label: 'Lock for a while, while this app is open', needs: Protection.remote),
+  (label: 'YouTube without Shorts, Clean TV', needs: Protection.home),
+  (
+    label: 'Bedtime and quiet hours when you\'re away',
+    needs: Protection.alwaysOn,
+  ),
+  (
+    label: 'Tidying up by itself after TV updates',
+    needs: Protection.alwaysOn,
+  ),
+];
+
+/// "What works right now": the three levels, where this TV is, what each
+/// one allows, and the one step up.
+class WhatWorksSheet extends StatelessWidget {
+  final String tvName;
+  final Protection level;
+
+  /// Always On is installed but not answering: its lines are not working.
+  final bool degraded;
+  final VoidCallback? onUnlockHome;
+  final VoidCallback? onAlwaysOn;
+
+  const WhatWorksSheet({
+    super.key,
+    required this.tvName,
+    required this.level,
+    this.degraded = false,
+    this.onUnlockHome,
+    this.onAlwaysOn,
+  });
+
+  bool _works(Protection needs) {
+    if (needs.index > level.index) return false;
+    if (needs == Protection.alwaysOn && degraded) return false;
+    return true;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bt = context.bt;
+    final text = Theme.of(context).textTheme;
+    final levelColor = level.tone.color(context);
+    return SheetScaffold(
+      key: const Key('what-works'),
+      title: 'What works right now',
+      lead: Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(text: '$tvName is in '),
+            TextSpan(
+              text: level.label,
+              style: TextStyle(
+                color: levelColor,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            TextSpan(text: '. ${level.reach}'),
+          ],
+        ),
+      ),
+      children: [
+        Row(
+          children: [
+            for (final p in Protection.values) ...[
+              if (p != Protection.remote) const SizedBox(width: Gap.sm),
+              Expanded(child: _LevelTile(level: p, current: level)),
+            ],
+          ],
+        ),
+        const SizedBox(height: Gap.lg),
+        InfoCard(
+          padding: const EdgeInsets.symmetric(
+            horizontal: Gap.lg,
+            vertical: Gap.xs,
+          ),
+          child: Column(
+            children: [
+              for (var i = 0; i < worksLines.length; i++) ...[
+                if (i > 0) const Divider(),
+                CheckLine(
+                  worksLines[i].label,
+                  key: Key('works-$i'),
+                  done: _works(worksLines[i].needs),
+                  minHeight: 48,
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: Gap.lg),
+        switch (level) {
+          Protection.remote => PrimaryButton(
+              key: const Key('works-unlock'),
+              label: 'Unlock Home mode',
+              icon: Icons.home_rounded,
+              kind: ButtonKind.ink,
+              onPressed: onUnlockHome,
+            ),
+          Protection.home => PrimaryButton(
+              key: const Key('works-always-on'),
+              label: 'Make it Always On',
+              icon: Icons.shield_rounded,
+              kind: ButtonKind.mint,
+              onPressed: onAlwaysOn,
+            ),
+          Protection.alwaysOn => Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  degraded ? Icons.error_rounded : Icons.verified_rounded,
+                  color: degraded ? bt.berryFill : bt.mintInk,
+                  size: 20,
+                ),
+                const SizedBox(width: Gap.sm),
+                Flexible(
+                  child: Text(
+                    degraded
+                        ? 'Always On needs a hand. Fix it from Home.'
+                        : 'You\'re all set. Nothing more to unlock.',
+                    style: text.titleSmall,
+                  ),
+                ),
+              ],
+            ),
+        },
+        const SizedBox(height: Gap.sm),
+        if (level != Protection.alwaysOn)
+          Text(
+            level == Protection.remote
+                ? 'One switch on the TV, about 3 minutes. We can put it '
+                    'back any time.'
+                : 'A tiny helper on the TV. One tap here, one OK on the TV.',
+            textAlign: TextAlign.center,
+            style: text.bodySmall,
+          ),
+      ],
+    );
+  }
+}
+
+class _LevelTile extends StatelessWidget {
+  final Protection level;
+  final Protection current;
+
+  const _LevelTile({required this.level, required this.current});
+
+  @override
+  Widget build(BuildContext context) {
+    final bt = context.bt;
+    final text = Theme.of(context).textTheme;
+    final here = level == current;
+    final done = level.index < current.index;
+    final next = level.index == current.index + 1;
+    final ink = level.tone.color(context);
+    final state = here
+        ? 'you are here'
+        : done
+            ? 'done'
+            : next
+                ? 'one step'
+                : 'later';
+    return Semantics(
+      label: '${level.label}: $state',
+      excludeSemantics: true,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: Gap.md),
+        decoration: BoxDecoration(
+          color: here ? level.tone.tint(context) : bt.surface,
+          borderRadius: Radii.tile,
+          border: here
+              ? Border.all(color: level.tone.hue(context), width: 2)
+              : Border.all(
+                  color: next
+                      ? level.tone.hue(context).withValues(
+                            alpha: 0.4,
+                          )
+                      : bt.border,
+                ),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              done ? Icons.check_rounded : level.icon,
+              size: 22,
+              color: done ? bt.mint : (here || next ? ink : bt.faint),
+            ),
+            const SizedBox(height: Gap.xs),
+            Text(
+              level.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: text.labelLarge!.copyWith(
+                fontSize: 14,
+                color: here ? ink : bt.ink,
+              ),
+            ),
+            Text(
+              state,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: text.bodySmall!.copyWith(
+                fontSize: 12,
+                color: here ? ink : bt.muted,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Volume, with a big number and a slider; sends on release.
+class VolumeSheet extends ConsumerStatefulWidget {
+  final void Function(int target) onSet;
+
+  const VolumeSheet({super.key, required this.onSet});
+
+  @override
+  ConsumerState<VolumeSheet> createState() => _VolumeSheetState();
+}
+
+class _VolumeSheetState extends ConsumerState<VolumeSheet> {
+  double? _drag;
+
+  void _send(int v) {
+    final t = v.clamp(0, 100);
+    setState(() => _drag = null);
+    widget.onSet(t);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bt = context.bt;
+    final text = Theme.of(context).textTheme;
+    final now = ref.watch(nowPlayingProvider);
+    final current = (now.volume ?? 0).toDouble().clamp(0.0, 100.0);
+    final shown = _drag ?? current;
+    final muted = now.muted == true;
+    return SheetScaffold(
+      key: const Key('volume-sheet'),
+      title: 'Volume',
+      lead: Text(muted ? 'The TV is muted.' : 'Changes when you let go.'),
+      children: [
+        Center(
+          child: Text(
+            '${shown.round()}',
+            style: text.displayMedium!.copyWith(
+              color: muted ? bt.muted : bt.ink,
+            ),
+          ),
+        ),
+        const SizedBox(height: Gap.sm),
+        Row(
+          children: [
+            IconButton(
+              key: const Key('volume-down'),
+              tooltip: 'Quieter',
+              onPressed: () => _send(shown.round() - 5),
+              icon: const Icon(Icons.volume_down_rounded),
+            ),
+            Expanded(
+              child: Slider(
+                key: const Key('volume-slider'),
+                value: shown,
+                max: 100,
+                divisions: 100,
+                label: '${shown.round()}',
+                onChanged: (v) {
+                  if (v.round() != shown.round()) {
+                    HapticFeedback.selectionClick();
+                  }
+                  setState(() => _drag = v);
+                },
+                onChangeEnd: (v) => _send(v.round()),
+              ),
+            ),
+            IconButton(
+              key: const Key('volume-up'),
+              tooltip: 'Louder',
+              onPressed: () => _send(shown.round() + 5),
+              icon: const Icon(Icons.volume_up_rounded),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// ⋯: the optional tricks.
+class MoreSheet extends StatelessWidget {
+  final VoidCallback? onBore;
+  final VoidCallback? onSoundBack;
+  final void Function(int minutes)? onQuietFor;
+
+  const MoreSheet({
+    super.key,
+    this.onBore,
+    this.onSoundBack,
+    this.onQuietFor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    void pop(VoidCallback f) {
+      Navigator.pop(context);
+      f();
+    }
+
+    return SheetScaffold(
+      key: const Key('more-sheet'),
+      title: 'More',
+      children: [
+        GroupCard(
+          children: [
+            if (onBore != null)
+              StatusRow(
+                key: const Key('action-bore'),
+                tone: Tone.info,
+                icon: Icons.bedtime_rounded,
+                title: 'Make it boring',
+                detail: 'Closes the app and mutes. The TV just sits there.',
+                detailLines: 2,
+                onTap: () => pop(onBore!),
+              ),
+            if (onSoundBack != null)
+              StatusRow(
+                key: const Key('action-restore'),
+                tone: Tone.ok,
+                icon: Icons.volume_up_rounded,
+                title: 'Sound back on',
+                detail: 'Unmutes and ends any quiet time.',
+                onTap: () => pop(onSoundBack!),
+              ),
+          ],
+        ),
+        if (onQuietFor != null) ...[
+          const SectionHeader('Quiet for a while'),
+          Text(
+            'Mutes now; whatever is on keeps playing. Sound comes back by '
+            'itself.',
+            style: text.bodyMedium,
+          ),
+          const SizedBox(height: Gap.md),
+          Row(
+            children: [
+              for (final m in const [15, 30, 60]) ...[
+                if (m != 15) const SizedBox(width: Gap.sm),
+                Expanded(
+                  child: PillChoice(
+                    key: Key('quiet-$m'),
+                    label: m == 60 ? '1 hour' : '$m min',
+                    selected: false,
+                    onTap: () {
+                      Navigator.pop(context);
+                      onQuietFor!(m);
+                    },
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+}

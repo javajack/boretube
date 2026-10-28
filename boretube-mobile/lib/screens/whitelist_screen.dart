@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/whitelist_entry.dart';
 import '../providers/providers.dart';
+import '../ui/components.dart';
+import '../ui/tokens.dart';
 
 class WhitelistScreen extends ConsumerStatefulWidget {
   const WhitelistScreen({super.key});
@@ -74,7 +76,7 @@ class _WhitelistScreenState
 
   Future<void> _queryCurrentApp() async {
     final tvService = ref.read(tvServiceProvider);
-    final status = await tvService.getStatus();
+    final status = await tvService?.getStatus();
     if (!mounted) return;
 
     if (status == null) {
@@ -189,97 +191,83 @@ class _WhitelistScreenState
   @override
   Widget build(BuildContext context) {
     final whitelist = ref.watch(whitelistProvider);
+    final text = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Whitelist'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.live_tv),
-            tooltip: "What's playing now?",
-            onPressed: _queryCurrentApp,
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
+      appBar: AppBar(title: const Text('Classic lock whitelist')),
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: _addEntry,
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Add app'),
       ),
-      body: Column(
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(
+          Gap.page,
+          Gap.sm,
+          Gap.page,
+          96,
+        ),
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              'Apps not listed here will be stopped and '
-              'muted during lock mode.',
-              style: TextStyle(
-                color: Colors.grey.shade500,
-                fontSize: 13,
-              ),
+          Text(
+            'Apps not listed here will be stopped and muted during lock '
+            'mode.',
+            style: text.bodyMedium,
+          ),
+          const SizedBox(height: Gap.lg),
+          InfoCard(
+            padding: EdgeInsets.zero,
+            onTap: _queryCurrentApp,
+            child: const StatusRow(
+              tone: Tone.accent,
+              icon: Icons.live_tv_rounded,
+              title: "What's playing now?",
+              detail: 'Check the TV and add the current app',
+              trailing: Icon(Icons.chevron_right_rounded),
             ),
           ),
-          Expanded(
-            child: whitelist.isEmpty
-                ? Center(
-                    child: Text(
-                      'No apps whitelisted.\n'
-                      'All apps will be stopped in lock mode.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                  )
-                : ListView.builder(
-                    itemCount: whitelist.length,
-                    itemBuilder: (context, index) {
-                      final entry = whitelist[index];
-                      final isBackdrop =
-                          entry.appId == 'E8C28D3C';
-                      return ListTile(
-                        leading: Icon(
-                          isBackdrop
-                              ? Icons.home
-                              : Icons.apps,
-                          color: isBackdrop
-                              ? Colors.grey
-                              : Colors.green,
-                        ),
-                        title: Text(entry.friendlyName),
-                        subtitle: Text(
-                          entry.appId,
-                          style: const TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: 12,
+          SectionHeader('Allowed · ${whitelist.length}'),
+          if (whitelist.isEmpty)
+            const InfoCard(
+              child: EmptyState(
+                icon: Icons.block_rounded,
+                title: 'No apps whitelisted',
+                message: 'All apps will be stopped in lock mode.',
+              ),
+            )
+          else
+            GroupCard(
+              children: [
+                for (final entry in whitelist)
+                  StatusRow(
+                    tone: entry.appId == 'E8C28D3C' ? Tone.idle : Tone.ok,
+                    icon: entry.appId == 'E8C28D3C'
+                        ? Icons.home_rounded
+                        : Icons.apps_rounded,
+                    title: entry.friendlyName,
+                    detail: entry.appId,
+                    trailing: entry.appId == 'E8C28D3C'
+                        ? Tooltip(
+                            message: 'Cannot remove Home Screen',
+                            child: Icon(
+                              Icons.lock_outline_rounded,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                          )
+                        : IconButton(
+                            tooltip: 'Remove',
+                            icon: Icon(
+                              Icons.delete_outline_rounded,
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                            onPressed: () => ref
+                                .read(whitelistProvider.notifier)
+                                .remove(entry.appId),
                           ),
-                        ),
-                        trailing: isBackdrop
-                            ? Tooltip(
-                                message: 'Cannot remove '
-                                    'Home Screen',
-                                child: Icon(
-                                  Icons.lock_outline,
-                                  color: Colors.grey.shade600,
-                                ),
-                              )
-                            : IconButton(
-                                icon: const Icon(
-                                  Icons.delete_outline,
-                                  color: Colors.red,
-                                ),
-                                onPressed: () {
-                                  ref
-                                      .read(
-                                        whitelistProvider
-                                            .notifier,
-                                      )
-                                      .remove(entry.appId);
-                                },
-                              ),
-                      );
-                    },
                   ),
-          ),
+              ],
+            ),
         ],
       ),
     );

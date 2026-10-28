@@ -25,6 +25,8 @@ data class ShortsStep(
     val newShorts: Int = 0,
     /** Distinct titles in the window (for the journal). */
     val titles: List<String> = emptyList(),
+    /** "hopping" (many videos started, any length) or "shorts" (short ones). */
+    val kind: String = "hopping",
 )
 
 /**
@@ -51,6 +53,15 @@ class ShortsDetector(
     private val minPlayedMs: Long = 1_000,
     /** Steps (about 1 s each) with no media session before the run is dropped. */
     private val maxGapSteps: Int = 60,
+    /**
+     * Video hopping: this many different videos started within [hopWindowMs]
+     * of watching is a binge, whatever their length. It is the behaviour a
+     * Shorts feed trains, and it also catches flicking through full videos.
+     */
+    private val hopMinTitles: Int = 5,
+    private val hopWindowMs: Long = 180_000,
+    /** Watching the current video this long means the child settled: no hopping. */
+    private val settleMs: Long = 60_000,
 ) {
     private var pkg: String? = null
     private var gapSteps = 0
@@ -93,20 +104,30 @@ class ShortsDetector(
             return ShortsStep(false)
         }
         if (done != null && done.track.pkg == followed && done.playedMs >= minPlayedMs) finished.addLast(done)
-        val from = playClockMs - windowMs
-        while (finished.isNotEmpty() && finished.first().endPlayMs < from) finished.removeFirst()
-        val window = finished.toMutableList()
-        if (current != null && current.playedMs >= minPlayedMs) window += current
-        counted.retainAll(window.map { it.seq }.toSet())
+        val keep = playClockMs - maxOf(windowMs, hopWindowMs)
+        while (finished.isNotEmpty() && finished.first().endPlayMs < keep) finished.removeFirst()
+        val all = finished.toMutableList()
+        if (current != null && current.playedMs >= minPlayedMs) all += current
 
-        val distinct = window.map { it.track.key }.distinct()
-        val now = distinct.size >= minTitles && window.all { isShort(it) }
+        val shortWindow = all.filter { it.endPlayMs >= playClockMs - windowMs }
+        val shortsNow = shortWindow.map { it.track.key }.distinct().size >= minTitles &&
+            shortWindow.all { isShort(it) }
+        val hopWindow = all.filter { it.endPlayMs >= playClockMs - hopWindowMs }
+        val settled = current != null && current.playedMs >= settleMs
+        val hoppingNow = !settled && hopWindow.map { it.track.key }.distinct().size >= hopMinTitles
+        val window = if (hoppingNow) hopWindow else shortWindow
+        counted.retainAll(all.map { it.seq }.toSet())
+
+        val now = shortsNow || hoppingNow
         val started = now && !active
         active = now
         if (!now) return ShortsStep(false)
         val fresh = window.filter { it.seq !in counted }
         counted += fresh.map { it.seq }
-        return ShortsStep(true, started, fresh.size, window.map { it.track.title }.distinct())
+        return ShortsStep(
+            true, started, fresh.size, window.map { it.track.title }.distinct(),
+            kind = if (shortsNow) "shorts" else "hopping",
+        )
     }
 }
 

@@ -98,7 +98,7 @@ class MediaGuard(
             if (s.started && sr.mode != "off") {
                 notes += MediaNote(
                     "shorts", pkg, "detected",
-                    "${s.titles.size} titles in 2 min; today ${shortsCount.count}; mode ${sr.mode}" +
+                    "${s.kind}: ${s.titles.size} videos; today ${shortsCount.count}; mode ${sr.mode}" +
                         (if (sr.mode == "budget") " (${sr.perDay}/day)" else "") +
                         "; ${s.titles.take(5).joinToString(" | ")}",
                 )
@@ -112,6 +112,8 @@ class MediaGuard(
                 val explicit = rules.style == "explicit"
                 val card = when {
                     !explicit -> null
+                    s.kind == "hopping" && block == "shortsBlock" -> Card(HOP_TITLE, null, HOP_SUB)
+                    s.kind == "hopping" -> Card(HOP_BUDGET_TITLE, null, HOP_SUB)
                     block == "shortsBlock" -> Card(BLOCK_TITLE, null, BLOCK_SUB)
                     else -> Card(BUDGET_TITLE, null, BLOCK_SUB)
                 }
@@ -184,5 +186,8 @@ class MediaGuard(
         const val BLOCK_TITLE = "Shorts aren't on in this house."
         const val BUDGET_TITLE = "That's all the Shorts for today."
         const val BLOCK_SUB = "Pick a full video instead."
+        const val HOP_TITLE = "Lots of jumping between videos."
+        const val HOP_BUDGET_TITLE = "That's enough video hopping for today."
+        const val HOP_SUB = "Pick one video and watch it to the end."
     }
 }

@@ -205,10 +205,12 @@ class ShortsDetectorTest {
         s.shorts(2, dur = 30_000)
         s.play("Looping short", 100_000, dur = 45_000)
         assertTrue(s.active)
-        // Known long videos skipped quickly are not Shorts.
+        // Known long videos skipped quickly are not Shorts, but they ARE video
+        // hopping (the behaviour the user asked to catch, 2026-10-29).
         val n = Sim()
         n.shorts(5, secs = 15, dur = 12 * 60_000L)
-        assertFalse(n.everActive)
+        assertTrue(n.everActive)
+        assertEquals("hopping", n.steps.last { it.active }.kind)
         // A normal long-ish video (2.5 min known) after one short: no session.
         val m = Sim()
         m.shorts(1, dur = 20_000)
@@ -381,6 +383,30 @@ class MediaGuardTest {
         val closes = out.mapNotNull { it.close }
         assertTrue("Shorts across session gaps must be blocked", closes.isNotEmpty())
         assertEquals("shortsBlock", closes.first().reason)
+    }
+
+    // Replays the VU3 recording of 2026-10-29 02:38: six full-length films
+    // (40-120 min) hopped through in about a minute, ~10 s each with session
+    // gaps. Length is irrelevant: this is the Shorts-binge behaviour.
+    @Test fun hoppingThroughLongVideosIsCaught() {
+        val g = MediaGuard()
+        val r = rules("block")
+        val out = mutableListOf<MediaOutcome>()
+        for (title in listOf("Chillar Party", "Anand", "Ramayan", "Nana", "Khadi", "Yeshwant")) {
+            out += gap(g, r, 2)
+            out += listenerShort(g, r, title, 6_000_000, 9)
+        }
+        val close = out.mapNotNull { it.close }.firstOrNull()
+        assertNotNull("hopping through long videos must be caught", close)
+        assertEquals(MediaGuard.HOP_TITLE, close!!.card!!.message)
+    }
+
+    @Test fun watchingTwoLongVideosProperlyIsFine() {
+        val g = MediaGuard()
+        val r = rules("block")
+        val out = listenerShort(g, r, "Film A", 6_000_000, 200) + gap(g, r, 3) +
+            listenerShort(g, r, "Film B", 6_000_000, 200)
+        assertTrue(out.none { it.close != null })
     }
 
     @Test fun aLongGapStartsOver() {

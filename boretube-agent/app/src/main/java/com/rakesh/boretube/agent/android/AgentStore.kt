@@ -116,6 +116,11 @@ class AgentStore(private val ctx: Context) {
         } ?: ShortsCount()
         set(v) { prefs.edit().putString(K_SHORTS, AgentJson.encodeToString(ShortsCount.serializer(), v)).apply() }
 
+    /** Shorts/hopping cool-down end (epoch ms), or null: survives agent restarts. */
+    var cooldownUntil: Long?
+        get() = prefs.getLong(K_COOLDOWN, 0).takeIf { it > 0 }
+        set(v) { prefs.edit().apply { if (v == null) remove(K_COOLDOWN) else putLong(K_COOLDOWN, v) }.commit() }
+
     var lastWatchdogAt: Long
         get() = prefs.getLong(K_LAST_WD, 0)
         set(v) { prefs.edit().putLong(K_LAST_WD, v).apply() }
@@ -149,6 +154,7 @@ class AgentStore(private val ctx: Context) {
         private const val K_LAST_WD = "lastWatchdogAt"
         private const val K_END_AFTER = "endAfter"
         private const val K_SHORTS = "shortsCount"
+        private const val K_COOLDOWN = "cooldownUntil"
 
         fun randomHex(bytes: Int): String {
             val b = ByteArray(bytes)

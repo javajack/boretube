@@ -90,6 +90,12 @@ data class MediaSnapshot(val source: MediaSource, val sessions: List<MediaSample
             "com.google.android.youtube.tv", "com.google.android.youtube",
             "com.google.android.apps.youtube.kids", "com.google.android.youtube.tvkids",
         )
+
+        /**
+         * Kept closed during a Shorts/hopping cool-down: the video apps, plus
+         * Netflix (not followed for Shorts: its browse trailers change title).
+         */
+        val COOLDOWN_PACKAGES = VIDEO_PACKAGES + setOf("com.netflix.ninja")
     }
 
     /**

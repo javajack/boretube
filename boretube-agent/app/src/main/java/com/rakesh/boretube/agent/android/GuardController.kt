@@ -20,6 +20,8 @@ import com.rakesh.boretube.agent.core.ActionResult
 import com.rakesh.boretube.agent.core.AgentApi
 import com.rakesh.boretube.agent.core.BreakDoc
 import com.rakesh.boretube.agent.core.BreakState
+import com.rakesh.boretube.agent.core.Card
+import com.rakesh.boretube.agent.core.CardMood
 import com.rakesh.boretube.agent.core.ClockSkew
 import com.rakesh.boretube.agent.core.Decision
 import com.rakesh.boretube.agent.core.DeviceProfile
@@ -89,7 +91,7 @@ class GuardController(private val ctx: Context) : AgentApi {
     private var safety = store.safety
     private val tvTime = TvTimeCounter(store.tvTime)
     /** Shorts + end-after-this-one; touched on the guard thread only (status reads volatile fields). */
-    private val mediaGuard = MediaGuard(store.shortsCount, store.endAfter)
+    private val mediaGuard = MediaGuard(store.shortsCount, store.endAfter, store.cooldownUntil)
     private val fingerprint: String = Build.FINGERPRINT
     private var skewMs: Long? = null
     private val startedElapsed = SystemClock.elapsedRealtime()
@@ -261,11 +263,13 @@ class GuardController(private val ctx: Context) : AgentApi {
     private fun mediaStep(fg: String?, now: Long, today: LocalDate, r: Rules, canEnforce: Boolean, guard: PackageGuard, p: DeviceProfile?) {
         val beforeCount = mediaGuard.shortsCount
         val beforeEnd = mediaGuard.endAfter
+        val beforeCooldown = mediaGuard.cooldownUntil
         val out: MediaOutcome = mediaGuard.step(
             media.snapshot, fg, SystemClock.elapsedRealtime(), now, today.toString(), r, canEnforce,
         )
         if (mediaGuard.shortsCount != beforeCount) store.shortsCount = mediaGuard.shortsCount
         if (mediaGuard.endAfter != beforeEnd) store.endAfter = mediaGuard.endAfter
+        if (mediaGuard.cooldownUntil != beforeCooldown) store.cooldownUntil = mediaGuard.cooldownUntil
         for (n in out.notes) record(n.op, n.target, n.before, n.after, n.ok, "rule")
         out.close?.let { d ->
             if (!guard.isHome(d.pkg)) apply(d.copy(forceStop = !guard.isStopProtected(d.pkg)), now, guard, p)
@@ -494,7 +498,7 @@ class GuardController(private val ctx: Context) : AgentApi {
 
     override fun action(req: ActionRequest): ActionResult = onGuard {
         val mode = synchronized(lock) { safety.mode }
-        if (mode == Mode.safe && req.action !in setOf("unmute", "restore", "endBreak")) {
+        if (mode == Mode.safe && req.action !in setOf("unmute", "restore", "endBreak", "previewCard")) {
             return@onGuard ActionResult(false, "safe mode: report only")
         }
         val now = System.currentTimeMillis()
@@ -517,11 +521,24 @@ class GuardController(private val ctx: Context) : AgentApi {
             "restore" -> {
                 setBreak { it.restore() }
                 if (mediaGuard.cancelEndAfter()) store.endAfter = mediaGuard.endAfter
+                val cooled = mediaGuard.endCooldown()
+                if (cooled) store.cooldownUntil = null
                 val ok = sound.setMuted(false)
-                record("restore", "sound", "breaks and timed mutes ended", "${sound.read()}", ok, "agent")
-                ActionResult(ok, "breaks ended, sound on")
+                val what = if (cooled) "breaks, timed mutes and video cool-down ended" else "breaks and timed mutes ended"
+                record("restore", "sound", what, "${sound.read()}", ok, "agent")
+                ActionResult(ok, if (cooled) "breaks and cool-down ended, sound on" else "breaks ended, sound on")
             }
             "break" -> startBreak(now, req.minutes!!, "")
+            "previewCard" -> {
+                // Display only: shows a sample card for 8 s, whatever the style or mode.
+                val mood = CardMood.entries.firstOrNull { it.name == req.mood } ?: CardMood.asleep
+                if (!overlay.allowed()) ActionResult(false, "no overlay permission")
+                else {
+                    overlay.show(Card.preview(mood))
+                    record("previewCard", mood.name, "", "shown ${Overlay.SHOW_MS / 1000} s", true, "agent")
+                    ActionResult(true, "card ${mood.name} shown for ${Overlay.SHOW_MS / 1000} s")
+                }
+            }
             "endAfter" -> {
                 val res = mediaGuard.arm(media.snapshot, fgw.foreground, now, req.capMin, req.breakMin)
                 if (res.ok) store.endAfter = mediaGuard.endAfter
@@ -603,7 +620,7 @@ class GuardController(private val ctx: Context) : AgentApi {
             profileId = p?.id,
             media = mediaGuard.mediaDoc(SystemClock.elapsedRealtime()),
             endAfter = mediaGuard.endAfterDoc(),
-            shorts = mediaGuard.shortsDoc(r, LocalDate.now().toString()),
+            shorts = mediaGuard.shortsDoc(r, LocalDate.now().toString(), now),
         )
     }
 

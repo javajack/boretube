@@ -80,8 +80,9 @@ data class Rules(
             requireNotNull(parseIsoInstant(o.until, ZoneId.systemDefault())) { "bad override until \"${o.until}\"" }
         }
         shorts?.let {
-            require(it.mode in ShortsRules.MODES) { "shorts.mode must be off|block|budget|report" }
+            require(it.mode in ShortsRules.MODES) { "shorts.mode must be off|block|budget|report|cooldown" }
             require(it.perDay in 0..1000) { "shorts.perDay must be 0..1000" }
+            require(it.cooldownMin == null || it.cooldownMin in 1..120) { "shorts.cooldownMin must be 1..120" }
         }
     }
 

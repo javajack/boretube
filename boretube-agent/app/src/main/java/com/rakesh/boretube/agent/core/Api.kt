@@ -65,9 +65,12 @@ data class ActionRequest(
     val capMin: Int? = null,
     /** endAfter: break length once the video is over (default 60). */
     val breakMin: Int? = null,
+    /** previewCard (1.3.0+): asleep | calm | guard (default asleep). */
+    val mood: String? = null,
 ) {
     fun validate(): String? = when (action) {
         "mute", "unmute", "stop", "bore", "restore", "endBreak", "cancelEndAfter" -> null
+        "previewCard" -> if (mood != null && CardMood.entries.none { it.name == mood }) "previewCard mood must be asleep|calm|guard" else null
         "endAfter" -> when {
             capMin != null && capMin !in 1..1440 -> "endAfter capMin must be 1..1440"
             breakMin != null && breakMin !in 1..1440 -> "endAfter breakMin must be 1..1440"

@@ -5,13 +5,18 @@ import kotlinx.serialization.Serializable
 /** Rules doc `shorts` (optional; absent = off). */
 @Serializable
 data class ShortsRules(
-    /** off | block | budget | report */
+    /** off | block | budget | report | cooldown */
     val mode: String = "off",
     /** budget: Shorts allowed per day (local midnight reset). */
     val perDay: Int = 0,
+    /** cooldown (1.3.0+): minutes all video apps stay closed after a session (default 10, 1..120). */
+    val cooldownMin: Int? = null,
 ) {
+    val cooldownMinutes: Int get() = cooldownMin ?: DEFAULT_COOLDOWN_MIN
+
     companion object {
-        val MODES = setOf("off", "block", "budget", "report")
+        val MODES = setOf("off", "block", "budget", "report", "cooldown")
+        const val DEFAULT_COOLDOWN_MIN = 10
     }
 }
 

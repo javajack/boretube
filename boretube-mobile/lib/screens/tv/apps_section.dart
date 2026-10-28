@@ -1,109 +1,479 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
+import '../../agent/agent_client.dart';
 import '../../ops/tv_ops.dart';
+import '../../providers/agent_providers.dart';
 import '../../providers/now_playing.dart';
-import '../../providers/providers.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/tv_providers.dart';
 import '../../ui/components.dart';
+import '../../ui/controls.dart';
+import '../../ui/learn.dart';
 import '../../ui/tokens.dart';
+import '../rules/rules_editor.dart' show AppAvatar;
+import '../rules_tab.dart' show rulesProvider;
 import 'common.dart';
 
-class AppsSection extends ConsumerWidget {
-  const AppsSection({super.key});
+const smartTubePackages = {
+  'org.smarttube.stable',
+  'org.smarttube.beta',
+  'com.teamsmart.videomanager.tv',
+};
+
+bool _canWrite(TvOps? ops) =>
+    ops != null && (!ops.profile.readOnly || ops.maintenanceUnlocked);
+
+/// Whether SmartTube is on the TV (null while unknown).
+bool? smartTubeInstalled(WidgetRef ref) {
+  final apps = ref.watch(appsProvider).valueOrNull;
+  if (apps == null) return null;
+  return apps.any(
+    (a) => smartTubePackages.contains(a.pkg) && a.state == AppState.enabled,
+  );
+}
+
+/// Hides or brings back the TV's own YouTube (and YouTube Music).
+Future<void> setStockYouTube(
+  BuildContext context,
+  WidgetRef ref, {
+  required bool installed,
+}) async {
+  final ok = await confirmAction(
+    context,
+    title: installed
+        ? 'Bring back the TV\'s YouTube?'
+        : 'Hide the TV\'s own YouTube?',
+    message: installed
+        ? 'Google\'s YouTube app comes back with its Shorts, and YouTube '
+            'Music is switched back on.'
+        : 'Google\'s YouTube app (and YouTube Music) is removed for this TV '
+            'user. SmartTube keeps working. One tap here brings it back.',
+    confirmLabel: installed ? 'Bring it back' : 'Hide it',
+    icon: Icons.smart_display_outlined,
+  );
+  if (!ok || !context.mounted) return;
+  final ops = ref.read(tvOpsProvider).valueOrNull;
+  final tvId = ref.read(activeTvIdProvider);
+  if (ops == null || tvId == null) return;
+  await ref
+      .read(appSettingsProvider.notifier)
+      .setAllowStockYouTube(tvId, installed);
+  if (!context.mounted) return;
+  await runMaintenance(
+    context,
+    ref,
+    title: installed ? 'YouTube is back' : 'Shorts are gone',
+    run: () => ops.stockYouTube(installed),
+  );
+  ref
+    ..invalidate(stockYouTubeStateProvider)
+    ..invalidate(appsProvider)
+    ..invalidate(healthProvider);
+}
+
+/// Better TV › YouTube without Shorts.
+class YouTubeScreen extends ConsumerWidget {
+  const YouTubeScreen({super.key});
+
+  Future<void> _letStay(BuildContext context, WidgetRef ref, bool v) async {
+    final c = ref.read(agentClientProvider);
+    if (c == null) return;
+    Future<void> send(AgentRules base) => c.putRules(
+          base.copyWith(
+            stockYouTubeAllowed: v,
+            updatedBy: 'Parent phone',
+            updatedAt: DateTime.now().toUtc().toIso8601String(),
+          ),
+        );
+    try {
+      final current = await c.rules();
+      try {
+        await send(current);
+      } on AgentConflict catch (e) {
+        // Someone saved in between: apply this one switch on top.
+        await send(e.current);
+      }
+      ref.invalidate(rulesProvider);
+      if (context.mounted) showStatusSnack(context, 'Saved to the TV ✓');
+    } on AgentException catch (e) {
+      if (context.mounted) {
+        showStatusSnack(context, 'Not saved: ${e.message}', ok: false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (!ref.watch(activeHasAdbProvider)) {
-      return ListView(
-        padding: tvListPadding,
-        children: const [
-          _WhitelistEntry(),
-          SizedBox(height: Gap.md),
-          _AdbAppsTip(),
-        ],
-      );
-    }
-    final apps = ref.watch(appsProvider);
+    final text = Theme.of(context).textTheme;
+    final bt = context.bt;
+    final state = ref.watch(stockYouTubeStateProvider).valueOrNull;
     final ops = ref.watch(tvOpsProvider).valueOrNull;
-    final canWrite =
-        ops != null && (!ops.profile.readOnly || ops.maintenanceUnlocked);
-    return RefreshIndicator(
+    final canWrite = _canWrite(ops);
+    final smart = smartTubeInstalled(ref);
+    final installed = state == AppState.enabled || state == AppState.disabled;
+    final on = state != null && !installed;
+    final alwaysOn = ref.watch(hasAgentProvider);
+    final rules = alwaysOn ? ref.watch(rulesProvider).valueOrNull : null;
+    return DetailPage(
+      title: 'YouTube without Shorts',
+      titleTrailing: const InfoDot(LearnTerm.noShorts),
+      subtitle: 'Kids keep YouTube. The endless Shorts go.',
       onRefresh: () async {
         ref
           ..invalidate(stockYouTubeStateProvider)
           ..invalidate(appsProvider);
         await ref.read(appsProvider.future);
       },
-      child: ListView(
-        padding: tvListPadding,
-        children: [
-          _YouTubeCard(canWrite: canWrite),
-          const SizedBox(height: Gap.md),
-          const _WhitelistEntry(),
-          ...apps.when(
-            loading: () => const [
-              SectionHeader('Apps on the TV'),
-              SkeletonCard(rows: 5),
+      children: [
+        InfoCard(
+          key: const Key('youtube-card'),
+          radius: Radii.hero,
+          color: on ? bt.mintTint : bt.sunTint,
+          borderColor: on ? bt.mintTint : bt.sunTint,
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      state == null ? 'Checking…' : (on ? 'On' : 'Not yet'),
+                      style: Fonts.bricolage(
+                        28,
+                        color: on ? bt.mintInk : bt.sunInk,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      on
+                          ? 'The TV\'s own YouTube is hidden. SmartTube plays '
+                              'YouTube without Shorts.'
+                          : 'The TV\'s own YouTube still shows Shorts.',
+                      style: text.bodyMedium!.copyWith(color: bt.inkSoft),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: Gap.md),
+              Icon(
+                on ? Icons.check_circle_rounded : Icons.smart_display_rounded,
+                size: 40,
+                color: on ? bt.mint : bt.sun,
+              ),
             ],
-            error: (e, _) => [
-              const SectionHeader('Apps on the TV'),
-              InfoCard(
-                child: EmptyState(
-                  icon: Icons.apps_outage_rounded,
-                  tone: Tone.bad,
-                  title: 'Couldn\'t read the app list',
-                  message: '$e',
-                  actionLabel: 'Try again',
-                  onAction: () => ref.invalidate(appsProvider),
+          ),
+        ),
+        const SectionHeader('Two steps'),
+        InfoCard(
+          key: const Key('youtube-step-smarttube'),
+          child: Row(
+            children: [
+              _StepNumber(1, done: smart == true),
+              const SizedBox(width: Gap.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Put SmartTube on the TV', style: text.titleMedium),
+                    Text(
+                      smart == true
+                          ? 'It\'s on the TV. Nice.'
+                          : smart == null
+                              ? 'A free YouTube app with Shorts turned off.'
+                              : 'Not on the TV yet. About 5 minutes.',
+                      style: text.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              TextButton(
+                key: const Key('youtube-guide'),
+                onPressed: () => showBtSheet<void>(
+                  context,
+                  builder: (_) => const SmartTubeGuide(),
+                ),
+                child: Text(smart == true ? 'Guide' : 'Show me'),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: Gap.sm),
+        InfoCard(
+          padding: const EdgeInsets.fromLTRB(Gap.lg, Gap.sm, Gap.lg, Gap.sm),
+          child: SwitchLine(
+            key: const Key('youtube-stock-toggle'),
+            leading: _StepNumber(2, done: on),
+            title: 'Hide the TV\'s own YouTube',
+            subtitle: state == null
+                ? 'Checking the TV…'
+                : on
+                    ? 'Hidden. YouTube Music is off too'
+                    : smart == false
+                        ? 'Do step 1 first, so there\'s still YouTube'
+                        : 'Also switches off YouTube Music',
+            value: on,
+            onChanged: state == null || !canWrite
+                ? null
+                : (v) => setStockYouTube(context, ref, installed: !v),
+          ),
+        ),
+        if (alwaysOn && rules != null) ...[
+          const SectionHeader('With Always On'),
+          InfoCard(
+            padding: const EdgeInsets.fromLTRB(Gap.lg, Gap.sm, Gap.lg, Gap.sm),
+            child: SwitchLine(
+              key: const Key('rules-stock-youtube'),
+              leading: IconBadge(
+                icon: Icons.shield_rounded,
+                color: Tone.ok.color(context),
+                size: 40,
+              ),
+              title: 'Let stock YouTube stay',
+              subtitle: rules.stockYouTubeAllowed
+                  ? 'Always On leaves the TV\'s YouTube alone'
+                  : 'Always On hides it again if a TV update brings it back',
+              value: rules.stockYouTubeAllowed,
+              onChanged: (v) => _letStay(context, ref, v),
+            ),
+          ),
+        ],
+        if (!canWrite && ops != null) ...[
+          const SizedBox(height: Gap.md),
+          Text(
+            'boretube hasn\'t been tested on this TV model, so changes are '
+            'off. Allow them in Settings › Advanced.',
+            style: text.bodySmall,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _StepNumber extends StatelessWidget {
+  final int n;
+  final bool done;
+  const _StepNumber(this.n, {required this.done});
+
+  @override
+  Widget build(BuildContext context) {
+    final bt = context.bt;
+    return AnimatedContainer(
+      duration: Motion.of(context, Motion.fast),
+      width: 40,
+      height: 40,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: done ? bt.mint : bt.hairline,
+        borderRadius: Radii.icon,
+      ),
+      child: done
+          ? const Icon(Icons.check_rounded, color: Color(0xFF06392A))
+          : Text('$n', style: Fonts.bricolage(18, color: bt.ink)),
+    );
+  }
+}
+
+/// How to get SmartTube onto the TV, safely.
+class SmartTubeGuide extends StatelessWidget {
+  const SmartTubeGuide({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final bt = context.bt;
+    final text = Theme.of(context).textTheme;
+    const steps = [
+      (
+        'On the TV, open the Play Store and install "Downloader" by '
+            'AFTVnews.',
+        'It\'s free. It lets the TV download an app from a web address.',
+      ),
+      (
+        'In Downloader, type: smarttubeapp.github.io',
+        'Use exactly this address. Choose the "Stable" version.',
+      ),
+      (
+        'Tap Install when the TV asks. Allow Downloader to install apps if '
+            'it asks first.',
+        'Then open SmartTube once and sign in if you like.',
+      ),
+      (
+        'Come back here and hide the TV\'s own YouTube.',
+        'Shorts gone. You can undo it any time.',
+      ),
+    ];
+    return SheetScaffold(
+      key: const Key('smarttube-guide'),
+      title: 'Put SmartTube on the TV',
+      lead: const Text('About 5 minutes, with the TV remote.'),
+      children: [
+        Container(
+          key: const Key('smarttube-warning'),
+          padding: const EdgeInsets.all(Gap.md),
+          decoration: BoxDecoration(
+            color: bt.berryTint,
+            borderRadius: Radii.tile,
+            border: Border.all(color: bt.berryBorder),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.gpp_maybe_rounded, color: bt.berryInk),
+              const SizedBox(width: Gap.md),
+              Expanded(
+                child: Text(
+                  'Only get SmartTube from its official site, '
+                  'smarttubeapp.github.io. Copies from other sites or app '
+                  'stores can hide ads or malware. boretube never installs '
+                  'it for you.',
+                  style: text.bodyMedium!.copyWith(
+                    color: bt.berryInk,
+                    fontSize: 14,
+                  ),
                 ),
               ),
             ],
-            data: (list) => _appList(context, ref, list, canWrite),
+          ),
+        ),
+        const SizedBox(height: Gap.lg),
+        for (var i = 0; i < steps.length; i++) ...[
+          if (i > 0) const SizedBox(height: Gap.md),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: bt.coralTint,
+                  borderRadius: Radii.icon,
+                ),
+                child: Text(
+                  '${i + 1}',
+                  style: Fonts.bricolage(16, color: bt.coralInk),
+                ),
+              ),
+              const SizedBox(width: Gap.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(steps[i].$1, style: text.titleSmall),
+                    Text(steps[i].$2, style: text.bodySmall),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
-      ),
+        const SizedBox(height: Gap.xl),
+        PrimaryButton(
+          label: 'Got it',
+          kind: ButtonKind.ink,
+          onPressed: () => Navigator.pop(context),
+        ),
+      ],
     );
   }
+}
 
-  List<Widget> _appList(
-    BuildContext context,
-    WidgetRef ref,
-    List<TvApp> list,
-    bool canWrite,
-  ) {
-    final shown = list.where((a) => a.state != AppState.absent).toList()
-      ..sort((a, b) => appLabel(a.pkg).compareTo(appLabel(b.pkg)));
-    return [
-      SectionHeader('Apps on the TV · ${shown.length}'),
-      if (!canWrite)
-        const Padding(
-          padding: EdgeInsets.only(bottom: Gap.md),
-          child: InfoCard(
-            padding: EdgeInsets.all(Gap.md),
-            child: Text(
-              'Generic profile: app changes are off. Turn on maintenance '
-              'in Settings to allow them.',
+/// Better TV › Apps on your TV: turn apps on or off.
+class AppsScreen extends ConsumerWidget {
+  const AppsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final apps = ref.watch(appsProvider);
+    final ops = ref.watch(tvOpsProvider).valueOrNull;
+    final canWrite = _canWrite(ops);
+    final text = Theme.of(context).textTheme;
+    return DetailPage(
+      title: 'Apps on your TV',
+      subtitle: 'Switch an app off and it disappears from the TV. Switch it '
+          'back on any time.',
+      onRefresh: () async {
+        ref.invalidate(appsProvider);
+        await ref.read(appsProvider.future);
+      },
+      children: [
+        ...apps.when(
+          loading: () => const [SkeletonCard(rows: 6)],
+          error: (e, _) => [
+            InfoCard(
+              child: EmptyState(
+                icon: Icons.apps_outage_rounded,
+                tone: Tone.bad,
+                title: 'Couldn\'t read the app list',
+                message: 'Is the TV on and on this Wi-Fi? Then try again.',
+                actionLabel: 'Try again',
+                onAction: () => ref.invalidate(appsProvider),
+              ),
             ),
-          ),
-        ),
-      if (shown.isEmpty)
-        const InfoCard(
-          child: EmptyState(
-            icon: Icons.apps_rounded,
-            title: 'No apps found',
-            message: 'Pull down to read the list again.',
-          ),
-        )
-      else
-        GroupCard(
-          children: [
-            for (final a in shown) _AppRow(app: a, canWrite: canWrite),
           ],
+          data: (list) {
+            final shown = list
+                .where((a) => a.state != AppState.absent && a.launchable)
+                .toList()
+              ..sort((a, b) => appLabel(a.pkg).compareTo(appLabel(b.pkg)));
+            final hidden = list
+                .where(
+                  (a) =>
+                      a.state != AppState.absent &&
+                      !a.launchable &&
+                      a.state != AppState.enabled,
+                )
+                .toList()
+              ..sort((a, b) => appLabel(a.pkg).compareTo(appLabel(b.pkg)));
+            return [
+              if (!canWrite)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: Gap.md),
+                  child: Text(
+                    'boretube hasn\'t been tested on this TV model, so this '
+                    'is a list only. Allow changes in Settings › Advanced.',
+                    style: text.bodySmall,
+                  ),
+                ),
+              if (shown.isEmpty && hidden.isEmpty)
+                const InfoCard(
+                  child: EmptyState(
+                    icon: Icons.apps_rounded,
+                    title: 'No apps found',
+                    message: 'Pull down to read the list again.',
+                  ),
+                )
+              else ...[
+                SectionHeader(
+                  'On the home screen · ${shown.length}',
+                  padding: const EdgeInsets.fromLTRB(
+                    Gap.xs,
+                    0,
+                    Gap.xs,
+                    Gap.sm,
+                  ),
+                ),
+                GroupCard(
+                  children: [
+                    for (final a in shown) _AppRow(app: a, canWrite: canWrite),
+                  ],
+                ),
+                if (hidden.isNotEmpty) ...[
+                  SectionHeader('Switched off · ${hidden.length}'),
+                  GroupCard(
+                    children: [
+                      for (final a in hidden)
+                        _AppRow(app: a, canWrite: canWrite),
+                    ],
+                  ),
+                ],
+              ],
+            ];
+          },
         ),
-    ];
+      ],
+    );
   }
 }
 
@@ -117,12 +487,12 @@ class _AppRow extends ConsumerWidget {
     final name = appLabel(app.pkg);
     final ok = await confirmAction(
       context,
-      title: on ? 'Turn on $name?' : 'Turn off $name?',
+      title: on ? 'Switch $name back on?' : 'Switch $name off?',
       message: on
-          ? '$name will show up on the TV again.'
-          : '$name disappears from the TV and can\'t be opened. You can '
-              'turn it back on here any time.',
-      confirmLabel: on ? 'Turn on' : 'Turn off',
+          ? '$name shows up on the TV again.'
+          : '$name disappears from the TV and can\'t be opened. Switch it '
+              'back on here any time.',
+      confirmLabel: on ? 'Switch on' : 'Switch off',
       destructive: !on,
       icon: on ? Icons.toggle_on_outlined : Icons.toggle_off_outlined,
     );
@@ -132,7 +502,7 @@ class _AppRow extends ConsumerWidget {
     await runMaintenance(
       context,
       ref,
-      title: on ? '$name turned on' : '$name turned off',
+      title: on ? '$name is back' : '$name switched off',
       run: () => ops.setAppEnabled(app.pkg, on),
     );
     ref.invalidate(appsProvider);
@@ -140,20 +510,14 @@ class _AppRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final (tone, tag) = switch (app.state) {
-      AppState.enabled => (Tone.ok, null),
-      AppState.disabled => (Tone.warn, 'Off'),
-      AppState.notInstalled => (Tone.idle, 'Removed'),
-      AppState.absent => (Tone.idle, 'Missing'),
-    };
+    final bt = context.bt;
+    final text = Theme.of(context).textTheme;
+    final name = appLabel(app.pkg);
     final Widget trailing;
     if (app.protected) {
       trailing = Tooltip(
-        message: 'Protected — boretube never changes this app',
-        child: Icon(
-          Icons.lock_rounded,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
+        message: 'The TV needs this one, so boretube never changes it',
+        child: Icon(Icons.lock_rounded, color: bt.faint),
       );
     } else if (app.state == AppState.notInstalled) {
       trailing = const TagChip('Removed');
@@ -163,151 +527,36 @@ class _AppRow extends ConsumerWidget {
         onChanged: canWrite ? (v) => _toggle(context, ref, v) : null,
       );
     }
-    return StatusRow(
-      tone: tone,
-      icon: app.launchable ? Icons.apps_rounded : Icons.apps_outage_rounded,
-      title: appLabel(app.pkg) + (tag != null ? ' · $tag' : ''),
-      detail: app.pkg,
-      trailing: trailing,
-    );
-  }
-}
-
-class _YouTubeCard extends ConsumerWidget {
-  final bool canWrite;
-  const _YouTubeCard({required this.canWrite});
-
-  Future<void> _set(BuildContext context, WidgetRef ref, bool on) async {
-    final ok = await confirmAction(
-      context,
-      title: on ? 'Bring back stock YouTube?' : 'Remove stock YouTube?',
-      message: on
-          ? 'This restores Google\'s YouTube app and turns YouTube Music '
-              'back on. Health will stop flagging it.'
-          : 'This removes Google\'s YouTube app for this TV user and also '
-              'turns off YouTube Music. SmartTube keeps working. You can '
-              'bring it back here.',
-      confirmLabel: on ? 'Restore' : 'Remove',
-      destructive: !on,
-      icon: Icons.smart_display_outlined,
-    );
-    if (!ok || !context.mounted) return;
-    final ops = ref.read(tvOpsProvider).valueOrNull;
-    final tvId = ref.read(activeTvIdProvider);
-    if (ops == null || tvId == null) return;
-    await ref.read(appSettingsProvider.notifier).setAllowStockYouTube(tvId, on);
-    if (!context.mounted) return;
-    await runMaintenance(
-      context,
-      ref,
-      title: on ? 'Stock YouTube restored' : 'Stock YouTube removed',
-      run: () => ops.stockYouTube(on),
-    );
-    ref
-      ..invalidate(stockYouTubeStateProvider)
-      ..invalidate(appsProvider)
-      ..invalidate(healthProvider);
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(stockYouTubeStateProvider);
-    final text = Theme.of(context).textTheme;
-    final scheme = Theme.of(context).colorScheme;
-    return state.when(
-      loading: () => const SkeletonCard(rows: 1),
-      error: (_, __) => const SizedBox.shrink(),
-      data: (s) {
-        if (s == null) return const SizedBox.shrink();
-        final installed = s == AppState.enabled || s == AppState.disabled;
-        return InfoCard(
-          key: const Key('youtube-card'),
-          padding: const EdgeInsets.all(Gap.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  IconBadge(
-                    icon: Icons.smart_display_rounded,
-                    color: installed ? scheme.error : scheme.primary,
-                    size: 44,
-                  ),
-                  const SizedBox(width: Gap.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Stock YouTube', style: text.titleMedium),
-                        Text(
-                          installed
-                              ? 'Installed on the TV'
-                              : 'Removed — SmartTube is used instead',
-                          style: text.bodySmall,
-                        ),
-                      ],
-                    ),
-                  ),
-                  Switch(
-                    value: installed,
-                    onChanged: canWrite ? (v) => _set(context, ref, v) : null,
-                  ),
-                ],
-              ),
-              const SizedBox(height: Gap.md),
-              Text(
-                'Switching this also turns YouTube Music on or off.',
-                style: text.bodySmall,
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _WhitelistEntry extends ConsumerWidget {
-  const _WhitelistEntry();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final count = ref.watch(whitelistProvider).length;
-    return InfoCard(
-      padding: EdgeInsets.zero,
-      onTap: () => context.push('/whitelist'),
-      child: StatusRow(
-        tone: Tone.accent,
-        icon: Icons.checklist_rounded,
-        title: 'Classic lock whitelist',
-        detail: '$count allowed · add what\'s playing now',
-        trailing: const Icon(Icons.chevron_right_rounded),
-      ),
-    );
-  }
-}
-
-class _AdbAppsTip extends StatelessWidget {
-  const _AdbAppsTip();
-
-  @override
-  Widget build(BuildContext context) {
-    return InfoCard(
-      child: Column(
+    return Padding(
+      key: Key('app-${app.pkg}'),
+      padding: const EdgeInsets.symmetric(horizontal: Gap.lg, vertical: 10),
+      child: Row(
         children: [
-          const EmptyState(
-            icon: Icons.lock_outline_rounded,
-            tone: Tone.accent,
-            title: 'See every app on the TV',
-            message: 'Unlock Home mode to turn apps on or off and manage '
-                'stock YouTube.',
+          Opacity(
+            opacity: app.state == AppState.enabled ? 1 : 0.5,
+            child: AppAvatar(pkg: app.pkg, size: 40),
           ),
-          FilledButton.icon(
-            onPressed: () => context.push('/adb-guide'),
-            icon: const Icon(Icons.lock_open_rounded),
-            label: const Text('Unlock Home mode'),
+          const SizedBox(width: Gap.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name, style: text.titleSmall),
+                Text(
+                  app.protected
+                      ? 'The TV needs this'
+                      : switch (app.state) {
+                          AppState.enabled => 'On',
+                          AppState.disabled => 'Switched off',
+                          AppState.notInstalled => 'Removed for this TV user',
+                          AppState.absent => 'Not on this TV',
+                        },
+                  style: text.bodySmall,
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: Gap.sm),
+          trailing,
         ],
       ),
     );

@@ -6,9 +6,10 @@ import '../../ops/health.dart';
 import '../../providers/agent_providers.dart';
 import '../../providers/tv_providers.dart';
 import '../../ui/components.dart';
+import '../../ui/controls.dart';
 import '../../ui/tokens.dart';
 import 'common.dart';
-import 'tv_guard_card.dart';
+import 'health_copy.dart';
 
 Tone healthTone(HealthStatus s) => switch (s) {
       HealthStatus.ok => Tone.ok,
@@ -18,8 +19,8 @@ Tone healthTone(HealthStatus s) => switch (s) {
     };
 
 IconData healthIcon(String id) => switch (id) {
-      'adb' => Icons.usb_rounded,
-      'cleanup' => Icons.cleaning_services_rounded,
+      'adb' => Icons.wifi_rounded,
+      'cleanup' => Icons.auto_awesome_rounded,
       'stockYouTube' => Icons.smart_display_rounded,
       'speech' => Icons.record_voice_over_rounded,
       'launcher' => Icons.home_rounded,
@@ -35,27 +36,7 @@ HealthStatus _fromAgent(AgentHealthStatus s) => switch (s) {
       AgentHealthStatus.unknown => HealthStatus.unknown,
     };
 
-String _agentCheckTitle(String id) => switch (id) {
-      'youtube' || 'stockYouTube' => 'YouTube watchdog',
-      'speech' || 'tts' => 'Speech watchdog',
-      'cleanup' => 'Clean-up watchdog',
-      'launcher' || 'home' => 'Home watchdog',
-      'selfAdb' => 'Always On\'s TV access',
-      'usage' || 'usageStats' || 'usageAccess' => 'Usage access',
-      'overlay' => 'Explicit card permission',
-      'notifications' => 'Always On notification',
-      'profile' => 'TV profile',
-      'build' => 'TV software',
-      'watchdog' => 'Watchdog',
-      'sound' => 'Sound control',
-      'clock' => 'TV clock',
-      'mode' => 'Always On mode',
-      _ => id.isEmpty
-          ? 'Always On check'
-          : '${id[0].toUpperCase()}${id.substring(1)}',
-    };
-
-/// TV Guard's own checks (and an "Agent vX" line) as Health rows.
+/// Always On's own checks (and an "is it running" line) as health rows.
 List<HealthCheck> agentHealthChecks(AgentLink link) {
   if (!link.installed) return const [];
   final s = link.status;
@@ -63,7 +44,7 @@ List<HealthCheck> agentHealthChecks(AgentLink link) {
   return [
     HealthCheck(
       id: 'agent',
-      title: s == null ? 'Always On' : 'Always On',
+      title: 'Always On',
       status: up
           ? (s!.mode == AgentMode.normal ? HealthStatus.ok : HealthStatus.warn)
           : link.kind == AgentLinkKind.checking
@@ -77,202 +58,130 @@ List<HealthCheck> agentHealthChecks(AgentLink link) {
             }
           : link.kind == AgentLinkKind.checking
               ? 'Checking…'
-              : 'Not answering — use Repair above',
+              : 'Not answering',
     ),
     if (up)
       for (final h in s!.health)
         HealthCheck(
           id: 'agent.${h.id}',
-          title: _agentCheckTitle(h.id),
+          title: agentCheckTitle(h.id),
           status: _fromAgent(h.status),
           detail: h.detail.isEmpty ? 'Checked by Always On' : h.detail,
         ),
   ];
 }
 
-class HealthSection extends ConsumerWidget {
-  const HealthSection({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    if (!ref.watch(activeHasAdbProvider)) {
-      if (!ref.watch(hasAgentProvider)) {
-        return const AdbRequired(what: 'TV health');
-      }
-      return const HealthList(checks: []);
-    }
-    final health = ref.watch(healthProvider);
-    return RefreshIndicator(
-      onRefresh: () => ref.refresh(healthProvider.future),
-      child: health.when(
-        loading: () => ListView(
-          padding: tvListPadding,
-          children: const [
-            TvGuardCard(),
-            SizedBox(height: Gap.md),
-            SkeletonCard(rows: 1),
-            SizedBox(height: Gap.md),
-            SkeletonCard(rows: 4),
-          ],
-        ),
-        error: (e, _) => ListView(
-          padding: tvListPadding,
-          children: [
-            const TvGuardCard(),
-            const SizedBox(height: Gap.md),
-            InfoCard(
-              child: EmptyState(
-                icon: Icons.wifi_off_rounded,
-                tone: Tone.bad,
-                title: 'Couldn\'t check the TV',
-                message: '$e',
-                actionLabel: 'Try again',
-                onAction: () {
-                  ref.invalidate(profileMatchProvider);
-                  ref.invalidate(healthProvider);
-                },
-              ),
-            ),
-          ],
-        ),
-        data: (checks) => HealthList(checks: checks),
-      ),
-    );
-  }
+/// Phone checks (when Home mode works) plus Always On's, or null while
+/// the phone's are still loading.
+List<HealthCheck>? mergedHealth(WidgetRef ref) {
+  final link = ref.watch(agentStatusProvider);
+  final agent = agentHealthChecks(link);
+  if (!ref.watch(activeHasAdbProvider)) return agent;
+  final phone = ref.watch(healthProvider);
+  if (phone.isLoading && !phone.hasValue) return null;
+  return [...phone.valueOrNull ?? const [], ...agent];
 }
 
-class HealthList extends ConsumerWidget {
-  /// Phone-side checks; TV Guard's own are merged in.
-  final List<HealthCheck> checks;
-  const HealthList({super.key, required this.checks});
+/// Asks, then runs each check's fix and shows what changed.
+Future<void> fixHealth(
+  BuildContext context,
+  WidgetRef ref,
+  List<HealthCheck> targets,
+) async {
+  final names =
+      targets.map((c) => '•  ${healthLook(c).title}').toList().join('\n');
+  final ok = await confirmAction(
+    context,
+    title: targets.length == 1
+        ? 'Fix ${healthLook(targets.first).title}?'
+        : 'Fix ${targets.length} things?',
+    message: 'This changes settings on the TV:\n\n$names\n\n'
+        'Every change is kept in History and can be undone.',
+    confirmLabel: 'Fix',
+    icon: Icons.auto_fix_high_rounded,
+  );
+  if (!ok || !context.mounted) return;
+  await runMaintenance(
+    context,
+    ref,
+    title: targets.length == 1
+        ? '${healthLook(targets.first).title} fixed'
+        : 'All fixed',
+    run: () async {
+      for (final c in targets) {
+        await c.fix!();
+      }
+    },
+  );
+  ref
+    ..invalidate(healthProvider)
+    ..invalidate(stockYouTubeStateProvider)
+    ..invalidate(appsProvider);
+}
 
-  Future<void> _fix(
-    BuildContext context,
-    WidgetRef ref,
-    List<HealthCheck> targets,
-  ) async {
-    final names = targets.map((c) => '• ${c.title}: ${c.detail}').join('\n');
-    final ok = await confirmAction(
-      context,
-      title: targets.length == 1
-          ? 'Fix ${targets.first.title}?'
-          : 'Fix ${targets.length} things?',
-      message: 'This changes settings on the TV:\n\n$names\n\n'
-          'Every change is logged in Activity.',
-      confirmLabel: 'Fix',
-    );
-    if (!ok || !context.mounted) return;
-    await runMaintenance(
-      context,
-      ref,
-      title: targets.length == 1 ? '${targets.first.title} fixed' : 'Fixed',
-      run: () async {
-        for (final c in targets) {
-          await c.fix!();
-        }
-      },
-    );
-    ref.invalidate(healthProvider);
-  }
+/// TV health: every check in plain words, with a Fix where one is safe.
+class HealthScreen extends ConsumerStatefulWidget {
+  const HealthScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HealthScreen> createState() => _HealthScreenState();
+}
+
+class _HealthScreenState extends ConsumerState<HealthScreen> {
+  bool _technical = false;
+
+  @override
+  Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final status = StatusColors.of(context);
-    final checks = [
-      ...this.checks,
-      ...agentHealthChecks(ref.watch(agentStatusProvider)),
-    ];
-    final issues = checks.where((c) => c.status != HealthStatus.ok).toList();
-    final fixable = checks.where((c) => c.fix != null).toList();
+    final bt = context.bt;
+    final checks = mergedHealth(ref);
+    final error = ref.watch(healthProvider).error;
     final ops = ref.watch(tvOpsProvider).valueOrNull;
     final readOnly =
         ops != null && ops.profile.readOnly && !ops.maintenanceUnlocked;
-    final good = issues.isEmpty;
-    return ListView(
-      padding: tvListPadding,
+    final fixable = checks?.where((c) => c.fix != null).toList() ?? const [];
+    return DetailPage(
+      title: 'TV health',
+      subtitle: 'What boretube checks on the TV, in plain words.',
+      onRefresh: () async {
+        ref.invalidate(healthProvider);
+        await ref.read(agentStatusProvider.notifier).refresh();
+      },
       children: [
-        const TvGuardCard(),
-        const SizedBox(height: Gap.md),
-        InfoCard(
-          key: const Key('health-summary'),
-          padding: const EdgeInsets.all(Gap.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  IconBadge(
-                    icon: good
-                        ? Icons.verified_rounded
-                        : Icons.report_gmailerrorred_rounded,
-                    color: good ? status.ok : status.warn,
-                    size: 48,
-                  ),
-                  const SizedBox(width: Gap.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          good
-                              ? 'All good'
-                              : issues.length == 1
-                                  ? '1 thing needs attention'
-                                  : '${issues.length} things need attention',
-                          style: text.titleMedium,
-                        ),
-                        Text(
-                          good
-                              ? '${checks.length} checks passed'
-                              : '${checks.length} checks · fixes ask first',
-                          style: text.bodySmall,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              if (fixable.length > 1) ...[
-                const SizedBox(height: Gap.lg),
-                FilledButton.icon(
-                  key: const Key('health-fix-all'),
-                  onPressed: () => _fix(context, ref, fixable),
-                  icon: const Icon(Icons.auto_fix_high_rounded),
-                  label: Text('Fix all (${fixable.length})'),
-                ),
-              ],
-            ],
-          ),
-        ),
-        if (readOnly) ...[
-          const SizedBox(height: Gap.md),
-          const InfoCard(
-            padding: EdgeInsets.all(Gap.md),
-            child: Row(
-              children: [
-                Icon(Icons.info_outline_rounded, size: 20),
-                SizedBox(width: Gap.md),
-                Expanded(
-                  child: Text(
-                    'This TV uses a generic profile, so fixes are off. '
-                    'Turn on maintenance in Settings to allow them.',
-                  ),
-                ),
-              ],
+        if (checks == null)
+          const SkeletonCard(rows: 4)
+        else if (error != null && checks.isEmpty)
+          InfoCard(
+            child: EmptyState(
+              icon: Icons.wifi_off_rounded,
+              tone: Tone.bad,
+              title: 'Couldn\'t check the TV',
+              message: 'Is it on and on this Wi-Fi? Then try again.',
+              actionLabel: 'Try again',
+              onAction: () {
+                ref.invalidate(profileMatchProvider);
+                ref.invalidate(healthProvider);
+              },
             ),
-          ),
-        ],
-        const SectionHeader('Checks'),
-        if (checks.isEmpty)
+          )
+        else if (checks.isEmpty)
           const InfoCard(
             child: EmptyState(
               icon: Icons.monitor_heart_outlined,
-              title: 'No checks yet',
+              title: 'Nothing checked yet',
               message: 'Pull down to check the TV.',
             ),
           )
-        else
+        else ...[
+          if (fixable.length > 1) ...[
+            PrimaryButton(
+              key: const Key('health-fix-all'),
+              label: 'Fix all (${fixable.length})',
+              icon: Icons.auto_fix_high_rounded,
+              onPressed: () => fixHealth(context, ref, fixable),
+            ),
+            const SizedBox(height: Gap.md),
+          ],
           GroupCard(
             children: [
               for (final c in checks)
@@ -280,19 +189,13 @@ class HealthList extends ConsumerWidget {
                   key: Key('health-${c.id}'),
                   tone: healthTone(c.status),
                   icon: healthIcon(c.id),
-                  title: c.title,
-                  detail: c.detail,
-                  detailLines: 2,
+                  title: healthLook(c).title,
+                  detail: _technical ? c.detail : healthLook(c).detail,
+                  detailLines: 3,
                   trailing: c.fix != null
-                      ? FilledButton.tonal(
-                          style: FilledButton.styleFrom(
-                            minimumSize: const Size(56, 40),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: Gap.md,
-                            ),
-                          ),
-                          onPressed: () => _fix(context, ref, [c]),
-                          child: const Text('Fix'),
+                      ? _FixButton(
+                          key: Key('health-fix-${c.id}'),
+                          onPressed: () => fixHealth(context, ref, [c]),
                         )
                       : Icon(
                           c.status == HealthStatus.ok
@@ -303,7 +206,54 @@ class HealthList extends ConsumerWidget {
                 ),
             ],
           ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(
+              key: const Key('health-technical'),
+              style: TextButton.styleFrom(foregroundColor: bt.muted),
+              onPressed: () => setState(() => _technical = !_technical),
+              child: Text(
+                _technical ? 'Plain words' : 'Technical details',
+              ),
+            ),
+          ),
+        ],
+        if (readOnly) ...[
+          const SizedBox(height: Gap.sm),
+          InfoCard(
+            padding: const EdgeInsets.all(Gap.md),
+            child: Row(
+              children: [
+                Icon(Icons.info_outline_rounded, size: 20, color: bt.skyInk),
+                const SizedBox(width: Gap.md),
+                Expanded(
+                  child: Text(
+                    'boretube hasn\'t been tested on this TV model, so fixes '
+                    'are off. You can allow them in Settings › Advanced.',
+                    style: text.bodySmall,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
+}
+
+class _FixButton extends StatelessWidget {
+  final VoidCallback onPressed;
+  const _FixButton({super.key, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        width: 72,
+        child: PrimaryButton(
+          label: 'Fix',
+          kind: ButtonKind.ink,
+          height: 48,
+          onPressed: onPressed,
+        ),
+      );
 }

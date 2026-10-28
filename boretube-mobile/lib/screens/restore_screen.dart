@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,13 +10,16 @@ import '../ops/restore_planner.dart';
 import '../providers/agent_providers.dart';
 import '../providers/tv_providers.dart';
 import '../ui/components.dart';
+import '../ui/controls.dart';
 import '../ui/format.dart';
 import '../ui/tokens.dart';
+import '../ui/tubby.dart';
 import 'tv/common.dart';
 
 const _confirmWord = 'RESTORE';
 
-/// TV › Settings › Restore TV: put the TV back, over ADB, step by step.
+/// Put the TV back the way it was: over Home mode, step by step, checked
+/// and logged. Works even if Always On is broken.
 class RestoreScreen extends ConsumerStatefulWidget {
   const RestoreScreen({super.key});
 
@@ -54,6 +59,7 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
     final runner = await ref.read(restoreRunnerProvider.future);
     if (runner == null || !mounted) return;
     FocusScope.of(context).unfocus();
+    unawaited(HapticFeedback.mediumImpact());
     setState(() {
       _running = plan;
       _results = List.filled(plan.actions.length, null);
@@ -75,310 +81,278 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
     }
     ref.invalidate(journalEntriesProvider);
     ref.invalidate(healthProvider);
-    if (mounted) setState(() => _done = true);
+    if (mounted) {
+      unawaited(HapticFeedback.mediumImpact());
+      setState(() => _done = true);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final hasAdb = ref.watch(activeHasAdbProvider);
-    return Scaffold(
-      appBar: AppBar(title: const Text('Restore TV')),
-      body: !hasAdb
-          ? const AdbRequired(what: 'Restore')
-          : _running != null
-              ? _progress(context)
-              : _chooser(context),
+    final running = _running != null;
+    return PopScope(
+      canPop: !running || _done,
+      child: !hasAdb
+          ? Scaffold(
+              appBar: AppBar(),
+              body: const AdbRequired(what: 'Putting the TV back'),
+            )
+          : DetailPage(
+              title: running
+                  ? (_done ? 'Done' : 'Putting it back…')
+                  : 'Put the TV back',
+              subtitle: running
+                  ? null
+                  : 'Runs from this phone directly, so it works even if '
+                      'Always On is broken. Every step is checked and kept '
+                      'in History.',
+              children: running ? _progress(context) : _chooser(context),
+            ),
     );
   }
 
-  Widget _chooser(BuildContext context) {
+  List<Widget> _chooser(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final bt = context.bt;
     final plan = ref.watch(restorePlanProvider(_req));
     final ready = plan.valueOrNull;
-    final canRun =
-        ready != null && !ready.isEmpty && _confirm.text.trim() == _confirmWord;
-    return ListView(
-      padding: tvListPadding,
-      children: [
+    final matches = _confirm.text.trim().toUpperCase() == _confirmWord;
+    final canRun = ready != null && !ready.isEmpty && matches;
+    return [
+      const SectionHeader(
+        'How far back',
+        padding: EdgeInsets.fromLTRB(Gap.xs, 0, Gap.xs, Gap.sm),
+      ),
+      ChoiceCard(
+        key: const Key('restore-undo'),
+        selected: _target == RestoreTarget.undoBoretube,
+        icon: Icons.undo_rounded,
+        title: 'Undo boretube',
+        body: 'Only what boretube changed: apps it switched off come back, '
+            'YouTube returns if boretube hid it, and Always On is removed.',
+        onTap: () => setState(() => _target = RestoreTarget.undoBoretube),
+      ),
+      const SizedBox(height: Gap.sm),
+      ChoiceCard(
+        key: const Key('restore-stock'),
+        selected: _target == RestoreTarget.stock,
+        icon: Icons.tv_rounded,
+        title: 'Like a new TV',
+        body: 'Every clean-up app back on, YouTube and YouTube Music back, '
+            'Always On removed. Things the TV needs are never touched.',
+        onTap: () => setState(() => _target = RestoreTarget.stock),
+        footer: _target == RestoreTarget.stock
+            ? SwitchLine(
+                key: const Key('restore-helper'),
+                title: 'Also undo the calm home screen',
+                subtitle: 'The Home button goes back to Google TV\'s own '
+                    'home. The launcher app stays installed.',
+                value: _helper,
+                onChanged: (v) => setState(() => _helper = v),
+              )
+            : null,
+      ),
+      SectionHeader(
+        'What will happen',
+        trailing: TextButton(
+          key: const Key('restore-show-commands'),
+          style: TextButton.styleFrom(foregroundColor: bt.muted),
+          onPressed: () => setState(() => _commands = !_commands),
+          child: Text(_commands ? 'Hide details' : 'Exact commands'),
+        ),
+      ),
+      plan.when(
+        loading: () => const SkeletonCard(rows: 4),
+        error: (e, _) => InfoCard(
+          child: EmptyState(
+            icon: Icons.wifi_off_rounded,
+            tone: Tone.bad,
+            title: 'Couldn\'t read the TV',
+            message: 'Is it on and on this Wi-Fi? Then try again.',
+            actionLabel: 'Try again',
+            onAction: () => ref.invalidate(restorePlanProvider(_req)),
+          ),
+        ),
+        data: (p) => p == null
+            ? const SizedBox.shrink()
+            : _PlanPreview(plan: p, commands: _commands),
+      ),
+      if (ready != null && !ready.isEmpty) ...[
+        const SizedBox(height: Gap.xl),
         InfoCard(
-          child: Row(
+          key: const Key('restore-confirm-card'),
+          color: bt.berryTint,
+          borderColor: bt.berryBorder,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              IconBadge(
-                icon: Icons.settings_backup_restore_rounded,
-                color: Tone.accent.color(context),
-                size: 44,
-              ),
-              const SizedBox(width: Gap.md),
-              Expanded(
-                child: Text(
-                  'Put the TV back the way it was. This runs from your '
-                  'phone directly, so it works even if Always On is broken. '
-                  'Every step is checked and logged in Activity.',
-                  style: text.bodyMedium,
+              Text.rich(
+                TextSpan(
+                  style: text.titleSmall!.copyWith(color: bt.berryInk),
+                  children: const [
+                    TextSpan(text: 'To be sure, type '),
+                    TextSpan(
+                      text: _confirmWord,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  ],
                 ),
+              ),
+              const SizedBox(height: Gap.sm),
+              TextField(
+                key: const Key('restore-confirm'),
+                controller: _confirm,
+                textCapitalization: TextCapitalization.characters,
+                autocorrect: false,
+                enableSuggestions: false,
+                style: text.titleMedium!.copyWith(letterSpacing: 2),
+                decoration: InputDecoration(
+                  hintText: _confirmWord,
+                  suffixIcon: AnimatedSwitcher(
+                    duration: Motion.of(context, Motion.fast),
+                    child: matches
+                        ? Icon(
+                            Icons.check_circle_rounded,
+                            key: const ValueKey('ok'),
+                            color: bt.mintInk,
+                          )
+                        : const SizedBox(key: ValueKey('no'), width: 24),
+                  ),
+                ),
+              ),
+              const SizedBox(height: Gap.md),
+              PrimaryButton(
+                key: const Key('restore-run'),
+                kind: ButtonKind.berry,
+                icon: Icons.settings_backup_restore_rounded,
+                label: 'Put it back · ${ready.actions.length} '
+                    'step${ready.actions.length == 1 ? '' : 's'}',
+                onPressed: canRun ? () => _run(ready) : null,
               ),
             ],
           ),
         ),
-        const SectionHeader('How far back'),
-        _TargetCard(
-          key: const Key('restore-undo'),
-          selected: _target == RestoreTarget.undoBoretube,
-          icon: Icons.undo_rounded,
-          title: 'Undo boretube',
-          body: 'Reverses only what boretube changed: turns back on the '
-              'apps it turned off, puts stock YouTube back if boretube '
-              'removed it, and removes Always On.',
-          onTap: () => setState(() => _target = RestoreTarget.undoBoretube),
-        ),
         const SizedBox(height: Gap.md),
-        _TargetCard(
-          key: const Key('restore-stock'),
-          selected: _target == RestoreTarget.stock,
-          icon: Icons.tv_rounded,
-          title: 'Back to stock',
-          body: 'Like a new TV: turns every clean-up app back on, puts back '
-              'YouTube and YouTube Music, and removes Always On. System apps '
-              '(Wi-Fi setup, Google TV home, screensaver) are never touched.',
-          onTap: () => setState(() => _target = RestoreTarget.stock),
-          footer: _target == RestoreTarget.stock
-              ? CheckboxListTile(
-                  key: const Key('restore-helper'),
-                  contentPadding: EdgeInsets.zero,
-                  controlAffinity: ListTileControlAffinity.leading,
-                  value: _helper,
-                  onChanged: (v) => setState(() => _helper = v ?? false),
-                  title: const Text('Also remove the custom launcher helper'),
-                  subtitle: const Text(
-                    'Home goes back to Google TV\'s own home screen. The '
-                    'launcher app itself stays installed.',
-                  ),
-                )
-              : null,
+        Text(
+          'Keep this app open while it runs, and wait a minute before '
+          'restarting the TV so the changes stick.',
+          textAlign: TextAlign.center,
+          style: text.bodySmall,
         ),
-        SectionHeader(
-          'What will happen',
-          trailing: TextButton.icon(
-            key: const Key('restore-show-commands'),
-            onPressed: () => setState(() => _commands = !_commands),
-            icon: Icon(
-              _commands ? Icons.expand_less_rounded : Icons.code_rounded,
-              size: 18,
-            ),
-            label: Text(_commands ? 'Hide commands' : 'Exact commands'),
-          ),
-        ),
-        plan.when(
-          loading: () => const SkeletonCard(rows: 4),
-          error: (e, _) => InfoCard(
-            child: EmptyState(
-              icon: Icons.wifi_off_rounded,
-              tone: Tone.bad,
-              title: 'Couldn\'t read the TV',
-              message: '$e',
-              actionLabel: 'Try again',
-              onAction: () => ref.invalidate(restorePlanProvider(_req)),
-            ),
-          ),
-          data: (p) => p == null
-              ? const SizedBox.shrink()
-              : _PlanPreview(plan: p, commands: _commands),
-        ),
-        const SizedBox(height: Gap.xl),
-        if (ready != null && !ready.isEmpty) ...[
-          Text(
-            'Type $_confirmWord to confirm',
-            style: text.titleSmall,
-          ),
-          const SizedBox(height: Gap.sm),
-          TextField(
-            key: const Key('restore-confirm'),
-            controller: _confirm,
-            textCapitalization: TextCapitalization.characters,
-            autocorrect: false,
-            decoration: const InputDecoration(
-              hintText: _confirmWord,
-              prefixIcon: Icon(Icons.keyboard_rounded),
-            ),
-          ),
-          const SizedBox(height: Gap.md),
-          FilledButton.icon(
-            key: const Key('restore-run'),
-            onPressed: canRun ? () => _run(ready) : null,
-            icon: const Icon(Icons.settings_backup_restore_rounded),
-            label: Text(
-              'Restore TV · ${ready.actions.length} '
-              'step${ready.actions.length == 1 ? '' : 's'}',
-            ),
-          ),
-        ],
-        const SectionHeader('Baseline snapshot'),
-        const _BaselineCard(),
       ],
-    );
+    ];
   }
 
-  Widget _progress(BuildContext context) {
+  List<Widget> _progress(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final status = StatusColors.of(context);
+    final bt = context.bt;
     final plan = _running!;
     final actions = plan.actions;
     final finished = _results.whereType<RestoreStepResult>().toList();
     final failed = finished.where((r) => !r.ok).toList();
-    return ListView(
-      padding: tvListPadding,
-      children: [
-        if (_done)
-          InfoCard(
-            key: const Key('restore-summary'),
-            padding: const EdgeInsets.all(Gap.xl),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                IconBadge(
-                  icon: failed.isEmpty
-                      ? Icons.check_circle_rounded
-                      : Icons.report_rounded,
-                  color: failed.isEmpty ? status.ok : status.warn,
-                  size: 52,
-                ),
-                const SizedBox(height: Gap.lg),
-                Text(
-                  failed.isEmpty
-                      ? 'TV restored'
-                      : '${finished.length - failed.length} of '
-                          '${finished.length} steps worked',
-                  style: text.headlineSmall,
-                ),
-                const SizedBox(height: Gap.sm),
-                Text(
-                  failed.isEmpty
-                      ? 'Every step was checked on the TV. Wait a minute '
-                          'before restarting the TV so the changes stick.'
-                      : 'The rest still ran. You can run Restore again to '
-                          'retry what didn\'t work. Wait a minute before '
-                          'restarting the TV.',
-                  style: text.bodyMedium,
-                ),
-                const SizedBox(height: Gap.lg),
-                FilledButton(
-                  onPressed: () => Navigator.of(context).maybePop(),
-                  child: const Text('Done'),
-                ),
-              ],
-            ),
-          )
-        else
-          InfoCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text('Restoring…', style: text.titleLarge),
-                const SizedBox(height: Gap.md),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(Radii.pill),
-                  child: LinearProgressIndicator(
-                    minHeight: 6,
-                    value: actions.isEmpty
-                        ? null
-                        : finished.length / actions.length,
-                  ),
-                ),
-                const SizedBox(height: Gap.sm),
-                Text(
-                  '${finished.length} of ${actions.length} · keep the app '
-                  'open',
-                  style: text.bodySmall,
-                ),
-              ],
-            ),
-          ),
-        SectionHeader('Steps · ${actions.length}'),
-        GroupCard(
-          children: [
-            for (var i = 0; i < actions.length; i++)
-              _ResultRow(
-                key: Key('restore-step-$i'),
-                step: actions[i],
-                result: _results[i],
-                running: i == finished.length && !_done,
-              ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _TargetCard extends StatelessWidget {
-  final bool selected;
-  final IconData icon;
-  final String title;
-  final String body;
-  final VoidCallback onTap;
-  final Widget? footer;
-
-  const _TargetCard({
-    super.key,
-    required this.selected,
-    required this.icon,
-    required this.title,
-    required this.body,
-    required this.onTap,
-    this.footer,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final text = Theme.of(context).textTheme;
-    final accent = scheme.primary;
-    return InfoCard(
-      onTap: onTap,
-      color: selected
-          ? Color.alphaBlend(
-              accent.withValues(alpha: 0.10),
-              scheme.surfaceContainerLow,
-            )
-          : null,
-      borderColor: selected ? accent.withValues(alpha: 0.7) : null,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return [
+      if (_done)
+        InfoCard(
+          key: const Key('restore-summary'),
+          radius: Radii.hero,
+          color: failed.isEmpty ? bt.mintTint : bt.sunTint,
+          borderColor: failed.isEmpty ? bt.mintTint : bt.sunTint,
+          padding: const EdgeInsets.all(Gap.xl),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              IconBadge(
-                icon: icon,
-                color: selected ? accent : StatusColors.of(context).idle,
+              Tubby(
+                mood: failed.isEmpty ? TubbyMood.cleaning : TubbyMood.calm,
+                size: 64,
+                beaming: failed.isEmpty,
+                animate: false,
               ),
-              const SizedBox(width: Gap.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: text.titleMedium),
-                    const SizedBox(height: 2),
-                    Text(body, style: text.bodySmall),
-                  ],
-                ),
+              const SizedBox(height: Gap.lg),
+              Text(
+                failed.isEmpty
+                    ? 'The TV is back the way it was'
+                    : '${finished.length - failed.length} of '
+                        '${finished.length} steps worked',
+                style: text.headlineMedium,
               ),
-              const SizedBox(width: Gap.sm),
-              Icon(
-                selected
-                    ? Icons.radio_button_checked_rounded
-                    : Icons.radio_button_unchecked_rounded,
-                color: selected ? accent : scheme.onSurfaceVariant,
+              const SizedBox(height: Gap.sm),
+              Text(
+                failed.isEmpty
+                    ? 'Every step was checked on the TV. Wait a minute '
+                        'before restarting the TV so the changes stick.'
+                    : 'The rest still ran. Run it again to retry what '
+                        'didn\'t work. Wait a minute before restarting the '
+                        'TV.',
+                style: text.bodyMedium,
+              ),
+              const SizedBox(height: Gap.lg),
+              PrimaryButton(
+                label: 'Done',
+                kind: ButtonKind.ink,
+                onPressed: () => Navigator.of(context).maybePop(),
               ),
             ],
           ),
-          if (footer != null) ...[
-            const SizedBox(height: Gap.sm),
-            footer!,
-          ],
+        )
+      else
+        InfoCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${finished.length} of ${actions.length}',
+                      style: Fonts.bricolage(
+                        28,
+                        color: bt.ink,
+                        tabularFigures: true,
+                      ),
+                    ),
+                  ),
+                  const DelayedSpinner(color: Color(0xFF3A8DFF), size: 18),
+                ],
+              ),
+              const SizedBox(height: Gap.md),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(Radii.pill),
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(
+                    end: actions.isEmpty ? 0 : finished.length / actions.length,
+                  ),
+                  duration: Motion.of(context, Motion.slow),
+                  curve: Motion.settle,
+                  builder: (context, v, _) => LinearProgressIndicator(
+                    minHeight: 8,
+                    value: v,
+                    color: bt.mint,
+                    backgroundColor: bt.hairline,
+                  ),
+                ),
+              ),
+              const SizedBox(height: Gap.sm),
+              Text('Keep this app open', style: text.bodySmall),
+            ],
+          ),
+        ),
+      SectionHeader('Steps · ${actions.length}'),
+      GroupCard(
+        children: [
+          for (var i = 0; i < actions.length; i++)
+            _ResultRow(
+              key: Key('restore-step-$i'),
+              step: actions[i],
+              result: _results[i],
+              running: i == finished.length && !_done,
+            ),
         ],
       ),
-    );
+    ];
   }
 }
 
@@ -391,7 +365,7 @@ class _PlanPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final scheme = Theme.of(context).colorScheme;
+    final bt = context.bt;
     var n = 0;
     return GroupCard(
       children: [
@@ -411,29 +385,44 @@ class _PlanPreview extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(
+                Container(
                   width: 28,
+                  height: 28,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: s.runs ? bt.skyTint : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   child: s.runs
-                      ? Text('${++n}', style: text.titleSmall)
+                      ? Text(
+                          '${++n}',
+                          style: text.labelLarge!.copyWith(
+                            fontSize: 13,
+                            color: bt.skyInk,
+                            fontFeatures: Fonts.tabular,
+                          ),
+                        )
                       : Icon(
                           Icons.info_outline_rounded,
                           size: 18,
-                          color: scheme.onSurfaceVariant,
+                          color: bt.muted,
                         ),
                 ),
+                const SizedBox(width: Gap.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(s.title, style: text.titleSmall),
-                      if (s.why.isNotEmpty) Text(s.why, style: text.bodySmall),
+                      if (s.why.isNotEmpty && (commands || !s.runs))
+                        Text(s.why, style: text.bodySmall),
                       if (commands && s.command != null) ...[
                         const SizedBox(height: Gap.xs),
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(Gap.sm),
                           decoration: BoxDecoration(
-                            color: scheme.surfaceContainerHighest,
+                            color: bt.hairline,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: SelectableText(
@@ -472,18 +461,21 @@ class _ResultRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final r = result;
-    final s = StatusColors.of(context);
+    final bt = context.bt;
     final Widget trailing = r == null
         ? running
-            ? const SizedBox(
+            ? SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2.4),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.4,
+                  color: bt.sky,
+                ),
               )
-            : Icon(Icons.more_horiz_rounded, color: s.idle)
+            : Icon(Icons.more_horiz_rounded, color: bt.faint)
         : Icon(
             r.ok ? Icons.check_circle_rounded : Icons.cancel_rounded,
-            color: r.ok ? s.ok : s.bad,
+            color: r.ok ? bt.mint : bt.berry,
             key: Key(r.ok ? 'restore-ok' : 'restore-failed'),
           );
     return StatusRow(
@@ -498,9 +490,9 @@ class _ResultRow extends StatelessWidget {
       },
       title: step.title,
       detail: r == null
-          ? step.command
+          ? (running ? 'Working on it…' : 'Waiting')
           : r.ok
-              ? '${r.before} → ${r.after}'
+              ? 'Done · checked on the TV'
               : 'Didn\'t work: ${r.detail}',
       detailLines: 2,
       trailing: trailing,
@@ -508,8 +500,8 @@ class _ResultRow extends StatelessWidget {
   }
 }
 
-class _BaselineCard extends ConsumerWidget {
-  const _BaselineCard();
+class BaselineCard extends ConsumerWidget {
+  const BaselineCard({super.key});
 
   void _view(BuildContext context, TvBaseline b) {
     showDialog<void>(

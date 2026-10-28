@@ -45,18 +45,7 @@ class ActivitySection extends ConsumerWidget {
             ],
             data: (list) {
               if (list.isEmpty) {
-                return const [
-                  InfoCard(
-                    child: EmptyState(
-                      icon: Icons.history_rounded,
-                      tubby: TubbyMood.calm,
-                      title: 'Nothing has happened yet',
-                      message: 'Every change boretube or Always On makes to '
-                          'the TV shows up here, with what it was before. '
-                          'So you can always see, and undo.',
-                    ),
-                  ),
-                ];
+                return const [HistoryExplainer()];
               }
               final away = [
                 for (final i in list)
@@ -156,6 +145,99 @@ class JournalRow extends StatelessWidget {
           ? '${relativeTime(entry.time)} · ${entry.before} → ${entry.after}'
           : relativeTime(entry.time),
       detailLines: expanded ? 3 : 1,
+    );
+  }
+}
+
+/// History before anything happened: what will show up here, with a
+/// faded example of each kind, and the promise behind it.
+class HistoryExplainer extends StatelessWidget {
+  const HistoryExplainer({super.key});
+
+  static const _examples = [
+    (
+      Icons.close_rounded,
+      'SmartTube closed at bedtime',
+      'Routine',
+      Tone.warn,
+    ),
+    (
+      Icons.volume_down_rounded,
+      'Volume brought back to 30%',
+      'Always On',
+      Tone.ok,
+    ),
+    (
+      Icons.auto_awesome_rounded,
+      'Sony promo banners switched off',
+      'Phone',
+      Tone.idle,
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final bt = context.bt;
+    final text = Theme.of(context).textTheme;
+    return Column(
+      key: const Key('history-explainer'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        InfoCard(
+          padding: const EdgeInsets.all(Gap.xl),
+          child: Column(
+            children: [
+              const Tubby(mood: TubbyMood.calm, size: 88),
+              const SizedBox(height: Gap.lg),
+              Text(
+                'Nothing has happened yet',
+                style: text.titleLarge,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: Gap.xs),
+              Text(
+                'Every change boretube or Always On makes to the TV lands '
+                'here, with what it was before. So you can always see it, '
+                'and undo it.',
+                style: text.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+        const SectionHeader('What you\'ll see here'),
+        ExcludeSemantics(
+          child: Opacity(
+            opacity: 0.72,
+            child: GroupCard(
+              children: [
+                for (final (icon, title, who, tone) in _examples)
+                  StatusRow(
+                    tone: tone == Tone.idle ? Tone.info : tone,
+                    icon: icon,
+                    title: title,
+                    detail: 'Example · before → after',
+                    trailing: TagChip(who, tone: tone),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: Gap.md),
+        Row(
+          children: [
+            Icon(Icons.undo_rounded, size: 18, color: bt.muted),
+            const SizedBox(width: Gap.sm),
+            Expanded(
+              child: Text(
+                'Changed your mind? "Put the TV back the way it was" '
+                'undoes it all, from Better TV.',
+                style: text.bodySmall,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

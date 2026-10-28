@@ -9,6 +9,7 @@ import 'package:boretube_mobile/screens/restore_screen.dart';
 import 'package:boretube_mobile/screens/rules_tab.dart';
 import 'package:boretube_mobile/screens/rules/rules_editor.dart';
 import 'package:boretube_mobile/screens/tv/tv_guard_card.dart';
+import 'package:boretube_mobile/ui/components.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -74,8 +75,8 @@ void main() {
     testWidgets('not installed: explains and offers install', (tester) async {
       await pumpCard(tester, AgentLink.none);
       expect(find.byKey(const Key('tv-guard-invite')), findsOneWidget);
-      expect(find.textContaining('even when your'), findsOneWidget);
-      final b = tester.widget<FilledButton>(
+      expect(find.textContaining('even when you\'re out'), findsOneWidget);
+      final b = tester.widget<PrimaryButton>(
         find.byKey(const Key('tv-guard-install')),
       );
       expect(b.onPressed, isNotNull);
@@ -84,7 +85,7 @@ void main() {
     testWidgets('bundle missing: install disabled with a reason',
         (tester) async {
       await pumpCard(tester, AgentLink.none, missing: true);
-      final b = tester.widget<FilledButton>(
+      final b = tester.widget<PrimaryButton>(
         find.byKey(const Key('tv-guard-install')),
       );
       expect(b.onPressed, isNull);
@@ -96,7 +97,7 @@ void main() {
         tester,
         AgentLink(AgentLinkKind.up, status: agentStatus()),
       );
-      expect(find.text('v1.0.0 · up 3 h'), findsOneWidget);
+      expect(find.text('Guarding your routines · up 3 h'), findsOneWidget);
       expect(find.text('Enforcing'), findsOneWidget);
       expect(find.text('Allowed'), findsOneWidget);
       for (final k in ['pause', 'safe', 'repair', 'uninstall']) {
@@ -126,9 +127,9 @@ void main() {
         tester,
         AgentLink(AgentLinkKind.up, status: agentStatus(mode: AgentMode.safe)),
       );
-      expect(find.text('Leave safe mode'), findsOneWidget);
+      expect(find.text('Turn back on'), findsOneWidget);
       expect(find.byKey(const Key('tv-guard-safe')), findsNothing);
-      expect(find.text('Hands off'), findsOneWidget);
+      expect(find.text('Hands off'), findsWidgets);
     });
 
     testWidgets('down: red banner and Repair', (tester) async {
@@ -144,7 +145,7 @@ void main() {
         AgentLink(AgentLinkKind.up, status: agentStatus(buildChanged: true)),
       );
       expect(find.byKey(const Key('tv-guard-approve-banner')), findsOneWidget);
-      expect(find.text('Approve this TV update'), findsOneWidget);
+      expect(find.text('Approve update'), findsOneWidget);
     });
   });
 
@@ -191,8 +192,8 @@ void main() {
       );
       await settle(tester, 3);
       expect(find.byKey(const Key('setup-look-at-tv')), findsOneWidget);
-      expect(find.text('Look at the TV'), findsOneWidget);
-      expect(find.text('Allow TV Guard on the TV'), findsOneWidget);
+      expect(find.text('Look at your TV'), findsOneWidget);
+      expect(find.text('OK it on the TV'), findsOneWidget);
 
       c.add(
         InstallProgress(
@@ -295,9 +296,11 @@ void main() {
         (tester) async {
       conflictOnce = false;
       await pumpRules(tester);
-      expect(find.text('Rules on Living Room TV'), findsOneWidget);
+      expect(
+        find.text('Saved to Living Room TV · runs even when you\'re away'),
+        findsOneWidget,
+      );
       expect(find.textContaining('Rakesh\'s Pixel'), findsOneWidget);
-      expect(find.text('v3'), findsOneWidget);
       expect(find.text('SmartTube'), findsOneWidget);
       expect(find.byKey(const Key('rules-save-bar')), findsNothing);
 
@@ -313,9 +316,9 @@ void main() {
       expect(body['alwaysMute'], isTrue);
       expect(body['updatedBy'], 'Test phone');
       expect(body['updatedAt'], '2026-10-28T19:30:00.000Z');
-      expect(find.text('Saved to the TV'), findsOneWidget);
+      expect(find.text('Saved to the TV ✓'), findsOneWidget);
       expect(find.byKey(const Key('rules-save-bar')), findsNothing);
-      expect(find.text('v4'), findsOneWidget);
+      expect(find.textContaining('Test phone'), findsOneWidget);
     });
 
     testWidgets('409: shows who changed it; Overwrite resends on top',
@@ -335,8 +338,9 @@ void main() {
       await settle(tester);
 
       expect(find.byKey(const Key('rules-conflict')), findsOneWidget);
-      expect(find.text('TV has newer rules'), findsOneWidget);
-      expect(find.textContaining('Changed by Other phone'), findsOneWidget);
+      expect(find.text('The TV has newer rules'), findsOneWidget);
+      expect(find.textContaining('Other phone changed them'), findsOneWidget);
+      expect(find.text('Keep it silent'), findsWidgets);
       await tester.tap(find.byKey(const Key('rules-overwrite')));
       await settle(tester);
 
@@ -345,7 +349,7 @@ void main() {
       final second = jsonDecode(puts[1].body) as Map<String, dynamic>;
       expect(second['version'], 4);
       expect(second['alwaysMute'], isTrue);
-      expect(find.text('v5'), findsOneWidget);
+      expect(find.text('Saved to the TV ✓'), findsOneWidget);
     });
 
     testWidgets('409: Reload shows the TV\'s rules and drops the draft',
@@ -365,7 +369,6 @@ void main() {
       await tester.tap(find.byKey(const Key('rules-reload')));
       await settle(tester);
       expect(sent.where((r) => r.method == 'PUT'), hasLength(1));
-      expect(find.text('v4'), findsOneWidget);
       expect(find.textContaining('Other phone'), findsOneWidget);
       expect(find.byKey(const Key('rules-save-bar')), findsNothing);
       expect(find.textContaining('A friendly card'), findsOneWidget);
@@ -384,13 +387,14 @@ void main() {
       expect(overrides, hasLength(1));
       expect(overrides.single['kind'], 'muteUntil');
       expect(overrides.single['until'], '2026-10-28T20:00:00.000Z');
-      expect(find.textContaining('Muted · until'), findsOneWidget);
+      expect(find.textContaining('Quiet · until'), findsOneWidget);
     });
 
     testWidgets('add a quiet-hours row', (tester) async {
       conflictOnce = false;
       await pumpRules(tester);
       expect(find.byKey(const Key('rules-schedule-1')), findsNothing);
+      await tester.ensureVisible(find.byKey(const Key('rules-add-schedule')));
       await tester.tap(find.byKey(const Key('rules-add-schedule')));
       await settle(tester);
       expect(find.byKey(const Key('rules-schedule-1')), findsOneWidget);
@@ -444,19 +448,19 @@ void main() {
       expect(find.text('pm enable com.sony.dtv.promos'), findsOneWidget);
 
       Finder run() => find.byKey(const Key('restore-run'));
-      expect(tester.widget<FilledButton>(run()).onPressed, isNull);
+      expect(tester.widget<PrimaryButton>(run()).onPressed, isNull);
       await tester.enterText(
         find.byKey(const Key('restore-confirm')),
         'restor',
       );
       await settle(tester, 2);
-      expect(tester.widget<FilledButton>(run()).onPressed, isNull);
+      expect(tester.widget<PrimaryButton>(run()).onPressed, isNull);
       await tester.enterText(
         find.byKey(const Key('restore-confirm')),
         'RESTORE',
       );
       await settle(tester, 2);
-      expect(tester.widget<FilledButton>(run()).onPressed, isNotNull);
+      expect(tester.widget<PrimaryButton>(run()).onPressed, isNotNull);
       expect(find.textContaining('23 steps'), findsOneWidget);
 
       tv.failing.add('pm enable com.sonyliv');

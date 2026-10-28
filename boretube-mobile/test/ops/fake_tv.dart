@@ -34,6 +34,8 @@ class FakeTv implements AdbShell {
   };
   int volume = 12;
   bool muted = false;
+  String fingerprint =
+      'Sony/BRAVIA_VU3/BRAVIA_VU3:14/UKR1.240726.001/1234:user/release-keys';
 
   /// Commands (by prefix) that should exit non-zero without effect.
   final failing = <String>{};
@@ -64,6 +66,7 @@ class FakeTv implements AdbShell {
       c == TvOps.launcherCommand ||
       c.startsWith('dumpsys package ') ||
       c.startsWith('pidof ') ||
+      c.startsWith('getprop ') ||
       c == 'echo ok';
 
   String _list(Iterable<String> s) =>
@@ -205,6 +208,34 @@ class FakeTv implements AdbShell {
         }
       }
       return _ok();
+    }
+    if (c == 'getprop ro.build.fingerprint') return _ok('$fingerprint\n');
+    if (words.length == 3 && c.startsWith('pm uninstall ')) {
+      if (!installed.remove(last)) {
+        return const AdbShellResult('Failure [not installed]', 1);
+      }
+      all.remove(last);
+      disabled.remove(last);
+      return _ok('Success\n');
+    }
+    if (c == 'settings delete secure enabled_accessibility_services') {
+      a11y = 'null';
+      return _ok('Deleted 1 rows\n');
+    }
+    if (c == 'settings put secure accessibility_enabled 0') {
+      a11yEnabled = '0';
+      return _ok();
+    }
+    final putOnly = RegExp(
+      r"^settings put secure enabled_accessibility_services '([^']*)'$",
+    ).firstMatch(c);
+    if (putOnly != null) {
+      a11y = putOnly.group(1)!;
+      return _ok();
+    }
+    if (c.startsWith('cmd package set-home-activity ')) {
+      home = 'priority=0 preferredOrder=0 match=0x108000\n$last\n';
+      return _ok('Success\n');
     }
     final put = RegExp(
       r"^settings put secure enabled_accessibility_services '([^']*)' && "

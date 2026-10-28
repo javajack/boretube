@@ -355,6 +355,44 @@ class MediaGuardTest {
         assertNull(sneaky.single().card)
     }
 
+    /** No session at all for [secs] seconds (SmartTube between Shorts). */
+    private fun gap(g: MediaGuard, rules: Rules, secs: Int): List<MediaOutcome> =
+        (1..secs).map {
+            g.step(MediaSnapshot.NONE, ST, t, wall, today, rules, true).also { t += 1_000; wall += 1_000 }
+        }
+
+    private fun listenerShort(g: MediaGuard, rules: Rules, title: String, durMs: Long, secs: Int): List<MediaOutcome> =
+        (1..secs).map {
+            val s = MediaSnapshot(MediaSource.listener, listOf(MediaSample(ST, track(title, durMs), PlayState.playing, 0, 1f, t)))
+            g.step(s, ST, t, wall, today, rules, true).also { t += 1_000; wall += 1_000 }
+        }
+
+    // Replays the pattern recorded on the VU3 (2026-10-29): SmartTube drops its
+    // session for ~4–5 s between Shorts, then a new one appears with the next
+    // title and a known duration (18 s, 35 s, 73 s, 23 s, 18 s).
+    @Test fun shortsAcrossSessionGapsAreDetected() {
+        val g = MediaGuard()
+        val r = rules("block")
+        val out = mutableListOf<MediaOutcome>()
+        for ((title, dur) in listOf("Border" to 18_000L, "Dandiya" to 35_000L, "Supercar" to 73_000L, "RPG-7" to 23_000L)) {
+            out += gap(g, r, 5)
+            out += listenerShort(g, r, title, dur, 10)
+        }
+        val closes = out.mapNotNull { it.close }
+        assertTrue("Shorts across session gaps must be blocked", closes.isNotEmpty())
+        assertEquals("shortsBlock", closes.first().reason)
+    }
+
+    @Test fun aLongGapStartsOver() {
+        val g = MediaGuard()
+        val r = rules("block")
+        listenerShort(g, r, "A", 20_000, 10)
+        listenerShort(g, r, "B", 20_000, 10)
+        gap(g, r, 70) // left the app for over a minute
+        val out = listenerShort(g, r, "C", 20_000, 10)
+        assertTrue(out.none { it.close != null })
+    }
+
     @Test fun neverActsWhilePausedOrSafe() {
         val g = MediaGuard()
         val out = shorts(g, rules("block"), 5, enforce = false)

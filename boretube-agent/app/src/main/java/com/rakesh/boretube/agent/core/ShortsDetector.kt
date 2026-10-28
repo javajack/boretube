@@ -49,8 +49,11 @@ class ShortsDetector(
     private val minTitles: Int = 3,
     private val shortDurationMs: Long = 180_000,
     private val minPlayedMs: Long = 1_000,
+    /** Steps (about 1 s each) with no media session before the run is dropped. */
+    private val maxGapSteps: Int = 60,
 ) {
     private var pkg: String? = null
+    private var gapSteps = 0
     private val finished = ArrayDeque<TrackRecord>()
     private val counted = HashSet<Long>()
     var active = false
@@ -58,6 +61,7 @@ class ShortsDetector(
 
     fun reset(newPkg: String? = null) {
         pkg = newPkg
+        gapSteps = 0
         finished.clear()
         counted.clear()
         active = false
@@ -74,12 +78,21 @@ class ShortsDetector(
      * timeline just finished (if any); [current] and [playClockMs] from the timeline.
      */
     fun step(followedPkg: String?, done: TrackRecord?, current: TrackRecord?, playClockMs: Long): ShortsStep {
-        if (followedPkg != pkg) reset(followedPkg)
-        if (followedPkg == null || followedPkg !in MediaSnapshot.VIDEO_PACKAGES) {
+        // SmartTube tears its media session down for ~4–5 s between Shorts
+        // (verified on the VU3), so "no session" must not end the run: keep
+        // following the last app until [maxGapSteps] steps pass with nothing.
+        if (followedPkg == null) {
+            if (++gapSteps > maxGapSteps) reset(null)
+        } else {
+            gapSteps = 0
+            if (followedPkg != pkg) reset(followedPkg)
+        }
+        val followed = followedPkg ?: pkg
+        if (followed == null || followed !in MediaSnapshot.VIDEO_PACKAGES) {
             active = false
             return ShortsStep(false)
         }
-        if (done != null && done.track.pkg == followedPkg && done.playedMs >= minPlayedMs) finished.addLast(done)
+        if (done != null && done.track.pkg == followed && done.playedMs >= minPlayedMs) finished.addLast(done)
         val from = playClockMs - windowMs
         while (finished.isNotEmpty() && finished.first().endPlayMs < from) finished.removeFirst()
         val window = finished.toMutableList()

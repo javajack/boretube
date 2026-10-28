@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../adb/adb_connection.dart';
@@ -836,9 +838,36 @@ class TvOps {
     );
   }
 
-  /// Mutes or unmutes in one round trip: the TV only gets the mute key if
-  /// it is in the other state. Returns null when already in that state.
+  /// Mutes or unmutes. The TV only honours the mute *toggle* key, so the
+  /// state must be known first. Fast path: a fresh polled state says the
+  /// TV is in the other state, so the key goes out alone (~0.1 s) and a
+  /// background read corrects it if the TV ended up wrong (e.g. the remote
+  /// toggled it meanwhile). Otherwise: read, press if needed and verify in
+  /// one round trip. Returns null when already in that state.
   Future<JournalEntry?> setMuted(bool muted) async {
+    final cached = cachedVolume;
+    if (cached != null && cached.muted != muted) {
+      final sent = await _sh('input keyevent KEYCODE_VOLUME_MUTE',
+          urgent: true);
+      if (sent.ok) {
+        final predicted = VolumeState(
+          level: cached.level,
+          min: cached.min,
+          max: cached.max,
+          muted: muted,
+        );
+        _seeVolume(predicted);
+        unawaited(_confirmMuted(muted));
+        return _record(
+          op: muted ? 'mute' : 'unmute',
+          target: 'sound',
+          before: '$cached',
+          after: '$predicted',
+          undo: 'input keyevent KEYCODE_VOLUME_MUTE',
+          ok: true,
+        );
+      }
+    }
     final r = await _keys(setMutedCommand(muted), (_, a) => a.muted == muted);
     final before = r.before;
     if (before == null) throw StateError('Could not read mute state');
@@ -852,6 +881,31 @@ class TvOps {
       ok: r.after?.muted == muted,
     );
   }
+
+  /// Background check after a fast-path mute: if the TV disagrees, fix it
+  /// with the careful read-press-verify command.
+  Future<void> _confirmMuted(bool muted) async {
+    try {
+      await Future<void>.delayed(confirmDelay);
+      final v = _seeVolume(parseVolume((await _sh(volumeCommand)).stdout));
+      if (v == null || v.muted == muted) return;
+      final r = await _keys(setMutedCommand(muted), (_, a) => a.muted == muted);
+      await _record(
+        op: muted ? 'mute' : 'unmute',
+        target: 'sound (corrected)',
+        before: '${r.before}',
+        after: '${r.after}',
+        undo: 'input keyevent KEYCODE_VOLUME_MUTE',
+        ok: r.after?.muted == muted,
+      );
+    } catch (_) {
+      // The next poll reconciles the UI either way.
+    }
+  }
+
+  /// How long a fast-path mute waits before its background check.
+  @visibleForTesting
+  static Duration confirmDelay = const Duration(milliseconds: 250);
 
   // ── parsers (pure; exposed for tests) ──
 

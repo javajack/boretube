@@ -135,6 +135,35 @@ void main() {
       expect(tv.writes, ['input keyevent KEYCODE_VOLUME_MUTE']);
     });
 
+    test('fresh poll: mute key goes out alone, then a background check',
+        () async {
+      TvOps.confirmDelay = Duration.zero;
+      await ops.status(); // poll: unmuted
+      tv.log.clear();
+      final e = await ops.setMuted(true);
+      expect(e!.ok, isTrue);
+      expect(tv.log, ['input keyevent KEYCODE_VOLUME_MUTE']);
+      expect(tv.muted, isTrue);
+      expect(ops.cachedVolume!.muted, isTrue);
+      await pumpEventQueue();
+      expect(tv.log, [
+        'input keyevent KEYCODE_VOLUME_MUTE',
+        TvOps.volumeCommand,
+      ]);
+    });
+
+    test('fast path corrects itself when the TV ended up wrong', () async {
+      TvOps.confirmDelay = Duration.zero;
+      await ops.status(); // poll: unmuted
+      tv.muted = true; // the remote muted it since the poll
+      tv.log.clear();
+      await ops.setMuted(true); // blind key toggles it back to unmuted
+      expect(tv.muted, isFalse);
+      await pumpEventQueue();
+      expect(tv.muted, isTrue);
+      expect(tv.log.last, TvOps.setMutedCommand(true));
+    });
+
     test('mute that lags dumpsys gets one re-read, then reports', () async {
       tv.muteReflected = false;
       final e = await ops.setMuted(true);

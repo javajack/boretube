@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/now_playing.dart';
 import '../../ui/components.dart';
+import '../../ui/learn.dart';
 import '../../ui/tokens.dart';
 import 'home_logic.dart';
 
@@ -85,7 +86,15 @@ class WhatWorksSheet extends StatelessWidget {
             ],
           ],
         ),
-        const SizedBox(height: Gap.lg),
+        const SizedBox(height: Gap.xs),
+        const Wrap(
+          spacing: Gap.xs,
+          children: [
+            _LearnLink('What\'s Home mode?', LearnTerm.homeMode),
+            _LearnLink('What\'s Always On?', LearnTerm.alwaysOn),
+          ],
+        ),
+        const SizedBox(height: Gap.sm),
         InfoCard(
           padding: const EdgeInsets.symmetric(
             horizontal: Gap.lg,
@@ -152,6 +161,29 @@ class WhatWorksSheet extends StatelessWidget {
             style: text.bodySmall,
           ),
       ],
+    );
+  }
+}
+
+/// "What's Home mode? ⓘ": a quiet link to the term's Learn sheet.
+class _LearnLink extends StatelessWidget {
+  final String label;
+  final LearnTerm term;
+
+  const _LearnLink(this.label, this.term);
+
+  @override
+  Widget build(BuildContext context) {
+    final bt = context.bt;
+    return TextButton.icon(
+      key: Key('works-learn-${term.name}'),
+      style: TextButton.styleFrom(
+        foregroundColor: bt.skyInk,
+        padding: const EdgeInsets.symmetric(horizontal: Gap.sm),
+      ),
+      onPressed: () => showLearnSheet(context, term),
+      icon: const Icon(Icons.info_outline_rounded, size: 18),
+      label: Text(label),
     );
   }
 }
@@ -341,6 +373,7 @@ class MoreSheet extends StatelessWidget {
                 title: 'Make it boring',
                 detail: 'Closes the app and mutes. The TV just sits there.',
                 detailLines: 2,
+                trailing: const InfoDot(LearnTerm.makeItBoring),
                 onTap: () => pop(onBore!),
               ),
             if (onSoundBack != null)

@@ -232,7 +232,7 @@ int? minutesUntilBedtime(List<ScheduleRow> schedule, DateTime now) {
 
 // ── Journals ──
 
-bool _isStop(JournalEntry e) =>
+bool isStopEntry(JournalEntry e) =>
     e.ok &&
     (e.op == 'stopApp' ||
         e.op == 'closeApp' ||
@@ -244,11 +244,11 @@ bool _isStop(JournalEntry e) =>
 int stopsToday(Iterable<ActivityItem> items, DateTime now) {
   final day = DateTime(now.year, now.month, now.day);
   return items
-      .where((i) => !i.entry.time.isBefore(day) && _isStop(i.entry))
+      .where((i) => !i.entry.time.isBefore(day) && isStopEntry(i.entry))
       .length;
 }
 
-String _appOf(JournalEntry e) {
+String stoppedAppOf(JournalEntry e) {
   final t = e.op == 'break' ? e.target.replaceFirst('closed ', '') : e.target;
   return t.contains('.') ? appLabel(t) : t;
 }
@@ -260,8 +260,8 @@ List<String> breakDigest(Iterable<ActivityItem> items, DateTime since) {
   for (final i in items) {
     final e = i.entry;
     if (e.time.isBefore(since) || !e.ok) continue;
-    if (_isStop(e)) {
-      final a = _appOf(e);
+    if (isStopEntry(e)) {
+      final a = stoppedAppOf(e);
       closed[a] = (closed[a] ?? 0) + 1;
     } else if ((e.op == 'break' && e.target == 're-muted') ||
         (e.op == 'mute' && i.source == JournalSource.rule)) {
@@ -288,8 +288,8 @@ String? awayDigest(Iterable<ActivityItem> items, DateTime since) {
     final e = i.entry;
     if (i.source == JournalSource.phone || !e.time.isAfter(since)) continue;
     if (!e.ok) continue;
-    if (_isStop(e)) {
-      final a = _appOf(e);
+    if (isStopEntry(e)) {
+      final a = stoppedAppOf(e);
       closed[a] = (closed[a] ?? 0) + 1;
     } else if (e.op == 'mute' || e.op == 'clampVolume') {
       quiet++;

@@ -8,10 +8,12 @@ import 'package:go_router/go_router.dart';
 
 import '../../actions/actions_service.dart';
 import '../../agent/agent_client.dart';
+import '../../ops/health.dart';
 import '../../ops/tv_ops.dart';
 import '../../providers/agent_providers.dart';
 import '../../providers/break_provider.dart';
 import '../../providers/now_playing.dart';
+import '../../providers/nudges.dart';
 import '../../providers/tv_providers.dart';
 import '../../providers/ui_providers.dart';
 import '../../tv/tv.dart';
@@ -27,6 +29,7 @@ import 'home_cards.dart';
 import 'home_hero.dart';
 import 'home_logic.dart';
 import 'home_sheets.dart';
+import 'nudge_card.dart';
 import 'plan.dart';
 
 /// Home: right now. One hero, one big Pause button, a few quick actions,
@@ -129,6 +132,7 @@ class _HomeTabState extends ConsumerState<HomeTab> {
     );
     if (!ok || id == null) return;
     await ref.read(breakStartLogProvider).mark(id, started);
+    if (!silenceOnly) await ref.read(nudgeStoreProvider).logPause(started);
     if (!silenceOnly &&
         await ref.read(momentsProvider).claim(Moments.firstPause) &&
         mounted) {
@@ -146,11 +150,19 @@ class _HomeTabState extends ConsumerState<HomeTab> {
   void _openVolume() => showBtSheet<void>(
         context,
         builder: (_) => VolumeSheet(
-          onSet: (v) => _run(
-            QuickAction.volume,
-            () async => _actions?.setVolume(v),
-            optimistic: (s) => s.copyWith(volume: v),
-          ),
+          onSet: (v) async {
+            final before = ref.read(nowPlayingProvider).volume;
+            final ok = await _run(
+              QuickAction.volume,
+              () async => _actions?.setVolume(v),
+              optimistic: (s) => s.copyWith(volume: v),
+            );
+            if (ok && before != null && v < before) {
+              await ref
+                  .read(nudgeStoreProvider)
+                  .logVolumeDown(ref.read(nudgeClockProvider)());
+            }
+          },
         ),
       );
 
@@ -245,6 +257,66 @@ class _HomeTabState extends ConsumerState<HomeTab> {
     }
   }
 
+  // ── Nudges: one gentle suggestion per app open ──
+
+  Future<void> _actOnNudge(Nudge n, String tvId) async {
+    await ref.read(nudgeSessionProvider).acted();
+    if (n.id == NudgeId.reviewUpdate) {
+      await ref.read(nudgeStoreProvider).buildReviewed(tvId);
+    }
+    if (!mounted) return;
+    switch (n.target) {
+      case NudgeTarget.routines:
+        ref.read(shellTabProvider.notifier).state = 1;
+      case NudgeTarget.betterTv:
+        ref.read(betterTvFocusProvider.notifier).state = n.focus;
+        ref.read(shellTabProvider.notifier).state = 2;
+      case NudgeTarget.addTv:
+        await context.push('/onboarding?add=1');
+    }
+  }
+
+  Nudge? _nudge({
+    required Tv tv,
+    required AgentLink link,
+    required AgentRules? rules,
+    required AppState? yt,
+    required List<ActivityItem> activity,
+    required DateTime? since,
+    required bool busy,
+    required bool problem,
+  }) {
+    final store = ref.watch(nudgeStoreProvider);
+    final session = ref.watch(nudgeSessionProvider);
+    final now = ref.read(nudgeClockProvider)();
+    final hasAdb = tv.can(TvCapability.adb);
+    final health = hasAdb
+        ? ref.watch(healthProvider).valueOrNull ?? const <HealthCheck>[]
+        : const <HealthCheck>[];
+    final build = hasAdb
+        ? ref.watch(profileMatchProvider).valueOrNull?.props.buildId
+        : null;
+    final inputs = NudgeInputs(
+      now: now,
+      pauses: store.pauses,
+      volumeDowns: store.volumeDowns,
+      activity: activity,
+      alwaysOn: link.installed,
+      hasAdb: hasAdb,
+      adbSince: hasAdb ? store.adbSince(tv.id, now) : null,
+      rules: rules,
+      status: link.status,
+      health: health,
+      stockYouTubeInstalled: yt == null ? null : yt == AppState.enabled,
+      firstOpen: store.firstOpen(now),
+      lastVisit: since,
+      buildChanged: build != null && store.noteBuild(tv.id, build),
+      unsavedTvs: store.unsavedTvs,
+      problem: problem,
+    );
+    return session.choose(nudgeCandidates(inputs), now: now, busy: busy);
+  }
+
   void _planStep(PlanStep s) {
     final tab = ref.read(shellTabProvider.notifier);
     switch (s) {
@@ -254,6 +326,8 @@ class _HomeTabState extends ConsumerState<HomeTab> {
         context.push('/adb-guide');
       case PlanStep.noShorts || PlanStep.cleanTv:
         tab.state = 2;
+        ref.read(betterTvFocusProvider.notifier).state =
+            s == PlanStep.noShorts ? 'noShorts' : 'cleanTv';
       case PlanStep.bedtime:
         tab.state = 1;
       case PlanStep.alwaysOn:
@@ -387,9 +461,49 @@ class _HomeTabState extends ConsumerState<HomeTab> {
     final pauseMinutes = ref.watch(pauseChoiceProvider);
     final chosen = pauseMinutes == 0 && untilBed == null ? 30 : pauseMinutes;
     final canPause = supported.contains(QuickAction.takeBreak) && !offline;
+    final nudge = _nudge(
+      tv: tv,
+      link: link,
+      rules: rules,
+      yt: yt,
+      activity: activity,
+      since: since,
+      busy: _inflight.isNotEmpty ||
+          brk.active ||
+          offline ||
+          (problem?.serious ?? false),
+      problem: problem != null,
+    );
 
     final children = <Widget>[
       const HomeHeader(),
+      AnimatedSwitcher(
+        duration: Motion.of(context, Motion.medium),
+        switchInCurve: Motion.settle,
+        switchOutCurve: Motion.settle,
+        transitionBuilder: (child, a) => FadeTransition(
+          opacity: a,
+          child: SizeTransition(
+            sizeFactor: a,
+            axisAlignment: -1,
+            child: child,
+          ),
+        ),
+        child: nudge == null
+            ? const SizedBox(key: ValueKey('no-nudge'), width: double.infinity)
+            : Padding(
+                key: ValueKey('nudge-${nudge.id.name}'),
+                padding: const EdgeInsets.only(top: Gap.sm),
+                child: NudgeCard(
+                  key: const Key('home-nudge'),
+                  nudge: nudge,
+                  onAct: () => _actOnNudge(nudge, tv.id),
+                  onNotNow: () => ref
+                      .read(nudgeSessionProvider)
+                      .notNow(ref.read(nudgeClockProvider)()),
+                ),
+              ),
+      ),
       const SizedBox(height: Gap.md + 2),
       AnimatedSwitcher(
         duration: Motion.of(context, Motion.slow),
@@ -518,6 +632,7 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                   child: PillChoice(
                     key: Key('pause-$m'),
                     label: m == 60 ? '1h' : '${m}m',
+                    radius: Radii.input,
                     semanticLabel: _minutesWords(m),
                     selected: chosen == m,
                     onTap: canPause
@@ -532,6 +647,7 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                   child: PillChoice(
                     key: const Key('pause-bedtime'),
                     label: 'Bedtime',
+                    radius: Radii.input,
                     semanticLabel: 'Until bedtime',
                     selected: chosen == 0,
                     onTap: canPause

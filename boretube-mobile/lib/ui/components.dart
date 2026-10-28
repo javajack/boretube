@@ -298,10 +298,19 @@ class PrimaryButton extends StatelessWidget {
               borderRadius: Radii.buttons,
               boxShadow: shadow && enabled
                   ? [
+                      // Two soft layers: a wide, low glow pulled in at the
+                      // sides (negative spread, so no hard edge shows past
+                      // the corners) and a faint contact shadow.
                       BoxShadow(
-                        color: bt.coral.withValues(alpha: 0.30),
-                        blurRadius: 24,
-                        offset: const Offset(0, 10),
+                        color: bt.coral.withValues(alpha: 0.24),
+                        blurRadius: 28,
+                        spreadRadius: -6,
+                        offset: const Offset(0, 14),
+                      ),
+                      BoxShadow(
+                        color: bt.coral.withValues(alpha: 0.14),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
                       ),
                     ]
                   : null,
@@ -351,6 +360,10 @@ class PillChoice extends StatelessWidget {
   final String? semanticLabel;
   final IconData? icon;
 
+  /// Corner radius; null is a full pill (small chips). Bigger choices,
+  /// like the Pause TV durations, use [Radii.input].
+  final double? radius;
+
   const PillChoice({
     super.key,
     required this.label,
@@ -358,12 +371,24 @@ class PillChoice extends StatelessWidget {
     this.onTap,
     this.semanticLabel,
     this.icon,
+    this.radius,
   });
 
   @override
   Widget build(BuildContext context) {
     final bt = context.bt;
     final text = Theme.of(context).textTheme;
+    final side = BorderSide(
+      color: selected ? bt.coral : bt.coralTint,
+      width: 2,
+    );
+    final r = radius;
+    final OutlinedBorder shape = r == null
+        ? StadiumBorder(side: side)
+        : RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(r),
+            side: side,
+          );
     return Semantics(
       button: true,
       selected: selected,
@@ -375,16 +400,11 @@ class PillChoice extends StatelessWidget {
         constraints: const BoxConstraints(minHeight: 48),
         decoration: ShapeDecoration(
           color: selected ? bt.coralWash : bt.surface,
-          shape: StadiumBorder(
-            side: BorderSide(
-              color: selected ? bt.coral : bt.coralTint,
-              width: 2,
-            ),
-          ),
+          shape: shape,
         ),
         child: Material(
           type: MaterialType.transparency,
-          shape: const StadiumBorder(),
+          shape: shape.copyWith(side: BorderSide.none),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: onTap == null

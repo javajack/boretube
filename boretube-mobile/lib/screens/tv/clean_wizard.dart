@@ -170,7 +170,7 @@ class _CleanWizardState extends ConsumerState<CleanWizardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (steps != null) _Header(index: steps.$1, count: steps.$2),
+            if (steps != null) _Header(index: steps, sub: _subOf(p!)),
             Expanded(
               child: AnimatedSwitcher(
                 duration: Motion.of(context, Motion.sheet),
@@ -186,17 +186,20 @@ class _CleanWizardState extends ConsumerState<CleanWizardScreen> {
     );
   }
 
-  /// (index, count) for the step bar: restore point, choose, each
-  /// batch, done.
-  (int, int)? _stepOf(WizardProgress p) {
-    final n = p.batches.isEmpty ? 1 : p.batches.length;
-    final count = n + 3;
-    return switch (p.step) {
-      WizardStep.restorePoint => (0, count),
-      WizardStep.choose => (1, count),
-      WizardStep.batch => (2 + p.current, count),
-      WizardStep.done => null,
-    };
+  /// The step bar's index: restore point, choose, tidy (every batch),
+  /// done. Always [wizardSteps] in all.
+  int _stepOf(WizardProgress p) => switch (p.step) {
+        WizardStep.restorePoint => 0,
+        WizardStep.choose => 1,
+        WizardStep.batch => 2,
+        WizardStep.done => 3,
+      };
+
+  /// While tidying: which group of how many.
+  String? _subOf(WizardProgress p) {
+    final b = p.batch;
+    if (p.step != WizardStep.batch || b == null) return null;
+    return 'Group ${p.current + 1} of ${p.batches.length} · ${b.title}';
   }
 
   String _keyOf(CleanWizard w) {
@@ -306,25 +309,44 @@ Widget _slide(Widget child, Animation<double> a) => FadeTransition(
       ),
     );
 
+/// Restore point · Choose · Tidy · Done: one stable total for the run.
+const wizardSteps = 4;
+
+/// The same segmented header on every step, with "Group 2 of 3" under it
+/// while tidying.
 class _Header extends StatelessWidget {
   final int index;
-  final int count;
-  const _Header({required this.index, required this.count});
+  final String? sub;
+  const _Header({required this.index, this.sub});
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return Padding(
+      key: const Key('wizard-header'),
       padding: const EdgeInsets.symmetric(horizontal: Gap.gutter),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: Text(
-              'Clean up · Step ${index + 1} of $count',
-              style: text.labelMedium,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Clean up · Step ${index + 1} of $wizardSteps',
+                  style: text.labelMedium,
+                ),
+              ),
+              StepIndicator(count: wizardSteps, index: index),
+            ],
           ),
-          StepIndicator(count: count, index: index),
+          if (sub != null)
+            Text(
+              sub!,
+              key: const Key('wizard-group-line'),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: text.bodySmall,
+            ),
         ],
       ),
     );
@@ -513,7 +535,10 @@ class _RestorePoint extends StatelessWidget {
 
 // ── step 2 ──
 
-class _Choose extends StatelessWidget {
+/// Per group, only the apps still to tidy are rows; the ones already off
+/// fold into one quiet row that opens a read-only list. A group that is
+/// all done is one quiet row at the end.
+class _Choose extends StatefulWidget {
   final Map<CleanGroup, List<CleanItem>> groups;
   final Set<String> selected;
   final void Function(String pkg, bool on) onToggle;
@@ -527,27 +552,81 @@ class _Choose extends StatelessWidget {
   });
 
   @override
+  State<_Choose> createState() => _ChooseState();
+}
+
+class _ChooseState extends State<_Choose> {
+  final _open = <CleanGroup>{};
+
+  void _toggle(CleanGroup g) => setState(
+        () => _open.contains(g) ? _open.remove(g) : _open.add(g),
+      );
+
+  @override
   Widget build(BuildContext context) {
+    final selected = widget.selected;
     final n = selected.length;
-    final batches = groups.entries
+    final batches = widget.groups.entries
         .where((e) => e.value.any((i) => selected.contains(i.pkg)))
         .length;
+    List<CleanItem> todo(List<CleanItem> l) => [
+          for (final i in l)
+            if (i.state == CleanState.showing) i
+        ];
+    List<CleanItem> done(List<CleanItem> l) => [
+          for (final i in l)
+            if (i.state == CleanState.tidied) i
+        ];
+    final active = [
+      for (final e in widget.groups.entries)
+        if (todo(e.value).isNotEmpty) e,
+    ];
+    final finished = [
+      for (final e in widget.groups.entries)
+        if (todo(e.value).isEmpty) e,
+    ];
     return _Page(
       key: const Key('wizard-choose'),
       title: const Text('Pick what to tidy'),
       lead: 'Ticked apps are switched off, group by group.',
       content: [
-        for (final (gi, e) in groups.entries.indexed) ...[
+        for (final (gi, e) in active.indexed) ...[
           GroupHeading(e.key.title, first: gi == 0),
           RowList(
             key: Key('wizard-group-${e.key.name}'),
             children: [
-              for (final i in e.value)
+              for (final i in todo(e.value))
                 _PickRow(
                   key: Key('wizard-pick-${i.pkg}'),
                   item: i,
                   chosen: selected.contains(i.pkg),
-                  onChanged: (v) => onToggle(i.pkg, v),
+                  onChanged: (v) => widget.onToggle(i.pkg, v),
+                ),
+              if (done(e.value) case final d when d.isNotEmpty)
+                _DoneFold(
+                  id: e.key.name,
+                  title: '${d.length} already tidied away',
+                  items: d,
+                  open: _open.contains(e.key),
+                  onTap: () => _toggle(e.key),
+                ),
+            ],
+          ),
+        ],
+        if (finished.isNotEmpty) ...[
+          const SizedBox(height: Gap.section),
+          RowList(
+            key: const Key('wizard-finished-groups'),
+            edges: true,
+            children: [
+              for (final e in finished)
+                _DoneFold(
+                  id: e.key.name,
+                  title: e.key.title,
+                  subtitle: 'All tidied away',
+                  items: e.value,
+                  open: _open.contains(e.key),
+                  onTap: () => _toggle(e.key),
                 ),
             ],
           ),
@@ -558,8 +637,94 @@ class _Choose extends StatelessWidget {
         label: n == 0 ? 'Pick an app' : 'Tidy $n app${n == 1 ? '' : 's'}',
         note: n == 0 ? null : '$batches group${batches == 1 ? '' : 's'}',
         icon: Icons.auto_awesome_rounded,
-        onPressed: onStart,
+        onPressed: widget.onStart,
       ),
+    );
+  }
+}
+
+/// "12 already tidied away": one quiet row; tap to see the apps
+/// (read-only).
+class _DoneFold extends StatelessWidget {
+  /// The group name, for keys.
+  final String id;
+  final String title;
+  final String? subtitle;
+  final List<CleanItem> items;
+  final bool open;
+  final VoidCallback onTap;
+
+  const _DoneFold({
+    required this.id,
+    required this.title,
+    this.subtitle,
+    required this.items,
+    required this.open,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bt = context.bt;
+    final text = Theme.of(context).textTheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Semantics(
+          key: Key('wizard-done-$id'),
+          button: true,
+          expanded: open,
+          label: subtitle == null ? null : '$title, $subtitle',
+          child: ListRow(
+            icon: Icons.check_rounded,
+            iconColor: StatusColors.of(context).ok,
+            title: title,
+            subtitle: subtitle,
+            dim: true,
+            chevron: false,
+            trailing: AnimatedRotation(
+              turns: open ? 0.5 : 0,
+              duration: Motion.of(context, Motion.flip),
+              curve: Motion.enter,
+              child: Icon(
+                Icons.expand_more_rounded,
+                size: Sizes.icon,
+                color: bt.muted,
+              ),
+            ),
+            onTap: onTap,
+          ),
+        ),
+        AnimatedSize(
+          duration: Motion.of(context, Motion.sheet),
+          curve: Motion.enter,
+          alignment: Alignment.topCenter,
+          child: open
+              ? Padding(
+                  key: Key('wizard-done-$id-list'),
+                  padding: const EdgeInsets.only(
+                    left: Sizes.iconControl + Gap.f13,
+                    bottom: Gap.f8,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (final i in items)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: Gap.f4,
+                          ),
+                          child: Text(
+                            appLabel(i.pkg),
+                            style: text.bodyMedium!.copyWith(color: bt.muted),
+                          ),
+                        ),
+                    ],
+                  ),
+                )
+              : const SizedBox(width: double.infinity),
+        ),
+      ],
     );
   }
 }
@@ -579,16 +744,6 @@ class _PickRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bt = context.bt;
-    final done = item.state == CleanState.tidied;
-    if (done) {
-      return ListRow(
-        icon: Icons.check_rounded,
-        iconColor: StatusColors.of(context).ok,
-        title: appLabel(item.pkg),
-        subtitle: 'Already tidied away',
-        dim: true,
-      );
-    }
     return Semantics(
       checked: chosen,
       child: ListRow(
@@ -615,8 +770,8 @@ class _AllTidy extends StatelessWidget {
           size: Sizes.tubbyLarge,
           beaming: true,
         ),
-        title: const Text('Already tidy'),
-        lead: 'Every app on the list is off.',
+        title: const Text('Nothing to tidy'),
+        lead: 'Every app on this TV\'s list is already off.',
         primary: PrimaryButton(label: 'Done', onPressed: onDone),
       );
 }
@@ -860,8 +1015,17 @@ class _Restarting extends StatelessWidget {
   }
 }
 
-String _checkTitle(WizardCheckId id, WizardBatch b, bool restarted) =>
+String _checkTitle(
+  WizardCheckId id,
+  WizardBatch b,
+  bool restarted,
+  WizardCheck? c,
+) =>
     switch (id) {
+      WizardCheckId.appsOff when c != null && !c.ok && c.count > 0 =>
+        c.count == 1
+            ? '1 app switched itself back on'
+            : '${c.count} apps switched themselves back on',
       WizardCheckId.appsOff => '${b.title} still off',
       WizardCheckId.connected =>
         restarted ? 'TV back on Wi-Fi' : 'TV still on Wi-Fi',
@@ -907,7 +1071,7 @@ class _Checks extends StatelessWidget {
                 : 'wizard-checks-passed',
       ),
       hero: Tubby(
-        mood: TubbyMood.calm,
+        mood: failed ? TubbyMood.concerned : TubbyMood.calm,
         size: Sizes.tubbyLarge,
         beaming: !running && !failed,
       ),
@@ -936,7 +1100,7 @@ class _Checks extends StatelessWidget {
               StaggerIn(
                 index: i,
                 child: _CheckRow(
-                  title: _checkTitle(id, batch, restarted),
+                  title: _checkTitle(id, batch, restarted, byId[id]),
                   check: byId[id],
                   id: id,
                 ),

@@ -68,7 +68,9 @@ void main() {
     final rig = await WizardRig.create(
       progress: const WizardProgress(step: WizardStep.choose),
     );
-    await pumpWizard(tester, rig, size: const Size(360, 1700));
+    // A mostly clean TV: one group is done already.
+    rig.tv.disabled.add('com.android.adservices.api');
+    await pumpWizard(tester, rig, size: const Size(360, 1150));
     await shot(tester, 'clean_wizard_choose_light');
   });
 
@@ -103,7 +105,8 @@ void main() {
           WizardCheck(
             WizardCheckId.appsOff,
             ok: false,
-            detail: 'Back on: Sony Select',
+            detail: 'Sony Select',
+            count: 1,
           ),
           WizardCheck(WizardCheckId.connected, ok: true),
           WizardCheck(WizardCheckId.home, ok: true),

@@ -152,7 +152,8 @@ void main() {
       expect(checksPassed(c), isFalse);
       final apps = c.firstWhere((c) => c.id == WizardCheckId.appsOff);
       expect(apps.ok, isFalse);
-      expect(apps.detail, 'Back on: Sony Select');
+      expect(apps.detail, 'Sony Select');
+      expect(apps.count, 1);
       expect(c.last.id, WizardCheckId.guard);
       expect(c.last.ok, isTrue);
     });
@@ -241,6 +242,15 @@ void main() {
       expect(back.checks.single.id, WizardCheckId.home);
       expect(back.undoResult, {'a': true});
       expect(back.restartSkipped, isTrue);
+      final fail = WizardCheck.fromJson(
+        const WizardCheck(
+          WizardCheckId.appsOff,
+          ok: false,
+          detail: 'A, B',
+          count: 2,
+        ).toJson(),
+      )!;
+      expect(fail.count, 2);
       expect(store.read('tv2'), isNull);
       await prefs.setString(WizardProgressStore.keyFor('tv2'), '{nope');
       expect(store.read('tv2'), isNull);

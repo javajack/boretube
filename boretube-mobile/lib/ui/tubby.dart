@@ -5,8 +5,9 @@ import 'package:flutter/material.dart';
 import 'tokens.dart';
 
 /// Tubby's moods. Calm (default), asleep (paused / bedtime), cleaning
-/// (cheering, tidy-up) and guard (Always On).
-enum TubbyMood { calm, asleep, cleaning, guard }
+/// (cheering, tidy-up), guard (Always On) and concerned (something needs
+/// a look: open eyes, a flat mouth, no shield).
+enum TubbyMood { calm, asleep, cleaning, guard, concerned }
 
 /// Tubby, the boretube TV. Drawn from the brand SVG (viewBox 120×110).
 ///
@@ -103,6 +104,7 @@ class _TubbyState extends State<Tubby> with SingleTickerProviderStateMixin {
           TubbyMood.asleep => bt.sun,
           TubbyMood.cleaning => bt.lavender,
           TubbyMood.guard => bt.mint,
+          TubbyMood.concerned => bt.sun,
         };
     final label = widget.semanticLabel ??
         switch (widget.mood) {
@@ -110,6 +112,7 @@ class _TubbyState extends State<Tubby> with SingleTickerProviderStateMixin {
           TubbyMood.asleep => 'Tubby the TV, asleep',
           TubbyMood.cleaning => 'Tubby the TV, cheering',
           TubbyMood.guard => 'Tubby the TV, on guard',
+          TubbyMood.concerned => 'Tubby the TV, concerned',
         };
     return Semantics(
       image: true,
@@ -243,6 +246,13 @@ class TubbyPainter extends CustomPainter {
           _stroke(_face, 5),
         );
         _shield(canvas);
+      case TubbyMood.concerned:
+        _eyes(canvas, v);
+        canvas.drawLine(
+          const Offset(50, 66),
+          const Offset(70, 66),
+          _stroke(_face, 5),
+        );
     }
     if (cheeks && mood != TubbyMood.asleep) {
       final p = _fill(_coral.withValues(alpha: 0.55));

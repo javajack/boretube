@@ -74,12 +74,22 @@ class WizardCheck {
   final WizardCheckId id;
   final bool ok;
 
-  /// Why it failed, in plain words (empty when it passed).
+  /// Why it failed, in plain words (empty when it passed). For
+  /// [WizardCheckId.appsOff], the names of the apps that came back.
   final String detail;
 
-  const WizardCheck(this.id, {required this.ok, this.detail = ''});
+  /// [WizardCheckId.appsOff]: how many apps switched themselves back on.
+  final int count;
 
-  Map<String, dynamic> toJson() => {'id': id.name, 'ok': ok, 'detail': detail};
+  const WizardCheck(
+    this.id, {
+    required this.ok,
+    this.detail = '',
+    this.count = 0,
+  });
+
+  Map<String, dynamic> toJson() =>
+      {'id': id.name, 'ok': ok, 'detail': detail, 'count': count};
 
   static WizardCheck? fromJson(Object? j) {
     if (j is! Map) return null;
@@ -89,6 +99,7 @@ class WizardCheck {
       id,
       ok: j['ok'] as bool? ?? false,
       detail: j['detail'] as String? ?? '',
+      count: j['count'] as int? ?? 0,
     );
   }
 
@@ -322,9 +333,8 @@ List<WizardCheck> evaluateChecks({
       ok: packages != null && back.isEmpty,
       detail: packages == null
           ? 'Couldn\'t read the apps'
-          : back.isEmpty
-              ? ''
-              : 'Back on: ${back.map(label).join(', ')}',
+          : back.map(label).join(', '),
+      count: back.length,
     ),
     WizardCheck(
       WizardCheckId.connected,

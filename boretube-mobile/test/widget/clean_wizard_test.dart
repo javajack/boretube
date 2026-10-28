@@ -5,6 +5,7 @@ import 'package:boretube_mobile/providers/agent_providers.dart';
 import 'package:boretube_mobile/providers/clean_wizard_providers.dart';
 import 'package:boretube_mobile/screens/tv/clean_tv.dart';
 import 'package:boretube_mobile/screens/tv/clean_wizard.dart';
+import 'package:boretube_mobile/ui/tubby.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -130,7 +131,19 @@ void main() {
     // Plain names and one line each; already-off apps shown as done.
     expect(find.text('Sony Select'), findsOneWidget);
     expect(find.text('Sony\'s app store and its ads'), findsOneWidget);
-    expect(find.text('Already tidied away'), findsWidgets);
+    // Apps already off fold into one quiet row per group.
+    expect(find.text('Already tidied away'), findsNothing);
+    expect(find.text('Sony tab'), findsNothing);
+    expect(find.text('5 already tidied away'), findsOneWidget);
+    expect(find.text('3 already tidied away'), findsOneWidget);
+    expect(find.text('6 already tidied away'), findsOneWidget);
+    expect(find.text('2 already tidied away'), findsOneWidget);
+    expect(find.text('Clean up · Step 2 of 4'), findsOneWidget);
+    await tap(tester, 'wizard-done-sony');
+    expect(find.byKey(const Key('wizard-done-sony-list')), findsOneWidget);
+    expect(find.text('Sony tab'), findsOneWidget);
+    await tap(tester, 'wizard-done-sony');
+    expect(find.text('Sony tab'), findsNothing);
     // Optional apps start unticked: 4 core apps are on.
     expect(find.text('Tidy 4 apps'), findsOneWidget);
     // Never-touch packages are never offered.
@@ -181,6 +194,9 @@ void main() {
     expect(rig.backCalls, 2);
 
     expect(find.byKey(const Key('wizard-checks-passed')), findsOneWidget);
+    // One stable total for the run; the group is the sub-line.
+    expect(find.text('Clean up · Step 3 of 4'), findsOneWidget);
+    expect(find.text('Group 1 of 1 · Sony promos'), findsOneWidget);
     for (final id in ['appsOff', 'connected', 'home']) {
       expect(find.byKey(Key('wizard-check-$id')), findsOneWidget);
     }
@@ -217,7 +233,13 @@ void main() {
     await rig.advance(tester, 21);
 
     expect(find.byKey(const Key('wizard-checks-failed')), findsOneWidget);
-    expect(find.text('Back on: Sony Select'), findsOneWidget);
+    expect(find.text('1 app switched itself back on'), findsOneWidget);
+    expect(find.text('Sony Select'), findsOneWidget);
+    expect(find.text('Sony promos still off'), findsNothing);
+    expect(
+      tester.widget<Tubby>(find.byType(Tubby)).mood,
+      TubbyMood.concerned,
+    );
     expect(find.byKey(const Key('wizard-keep-going')), findsOneWidget);
     expectCalmStructure(tester);
     expect(rig.saved!.phase, BatchPhase.failed);
@@ -230,6 +252,69 @@ void main() {
     await tap(tester, 'wizard-next');
     expect(find.text('0 apps tidied away'), findsOneWidget);
     expect(find.text('Sony promos · put back'), findsOneWidget);
+  });
+
+  testWidgets('a whole group done is one quiet row', (tester) async {
+    final rig = await WizardRig.create(
+      progress: const WizardProgress(step: WizardStep.choose),
+    );
+    rig.tv.disabled.add('com.android.adservices.api');
+    await pumpWizard(tester, rig);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('wizard-done-ads')),
+        matching: find.text('All tidied away'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('wizard-group-ads')), findsNothing);
+    expect(find.byKey(const Key('wizard-done-ads')), findsOneWidget);
+    expectCalmStructure(tester);
+  });
+
+  testWidgets('everything already off: Nothing to tidy, then Done',
+      (tester) async {
+    final clean = await WizardRig.create(
+      progress: const WizardProgress(step: WizardStep.choose),
+    );
+    clean.tv.disabled.addAll(const [
+      'com.sony.dtv.sonyselect',
+      'com.sony.dtv.multiscreendemo',
+      'com.android.adservices.api',
+      'com.google.android.feedback',
+      'com.sonyliv',
+    ]);
+    await pumpWizard(tester, clean);
+    expect(find.byKey(const Key('wizard-all-tidy')), findsOneWidget);
+    expect(find.text('Nothing to tidy'), findsOneWidget);
+    expect(find.text('Done'), findsOneWidget);
+    expectCalmStructure(tester);
+  });
+
+  testWidgets('two apps back on reads in the plural', (tester) async {
+    final rig = await WizardRig.create(
+      progress: const WizardProgress(
+        step: WizardStep.batch,
+        batches: [sonyBatch, sonyBatch],
+        current: 1,
+        phase: BatchPhase.failed,
+        checks: [
+          WizardCheck(
+            WizardCheckId.appsOff,
+            ok: false,
+            detail: 'Sony Select, Store demo',
+            count: 2,
+          ),
+          WizardCheck(WizardCheckId.connected, ok: true),
+          WizardCheck(WizardCheckId.home, ok: true),
+        ],
+      ),
+    );
+    await pumpWizard(tester, rig);
+    expect(find.text('2 apps switched themselves back on'), findsOneWidget);
+    expect(find.text('Sony Select, Store demo'), findsOneWidget);
+    expect(find.text('Clean up · Step 3 of 4'), findsOneWidget);
+    expect(find.text('Group 2 of 2 · Sony promos'), findsOneWidget);
   });
 
   testWidgets('Keep going after a failed check moves on', (tester) async {

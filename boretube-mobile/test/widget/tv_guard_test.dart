@@ -128,13 +128,13 @@ void main() {
       );
       expect(find.text('Leave safe mode'), findsOneWidget);
       expect(find.byKey(const Key('tv-guard-safe')), findsNothing);
-      expect(find.text('🛟 Safe mode'), findsOneWidget);
+      expect(find.text('Hands off'), findsOneWidget);
     });
 
     testWidgets('down: red banner and Repair', (tester) async {
       await pumpCard(tester, const AgentLink(AgentLinkKind.down));
       expect(find.byKey(const Key('tv-guard-down')), findsOneWidget);
-      expect(find.text('TV Guard down'), findsOneWidget);
+      expect(find.text('Not answering'), findsWidgets);
       expect(find.byKey(const Key('tv-guard-repair')), findsOneWidget);
     });
 
@@ -206,7 +206,7 @@ void main() {
       );
       await settle(tester, 3);
       expect(find.byKey(const Key('setup-look-at-tv')), findsNothing);
-      expect(find.text('TV Guard is ready'), findsOneWidget);
+      expect(find.text('Always On is ready'), findsOneWidget);
       expect(find.byKey(const Key('setup-done')), findsOneWidget);
       await c.close();
     });
@@ -406,7 +406,7 @@ void main() {
         overrides: [...env.overrides(), ...agentOverrides(AgentLink.none)],
       );
       await settle(tester);
-      expect(find.text('Rules run on TV Guard'), findsOneWidget);
+      expect(find.text('Bedtimes that stick'), findsOneWidget);
       expect(find.byKey(const Key('rules-install')), findsOneWidget);
     });
   });
@@ -424,7 +424,7 @@ void main() {
       await pumpScreen(
         tester,
         const RestoreScreen(),
-        size: const Size(360, 6000),
+        size: const Size(360, 9000),
         overrides: [
           ...env.overrides(ops: ops),
           ...agentOverrides(AgentLink.none),

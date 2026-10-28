@@ -1,8 +1,8 @@
 import 'package:boretube_mobile/actions/actions_service.dart';
 import 'package:boretube_mobile/providers/break_provider.dart';
 import 'package:boretube_mobile/providers/now_playing.dart';
-import 'package:boretube_mobile/screens/now/now_tab.dart';
-import 'package:boretube_mobile/screens/shell_screen.dart';
+import 'package:boretube_mobile/screens/home/home_tab.dart';
+import 'package:boretube_mobile/ui/components.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -36,12 +36,12 @@ void main() {
     final actions = ScriptedActions();
     await pumpScreen(
       tester,
-      const NowTab(),
+      const HomeTab(),
       scaffold: true,
       overrides: env.overrides(now: playing, actions: actions),
     );
     await settle(tester);
-    expect(inTile('action-mute', 'Mute'), findsOneWidget);
+    expect(inTile('action-mute', 'Quiet'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('action-mute')));
     await tester.pump();
@@ -49,8 +49,7 @@ void main() {
     // Before the TV answers: already muted everywhere.
     expect(actions.calls, ['mute']);
     expect(inTile('action-mute', 'Unmute'), findsOneWidget);
-    expect(inTile('action-mute', 'Muted'), findsOneWidget);
-    expect(find.byIcon(Icons.volume_off_rounded), findsWidgets);
+    expect(find.text('Muted'), findsOneWidget);
     // The ring only appears once the action has run for 1.5 s.
     expect(ring('action-mute'), findsNothing);
     await tester.pump(const Duration(milliseconds: 1600));
@@ -60,9 +59,18 @@ void main() {
     await tester.pump();
     expect(actions.calls, ['mute', 'stop']);
     expect(find.text('Home screen'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('action-more')));
+    await settle(tester, 4);
     await tester.tap(find.byKey(const Key('action-bore')));
     await tester.pump();
     expect(actions.calls, ['mute', 'stop'], reason: 'bore conflicts');
+    // The Pause button waits too (it touches sound and the app).
+    expect(
+      tester
+          .widget<PrimaryButton>(find.byKey(const Key('action-break')))
+          .onPressed,
+      isNull,
+    );
 
     actions.answer(ok);
     await tester.pump();
@@ -72,7 +80,13 @@ void main() {
     await tester.pump(const Duration(milliseconds: 250));
     expect(ring('action-mute'), findsNothing);
     expect(inTile('action-mute', 'Unmute'), findsOneWidget);
-    expect(find.byIcon(Icons.check_rounded), findsNothing);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('action-mute')),
+        matching: find.byIcon(Icons.check_rounded),
+      ),
+      findsNothing,
+    );
     expect(find.byType(SnackBar), findsNothing);
   });
 
@@ -81,7 +95,7 @@ void main() {
     final actions = ScriptedActions();
     await pumpScreen(
       tester,
-      const NowTab(),
+      const HomeTab(),
       scaffold: true,
       overrides: env.overrides(now: playing, actions: actions),
     );
@@ -96,8 +110,7 @@ void main() {
     );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
-    expect(inTile('action-mute', 'Mute'), findsOneWidget);
-    expect(inTile('action-mute', 'Sound on'), findsOneWidget);
+    expect(inTile('action-mute', 'Quiet'), findsOneWidget);
     expect(ring('action-mute'), findsNothing);
     expect(find.text('Didn\'t work: TV said no'), findsOneWidget);
   });
@@ -108,7 +121,7 @@ void main() {
     final actions = ScriptedActions();
     await pumpScreen(
       tester,
-      const NowTab(),
+      const HomeTab(),
       scaffold: true,
       overrides: env.overrides(now: playing, actions: actions),
     );
@@ -123,17 +136,18 @@ void main() {
     expect(find.text('Didn\'t work: TV unreachable'), findsOneWidget);
   });
 
-  group('Break', () {
+  group('Pause TV', () {
     final t0 = DateTime(2026, 10, 28, 19);
 
-    testWidgets('sheet starts a break: banner, muted tile, at once',
+    testWidgets('chip + Pause: amber hero and countdown, at once',
         (tester) async {
       final env = await TestEnv.create(tvs: [adbSony]);
       final actions = ScriptedActions();
       await pumpScreen(
         tester,
-        const NowTab(),
+        const HomeTab(),
         scaffold: true,
+        size: const Size(360, 1200),
         overrides: env.overrides(
           now: playing,
           actions: actions,
@@ -141,37 +155,32 @@ void main() {
         ),
       );
       await settle(tester);
-      expect(inTile('action-break', 'Break'), findsOneWidget);
-      expect(inTile('action-break', '15 · 30 · 60 min'), findsOneWidget);
-
+      // 30 minutes is the default choice.
+      expect(
+        tester.widget<PillChoice>(find.byKey(const Key('pause-30'))).selected,
+        isTrue,
+      );
+      await tester.tap(find.byKey(const Key('pause-15')));
+      await settle(tester, 2);
       await tester.tap(find.byKey(const Key('action-break')));
-      await settle(tester);
-      expect(
-        find.text('Closes the app and mutes now. Sound comes back '
-            'automatically.'),
-        findsOneWidget,
-      );
-      expect(
-        find.textContaining('Keeps working while Boretube is open'),
-        findsOneWidget,
-      );
-      await tester.tap(find.byKey(const Key('break-15')));
-      await settle(tester);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
 
       expect(actions.calls, ['break 15']);
-      expect(find.text('Break · 15:00 left'), findsOneWidget);
-      expect(inTile('action-mute', 'On break'), findsOneWidget);
-      expect(find.text('Home screen'), findsOneWidget);
+      expect(find.byKey(const Key('break-banner')), findsOneWidget);
+      expect(find.text('15:00'), findsOneWidget);
+      expect(find.text('Home screen'), findsNothing, reason: 'hero swapped');
       expect(
         env.prefs.getString(BreakController.keyFor(adbSony.id)),
         t0.add(const Duration(minutes: 15)).toIso8601String(),
       );
       actions.answer(ok);
       await settle(tester);
-      expect(find.text('Break · 15:00 left'), findsOneWidget);
+      expect(find.text('15:00'), findsOneWidget);
+      expect(find.text('Keep this app open'), findsOneWidget);
     });
 
-    testWidgets('resumes from prefs, counts down live, End now restores',
+    testWidgets('resumes from prefs, counts down live, End break restores',
         (tester) async {
       var now = t0;
       final until = t0.add(const Duration(minutes: 12, seconds: 40));
@@ -184,13 +193,9 @@ void main() {
       final actions = ScriptedActions();
       await pumpScreen(
         tester,
-        const Column(
-          children: [
-            GuardPill(),
-            Expanded(child: NowTab()),
-          ],
-        ),
+        const HomeTab(),
         scaffold: true,
+        size: const Size(360, 1200),
         overrides: env.overrides(
           now: playing,
           actions: actions,
@@ -198,26 +203,59 @@ void main() {
         ),
       );
       await tester.pump();
-      expect(find.text('Break · 12:40 left'), findsOneWidget);
-      expect(find.text('☕ Break'), findsOneWidget);
-      expect(inTile('action-mute', 'Unmute'), findsOneWidget);
+      expect(find.text('12:40'), findsOneWidget);
 
       now = now.add(const Duration(seconds: 1));
       await tester.pump(const Duration(seconds: 1));
-      expect(find.text('Break · 12:39 left'), findsOneWidget);
+      expect(find.text('12:39'), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('break-end')));
       await tester.pump();
-      expect(find.byKey(const Key('break-banner')), findsNothing);
       expect(actions.calls, ['restore']);
       actions.answer(ok);
       await settle(tester);
       expect(find.byKey(const Key('break-banner')), findsNothing);
-      expect(find.text('Not guarded'), findsOneWidget);
+      expect(find.byKey(const Key('home-hero')), findsOneWidget);
       expect(
         env.prefs.getString(BreakController.keyFor(adbSony.id)),
         isNull,
       );
+    });
+
+    testWidgets('+15 min extends; a refusal keeps the break', (tester) async {
+      var now = t0;
+      final until = t0.add(const Duration(minutes: 10));
+      final env = await TestEnv.create(
+        tvs: [adbSony],
+        prefs: {
+          BreakController.keyFor(adbSony.id): until.toIso8601String(),
+        },
+      );
+      final actions = ScriptedActions();
+      await pumpScreen(
+        tester,
+        const HomeTab(),
+        scaffold: true,
+        size: const Size(360, 1200),
+        overrides: env.overrides(
+          now: playing,
+          actions: actions,
+          clock: () => now,
+        ),
+      );
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('break-extend')));
+      await tester.pump();
+      expect(actions.calls, ['break 25']);
+      actions.answer(const ActionResult(false, ActionTransport.adb));
+      await settle(tester);
+      expect(find.text('10:00'), findsOneWidget, reason: 'kept as it was');
+
+      await tester.tap(find.byKey(const Key('break-extend')));
+      await tester.pump();
+      actions.answer(ok);
+      await settle(tester);
+      expect(find.text('25:00'), findsOneWidget);
     });
   });
 }

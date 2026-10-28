@@ -116,6 +116,6 @@ void main() {
       overrides: env.overrides(),
     );
     await settle(tester);
-    expect(find.text('Unlock with ADB'), findsOneWidget);
+    expect(find.text('Unlock Home mode'), findsOneWidget);
   });
 }

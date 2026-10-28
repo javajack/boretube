@@ -39,12 +39,12 @@ class TvIllustration extends StatelessWidget {
               height: h,
               decoration: BoxDecoration(
                 color: off ? bt.screenInner : bt.screen,
-                borderRadius: Radii.tile,
+                borderRadius: Radii.control,
               ),
               alignment: Alignment.center,
               child: AnimatedSwitcher(
-                duration: Motion.of(context, Motion.medium),
-                switchInCurve: Motion.spring,
+                duration: Motion.of(context, Motion.sheet),
+                switchInCurve: Motion.enter,
                 transitionBuilder: (c, a) => ScaleTransition(
                   scale: Tween(begin: 0.6, end: 1.0).animate(a),
                   child: FadeTransition(opacity: a, child: c),
@@ -62,7 +62,7 @@ class TvIllustration extends StatelessWidget {
                         height: tile,
                         decoration: BoxDecoration(
                           color: look.color,
-                          borderRadius: Radii.icon,
+                          borderRadius: Radii.chip,
                         ),
                         alignment: Alignment.center,
                         child: look.icon != null
@@ -207,14 +207,14 @@ class HomeHero extends StatelessWidget {
                   : const Color(0xFFE3ECFB),
         ),
       ),
-      padding: const EdgeInsets.all(Gap.lg),
+      padding: const EdgeInsets.all(Gap.f13),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
               TvIllustration(now: now, off: off || now.loading),
-              const SizedBox(width: Gap.md + 2),
+              const SizedBox(width: Gap.f13 + 2),
               Expanded(
                 child: Semantics(
                   container: true,
@@ -227,7 +227,7 @@ class HomeHero extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       AnimatedSwitcher(
-                        duration: Motion.of(context, Motion.medium),
+                        duration: Motion.of(context, Motion.sheet),
                         child: Text(
                           title,
                           key: ValueKey(title),
@@ -256,7 +256,7 @@ class HomeHero extends StatelessWidget {
                           ),
                         ),
                       ],
-                      const SizedBox(height: Gap.xs),
+                      const SizedBox(height: Gap.f4),
                       Row(
                         children: [
                           if (!off && !now.loading) ...[
@@ -286,15 +286,15 @@ class HomeHero extends StatelessWidget {
             ],
           ),
           if (m != null && m.timed) ...[
-            const SizedBox(height: Gap.md),
+            const SizedBox(height: Gap.f13),
             _MediaProgress(media: m),
           ],
-          const SizedBox(height: Gap.md),
+          const SizedBox(height: Gap.f13),
           Divider(color: dark ? bt.hairline : const Color(0xFFDCE6F7)),
-          const SizedBox(height: Gap.sm),
+          const SizedBox(height: Gap.f8),
           AnimatedSwitcher(
-            duration: Motion.of(context, Motion.medium),
-            switchInCurve: Motion.settle,
+            duration: Motion.of(context, Motion.sheet),
+            switchInCurve: Motion.enter,
             child: armed != null && !off
                 ? _ArmedBand(
                     key: const Key('end-after-armed'),
@@ -322,7 +322,7 @@ class HomeHero extends StatelessWidget {
             shape: BoxShape.circle,
           ),
         ),
-        const SizedBox(width: Gap.sm),
+        const SizedBox(width: Gap.f8),
         Expanded(
           child: Text(
             sentence,
@@ -380,7 +380,7 @@ class _MediaProgress extends StatelessWidget {
         children: [
           Expanded(
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(Radii.pill),
+              borderRadius: BorderRadius.circular(Radii.chipR),
               child: SizedBox(
                 height: 3,
                 child: Stack(
@@ -390,7 +390,7 @@ class _MediaProgress extends StatelessWidget {
                     TweenAnimationBuilder<double>(
                       tween: Tween(end: p),
                       duration: Motion.of(context, Motion.slow),
-                      curve: Motion.settle,
+                      curve: Motion.enter,
                       builder: (context, v, _) => FractionallySizedBox(
                         alignment: Alignment.centerLeft,
                         widthFactor: v,
@@ -403,7 +403,7 @@ class _MediaProgress extends StatelessWidget {
             ),
           ),
           if (left != null) ...[
-            const SizedBox(width: Gap.md),
+            const SizedBox(width: Gap.f13),
             Text(
               '${aboutMinutes(left)} left',
               style: text.labelMedium!.copyWith(
@@ -441,16 +441,16 @@ class _ArmedBand extends StatelessWidget {
       container: true,
       liveRegion: true,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(Gap.md, Gap.sm, Gap.xs, Gap.sm),
+        padding: const EdgeInsets.fromLTRB(Gap.f13, Gap.f8, Gap.f4, Gap.f8),
         decoration: BoxDecoration(
           color: bt.sunTint,
-          borderRadius: Radii.tile,
+          borderRadius: Radii.control,
           border: Border.all(color: bt.sun.withValues(alpha: 0.55)),
         ),
         child: Row(
           children: [
             Icon(Icons.hourglass_bottom_rounded, size: 20, color: bt.sunInk),
-            const SizedBox(width: Gap.sm + 2),
+            const SizedBox(width: Gap.f8 + 2),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -525,10 +525,10 @@ class PausedHero extends StatelessWidget {
         key: const Key('break-banner'),
         width: double.infinity,
         padding: const EdgeInsets.fromLTRB(
-          Gap.page,
-          Gap.xl,
-          Gap.page,
-          Gap.page,
+          Gap.gutter,
+          Gap.f21,
+          Gap.gutter,
+          Gap.gutter,
         ),
         decoration: BoxDecoration(
           borderRadius: Radii.hero,
@@ -547,7 +547,7 @@ class PausedHero extends StatelessWidget {
               size: 132,
               body: const Color(0xFFFFF8F1),
             ),
-            const SizedBox(height: Gap.sm),
+            const SizedBox(height: Gap.f8),
             Text(
               silenceOnly ? 'The TV is on quiet' : 'The TV is taking a break',
               textAlign: TextAlign.center,
@@ -556,7 +556,7 @@ class PausedHero extends StatelessWidget {
                 fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(height: Gap.xs),
+            const SizedBox(height: Gap.f4),
             Text(
               countdown(left),
               key: const Key('break-countdown'),
@@ -564,23 +564,23 @@ class PausedHero extends StatelessWidget {
                 color: const Color(0xFF1C1D3A),
               ),
             ),
-            const SizedBox(height: Gap.sm),
+            const SizedBox(height: Gap.f8),
             Text(
               'left · sound returns by itself at '
               '${friendlyTime(context, until)}',
               textAlign: TextAlign.center,
               style: text.bodyMedium!.copyWith(color: _brown),
             ),
-            const SizedBox(height: Gap.md),
+            const SizedBox(height: Gap.f13),
             Container(
               key: Key(byTv ? 'break-by-tv' : 'break-by-phone'),
               padding: const EdgeInsets.symmetric(
-                horizontal: Gap.md + 2,
-                vertical: Gap.sm,
+                horizontal: Gap.f13 + 2,
+                vertical: Gap.f8,
               ),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.55),
-                borderRadius: BorderRadius.circular(Radii.pill),
+                borderRadius: BorderRadius.circular(Radii.chipR),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -590,7 +590,7 @@ class PausedHero extends StatelessWidget {
                     size: 15,
                     color: _deep,
                   ),
-                  const SizedBox(width: Gap.sm),
+                  const SizedBox(width: Gap.f8),
                   Flexible(
                     child: Text(
                       byTv

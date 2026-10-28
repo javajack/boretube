@@ -126,7 +126,7 @@ class YouTubeScreen extends ConsumerWidget {
         await ref.read(appsProvider.future);
       },
       children: [
-        InfoCard(
+        Surface(
           key: const Key('youtube-card'),
           radius: Radii.hero,
           color: on ? bt.mintTint : bt.sunTint,
@@ -155,7 +155,7 @@ class YouTubeScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: Gap.md),
+              const SizedBox(width: Gap.f13),
               Icon(
                 on ? Icons.check_circle_rounded : Icons.smart_display_rounded,
                 size: 40,
@@ -164,13 +164,13 @@ class YouTubeScreen extends ConsumerWidget {
             ],
           ),
         ),
-        const SectionHeader('Two steps'),
-        InfoCard(
+        const GroupHeading('Two steps'),
+        Surface(
           key: const Key('youtube-step-smarttube'),
           child: Row(
             children: [
               _StepNumber(1, done: smart == true),
-              const SizedBox(width: Gap.md),
+              const SizedBox(width: Gap.f13),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -198,9 +198,9 @@ class YouTubeScreen extends ConsumerWidget {
             ],
           ),
         ),
-        const SizedBox(height: Gap.sm),
-        InfoCard(
-          padding: const EdgeInsets.fromLTRB(Gap.lg, Gap.sm, Gap.lg, Gap.sm),
+        const SizedBox(height: Gap.f8),
+        Surface(
+          padding: const EdgeInsets.fromLTRB(Gap.f13, Gap.f8, Gap.f13, Gap.f8),
           child: SwitchLine(
             key: const Key('youtube-stock-toggle'),
             leading: _StepNumber(2, done: on),
@@ -219,12 +219,13 @@ class YouTubeScreen extends ConsumerWidget {
           ),
         ),
         if (alwaysOn && rules != null) ...[
-          const SectionHeader('With Always On'),
-          InfoCard(
-            padding: const EdgeInsets.fromLTRB(Gap.lg, Gap.sm, Gap.lg, Gap.sm),
+          const GroupHeading('With Always On'),
+          Surface(
+            padding:
+                const EdgeInsets.fromLTRB(Gap.f13, Gap.f8, Gap.f13, Gap.f8),
             child: SwitchLine(
               key: const Key('rules-stock-youtube'),
-              leading: IconBadge(
+              leading: IconTile(
                 icon: Icons.shield_rounded,
                 color: Tone.ok.color(context),
                 size: 40,
@@ -239,7 +240,7 @@ class YouTubeScreen extends ConsumerWidget {
           ),
         ],
         if (!canWrite && ops != null) ...[
-          const SizedBox(height: Gap.md),
+          const SizedBox(height: Gap.f13),
           Text(
             'boretube hasn\'t been tested on this TV model, so changes are '
             'off. Allow them in Settings › Advanced.',
@@ -260,13 +261,13 @@ class _StepNumber extends StatelessWidget {
   Widget build(BuildContext context) {
     final bt = context.bt;
     return AnimatedContainer(
-      duration: Motion.of(context, Motion.fast),
+      duration: Motion.of(context, Motion.flip),
       width: 40,
       height: 40,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: done ? bt.mint : bt.hairline,
-        borderRadius: Radii.icon,
+        borderRadius: Radii.chip,
       ),
       child: done
           ? const Icon(Icons.check_rounded, color: Color(0xFF06392A))
@@ -310,17 +311,17 @@ class SmartTubeGuide extends StatelessWidget {
       children: [
         Container(
           key: const Key('smarttube-warning'),
-          padding: const EdgeInsets.all(Gap.md),
+          padding: const EdgeInsets.all(Gap.f13),
           decoration: BoxDecoration(
             color: bt.berryTint,
-            borderRadius: Radii.tile,
+            borderRadius: Radii.control,
             border: Border.all(color: bt.berryBorder),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(Icons.gpp_maybe_rounded, color: bt.berryInk),
-              const SizedBox(width: Gap.md),
+              const SizedBox(width: Gap.f13),
               Expanded(
                 child: Text(
                   'Only get SmartTube from its official site, '
@@ -336,9 +337,9 @@ class SmartTubeGuide extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: Gap.lg),
+        const SizedBox(height: Gap.f13),
         for (var i = 0; i < steps.length; i++) ...[
-          if (i > 0) const SizedBox(height: Gap.md),
+          if (i > 0) const SizedBox(height: Gap.f13),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -348,14 +349,14 @@ class SmartTubeGuide extends StatelessWidget {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: bt.coralTint,
-                  borderRadius: Radii.icon,
+                  borderRadius: Radii.chip,
                 ),
                 child: Text(
                   '${i + 1}',
                   style: Fonts.bricolage(16, color: bt.coralInk),
                 ),
               ),
-              const SizedBox(width: Gap.md),
+              const SizedBox(width: Gap.f13),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -368,7 +369,7 @@ class SmartTubeGuide extends StatelessWidget {
             ],
           ),
         ],
-        const SizedBox(height: Gap.xl),
+        const SizedBox(height: Gap.f21),
         PrimaryButton(
           label: 'Got it',
           kind: ButtonKind.ink,
@@ -401,7 +402,7 @@ class AppsScreen extends ConsumerWidget {
         ...apps.when(
           loading: () => const [SkeletonCard(rows: 6)],
           error: (e, _) => [
-            InfoCard(
+            Surface(
               child: EmptyState(
                 icon: Icons.apps_outage_rounded,
                 tone: Tone.bad,
@@ -429,7 +430,7 @@ class AppsScreen extends ConsumerWidget {
             return [
               if (!canWrite)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: Gap.md),
+                  padding: const EdgeInsets.only(bottom: Gap.f13),
                   child: Text(
                     'boretube hasn\'t been tested on this TV model, so this '
                     'is a list only. Allow changes in Settings › Advanced.',
@@ -437,7 +438,7 @@ class AppsScreen extends ConsumerWidget {
                   ),
                 ),
               if (shown.isEmpty && hidden.isEmpty)
-                const InfoCard(
+                const Surface(
                   child: EmptyState(
                     icon: Icons.apps_rounded,
                     title: 'No apps found',
@@ -445,23 +446,17 @@ class AppsScreen extends ConsumerWidget {
                   ),
                 )
               else ...[
-                SectionHeader(
+                GroupHeading(
                   'On the home screen · ${shown.length}',
-                  padding: const EdgeInsets.fromLTRB(
-                    Gap.xs,
-                    0,
-                    Gap.xs,
-                    Gap.sm,
-                  ),
                 ),
-                GroupCard(
+                RowList(
                   children: [
                     for (final a in shown) _AppRow(app: a, canWrite: canWrite),
                   ],
                 ),
                 if (hidden.isNotEmpty) ...[
-                  SectionHeader('Switched off · ${hidden.length}'),
-                  GroupCard(
+                  GroupHeading('Switched off · ${hidden.length}'),
+                  RowList(
                     children: [
                       for (final a in hidden)
                         _AppRow(app: a, canWrite: canWrite),
@@ -529,14 +524,14 @@ class _AppRow extends ConsumerWidget {
     }
     return Padding(
       key: Key('app-${app.pkg}'),
-      padding: const EdgeInsets.symmetric(horizontal: Gap.lg, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: Gap.f13, vertical: 10),
       child: Row(
         children: [
           Opacity(
             opacity: app.state == AppState.enabled ? 1 : 0.5,
             child: AppAvatar(pkg: app.pkg, size: 40),
           ),
-          const SizedBox(width: Gap.md),
+          const SizedBox(width: Gap.f13),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

@@ -124,15 +124,15 @@ class InfoDot extends StatelessWidget {
       excludeSemantics: true,
       child: InkResponse(
         key: Key('info-${term.name}'),
-        radius: 22,
+        radius: Sizes.touch / 2,
         onTap: () {
           HapticFeedback.selectionClick();
           showLearnSheet(context, term);
         },
         child: SizedBox(
-          width: 40,
-          height: 40,
-          child: Icon(Icons.info_outline_rounded, size: 18, color: c),
+          width: Sizes.control,
+          height: Sizes.control,
+          child: Icon(Icons.info_outline_rounded, size: Sizes.icon, color: c),
         ),
       ),
     );
@@ -166,7 +166,7 @@ class TermTitle extends StatelessWidget {
           ),
         ),
         Transform.translate(
-          offset: const Offset(-4, 0),
+          offset: const Offset(-Gap.f8, 0),
           child: InfoDot(term, color: dotColor),
         ),
       ],
@@ -202,8 +202,8 @@ class _LearnSheetState extends State<LearnSheet> {
       lead: Text(c.sentence, style: text.bodyLarge!.copyWith(color: bt.ink)),
       children: [
         AnimatedSize(
-          duration: Motion.of(context, Motion.medium),
-          curve: Motion.settle,
+          duration: Motion.of(context, Motion.sheet),
+          curve: Motion.enter,
           alignment: Alignment.topCenter,
           child: !_more
               ? Align(
@@ -211,41 +211,43 @@ class _LearnSheetState extends State<LearnSheet> {
                   child: TextButton.icon(
                     key: const Key('learn-more'),
                     style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: Gap.sm),
+                      padding: const EdgeInsets.symmetric(horizontal: Gap.f8),
                     ),
                     onPressed: () => setState(() => _more = true),
-                    icon: const Icon(Icons.expand_more_rounded, size: 20),
+                    icon:
+                        const Icon(Icons.expand_more_rounded, size: Sizes.icon),
                     label: const Text('Learn more'),
                   ),
                 )
               : Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(Gap.lg),
+                  padding: const EdgeInsets.all(Gap.f13),
                   decoration: BoxDecoration(
                     color: bt.surface,
-                    borderRadius: Radii.card,
+                    borderRadius: Radii.control,
                     border: Border.all(color: bt.border),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       for (var i = 0; i < c.more.length; i++) ...[
-                        if (i > 0) const SizedBox(height: Gap.md),
+                        if (i > 0) const SizedBox(height: Gap.f13),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Padding(
-                              padding: const EdgeInsets.only(top: 9),
+                              padding: const EdgeInsets.only(
+                                  top: Gap.f8 + Gap.f4 / 2),
                               child: Container(
-                                width: 6,
-                                height: 6,
+                                width: Gap.f4,
+                                height: Gap.f4,
                                 decoration: BoxDecoration(
                                   color: c.tone.hue(context),
                                   shape: BoxShape.circle,
                                 ),
                               ),
                             ),
-                            const SizedBox(width: Gap.md),
+                            const SizedBox(width: Gap.f13),
                             Expanded(
                               child: Text(c.more[i], style: text.bodyMedium),
                             ),
@@ -256,12 +258,11 @@ class _LearnSheetState extends State<LearnSheet> {
                   ),
                 ),
         ),
-        const SizedBox(height: Gap.lg),
+        const SizedBox(height: Gap.f13),
         PrimaryButton(
           key: const Key('learn-done'),
           label: 'Got it',
           kind: ButtonKind.ink,
-          height: 52,
           onPressed: () => Navigator.pop(context),
         ),
       ],

@@ -49,15 +49,15 @@ Future<void> allowWhatsPlaying(BuildContext context, WidgetRef ref) async {
         key: const Key('whats-playing'),
         title: 'On the TV now',
         children: [
-          InfoCard(
+          Surface(
             child: Row(
               children: [
-                IconBadge(
+                IconTile(
                   icon: status.isIdle ? Icons.home_rounded : Icons.live_tv,
                   color: tone.color(sheet),
                   size: 48,
                 ),
-                const SizedBox(width: Gap.md),
+                const SizedBox(width: Gap.f13),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,7 +70,7 @@ Future<void> allowWhatsPlaying(BuildContext context, WidgetRef ref) async {
               ],
             ),
           ),
-          const SizedBox(height: Gap.lg),
+          const SizedBox(height: Gap.f13),
           if (!status.isIdle && !allowed)
             PrimaryButton(
               key: const Key('whats-playing-allow'),
@@ -150,7 +150,7 @@ class _AddByIdSheetState extends State<_AddByIdSheet> {
               hintText: 'e.g. 233637DE',
             ),
           ),
-          const SizedBox(height: Gap.md),
+          const SizedBox(height: Gap.f13),
           TextField(
             key: const Key('whitelist-name'),
             controller: _name,
@@ -160,7 +160,7 @@ class _AddByIdSheetState extends State<_AddByIdSheet> {
               hintText: 'e.g. YouTube',
             ),
           ),
-          const SizedBox(height: Gap.lg),
+          const SizedBox(height: Gap.f13),
           ListenableBuilder(
             listenable: _id,
             builder: (context, _) => PrimaryButton(
@@ -211,7 +211,7 @@ class WhitelistScreen extends ConsumerWidget {
                 onPressed: () => allowWhatsPlaying(context, ref),
               ),
             ),
-            const SizedBox(width: Gap.sm),
+            const SizedBox(width: Gap.f8),
             Expanded(
               child: PrimaryButton(
                 label: 'Add by ID',
@@ -223,8 +223,8 @@ class WhitelistScreen extends ConsumerWidget {
             ),
           ],
         ),
-        SectionHeader('Allowed · ${whitelist.length}'),
-        GroupCard(
+        GroupHeading('Allowed · ${whitelist.length}'),
+        RowList(
           children: [
             for (final entry in whitelist)
               StatusRow(

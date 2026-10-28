@@ -4,17 +4,13 @@ import 'package:flutter/services.dart';
 import 'components.dart';
 import 'tokens.dart';
 
-/// A segmented control in the house style: a warm track with a white
-/// thumb that slides to the choice. Each segment is a 48 dp target.
+/// 2–4 short, mutually exclusive choices as an equal-width [ChipRow].
+/// Longer or more choices belong in a [RadioList]; never a 2×2 grid.
 class SegmentChoice<T> extends StatelessWidget {
   final List<(T, String)> options;
   final T value;
   final ValueChanged<T>? onChanged;
   final String? keyPrefix;
-
-  /// Segments per row; more options wrap onto a second row (four longer
-  /// labels as a 2×2 at phone width). Null keeps them all on one row.
-  final int? columns;
 
   const SegmentChoice({
     super.key,
@@ -22,128 +18,102 @@ class SegmentChoice<T> extends StatelessWidget {
     required this.value,
     this.onChanged,
     this.keyPrefix,
-    this.columns,
   });
 
   @override
   Widget build(BuildContext context) {
-    final bt = context.bt;
-    final text = Theme.of(context).textTheme;
-    final i = options.indexWhere((o) => o.$1 == value).clamp(0, 99);
-    final n = options.length;
-    final cols = (columns ?? n).clamp(1, n);
-    final rows = (n / cols).ceil();
-    final col = i % cols;
-    final row = i ~/ cols;
-
-    Widget segment((T, String) o) {
-      final (v, label) = o;
-      return Expanded(
-        child: Semantics(
-          button: true,
-          selected: v == value,
-          child: InkWell(
+    return ChipRow(
+      children: [
+        for (final (v, label) in options)
+          BtChip(
             key: keyPrefix == null
                 ? null
                 : Key('$keyPrefix-${v is Enum ? v.name : v}'),
-            borderRadius: BorderRadius.circular(Radii.button - 3),
-            onTap: onChanged == null || v == value
-                ? null
-                : () {
-                    HapticFeedback.selectionClick();
-                    onChanged!(v);
-                  },
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 42),
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: Gap.xs,
-                    vertical: Gap.sm,
-                  ),
-                  child: AnimatedDefaultTextStyle(
-                    duration: Motion.of(context, Motion.fast),
-                    style: text.labelLarge!.copyWith(
-                      fontSize: 14,
-                      color: v == value ? bt.ink : bt.muted,
-                      fontWeight:
-                          v == value ? FontWeight.w700 : FontWeight.w600,
-                    ),
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            label: label,
+            selected: v == value,
+            onTap: onChanged == null || v == value ? null : () => onChanged!(v),
           ),
-        ),
-      );
-    }
-
-    return Container(
-      constraints: const BoxConstraints(minHeight: 48),
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: bt.hairline,
-        borderRadius: Radii.buttons,
-        border: Border.all(color: bt.border),
-      ),
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: AnimatedAlign(
-              duration: Motion.of(context, Motion.medium),
-              curve: Motion.spring,
-              alignment: Alignment(
-                cols == 1 ? 0 : -1 + 2 * col / (cols - 1),
-                rows == 1 ? 0 : -1 + 2 * row / (rows - 1),
-              ),
-              child: FractionallySizedBox(
-                widthFactor: 1 / cols,
-                heightFactor: 1 / rows,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: bt.surface,
-                    borderRadius: BorderRadius.circular(Radii.button - 3),
-                    border: Border.all(color: bt.borderStrong),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          if (rows == 1)
-            Row(children: [for (final o in options) segment(o)])
-          else
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (var r = 0; r < rows; r++)
-                  Row(
-                    children: [
-                      for (var c = 0; c < cols; c++)
-                        if (r * cols + c < n)
-                          segment(options[r * cols + c])
-                        else
-                          const Spacer(),
-                    ],
-                  ),
-              ],
-            ),
-        ],
-      ),
+      ],
     );
   }
 }
 
-/// − N + : a small whole-number stepper with a unit ("5 per day").
+/// One option of a [RadioList].
+class RadioOption<T> {
+  final T value;
+  final String label;
+
+  /// One line at most.
+  final String? detail;
+  final IconData? icon;
+
+  const RadioOption(this.value, this.label, {this.detail, this.icon});
+}
+
+/// A multi-choice as a list: one line per option, a radio mark on the
+/// right, hairlines between. Keys are `$keyPrefix-<value name>`.
+class RadioList<T> extends StatelessWidget {
+  final List<RadioOption<T>> options;
+  final T value;
+  final ValueChanged<T>? onChanged;
+  final String? keyPrefix;
+
+  const RadioList({
+    super.key,
+    required this.options,
+    required this.value,
+    this.onChanged,
+    this.keyPrefix,
+  });
+
+  static String _id(Object? v) => v is Enum ? v.name : '$v';
+
+  @override
+  Widget build(BuildContext context) {
+    final bt = context.bt;
+    return RowList(
+      children: [
+        for (final o in options)
+          Semantics(
+            selected: o.value == value,
+            inMutuallyExclusiveGroup: true,
+            child: ListRow(
+              key: keyPrefix == null ? null : Key('$keyPrefix-${_id(o.value)}'),
+              icon: o.icon,
+              iconColor: o.value == value ? bt.ink : bt.muted,
+              title: o.label,
+              subtitle: o.detail,
+              chevron: false,
+              onTap: onChanged == null
+                  ? null
+                  : () {
+                      HapticFeedback.selectionClick();
+                      onChanged!(o.value);
+                    },
+              trailing: AnimatedSwitcher(
+                duration: Motion.of(context, Motion.flip),
+                child: Icon(
+                  o.value == value
+                      ? Icons.radio_button_checked_rounded
+                      : Icons.radio_button_unchecked_rounded,
+                  key: ValueKey(o.value == value),
+                  size: Sizes.iconControl,
+                  color: o.value == value ? bt.coralInk : bt.faint,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// − N + at text size, inline at the end of a row ("5 per day").
 class CountStepper extends StatelessWidget {
   final int value;
   final int min;
   final int max;
+  final int step;
   final String unit;
   final ValueChanged<int>? onChanged;
   final String? keyPrefix;
@@ -154,6 +124,7 @@ class CountStepper extends StatelessWidget {
     required this.min,
     required this.max,
     required this.unit,
+    this.step = 1,
     this.onChanged,
     this.keyPrefix,
   });
@@ -169,24 +140,22 @@ class CountStepper extends StatelessWidget {
         enabled: on,
         label: label,
         excludeSemantics: true,
-        child: Material(
-          color: on ? bt.surface : bt.hairline,
-          shape: CircleBorder(
-            side: BorderSide(color: on ? bt.borderStrong : bt.border, width: 2),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            key: keyPrefix == null ? null : Key('$keyPrefix-$id'),
-            onTap: on
-                ? () {
-                    HapticFeedback.selectionClick();
-                    onChanged!(to);
-                  }
-                : null,
-            child: SizedBox(
-              width: 48,
-              height: 48,
-              child: Icon(icon, size: 22, color: on ? bt.ink : bt.faint),
+        child: InkResponse(
+          key: keyPrefix == null ? null : Key('$keyPrefix-$id'),
+          radius: Sizes.touch / 2,
+          onTap: on
+              ? () {
+                  HapticFeedback.selectionClick();
+                  onChanged!(to);
+                }
+              : null,
+          child: SizedBox(
+            width: Sizes.control,
+            height: Sizes.control,
+            child: Icon(
+              icon,
+              size: Sizes.icon,
+              color: on ? bt.ink : bt.faint,
             ),
           ),
         ),
@@ -197,122 +166,29 @@ class CountStepper extends StatelessWidget {
       container: true,
       value: '$value $unit',
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          button(Icons.remove_rounded, 'Fewer', value - 1, 'minus'),
-          Expanded(
-            child: Column(
-              children: [
-                AnimatedSwitcher(
-                  duration: Motion.of(context, Motion.fast),
-                  transitionBuilder: (c, a) => FadeTransition(
-                    opacity: a,
-                    child: ScaleTransition(
-                      scale: Tween(begin: 0.85, end: 1.0).animate(a),
-                      child: c,
-                    ),
-                  ),
-                  child: Text(
-                    '$value',
-                    key: ValueKey(value),
-                    style: Fonts.bricolage(
-                      28,
-                      color: bt.ink,
-                      height: 1,
-                      tabularFigures: true,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(unit, style: text.bodySmall),
-              ],
+          button(Icons.remove_rounded, 'Fewer', value - step, 'minus'),
+          ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: Gap.f34),
+            child: Text(
+              unit.isEmpty ? '$value' : '$value $unit',
+              textAlign: TextAlign.center,
+              style: text.titleSmall!.copyWith(
+                fontWeight: FontWeight.w700,
+                fontFeatures: Fonts.tabular,
+              ),
             ),
           ),
-          button(Icons.add_rounded, 'More', value + 1, 'plus'),
+          button(Icons.add_rounded, 'More', value + step, 'plus'),
         ],
       ),
     );
   }
 }
 
-/// A small pill that is either "the one picked" (ink fill) or an option
-/// (outlined). For presets and filters.
-class InkPill extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback? onTap;
-  final IconData? icon;
-
-  const InkPill({
-    super.key,
-    required this.label,
-    required this.selected,
-    this.onTap,
-    this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final bt = context.bt;
-    final text = Theme.of(context).textTheme;
-    final fg = selected ? bt.onInkFill : bt.ink;
-    return Semantics(
-      button: onTap != null,
-      selected: selected,
-      child: AnimatedContainer(
-        duration: Motion.of(context, Motion.fast),
-        curve: Motion.settle,
-        decoration: ShapeDecoration(
-          color: selected ? bt.inkFill : bt.surface,
-          shape: StadiumBorder(
-            side: BorderSide(
-              color: selected ? bt.inkFill : bt.borderStrong,
-              width: 2,
-            ),
-          ),
-        ),
-        child: Material(
-          type: MaterialType.transparency,
-          shape: const StadiumBorder(),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onTap == null
-                ? null
-                : () {
-                    HapticFeedback.selectionClick();
-                    onTap!();
-                  },
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 44),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (icon != null) ...[
-                      Icon(icon, size: 16, color: fg),
-                      const SizedBox(width: 6),
-                    ],
-                    Text(
-                      label,
-                      maxLines: 1,
-                      style: text.labelLarge!.copyWith(
-                        fontSize: 14,
-                        color: fg,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// A settings card: tinted icon tile, title, a big value on the right, and
-/// whatever controls go underneath.
+/// A row with a title, a value on the right, and whatever controls go
+/// underneath. No card: it sits on the canvas.
 class SettingCard extends StatelessWidget {
   final IconData icon;
   final Tone tone;
@@ -337,44 +213,53 @@ class SettingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final bt = context.bt;
     final text = Theme.of(context).textTheme;
-    return InfoCard(
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: Gap.f13),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              IconBadge(
-                icon: icon,
-                color: dim ? bt.muted : tone.color(context),
-                size: 40,
-              ),
-              const SizedBox(width: Gap.md),
-              Expanded(
-                child: DefaultTextStyle.merge(
-                  style: text.titleMedium!.copyWith(fontSize: 17),
-                  child: title,
-                ),
-              ),
-              if (value != null)
-                AnimatedSwitcher(
-                  duration: Motion.of(context, Motion.fast),
-                  child: Text(
-                    value!,
-                    key: ValueKey(value),
-                    style: Fonts.bricolage(
-                      20,
-                      color: dim ? bt.muted : bt.ink,
-                      tabularFigures: true,
-                    ),
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: Sizes.control),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: Sizes.iconControl,
+                  child: Icon(
+                    icon,
+                    size: Sizes.icon,
+                    color: dim ? bt.faint : tone.color(context),
                   ),
                 ),
-              if (trailing != null) ...[
-                const SizedBox(width: Gap.sm),
-                trailing!,
+                const SizedBox(width: Gap.f13),
+                Expanded(
+                  child: DefaultTextStyle.merge(
+                    style: text.titleMedium!.copyWith(
+                      color: dim ? bt.muted : null,
+                    ),
+                    child: title,
+                  ),
+                ),
+                if (value != null)
+                  AnimatedSwitcher(
+                    duration: Motion.of(context, Motion.flip),
+                    child: Text(
+                      value!,
+                      key: ValueKey(value),
+                      style: text.bodyMedium!.copyWith(
+                        color: dim ? bt.faint : bt.muted,
+                        fontWeight: FontWeight.w600,
+                        fontFeatures: Fonts.tabular,
+                      ),
+                    ),
+                  ),
+                if (trailing != null) ...[
+                  const SizedBox(width: Gap.f8),
+                  trailing!,
+                ],
               ],
-            ],
+            ),
           ),
-          if (children.isNotEmpty) const SizedBox(height: Gap.md),
+          if (children.isNotEmpty) const SizedBox(height: Gap.f13),
           ...children,
         ],
       ),
@@ -401,55 +286,20 @@ class SwitchLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
     return MergeSemantics(
-      child: InkWell(
-        borderRadius: Radii.tile,
+      child: ListRow(
+        title: title,
+        subtitle: subtitle,
+        leading: leading,
+        chevron: false,
         onTap: onChanged == null ? null : () => onChanged!(!value),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 56),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: Gap.xs),
-            child: Row(
-              children: [
-                if (leading != null) ...[
-                  leading!,
-                  const SizedBox(width: Gap.md),
-                ],
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(title, style: text.titleSmall),
-                      if (subtitle != null)
-                        AnimatedSwitcher(
-                          duration: Motion.of(context, Motion.fast),
-                          layoutBuilder: (c, prev) => Stack(
-                            alignment: Alignment.topLeft,
-                            children: [...prev, if (c != null) c],
-                          ),
-                          child: Text(
-                            subtitle!,
-                            key: ValueKey(subtitle),
-                            style: text.bodySmall,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: Gap.sm),
-                Switch(value: value, onChanged: onChanged),
-              ],
-            ),
-          ),
-        ),
+        trailing: Switch(value: value, onChanged: onChanged),
       ),
     );
   }
 }
 
-/// "+ Add" with a dashed outline: something you can add more of.
+/// "+ Add" with a 1 px dashed outline: something you can add more of.
 class DashedAdd extends StatelessWidget {
   final String label;
   final VoidCallback? onTap;
@@ -466,39 +316,42 @@ class DashedAdd extends StatelessWidget {
   Widget build(BuildContext context) {
     final bt = context.bt;
     final text = Theme.of(context).textTheme;
-    final radius = expand ? Radii.tileR : 22.0;
     return Semantics(
       button: true,
       label: label,
       excludeSemantics: true,
       child: CustomPaint(
-        painter: _DashPainter(bt.borderStrong, radius),
+        painter: _DashPainter(bt.borderStrong, Radii.chipR),
         child: Material(
           type: MaterialType.transparency,
           child: InkWell(
-            borderRadius: BorderRadius.circular(radius),
+            borderRadius: Radii.chip,
             onTap: onTap,
             child: ConstrainedBox(
               constraints: BoxConstraints(
-                minHeight: expand ? 52 : 44,
+                minHeight: expand ? Sizes.control : Sizes.chip,
                 minWidth: expand ? double.infinity : 0,
               ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14),
+                padding: const EdgeInsets.symmetric(horizontal: Gap.f13),
                 child: Row(
                   mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.add_rounded, size: 18, color: bt.skyInk),
-                    const SizedBox(width: Gap.xs),
+                    Icon(
+                      Icons.add_rounded,
+                      size: Sizes.iconSmall,
+                      color: bt.skyInk,
+                    ),
+                    const SizedBox(width: Gap.f4),
                     Flexible(
                       child: Text(
                         label,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: text.labelLarge!.copyWith(
-                          fontSize: 14,
+                        style: text.labelMedium!.copyWith(
                           color: bt.skyInk,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
@@ -521,19 +374,19 @@ class _DashPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final r = RRect.fromRectAndRadius(
-      (Offset.zero & size).deflate(1),
+      (Offset.zero & size).deflate(Sizes.hairline / 2),
       Radius.circular(radius.clamp(0, size.height / 2)),
     );
     final path = Path()..addRRect(r);
     final paint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
+      ..strokeWidth = Sizes.hairline;
     for (final m in path.computeMetrics()) {
       var d = 0.0;
       while (d < m.length) {
-        canvas.drawPath(m.extractPath(d, d + 6), paint);
-        d += 11;
+        canvas.drawPath(m.extractPath(d, d + Gap.f4), paint);
+        d += Gap.f8;
       }
     }
   }
@@ -543,7 +396,7 @@ class _DashPainter extends CustomPainter {
       old.color != color || old.radius != radius;
 }
 
-/// A selectable card with a radio mark (two or three big choices).
+/// One choice of a few, as a radio row (icon, title, one line, radio).
 class ChoiceCard extends StatelessWidget {
   final bool selected;
   final IconData icon;
@@ -567,79 +420,44 @@ class ChoiceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bt = context.bt;
-    final text = Theme.of(context).textTheme;
-    final hue = tone.hue(context);
     return Semantics(
       selected: selected,
       button: true,
-      child: AnimatedContainer(
-        duration: Motion.of(context, Motion.fast),
-        curve: Motion.settle,
-        decoration: BoxDecoration(
-          color: selected ? tone.tint(context) : bt.surface,
-          borderRadius: Radii.card,
-          border: Border.all(
-            color: selected ? hue : bt.border,
-            width: selected ? 2 : 1,
-          ),
-        ),
-        child: Material(
-          type: MaterialType.transparency,
-          child: InkWell(
-            borderRadius: Radii.card,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ListRow(
+            icon: icon,
+            iconColor: selected ? tone.color(context) : bt.muted,
+            title: title,
+            subtitle: body,
+            chevron: false,
             onTap: onTap,
-            child: Padding(
-              padding: const EdgeInsets.all(Gap.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      IconBadge(
-                        icon: icon,
-                        color: selected ? tone.color(context) : bt.muted,
-                      ),
-                      const SizedBox(width: Gap.md),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(title, style: text.titleMedium),
-                            const SizedBox(height: 2),
-                            Text(body, style: text.bodySmall),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: Gap.sm),
-                      AnimatedSwitcher(
-                        duration: Motion.of(context, Motion.fast),
-                        child: Icon(
-                          selected
-                              ? Icons.radio_button_checked_rounded
-                              : Icons.radio_button_unchecked_rounded,
-                          key: ValueKey(selected),
-                          color: selected ? tone.color(context) : bt.faint,
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (footer != null) ...[
-                    const SizedBox(height: Gap.sm),
-                    footer!,
-                  ],
-                ],
+            trailing: AnimatedSwitcher(
+              duration: Motion.of(context, Motion.flip),
+              child: Icon(
+                selected
+                    ? Icons.radio_button_checked_rounded
+                    : Icons.radio_button_unchecked_rounded,
+                key: ValueKey(selected),
+                size: Sizes.iconControl,
+                color: selected ? tone.color(context) : bt.faint,
               ),
             ),
           ),
-        ),
+          if (footer != null) ...[
+            footer!,
+            const SizedBox(height: Gap.f13),
+          ],
+        ],
       ),
     );
   }
 }
 
-/// A row that opens a detail page: icon tile, title, live state, chevron.
-class NavCard extends StatelessWidget {
+/// A top-level destination row: a small icon tile, title, live state and
+/// a chevron, on the canvas.
+class NavRow extends StatelessWidget {
   final IconData icon;
   final Tone tone;
   final String title;
@@ -649,7 +467,7 @@ class NavCard extends StatelessWidget {
   final Widget? trailing;
   final Widget? titleWidget;
 
-  const NavCard({
+  const NavRow({
     super.key,
     required this.icon,
     required this.tone,
@@ -664,55 +482,26 @@ class NavCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bt = context.bt;
-    final text = Theme.of(context).textTheme;
     return Semantics(
       button: onTap != null,
       label: '$title, $detail',
       excludeSemantics: titleWidget == null,
-      child: InfoCard(
+      child: ListRow(
+        leading: IconTile(icon: icon, color: tone.color(context)),
+        title: title,
+        titleWidget: titleWidget,
+        subtitle: detail,
+        subtitleColor: detailTone?.color(context) ?? bt.muted,
         onTap: onTap,
-        padding: const EdgeInsets.fromLTRB(Gap.lg, 14, Gap.md, 14),
-        child: Row(
-          children: [
-            IconBadge(icon: icon, color: tone.color(context), size: 48),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  titleWidget ??
-                      Text(
-                        title,
-                        style: text.titleMedium!.copyWith(fontSize: 17),
-                      ),
-                  const SizedBox(height: 2),
-                  Text(
-                    detail,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: text.bodyMedium!.copyWith(
-                      fontSize: 14,
-                      height: 1.35,
-                      color: detailTone?.color(context) ?? bt.muted,
-                      fontWeight: detailTone == null
-                          ? FontWeight.w400
-                          : FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            trailing ??
-                Icon(Icons.chevron_right_rounded, color: bt.muted, size: 24),
-          ],
-        ),
+        trailing: trailing,
+        chevron: trailing == null,
       ),
     );
   }
 }
 
-/// The page frame for a Better TV detail: back, a Bricolage title and a
-/// line under it, then the content.
+/// The page frame for a detail page: back, a Bricolage title and one line
+/// under it, then the content.
 class DetailPage extends StatelessWidget {
   final String title;
   final String? subtitle;
@@ -734,10 +523,10 @@ class DetailPage extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final list = ListView(
       padding: const EdgeInsets.fromLTRB(
-        Gap.page,
+        Gap.gutter,
         0,
-        Gap.page,
-        Gap.xxl,
+        Gap.gutter,
+        Gap.section,
       ),
       children: [
         Row(
@@ -749,10 +538,10 @@ class DetailPage extends StatelessWidget {
                 children: [
                   Semantics(
                     header: true,
-                    child: Text(title, style: text.headlineLarge),
+                    child: Text(title, style: text.displaySmall),
                   ),
                   if (subtitle != null) ...[
-                    const SizedBox(height: 2),
+                    const SizedBox(height: Gap.f4),
                     Text(subtitle!, style: text.bodyMedium),
                   ],
                 ],
@@ -761,7 +550,7 @@ class DetailPage extends StatelessWidget {
             if (titleTrailing != null) titleTrailing!,
           ],
         ),
-        const SizedBox(height: Gap.lg),
+        const SizedBox(height: Gap.related),
         ...children,
       ],
     );

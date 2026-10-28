@@ -214,7 +214,7 @@ class _HelperSwitchState extends ConsumerState<HelperSwitchGuide> {
               'Tick "Always allow", so it doesn\'t ask every time.',
               done: true,
             ),
-            const SizedBox(height: Gap.lg),
+            const SizedBox(height: Gap.f13),
             PrimaryButton(
               label: 'Ask my TV again',
               kind: ButtonKind.ink,
@@ -240,7 +240,7 @@ class _HelperSwitchState extends ConsumerState<HelperSwitchGuide> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(Gap.xl, Gap.md, Gap.md, 0),
+          padding: const EdgeInsets.fromLTRB(Gap.f21, Gap.f13, Gap.f13, 0),
           child: Row(
             children: [
               Expanded(
@@ -263,13 +263,13 @@ class _HelperSwitchState extends ConsumerState<HelperSwitchGuide> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(Gap.xl, Gap.xs, Gap.xl, 0),
+          padding: const EdgeInsets.fromLTRB(Gap.f21, Gap.f4, Gap.f21, 0),
           child: _Progress(value: done ? 1 : n / 5),
         ),
         Expanded(
           child: AnimatedSwitcher(
-            duration: Motion.of(context, Motion.medium),
-            switchInCurve: Motion.settle,
+            duration: Motion.of(context, Motion.sheet),
+            switchInCurve: Motion.enter,
             transitionBuilder: (child, a) => FadeTransition(
               opacity: a,
               child: SlideTransition(
@@ -396,8 +396,8 @@ class _Progress extends StatelessWidget {
           height: 6,
           child: TweenAnimationBuilder<double>(
             tween: Tween(end: value),
-            duration: Motion.of(context, Motion.slow),
-            curve: Motion.settle,
+            duration: Motion.of(context, Motion.sheet),
+            curve: Motion.enter,
             builder: (context, v, _) => Stack(
               children: [
                 Positioned.fill(child: ColoredBox(color: bt.border)),
@@ -429,25 +429,25 @@ class _Why extends StatelessWidget {
     final bt = context.bt;
     return ListView(
       key: const Key('helper-why'),
-      padding: const EdgeInsets.fromLTRB(Gap.xl, Gap.xl, Gap.xl, Gap.xl),
+      padding: const EdgeInsets.fromLTRB(Gap.f21, Gap.f21, Gap.f21, Gap.f21),
       children: [
         const Center(child: Tubby(mood: TubbyMood.cleaning, size: 120)),
-        const SizedBox(height: Gap.xl),
+        const SizedBox(height: Gap.f21),
         Text('One switch on the TV', style: text.headlineLarge),
-        const SizedBox(height: Gap.sm),
+        const SizedBox(height: Gap.f8),
         Text(
           'Google TVs have a switch made for people who look after the TV. '
           'Turning it on lets this phone do more.',
           style: text.bodyLarge,
         ),
-        const SizedBox(height: Gap.lg),
-        InfoCard(
-          padding: const EdgeInsets.fromLTRB(Gap.lg, Gap.md, Gap.lg, Gap.sm),
+        const SizedBox(height: Gap.f13),
+        Surface(
+          padding: const EdgeInsets.fromLTRB(Gap.f13, Gap.f13, Gap.f13, Gap.f8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('WHAT YOU GET', style: text.labelSmall),
-              const SizedBox(height: Gap.xs),
+              const SizedBox(height: Gap.f4),
               const CheckLine('End app that really ends the app', done: true),
               const CheckLine('YouTube without Shorts', done: true),
               const CheckLine('A tidier TV: fewer promos and junk apps',
@@ -456,7 +456,7 @@ class _Why extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: Gap.md),
+        const SizedBox(height: Gap.f13),
         NoticeBanner(
           kind: BannerKind.success,
           icon: Icons.restore_rounded,
@@ -465,11 +465,11 @@ class _Why extends StatelessWidget {
               'time. "Put the TV back the way it was" undoes everything '
               'boretube changed.',
         ),
-        const SizedBox(height: Gap.xl),
+        const SizedBox(height: Gap.f21),
         Row(
           children: [
             Icon(Icons.timer_outlined, size: 18, color: bt.muted),
-            const SizedBox(width: Gap.sm),
+            const SizedBox(width: Gap.f8),
             Expanded(
               child: Text(
                 'About 3 minutes. Grab the TV remote.',
@@ -478,7 +478,7 @@ class _Why extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: Gap.lg),
+        const SizedBox(height: Gap.f13),
         PrimaryButton(
           key: const Key('helper-start'),
           label: 'I have the remote',
@@ -522,24 +522,25 @@ class _DoOnTv extends StatelessWidget {
       children: [
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(Gap.xl, Gap.lg, Gap.xl, Gap.md),
+            padding:
+                const EdgeInsets.fromLTRB(Gap.f21, Gap.f13, Gap.f21, Gap.f13),
             children: [
               Align(
                 alignment: Alignment.centerLeft,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: Gap.md + 2,
-                    vertical: Gap.sm,
+                    horizontal: Gap.f13 + 2,
+                    vertical: Gap.f8,
                   ),
                   decoration: BoxDecoration(
                     color: bt.inkFill,
-                    borderRadius: BorderRadius.circular(Radii.pill),
+                    borderRadius: BorderRadius.circular(Radii.chipR),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Icons.tv_rounded, size: 16, color: bt.onInkFill),
-                      const SizedBox(width: Gap.sm),
+                      const SizedBox(width: Gap.f8),
                       Flexible(
                         child: Text(
                           'DO THIS ON THE TV NOW',
@@ -554,7 +555,7 @@ class _DoOnTv extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: Gap.md + 2),
+              const SizedBox(height: Gap.f13 + 2),
               Semantics(
                 header: true,
                 child: Text.rich(
@@ -562,22 +563,22 @@ class _DoOnTv extends StatelessWidget {
                   style: text.headlineLarge!.copyWith(fontSize: 28),
                 ),
               ),
-              const SizedBox(height: Gap.sm),
+              const SizedBox(height: Gap.f8),
               Text(lead, style: text.bodyMedium),
-              const SizedBox(height: Gap.lg),
+              const SizedBox(height: Gap.f13),
               menu,
-              const SizedBox(height: Gap.md + 2),
+              const SizedBox(height: Gap.f13 + 2),
               if (counter != null) counter!,
               if (remote != null)
-                InfoCard(
+                Surface(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: Gap.lg,
-                    vertical: Gap.sm,
+                    horizontal: Gap.f13,
+                    vertical: Gap.f8,
                   ),
                   child: Row(
                     children: [
                       remote!,
-                      const SizedBox(width: Gap.sm),
+                      const SizedBox(width: Gap.f8),
                       Expanded(
                         child: Text(
                           remoteNote ?? '',
@@ -587,13 +588,13 @@ class _DoOnTv extends StatelessWidget {
                     ],
                   ),
                 ),
-              const SizedBox(height: Gap.md + 2),
+              const SizedBox(height: Gap.f13 + 2),
               const _Watching(),
             ],
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(Gap.xl, 0, Gap.xl, Gap.lg),
+          padding: const EdgeInsets.fromLTRB(Gap.f21, 0, Gap.f21, Gap.f13),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -608,7 +609,7 @@ class _DoOnTv extends StatelessWidget {
                       onPressed: onHelp,
                     ),
                   ),
-                  const SizedBox(width: Gap.md),
+                  const SizedBox(width: Gap.f13),
                   Expanded(
                     child: PrimaryButton(
                       key: const Key('helper-next'),
@@ -620,12 +621,12 @@ class _DoOnTv extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: Gap.sm + 2),
+              const SizedBox(height: Gap.f8 + 2),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.shield_rounded, size: 15, color: bt.mintInk),
-                  const SizedBox(width: Gap.sm),
+                  const SizedBox(width: Gap.f8),
                   Flexible(
                     child: Text(
                       'Google\'s own switch. Turn it off anytime.',
@@ -662,7 +663,7 @@ class _Watching extends StatelessWidget {
                 ? Icon(Icons.sync_rounded, size: 16, color: bt.skyInk)
                 : CircularProgressIndicator(strokeWidth: 2, color: bt.skyInk),
           ),
-          const SizedBox(width: Gap.md),
+          const SizedBox(width: Gap.f13),
           Expanded(
             child: Text(
               'Watching for the switch. We\'ll move on by ourselves.',
@@ -700,7 +701,7 @@ class _TvMenu extends StatelessWidget {
       label: 'On the TV, pick ${rows[target]}',
       excludeSemantics: true,
       child: Container(
-        padding: const EdgeInsets.all(Gap.lg),
+        padding: const EdgeInsets.all(Gap.f13),
         decoration: BoxDecoration(
           color: const Color(0xFF1C1D3A),
           borderRadius: Radii.hero,
@@ -716,16 +717,16 @@ class _TvMenu extends StatelessWidget {
               ),
             ),
             for (var i = 0; i < rows.length; i++) ...[
-              const SizedBox(height: Gap.sm),
+              const SizedBox(height: Gap.f8),
               i == target
                   ? Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: Gap.md,
+                        horizontal: Gap.f13,
                         vertical: 10,
                       ),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: Radii.field,
+                        borderRadius: Radii.control,
                         border: Border.all(color: bt.coral, width: 3),
                       ),
                       child: Row(
@@ -742,7 +743,7 @@ class _TvMenu extends StatelessWidget {
                           ),
                           if (toggle) ...[
                             const _MiniToggle(),
-                            const SizedBox(width: Gap.sm),
+                            const SizedBox(width: Gap.f8),
                           ],
                           Text(
                             '← here',
@@ -757,12 +758,12 @@ class _TvMenu extends StatelessWidget {
                     )
                   : Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: Gap.md,
+                        horizontal: Gap.f13,
                         vertical: 10,
                       ),
                       decoration: const BoxDecoration(
                         color: Color(0xFF2A2B4D),
-                        borderRadius: Radii.field,
+                        borderRadius: Radii.control,
                       ),
                       child: Text(
                         rows[i],
@@ -899,17 +900,17 @@ class _OkCounter extends StatelessWidget {
       button: true,
       label: done ? 'All 7 presses done' : 'I pressed OK. $presses of 7 so far',
       excludeSemantics: true,
-      child: InfoCard(
+      child: Surface(
         key: const Key('helper-ok-counter'),
         onTap: done ? null : onPress,
         padding: const EdgeInsets.symmetric(
-          horizontal: Gap.lg,
-          vertical: Gap.sm,
+          horizontal: Gap.f13,
+          vertical: Gap.f8,
         ),
         child: Row(
           children: [
             const _RemoteKey(label: 'OK'),
-            const SizedBox(width: Gap.xs),
+            const SizedBox(width: Gap.f4),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -930,8 +931,8 @@ class _OkCounter extends StatelessWidget {
                         if (i > 0) const SizedBox(width: 4),
                         Expanded(
                           child: AnimatedContainer(
-                            duration: Motion.of(context, Motion.fast),
-                            curve: Motion.spring,
+                            duration: Motion.of(context, Motion.flip),
+                            curve: Motion.enter,
                             height: 8,
                             decoration: BoxDecoration(
                               color: i < presses
@@ -985,7 +986,7 @@ class _Rehearse extends ConsumerWidget {
     final fp = key == null ? null : adbFingerprint(key);
     return ListView(
       key: const Key('helper-rehearse'),
-      padding: const EdgeInsets.fromLTRB(Gap.xl, Gap.lg, Gap.xl, Gap.xl),
+      padding: const EdgeInsets.fromLTRB(Gap.f21, Gap.f13, Gap.f21, Gap.f21),
       children: [
         if (detected && !failed) ...[
           const NoticeBanner(
@@ -995,7 +996,7 @@ class _Rehearse extends ConsumerWidget {
             title: 'The switch is on',
             message: 'Nice work. One last OK and you\'re done.',
           ),
-          const SizedBox(height: Gap.lg),
+          const SizedBox(height: Gap.f13),
         ],
         if (failed) ...[
           NoticeBanner(
@@ -1008,7 +1009,7 @@ class _Rehearse extends ConsumerWidget {
                 : 'Check USB debugging is on and the TV is awake, then ask '
                     'again.',
           ),
-          const SizedBox(height: Gap.lg),
+          const SizedBox(height: Gap.f13),
         ],
         Semantics(
           header: true,
@@ -1017,7 +1018,7 @@ class _Rehearse extends ConsumerWidget {
             style: text.headlineLarge!.copyWith(fontSize: 28),
           ),
         ),
-        const SizedBox(height: Gap.sm),
+        const SizedBox(height: Gap.f8),
         Text.rich(
           TextSpan(
             style: text.bodyMedium,
@@ -1036,21 +1037,21 @@ class _Rehearse extends ConsumerWidget {
             ],
           ),
         ),
-        const SizedBox(height: Gap.lg),
+        const SizedBox(height: Gap.f13),
         _PromptMock(fingerprint: fp),
-        const SizedBox(height: Gap.xl),
+        const SizedBox(height: Gap.f21),
         PrimaryButton(
           key: const Key('adb-connect'),
           label: failed ? 'Ask my TV again' : 'Ready: ask my TV',
           icon: Icons.tv_rounded,
           onPressed: onConnect,
         ),
-        const SizedBox(height: Gap.sm),
+        const SizedBox(height: Gap.f8),
         TextButton(
           onPressed: onBack,
           child: const Text('Back to the TV steps'),
         ),
-        const SizedBox(height: Gap.sm),
+        const SizedBox(height: Gap.f8),
         Text(
           'This only lets boretube on this phone talk to the TV. Remove it '
           'any time in the TV\'s Developer options.',
@@ -1076,7 +1077,7 @@ class _PromptMock extends StatelessWidget {
       label: 'The TV prompt: tick Always allow, then pick Allow',
       excludeSemantics: true,
       child: Container(
-        padding: const EdgeInsets.all(Gap.lg),
+        padding: const EdgeInsets.all(Gap.f13),
         decoration: BoxDecoration(
           color: const Color(0xFF1C1D3A),
           borderRadius: Radii.hero,
@@ -1088,7 +1089,7 @@ class _PromptMock extends StatelessWidget {
               'Allow USB debugging?',
               style: text.titleMedium!.copyWith(color: Colors.white),
             ),
-            const SizedBox(height: Gap.xs),
+            const SizedBox(height: Gap.f4),
             Text(
               'The computer\'s RSA key fingerprint is:\n'
               '${fingerprint ?? 'AB:CD:…'}',
@@ -1096,14 +1097,14 @@ class _PromptMock extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: text.bodySmall!.copyWith(color: const Color(0xFFA9AACB)),
             ),
-            const SizedBox(height: Gap.md),
+            const SizedBox(height: Gap.f13),
             Container(
               padding: const EdgeInsets.symmetric(
-                horizontal: Gap.sm,
-                vertical: Gap.sm,
+                horizontal: Gap.f8,
+                vertical: Gap.f8,
               ),
               decoration: BoxDecoration(
-                borderRadius: Radii.field,
+                borderRadius: Radii.control,
                 border: Border.all(color: bt.coral, width: 2),
               ),
               child: Row(
@@ -1121,7 +1122,7 @@ class _PromptMock extends StatelessWidget {
                       color: Colors.white,
                     ),
                   ),
-                  const SizedBox(width: Gap.sm),
+                  const SizedBox(width: Gap.f8),
                   Expanded(
                     child: Text(
                       'Always allow from this computer',
@@ -1138,7 +1139,7 @@ class _PromptMock extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: Gap.md),
+            const SizedBox(height: Gap.f13),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -1149,15 +1150,15 @@ class _PromptMock extends StatelessWidget {
                     fontSize: 14,
                   ),
                 ),
-                const SizedBox(width: Gap.lg),
+                const SizedBox(width: Gap.f13),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: Gap.md + 2,
-                    vertical: Gap.sm,
+                    horizontal: Gap.f13 + 2,
+                    vertical: Gap.f8,
                   ),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: Radii.field,
+                    borderRadius: Radii.control,
                     border: Border.all(color: bt.coral, width: 3),
                   ),
                   child: Text(
@@ -1192,7 +1193,7 @@ class _Waiting extends StatelessWidget {
             height: 56,
             child: CircularProgressIndicator(strokeWidth: 3),
           ),
-          const SizedBox(height: Gap.lg),
+          const SizedBox(height: Gap.f13),
           Text('Saying hello to the TV…', style: text.titleMedium),
         ],
       ),
@@ -1213,7 +1214,7 @@ class _LookAtTv extends ConsumerWidget {
     return Center(
       child: SingleChildScrollView(
         key: const Key('helper-look-at-tv'),
-        padding: const EdgeInsets.all(Gap.xl),
+        padding: const EdgeInsets.all(Gap.f21),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1222,7 +1223,7 @@ class _LookAtTv extends ConsumerWidget {
               color: bt.coral,
               child: Tubby(size: 120, body: bt.sky),
             ),
-            const SizedBox(height: Gap.lg),
+            const SizedBox(height: Gap.f13),
             Semantics(
               liveRegion: true,
               child: Text(
@@ -1231,7 +1232,7 @@ class _LookAtTv extends ConsumerWidget {
                 textAlign: TextAlign.center,
               ),
             ),
-            const SizedBox(height: Gap.md),
+            const SizedBox(height: Gap.f13),
             Text.rich(
               TextSpan(
                 style: text.bodyLarge,
@@ -1252,16 +1253,16 @@ class _LookAtTv extends ConsumerWidget {
               textAlign: TextAlign.center,
             ),
             if (key != null) ...[
-              const SizedBox(height: Gap.lg),
+              const SizedBox(height: Gap.f13),
               Text('THE TV SHOWS THIS CODE', style: text.labelSmall),
-              const SizedBox(height: Gap.xs),
+              const SizedBox(height: Gap.f4),
               Text(
                 adbFingerprint(key),
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
               ),
             ],
-            const SizedBox(height: Gap.xl),
+            const SizedBox(height: Gap.f21),
             TextButton(
               key: const Key('helper-prompt-gone-open'),
               onPressed: onGone,
@@ -1284,25 +1285,25 @@ class _Done extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     return ListView(
       key: const Key('helper-done'),
-      padding: const EdgeInsets.all(Gap.xl),
+      padding: const EdgeInsets.all(Gap.f21),
       children: [
-        const SizedBox(height: Gap.xl),
+        const SizedBox(height: Gap.f21),
         const Center(child: Tubby(mood: TubbyMood.cleaning, size: 140)),
-        const SizedBox(height: Gap.xl),
+        const SizedBox(height: Gap.f21),
         Text(
           'Home mode is on',
           style: text.displaySmall,
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: Gap.sm),
+        const SizedBox(height: Gap.f8),
         Text(
           '$tvName trusts this phone now.',
           style: text.bodyLarge,
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: Gap.xl),
-        const InfoCard(
-          padding: EdgeInsets.fromLTRB(Gap.lg, Gap.sm, Gap.lg, Gap.sm),
+        const SizedBox(height: Gap.f21),
+        const Surface(
+          padding: EdgeInsets.fromLTRB(Gap.f13, Gap.f8, Gap.f13, Gap.f8),
           child: Column(
             children: [
               CheckLine('End app now really ends the app', done: true),
@@ -1311,7 +1312,7 @@ class _Done extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: Gap.xl),
+        const SizedBox(height: Gap.f21),
         PrimaryButton(
           key: const Key('helper-finish'),
           label: 'Back to Home',
@@ -1370,9 +1371,9 @@ class _TroubleSheet extends StatelessWidget {
       children: [
         for (final t in tips) ...[
           CheckLine(t, done: true),
-          const SizedBox(height: Gap.xs),
+          const SizedBox(height: Gap.f4),
         ],
-        const SizedBox(height: Gap.lg),
+        const SizedBox(height: Gap.f13),
         PrimaryButton(
           label: 'Got it',
           kind: ButtonKind.ink,

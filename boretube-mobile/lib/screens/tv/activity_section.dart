@@ -32,7 +32,7 @@ class ActivitySection extends ConsumerWidget {
           ...items.when(
             loading: () => const [SkeletonCard(rows: 5)],
             error: (e, _) => [
-              InfoCard(
+              Surface(
                 child: EmptyState(
                   icon: Icons.history_toggle_off_rounded,
                   tone: Tone.bad,
@@ -60,28 +60,22 @@ class ActivitySection extends ConsumerWidget {
               ];
               return [
                 if (away.isNotEmpty) ...[
-                  SectionHeader(
+                  GroupHeading(
                     'While you were away · ${away.length}',
-                    padding: const EdgeInsets.fromLTRB(
-                      Gap.xs,
-                      Gap.sm,
-                      Gap.xs,
-                      Gap.sm,
-                    ),
                   ),
-                  GroupCard(
+                  RowList(
                     key: const Key('activity-away'),
                     children: [
                       for (final i in away) ActivityRow(item: i),
                     ],
                   ),
                 ],
-                SectionHeader(
+                GroupHeading(
                   away.isEmpty
                       ? '${rest.length} changes'
                       : 'Earlier · ${rest.length}',
                 ),
-                GroupCard(
+                RowList(
                   children: [
                     for (final i in rest) ActivityRow(item: i),
                   ],
@@ -183,18 +177,18 @@ class HistoryExplainer extends StatelessWidget {
       key: const Key('history-explainer'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        InfoCard(
-          padding: const EdgeInsets.all(Gap.xl),
+        Surface(
+          padding: const EdgeInsets.all(Gap.f21),
           child: Column(
             children: [
               const Tubby(mood: TubbyMood.calm, size: 88),
-              const SizedBox(height: Gap.lg),
+              const SizedBox(height: Gap.f13),
               Text(
                 'Nothing has happened yet',
                 style: text.titleLarge,
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: Gap.xs),
+              const SizedBox(height: Gap.f4),
               Text(
                 'Every change boretube or Always On makes to the TV lands '
                 'here, with what it was before. So you can always see it, '
@@ -205,11 +199,11 @@ class HistoryExplainer extends StatelessWidget {
             ],
           ),
         ),
-        const SectionHeader('What you\'ll see here'),
+        const GroupHeading('What you\'ll see here'),
         ExcludeSemantics(
           child: Opacity(
             opacity: 0.72,
-            child: GroupCard(
+            child: RowList(
               children: [
                 for (final (icon, title, who, tone) in _examples)
                   StatusRow(
@@ -223,11 +217,11 @@ class HistoryExplainer extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: Gap.md),
+        const SizedBox(height: Gap.f13),
         Row(
           children: [
             Icon(Icons.undo_rounded, size: 18, color: bt.muted),
-            const SizedBox(width: Gap.sm),
+            const SizedBox(width: Gap.f8),
             Expanded(
               child: Text(
                 'Changed your mind? "Put the TV back the way it was" '

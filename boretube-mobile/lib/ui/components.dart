@@ -47,42 +47,45 @@ extension ToneColor on Tone {
       Tone.warn => bt.sunTint,
       Tone.bad => bt.berryTint,
       Tone.info => bt.skyTint,
-      Tone.idle => bt.hairline,
+      Tone.idle => bt.wash,
       Tone.accent => bt.coralTint,
     };
   }
 }
 
-/// Small uppercase label above a group of cards, with an optional action.
-class SectionHeader extends StatelessWidget {
+/// A group name: sentence case, Bricolage 21/700, with a section gap
+/// above it. Use only where a group genuinely needs a name; never an
+/// uppercase "eyebrow".
+class GroupHeading extends StatelessWidget {
   final String title;
   final Widget? trailing;
-  final EdgeInsetsGeometry padding;
 
-  const SectionHeader(
+  /// The first heading on a screen sits closer to what is above it.
+  final bool first;
+
+  const GroupHeading(
     this.title, {
     super.key,
     this.trailing,
-    this.padding = const EdgeInsets.fromLTRB(
-      Gap.xs,
-      Gap.xl,
-      Gap.xs,
-      Gap.sm,
-    ),
+    this.first = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: padding,
+      padding: EdgeInsets.only(
+        top: first ? Gap.related : Gap.section,
+        bottom: Gap.f8,
+      ),
       child: Semantics(
         header: true,
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Expanded(
               child: Text(
-                title.toUpperCase(),
-                style: Theme.of(context).textTheme.labelSmall,
+                title,
+                style: Theme.of(context).textTheme.titleLarge,
               ),
             ),
             if (trailing != null) trailing!,
@@ -93,8 +96,10 @@ class SectionHeader extends StatelessWidget {
   }
 }
 
-/// The card: white on cream, a warm hairline border, no shadow.
-class InfoCard extends StatelessWidget {
+/// The one raised container: white on cream, a 1 px warm border, no
+/// shadow. At most two per screen (test/widget/structure_test.dart): the
+/// hero, and one more if it earns it. Lists go on the canvas instead.
+class Surface extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
   final VoidCallback? onTap;
@@ -103,15 +108,15 @@ class InfoCard extends StatelessWidget {
   final Color? borderColor;
   final BorderRadius radius;
 
-  const InfoCard({
+  const Surface({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(Gap.lg),
+    this.padding = const EdgeInsets.all(Gap.related),
     this.onTap,
     this.color,
     this.gradient,
     this.borderColor,
-    this.radius = Radii.card,
+    this.radius = Radii.control,
   });
 
   @override
@@ -124,7 +129,10 @@ class InfoCard extends StatelessWidget {
           color: gradient == null ? color ?? bt.surface : null,
           gradient: gradient,
           borderRadius: radius,
-          border: Border.all(color: borderColor ?? bt.border),
+          border: Border.all(
+            color: borderColor ?? bt.border,
+            width: Sizes.hairline,
+          ),
         ),
         child: InkWell(
           borderRadius: radius,
@@ -136,67 +144,68 @@ class InfoCard extends StatelessWidget {
   }
 }
 
-/// A tinted square icon tile (radius 10).
-class IconBadge extends StatelessWidget {
+/// A small tinted icon tile. Only for top-level navigation entries (Better
+/// TV's destinations) and the hero; rows use a plain 20 px icon.
+class IconTile extends StatelessWidget {
   final IconData icon;
   final Color color;
   final double size;
 
-  /// Solid fill with a white glyph (problem banners).
+  /// Solid fill with a white glyph.
   final bool solid;
 
-  const IconBadge({
+  const IconTile({
     super.key,
     required this.icon,
     required this.color,
-    this.size = 40,
+    this.size = Sizes.tile,
     this.solid = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final r = size >= 56 ? Radii.tileR : Radii.iconTile;
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
         color: solid ? color : color.withValues(alpha: 0.13),
-        borderRadius: BorderRadius.circular(r),
+        borderRadius: size >= Sizes.row ? Radii.control : Radii.chip,
       ),
       child: Icon(
         icon,
         color: solid ? Colors.white : color,
-        size: size * 0.55,
+        size: size * Phi.major,
       ),
     );
   }
 }
 
-/// Press feedback for custom buttons: a small spring scale.
-class _Pressable extends StatefulWidget {
+/// Press feedback: 120 ms, scale 0.97 (none with reduced motion).
+class Pressable extends StatefulWidget {
   final Widget child;
   final bool enabled;
 
-  const _Pressable({required this.child, required this.enabled});
+  const Pressable({super.key, required this.child, this.enabled = true});
 
   @override
-  State<_Pressable> createState() => _PressableState();
+  State<Pressable> createState() => _PressableState();
 }
 
-class _PressableState extends State<_Pressable> {
+class _PressableState extends State<Pressable> {
   bool _down = false;
 
   @override
   Widget build(BuildContext context) {
+    final still = Motion.reduced(context);
     return Listener(
       onPointerDown:
           widget.enabled ? (_) => setState(() => _down = true) : null,
       onPointerUp: (_) => setState(() => _down = false),
       onPointerCancel: (_) => setState(() => _down = false),
       child: AnimatedScale(
-        scale: _down ? 0.97 : 1,
-        duration: Motion.of(context, const Duration(milliseconds: 140)),
-        curve: _down ? Curves.easeOut : Motion.spring,
+        scale: _down && !still ? Motion.pressScale : 1,
+        duration: Motion.press,
+        curve: _down ? Motion.enter : Motion.exit,
         child: widget.child,
       ),
     );
@@ -205,14 +214,15 @@ class _PressableState extends State<_Pressable> {
 
 enum ButtonKind { coral, ink, berry, mint, outline, sun }
 
-/// The app's custom button. [ButtonKind.coral] is the single hero action
-/// on a screen and the only element with a (soft, coral) shadow.
+/// The app's button. [ButtonKind.coral] is the single primary on a screen
+/// (58 tall, the only element with a soft coral shadow); every other kind
+/// is a 44 secondary unless told otherwise.
 class PrimaryButton extends StatelessWidget {
   final String label;
   final IconData? icon;
   final VoidCallback? onPressed;
   final ButtonKind kind;
-  final double height;
+  final double? height;
 
   /// Bricolage label (the Pause TV button).
   final bool display;
@@ -228,7 +238,7 @@ class PrimaryButton extends StatelessWidget {
     this.icon,
     this.onPressed,
     this.kind = ButtonKind.coral,
-    this.height = 56,
+    this.height,
     this.display = false,
     this.shadow = false,
     this.semanticLabel,
@@ -240,26 +250,34 @@ class PrimaryButton extends StatelessWidget {
     final bt = context.bt;
     final text = Theme.of(context).textTheme;
     final enabled = onPressed != null;
+    final h =
+        height ?? (kind == ButtonKind.coral ? Sizes.primary : Sizes.control);
+    final big = h >= Sizes.row;
     final (bg, fg, pressed) = switch (kind) {
       ButtonKind.coral => (bt.coralFill, Colors.white, bt.coralPressed),
       ButtonKind.ink => (bt.inkFill, bt.onInkFill, bt.inkSoft),
       ButtonKind.berry => (bt.berryFill, Colors.white, bt.berryInk),
       ButtonKind.mint => (bt.mint, const Color(0xFF06392A), bt.mintInk),
       ButtonKind.sun => (bt.sun, const Color(0xFF3D2700), bt.sunInk),
-      ButtonKind.outline => (bt.surface, bt.ink, bt.hairline),
+      ButtonKind.outline => (Colors.transparent, bt.ink, bt.wash),
     };
     final style = display
-        ? Fonts.bricolage(24, color: fg, height: 1)
-        : text.labelLarge!.copyWith(
+        ? Fonts.bricolage(
+            TypeSize.headline,
             color: fg,
-            fontSize: height >= 56 ? 17 : 16,
-          );
+            height: TypeSize.tightLeading,
+          )
+        : text.labelLarge!.copyWith(color: fg);
     final content = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         if (icon != null) ...[
-          Icon(icon, color: fg, size: display ? 30 : 22),
-          SizedBox(width: display ? Gap.md : Gap.sm),
+          Icon(
+            icon,
+            color: fg,
+            size: big ? Sizes.iconControl : Sizes.icon,
+          ),
+          SizedBox(width: big ? Gap.f13 : Gap.f8),
         ],
         Flexible(
           child: Text(
@@ -288,29 +306,21 @@ class PrimaryButton extends StatelessWidget {
       enabled: enabled,
       label: semanticLabel,
       excludeSemantics: semanticLabel != null,
-      child: _Pressable(
+      child: Pressable(
         enabled: enabled,
         child: AnimatedOpacity(
           opacity: enabled ? 1 : 0.45,
-          duration: Motion.of(context, Motion.fast),
+          duration: Motion.of(context, Motion.flip),
           child: DecoratedBox(
             decoration: BoxDecoration(
-              borderRadius: Radii.buttons,
+              borderRadius: Radii.control,
               boxShadow: shadow && enabled
                   ? [
-                      // Two soft layers: a wide, low glow pulled in at the
-                      // sides (negative spread, so no hard edge shows past
-                      // the corners) and a faint contact shadow.
                       BoxShadow(
                         color: bt.coral.withValues(alpha: 0.24),
-                        blurRadius: 28,
-                        spreadRadius: -6,
-                        offset: const Offset(0, 14),
-                      ),
-                      BoxShadow(
-                        color: bt.coral.withValues(alpha: 0.14),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
+                        blurRadius: Gap.f21,
+                        spreadRadius: -Gap.f8,
+                        offset: const Offset(0, Gap.f13),
                       ),
                     ]
                   : null,
@@ -318,9 +328,9 @@ class PrimaryButton extends StatelessWidget {
             child: Material(
               color: bg,
               shape: RoundedRectangleBorder(
-                borderRadius: Radii.buttons,
+                borderRadius: Radii.control,
                 side: kind == ButtonKind.outline
-                    ? BorderSide(color: bt.borderStrong, width: 2)
+                    ? BorderSide(color: bt.borderStrong)
                     : BorderSide.none,
               ),
               clipBehavior: Clip.antiAlias,
@@ -334,11 +344,11 @@ class PrimaryButton extends StatelessWidget {
                 highlightColor: pressed.withValues(alpha: 0.35),
                 splashColor: Colors.white.withValues(alpha: 0.12),
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: height),
+                  constraints: BoxConstraints(minHeight: h),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: Gap.lg,
-                      vertical: Gap.sm,
+                      horizontal: Gap.related,
+                      vertical: Gap.f4,
                     ),
                     child: Center(child: content),
                   ),
@@ -352,93 +362,90 @@ class PrimaryButton extends StatelessWidget {
   }
 }
 
-/// A small selectable pill (duration chips, day chips, goal filters).
-class PillChoice extends StatelessWidget {
+/// A compact chip: 34 tall, radius 8, a 1 px line. Selection is a tint
+/// with ink text, never a thick border. Put several in a [ChipRow] so
+/// siblings are equal width.
+class BtChip extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback? onTap;
   final String? semanticLabel;
   final IconData? icon;
+  final Tone tone;
 
-  /// Corner radius; null is a full pill (small chips). Bigger choices,
-  /// like the Pause TV durations, use [Radii.input].
-  final double? radius;
-
-  const PillChoice({
+  const BtChip({
     super.key,
     required this.label,
     required this.selected,
     this.onTap,
     this.semanticLabel,
     this.icon,
-    this.radius,
+    this.tone = Tone.accent,
   });
 
   @override
   Widget build(BuildContext context) {
     final bt = context.bt;
     final text = Theme.of(context).textTheme;
-    final side = BorderSide(
-      color: selected ? bt.coral : bt.coralTint,
-      width: 2,
-    );
-    final r = radius;
-    final OutlinedBorder shape = r == null
-        ? StadiumBorder(side: side)
-        : RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(r),
-            side: side,
-          );
+    final fg = selected ? bt.ink : bt.inkSoft;
     return Semantics(
       button: true,
       selected: selected,
       label: semanticLabel,
       excludeSemantics: semanticLabel != null,
-      child: AnimatedContainer(
-        duration: Motion.of(context, Motion.fast),
-        curve: Motion.settle,
-        constraints: const BoxConstraints(minHeight: 48),
-        decoration: ShapeDecoration(
-          color: selected ? bt.coralWash : bt.surface,
-          shape: shape,
-        ),
-        child: Material(
-          type: MaterialType.transparency,
-          shape: shape.copyWith(side: BorderSide.none),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onTap == null
-                ? null
-                : () {
-                    HapticFeedback.selectionClick();
-                    onTap!();
-                  },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: Gap.sm),
-              child: Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (icon != null) ...[
-                      Icon(
-                        icon,
-                        size: 16,
-                        color: selected ? bt.coralInk : bt.ink,
-                      ),
-                      const SizedBox(width: Gap.xs),
-                    ],
-                    Flexible(
-                      child: Text(
-                        label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: text.labelLarge!.copyWith(
-                          fontSize: 14,
-                          color: selected ? bt.coralInk : bt.ink,
+      child: Pressable(
+        enabled: onTap != null,
+        child: AnimatedContainer(
+          duration: Motion.of(context, Motion.flip),
+          curve: Motion.enter,
+          constraints: const BoxConstraints(minHeight: Sizes.chip),
+          decoration: BoxDecoration(
+            color: selected ? tone.tint(context) : Colors.transparent,
+            borderRadius: Radii.chip,
+            border: Border.all(
+              color: selected
+                  ? tone.hue(context).withValues(alpha: 0.6)
+                  : bt.borderStrong,
+              width: Sizes.hairline,
+            ),
+          ),
+          child: Material(
+            type: MaterialType.transparency,
+            borderRadius: Radii.chip,
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: onTap == null
+                  ? null
+                  : () {
+                      HapticFeedback.selectionClick();
+                      onTap!();
+                    },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: Gap.f13),
+                child: Center(
+                  widthFactor: 1,
+                  heightFactor: 1,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (icon != null) ...[
+                        Icon(icon, size: Sizes.iconSmall, color: fg),
+                        const SizedBox(width: Gap.f4),
+                      ],
+                      Flexible(
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: text.labelMedium!.copyWith(
+                            color: fg,
+                            fontWeight:
+                                selected ? FontWeight.w700 : FontWeight.w600,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -449,19 +456,47 @@ class PillChoice extends StatelessWidget {
   }
 }
 
-/// Quick-action tile: icon over label, with an optional state line.
-/// [active] tints it in its tone (e.g. "Unmute" while muted).
+/// Equal-width siblings with an 8 gap: chips, quick actions. With
+/// [equal] false the children keep their own width and wrap.
+class ChipRow extends StatelessWidget {
+  final List<Widget> children;
+  final bool equal;
+
+  const ChipRow({super.key, required this.children, this.equal = true});
+
+  @override
+  Widget build(BuildContext context) {
+    if (!equal) {
+      return Wrap(
+        spacing: Gap.f8,
+        runSpacing: Gap.f8,
+        children: children,
+      );
+    }
+    return Row(
+      children: [
+        for (var i = 0; i < children.length; i++) ...[
+          if (i > 0) const SizedBox(width: Gap.f8),
+          Expanded(child: children[i]),
+        ],
+      ],
+    );
+  }
+}
+
+/// One quick-action cell: a 24 icon over a 13 label, 55 tall, no card.
+/// [active] tints it (e.g. "Unmute" while muted).
 class ActionTile extends StatelessWidget {
   final IconData icon;
   final String label;
   final String? state;
   final bool active;
 
-  /// Shows a small ring in the corner, but only once the action has run
-  /// for 1.5 s: normal actions just flip.
+  /// Shows a small ring, but only once the action has run for 1.5 s:
+  /// normal actions just flip.
   final bool busy;
 
-  /// Flashes a small check in the corner after success.
+  /// Flashes a small check after success.
   final bool done;
   final VoidCallback? onTap;
   final Tone tone;
@@ -482,112 +517,81 @@ class ActionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final bt = context.bt;
     final text = Theme.of(context).textTheme;
-    final hue = tone.hue(context);
     final enabled = onTap != null && !busy;
-    final bg = active ? tone.tint(context) : bt.surface;
     final fg = active ? tone.color(context) : bt.ink;
-    final iconColor = active ? tone.color(context) : bt.sky;
     final dim = !enabled && !busy;
     return Semantics(
       button: true,
       enabled: enabled,
       label: state == null ? label : '$label, $state',
       excludeSemantics: true,
-      child: _Pressable(
+      child: Pressable(
         enabled: enabled,
         child: AnimatedContainer(
-          duration: Motion.of(context, Motion.fast),
-          curve: Motion.settle,
+          duration: Motion.of(context, Motion.flip),
+          curve: Motion.enter,
+          constraints: const BoxConstraints(minHeight: Sizes.row),
           decoration: BoxDecoration(
-            color: bg,
-            borderRadius: Radii.tile,
-            border: Border.all(
-              color: active ? hue.withValues(alpha: 0.7) : bt.border,
-              width: active ? 1.5 : 1,
-            ),
+            color: active ? tone.tint(context) : Colors.transparent,
+            borderRadius: Radii.control,
           ),
           child: Material(
-            color: Colors.transparent,
+            type: MaterialType.transparency,
+            borderRadius: Radii.control,
+            clipBehavior: Clip.antiAlias,
             child: InkWell(
-              borderRadius: Radii.tile,
               onTap: enabled
                   ? () {
                       HapticFeedback.lightImpact();
                       onTap!();
                     }
                   : null,
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: Gap.xs,
-                        vertical: Gap.sm,
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          AnimatedSwitcher(
-                            duration: Motion.of(context, Motion.fast),
-                            child: Icon(
-                              icon,
-                              key: ValueKey(icon),
-                              size: 26,
-                              color: dim ? bt.faint : iconColor,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            label,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
-                            style: text.labelLarge!.copyWith(
-                              fontSize: 14,
-                              color: dim ? bt.muted : fg,
-                            ),
-                          ),
-                          if (state != null)
-                            AnimatedSwitcher(
-                              duration: Motion.of(context, Motion.fast),
-                              child: Text(
-                                state!,
-                                key: ValueKey(state),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.center,
-                                style: text.bodySmall!.copyWith(fontSize: 12),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    top: Gap.sm,
-                    right: Gap.sm,
-                    child: AnimatedSwitcher(
-                      duration: Motion.of(context, Motion.fast),
-                      child: busy
-                          ? DelayedSpinner(
-                              key: const ValueKey('busy'),
-                              color: fg,
-                            )
-                          : done
-                              ? Icon(
-                                  Icons.check_rounded,
-                                  key: const ValueKey('done'),
-                                  size: 16,
-                                  color: StatusColors.of(context).ok,
-                                )
-                              : const SizedBox(
-                                  key: ValueKey('idle'),
-                                  width: 14,
-                                  height: 14,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: Gap.f4),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      height: Sizes.iconControl,
+                      child: AnimatedSwitcher(
+                        duration: Motion.of(context, Motion.flip),
+                        child: busy
+                            ? DelayedSpinner(
+                                key: const ValueKey('busy'),
+                                color: fg,
+                                size: Sizes.icon,
+                                fallback: Icon(
+                                  icon,
+                                  size: Sizes.iconControl,
+                                  color: fg,
                                 ),
+                              )
+                            : Icon(
+                                done ? Icons.check_rounded : icon,
+                                key: ValueKey(done ? 'done' : icon),
+                                size: Sizes.iconControl,
+                                color: dim
+                                    ? bt.faint
+                                    : done
+                                        ? StatusColors.of(context).ok
+                                        : fg,
+                              ),
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: Gap.f4),
+                    Text(
+                      state ?? label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: text.labelMedium!.copyWith(
+                        color: dim ? bt.muted : fg,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -597,7 +601,132 @@ class ActionTile extends StatelessWidget {
   }
 }
 
-/// Tinted icon tile, title, detail and an optional trailing widget.
+/// The plain list row: on the canvas, 55 tall, a 20 px inline icon, a
+/// title with at most one line under it, and a right-aligned value or
+/// control. Rows in a [RowList] share one trailing edge.
+class ListRow extends StatelessWidget {
+  final IconData? icon;
+  final Widget? leading;
+  final Color? iconColor;
+  final String title;
+  final Widget? titleWidget;
+  final String? subtitle;
+  final Color? subtitleColor;
+
+  /// Right-aligned value text ("9:00 pm", "On").
+  final String? value;
+  final Color? valueColor;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+
+  /// Shows a chevron after the value; defaults to true when tappable.
+  final bool? chevron;
+  final bool dim;
+  final int subtitleLines;
+
+  const ListRow({
+    super.key,
+    this.icon,
+    this.leading,
+    this.iconColor,
+    required this.title,
+    this.titleWidget,
+    this.subtitle,
+    this.subtitleColor,
+    this.value,
+    this.valueColor,
+    this.trailing,
+    this.onTap,
+    this.chevron,
+    this.dim = false,
+    this.subtitleLines = 1,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bt = context.bt;
+    final text = Theme.of(context).textTheme;
+    final showChevron = chevron ?? onTap != null;
+    final lead = leading ??
+        (icon == null
+            ? null
+            : Icon(
+                icon,
+                size: Sizes.icon,
+                color: dim ? bt.faint : iconColor ?? bt.inkSoft,
+              ));
+    return InkWell(
+      onTap: onTap,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: Sizes.row),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: Gap.f8),
+          child: Row(
+            children: [
+              if (lead != null) ...[
+                SizedBox(width: Sizes.iconControl, child: Center(child: lead)),
+                const SizedBox(width: Gap.f13),
+              ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    titleWidget ??
+                        Text(
+                          title,
+                          style: text.titleSmall!.copyWith(
+                            color: dim ? bt.muted : null,
+                          ),
+                        ),
+                    if (subtitle != null && subtitle!.isNotEmpty)
+                      Text(
+                        subtitle!,
+                        maxLines: subtitleLines,
+                        overflow: TextOverflow.ellipsis,
+                        style: text.bodySmall!.copyWith(color: subtitleColor),
+                      ),
+                  ],
+                ),
+              ),
+              if (value != null) ...[
+                const SizedBox(width: Gap.f13),
+                AnimatedSwitcher(
+                  duration: Motion.of(context, Motion.flip),
+                  child: Text(
+                    value!,
+                    key: ValueKey(value),
+                    textAlign: TextAlign.right,
+                    style: text.bodyMedium!.copyWith(
+                      color: valueColor ?? (dim ? bt.faint : bt.muted),
+                      fontWeight: FontWeight.w600,
+                      fontFeatures: Fonts.tabular,
+                    ),
+                  ),
+                ),
+              ],
+              if (trailing != null) ...[
+                const SizedBox(width: Gap.f13),
+                trailing!,
+              ],
+              if (showChevron) ...[
+                const SizedBox(width: Gap.f4),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: Sizes.icon,
+                  color: bt.faint,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A row whose icon carries a tone (ok / warn / bad), for checklists and
+/// status lists. Plain, on the canvas, like every row.
 class StatusRow extends StatelessWidget {
   final Tone tone;
   final IconData icon;
@@ -619,74 +748,185 @@ class StatusRow extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    return InkWell(
-      onTap: onTap,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 56),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: Gap.lg,
-            vertical: Gap.md,
-          ),
-          child: Row(
-            children: [
-              IconBadge(icon: icon, color: tone.color(context), size: 36),
-              const SizedBox(width: Gap.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: text.titleSmall),
-                    if (detail != null && detail!.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        detail!,
-                        maxLines: detailLines,
-                        overflow: TextOverflow.ellipsis,
-                        style: text.bodySmall,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              if (trailing != null) ...[
-                const SizedBox(width: Gap.sm),
-                trailing!,
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => ListRow(
+        icon: icon,
+        iconColor: tone.color(context),
+        title: title,
+        subtitle: detail,
+        subtitleLines: detailLines,
+        trailing: trailing,
+        onTap: onTap,
+        chevron: onTap != null && trailing == null,
+      );
 }
 
-/// A card holding rows separated by hairlines.
-class GroupCard extends StatelessWidget {
+/// Rows separated by 1 px warm hairlines, straight on the canvas (no
+/// card). [edges] adds a hairline above the first and below the last.
+class RowList extends StatelessWidget {
   final List<Widget> children;
+  final bool edges;
 
-  const GroupCard({super.key, required this.children});
+  /// Indent the dividers past a leading icon column.
+  final bool indent;
+
+  const RowList({
+    super.key,
+    required this.children,
+    this.edges = false,
+    this.indent = false,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return InfoCard(
-      padding: const EdgeInsets.symmetric(vertical: Gap.xs),
-      child: ClipRRect(
-        borderRadius: Radii.card,
-        child: Column(
-          children: [
-            for (var i = 0; i < children.length; i++) ...[
-              if (i > 0) const Divider(indent: Gap.lg, endIndent: Gap.lg),
-              children[i],
+    final line = Divider(
+      height: Sizes.hairline,
+      thickness: Sizes.hairline,
+      indent: indent ? Sizes.iconControl + Gap.f13 : 0,
+      color: context.bt.hairline,
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (edges) line,
+        for (var i = 0; i < children.length; i++) ...[
+          if (i > 0) line,
+          children[i],
+        ],
+        if (edges) line,
+      ],
+    );
+  }
+}
+
+/// A single thin progress bar ("4 of 6").
+class ThinProgress extends StatelessWidget {
+  final double value;
+  final Color? color;
+
+  const ThinProgress({super.key, required this.value, this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final bt = context.bt;
+    return ClipRRect(
+      borderRadius: Radii.chip,
+      child: SizedBox(
+        height: Sizes.bar,
+        child: TweenAnimationBuilder<double>(
+          tween: Tween(end: value.clamp(0.0, 1.0)),
+          duration: Motion.of(context, Motion.sheet),
+          curve: Motion.enter,
+          builder: (context, v, _) => Stack(
+            children: [
+              Positioned.fill(child: ColoredBox(color: bt.wash)),
+              FractionallySizedBox(
+                widthFactor: v,
+                child: ColoredBox(
+                  color: color ?? bt.mint,
+                  child: const SizedBox.expand(),
+                ),
+              ),
             ],
-          ],
+          ),
         ),
       ),
     );
   }
 }
+
+/// Fades a list item in, 34 ms after the one before it (first five only).
+/// No movement with reduced motion; nothing on scroll.
+class StaggerIn extends StatelessWidget {
+  final int index;
+  final Widget child;
+
+  const StaggerIn({super.key, required this.index, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    if (index >= Motion.staggerMax || Motion.reduced(context)) return child;
+    final lead = Motion.stagger * index;
+    final total = Motion.sheet + lead;
+    final start = lead.inMicroseconds / total.inMicroseconds;
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: total,
+      builder: (context, t, child) {
+        final v = Motion.enter.transform(
+          ((t - start) / (1 - start)).clamp(0.0, 1.0),
+        );
+        return Opacity(
+          opacity: v,
+          child: Transform.translate(
+            offset: Offset(0, Gap.f8 * (1 - v)),
+            child: child,
+          ),
+        );
+      },
+      child: child,
+    );
+  }
+}
+
+/// A small ⓘ that opens a sheet with the longer explanation, so helper
+/// copy under a control stays to one line.
+class InfoButton extends StatelessWidget {
+  final String title;
+  final String body;
+  final Color? color;
+
+  const InfoButton({
+    super.key,
+    required this.title,
+    required this.body,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'About $title',
+      excludeSemantics: true,
+      child: InkResponse(
+        radius: Sizes.touch / 2,
+        onTap: () {
+          HapticFeedback.selectionClick();
+          showInfoSheet(context, title: title, body: body);
+        },
+        child: SizedBox(
+          width: Sizes.control,
+          height: Sizes.control,
+          child: Icon(
+            Icons.info_outline_rounded,
+            size: Sizes.icon,
+            color: color ?? context.bt.muted,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+Future<void> showInfoSheet(
+  BuildContext context, {
+  required String title,
+  required String body,
+}) =>
+    showBtSheet<void>(
+      context,
+      builder: (context) => SheetScaffold(
+        title: title,
+        lead: Text(body),
+        children: [
+          PrimaryButton(
+            label: 'Got it',
+            kind: ButtonKind.ink,
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
+      ),
+    );
 
 /// A ✓ (works) or ○ (not yet) line, for "Still working" style lists.
 class CheckLine extends StatelessWidget {
@@ -698,7 +938,7 @@ class CheckLine extends StatelessWidget {
     this.label, {
     super.key,
     required this.done,
-    this.minHeight = 40,
+    this.minHeight = Sizes.chip,
   });
 
   @override
@@ -711,16 +951,19 @@ class CheckLine extends StatelessWidget {
       child: ConstrainedBox(
         constraints: BoxConstraints(minHeight: minHeight),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
+          padding: const EdgeInsets.symmetric(vertical: Gap.f4),
           child: Row(
             children: [
-              Icon(
-                done ? Icons.check_rounded : Icons.radio_button_unchecked,
-                size: done ? 20 : 18,
-                color: done ? bt.mint : bt.faint,
-                weight: 700,
+              SizedBox(
+                width: Sizes.iconControl,
+                child: Icon(
+                  done ? Icons.check_rounded : Icons.radio_button_unchecked,
+                  size: Sizes.icon,
+                  color: done ? bt.mint : bt.faint,
+                  weight: 700,
+                ),
               ),
-              const SizedBox(width: Gap.md),
+              const SizedBox(width: Gap.f13),
               Expanded(
                 child: Text(
                   label,
@@ -764,25 +1007,29 @@ class EmptyState extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     return Padding(
       padding: const EdgeInsets.symmetric(
-        horizontal: Gap.lg,
-        vertical: Gap.xl,
+        horizontal: Gap.f13,
+        vertical: Gap.section,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (tubby != null)
-            Tubby(mood: tubby!, size: 96)
+            Tubby(mood: tubby!, size: Sizes.tubbyLarge)
           else
-            IconBadge(icon: icon, color: tone.color(context), size: 56),
-          const SizedBox(height: Gap.lg),
+            IconTile(
+              icon: icon,
+              color: tone.color(context),
+              size: Sizes.row,
+            ),
+          const SizedBox(height: Gap.related),
           Text(title, style: text.titleLarge, textAlign: TextAlign.center),
-          const SizedBox(height: Gap.xs),
+          const SizedBox(height: Gap.f4),
           Text(message, style: text.bodyMedium, textAlign: TextAlign.center),
           if (actionLabel != null && onAction != null) ...[
-            const SizedBox(height: Gap.lg),
+            const SizedBox(height: Gap.related),
             OutlinedButton.icon(
               onPressed: onAction,
-              icon: const Icon(Icons.refresh_rounded),
+              icon: const Icon(Icons.refresh_rounded, size: Sizes.icon),
               label: Text(actionLabel!),
             ),
           ],
@@ -792,7 +1039,8 @@ class EmptyState extends StatelessWidget {
   }
 }
 
-/// A small tinted pill with an optional icon: mode badges, states.
+/// A small tinted badge with an optional icon: mode badges, states.
+/// Tappable badges are a 34 chip; static ones are a compact tag.
 class BtBadge extends StatelessWidget {
   final String label;
   final Tone tone;
@@ -812,21 +1060,22 @@ class BtBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = tone.color(context);
-    final style = Theme.of(context).textTheme.labelLarge!.copyWith(
-          fontSize: large ? 13 : 12,
+    final chip = large || onTap != null;
+    final style = Theme.of(context).textTheme.labelMedium!.copyWith(
           color: c,
+          fontWeight: FontWeight.w700,
         );
     final body = Padding(
       padding: EdgeInsets.symmetric(
-        horizontal: large ? Gap.md : 10,
-        vertical: large ? Gap.sm : 6,
+        horizontal: chip ? Gap.f13 : Gap.f8,
+        vertical: Gap.f4,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: large ? 15 : 13, color: c),
-            const SizedBox(width: 5),
+            Icon(icon, size: Sizes.iconSmall, color: c),
+            const SizedBox(width: Gap.f4),
           ],
           Flexible(
             child: Text(
@@ -837,78 +1086,21 @@ class BtBadge extends StatelessWidget {
             ),
           ),
           if (onTap != null) ...[
-            const SizedBox(width: 2),
-            Icon(Icons.expand_more_rounded, size: large ? 16 : 14, color: c),
+            const SizedBox(width: Gap.f4),
+            Icon(Icons.expand_more_rounded, size: Sizes.iconSmall, color: c),
           ],
         ],
       ),
     );
     return Material(
       color: tone.tint(context),
-      shape: const StadiumBorder(),
-      clipBehavior: Clip.antiAlias,
-      child: onTap == null
-          ? body
-          : InkWell(
-              onTap: onTap,
-              child: ConstrainedBox(
-                // A 48 dp touch target around a small badge.
-                constraints: const BoxConstraints(minHeight: 32),
-                child: body,
-              ),
-            ),
-    );
-  }
-}
-
-/// Pill with a status dot (kept for older screens).
-class StatusPill extends StatelessWidget {
-  final String label;
-  final Tone tone;
-  final VoidCallback? onTap;
-
-  const StatusPill({
-    super.key,
-    required this.label,
-    required this.tone,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    return Material(
-      color: tone.tint(context),
-      shape: const StadiumBorder(),
+      borderRadius: Radii.chip,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: Gap.md,
-            vertical: Gap.sm,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: tone.hue(context),
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: Gap.sm),
-              Text(
-                label,
-                style: text.labelLarge!.copyWith(
-                  fontSize: 13,
-                  color: tone.color(context),
-                ),
-              ),
-            ],
-          ),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: chip ? Sizes.chip : 0),
+          child: Center(widthFactor: 1, heightFactor: 1, child: body),
         ),
       ),
     );
@@ -917,15 +1109,16 @@ class StatusPill extends StatelessWidget {
 
 enum BannerKind { problem, info, digest, success, paused }
 
-/// A full-width notice. Problems are Berry with `role=alert` semantics,
-/// plain words and one fix; digests are lavender.
+/// A slim inline banner: a tint, a 20 px icon, one bold line and at most
+/// one line under it. Problems are Berry with `role=alert` semantics and
+/// one 44 fix button; other kinds take a quiet text action.
 class NoticeBanner extends StatelessWidget {
   final BannerKind kind;
   final String title;
   final String? message;
   final IconData? icon;
 
-  /// Replaces the icon tile (e.g. a small Tubby on the digest).
+  /// Replaces the icon (e.g. a small Tubby on the digest).
   final Widget? leading;
   final String? actionLabel;
   final String? actionNote;
@@ -949,10 +1142,9 @@ class NoticeBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final bt = context.bt;
     final text = Theme.of(context).textTheme;
-    final (bg, border, titleC, bodyC, solid, btn) = switch (kind) {
+    final (bg, titleC, bodyC, hue, btn) = switch (kind) {
       BannerKind.problem => (
           bt.berryTint,
-          bt.berryBorder,
           bt.berryInk,
           bt.berryInk,
           bt.berry,
@@ -960,118 +1152,126 @@ class NoticeBanner extends StatelessWidget {
         ),
       BannerKind.info => (
           bt.skyTint,
-          bt.skyTint,
           bt.skyInk,
           bt.inkSoft,
-          bt.sky,
+          bt.skyInk,
           ButtonKind.ink,
         ),
       BannerKind.digest => (
           bt.lavenderTint,
-          bt.lavenderTint,
           bt.ink,
           bt.inkSoft,
-          bt.lavender,
+          bt.lavenderInk,
           ButtonKind.ink,
         ),
       BannerKind.success => (
           bt.mintTint,
-          bt.mintTint,
           bt.mintInk,
           bt.inkSoft,
-          bt.mint,
+          bt.mintInk,
           ButtonKind.mint,
         ),
       BannerKind.paused => (
           bt.sunTint,
-          bt.sunTint,
           bt.sunInk,
           bt.inkSoft,
-          bt.sun,
+          bt.sunInk,
           ButtonKind.ink,
         ),
     };
-    final card = Container(
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: Radii.card,
-        border: Border.all(color: border),
-      ),
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(
-          borderRadius: Radii.card,
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(Gap.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    leading ??
-                        IconBadge(
-                          icon: icon ?? Icons.info_rounded,
-                          color: solid,
-                          solid: kind == BannerKind.problem,
-                          size: 40,
-                        ),
-                    const SizedBox(width: Gap.md),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            style: text.titleMedium!.copyWith(
-                              color: titleC,
-                              fontWeight: FontWeight.w800,
-                            ),
+    final problem = kind == BannerKind.problem;
+    final inlineAction = actionLabel != null && !problem;
+    final banner = Material(
+      color: bg,
+      borderRadius: Radii.control,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            Gap.f13,
+            Gap.f13,
+            Gap.f8,
+            Gap.f13,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  SizedBox(
+                    width: Sizes.iconControl,
+                    child: Center(
+                      child: leading ??
+                          Icon(
+                            icon ?? Icons.info_rounded,
+                            size: Sizes.icon,
+                            color: hue,
                           ),
-                          if (message != null) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              message!,
-                              style: text.bodyMedium!.copyWith(
-                                color: bodyC,
-                                fontSize: 14,
-                                height: 1.45,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
                     ),
-                    if (onTap != null && onAction == null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: Gap.sm),
-                        child: Icon(
-                          Icons.chevron_right_rounded,
-                          color: bodyC,
+                  ),
+                  const SizedBox(width: Gap.f13),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: text.titleSmall!.copyWith(
+                            color: titleC,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        if (message != null)
+                          Text(
+                            message!,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: text.bodySmall!.copyWith(color: bodyC),
+                          ),
+                      ],
+                    ),
+                  ),
+                  if (inlineAction)
+                    TextButton(
+                      key: key == null ? null : ValueKey('$key-action'),
+                      onPressed: onAction,
+                      style: TextButton.styleFrom(
+                        foregroundColor: titleC,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: Gap.f13,
                         ),
                       ),
-                  ],
-                ),
-                if (actionLabel != null) ...[
-                  const SizedBox(height: Gap.md),
-                  PrimaryButton(
+                      child: Text(actionLabel!),
+                    )
+                  else if (onTap != null)
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      size: Sizes.icon,
+                      color: bodyC,
+                    ),
+                ],
+              ),
+              if (actionLabel != null && problem) ...[
+                const SizedBox(height: Gap.f13),
+                Padding(
+                  padding: const EdgeInsets.only(right: Gap.f4),
+                  child: PrimaryButton(
                     key: key == null ? null : ValueKey('$key-action'),
                     label: actionLabel!,
                     note: actionNote,
                     kind: btn,
-                    height: 50,
                     onPressed: onAction,
                   ),
-                ],
+                ),
               ],
-            ),
+            ],
           ),
         ),
       ),
     );
-    if (kind != BannerKind.problem) return card;
-    return Semantics(liveRegion: true, container: true, child: card);
+    if (!problem) return banner;
+    return Semantics(liveRegion: true, container: true, child: banner);
   }
 }
 
@@ -1096,7 +1296,7 @@ class VolumeMeter extends StatelessWidget {
     super.key,
     required this.percent,
     this.muted = false,
-    this.height = 8,
+    this.height = Sizes.bar,
   });
 
   @override
@@ -1105,13 +1305,13 @@ class VolumeMeter extends StatelessWidget {
     final value = ((percent ?? 0) / 100).clamp(0.0, 1.0);
     final color = muted ? bt.faint : bt.sky;
     return ClipRRect(
-      borderRadius: BorderRadius.circular(height),
+      borderRadius: Radii.chip,
       child: SizedBox(
         height: height,
         child: TweenAnimationBuilder<double>(
           tween: Tween(end: value),
-          duration: Motion.of(context, Motion.slow),
-          curve: Motion.settle,
+          duration: Motion.of(context, Motion.sheet),
+          curve: Motion.enter,
           builder: (context, v, _) => Stack(
             children: [
               Positioned.fill(child: ColoredBox(color: bt.skyTint)),
@@ -1127,7 +1327,7 @@ class VolumeMeter extends StatelessWidget {
   }
 }
 
-/// A number that tweens to its new value ("Numbers tween").
+/// A number that tweens to its new value over 320 ms, tabular figures.
 class TweenNumber extends StatelessWidget {
   final int value;
   final TextStyle? style;
@@ -1144,11 +1344,13 @@ class TweenNumber extends StatelessWidget {
   Widget build(BuildContext context) {
     return TweenAnimationBuilder<double>(
       tween: Tween(end: value.toDouble()),
-      duration: Motion.of(context, Motion.slow),
-      curve: Motion.settle,
+      duration: Motion.of(context, Motion.sheet),
+      curve: Motion.enter,
       builder: (context, v, _) => Text(
         format(v.round()),
-        style: style?.copyWith(fontFeatures: Fonts.tabular),
+        style: (style ?? const TextStyle()).copyWith(
+          fontFeatures: Fonts.tabular,
+        ),
       ),
     );
   }
@@ -1162,9 +1364,9 @@ class Skeleton extends StatefulWidget {
 
   const Skeleton({
     super.key,
-    this.height = 16,
+    this.height = Gap.f13,
     this.width,
-    this.radius = const BorderRadius.all(Radius.circular(8)),
+    this.radius = Radii.chip,
   });
 
   @override
@@ -1175,7 +1377,7 @@ class _SkeletonState extends State<Skeleton>
     with SingleTickerProviderStateMixin {
   late final AnimationController _c = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1300),
+    duration: Motion.slow * 3,
   )..repeat();
 
   @override
@@ -1187,7 +1389,7 @@ class _SkeletonState extends State<Skeleton>
   @override
   Widget build(BuildContext context) {
     final bt = context.bt;
-    final base = bt.hairline;
+    final base = bt.wash;
     final glow = bt.border;
     return AnimatedBuilder(
       animation: _c,
@@ -1210,7 +1412,7 @@ class _SkeletonState extends State<Skeleton>
   }
 }
 
-/// A few skeleton rows inside a card while a list loads.
+/// A few skeleton rows on the canvas while a list loads.
 class SkeletonCard extends StatelessWidget {
   final int rows;
 
@@ -1218,37 +1420,31 @@ class SkeletonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InfoCard(
-      child: Column(
-        children: [
-          for (var i = 0; i < rows; i++) ...[
-            if (i > 0) const SizedBox(height: Gap.lg),
-            Row(
+    return RowList(
+      children: [
+        for (var i = 0; i < rows; i++)
+          SizedBox(
+            height: Sizes.row,
+            child: Row(
               children: [
                 const Skeleton(
-                  height: 36,
-                  width: 36,
-                  radius: Radii.icon,
+                  height: Sizes.icon,
+                  width: Sizes.iconControl,
                 ),
-                const SizedBox(width: Gap.md),
+                const SizedBox(width: Gap.f13),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      FractionallySizedBox(
-                        widthFactor: 0.5 + (i % 2) * 0.2,
-                        child: const Skeleton(height: 12),
-                      ),
-                      const SizedBox(height: Gap.sm),
-                      const Skeleton(height: 10),
-                    ],
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: FractionallySizedBox(
+                      widthFactor: Phi.major - (i % 2) * Phi.minor / 2,
+                      child: const Skeleton(),
+                    ),
                   ),
                 ),
               ],
             ),
-          ],
-        ],
-      ),
+          ),
+      ],
     );
   }
 }
@@ -1264,7 +1460,7 @@ class PulsingIcon extends StatefulWidget {
   const PulsingIcon({
     super.key,
     this.icon,
-    this.size = 96,
+    this.size = Sizes.tubbyLarge,
     this.color,
     this.child,
   });
@@ -1277,7 +1473,7 @@ class _PulsingIconState extends State<PulsingIcon>
     with SingleTickerProviderStateMixin {
   late final AnimationController _c = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1600),
+    duration: Motion.slow * 3,
   );
 
   @override
@@ -1299,7 +1495,7 @@ class _PulsingIconState extends State<PulsingIcon>
   @override
   Widget build(BuildContext context) {
     final color = widget.color ?? context.bt.coral;
-    final box = widget.size * 1.7;
+    final box = widget.size * Phi.ratio;
     return SizedBox(
       width: box,
       height: box,
@@ -1315,8 +1511,8 @@ class _PulsingIconState extends State<PulsingIcon>
                   builder: (context) {
                     final p = (t + phase) % 1.0;
                     return Container(
-                      width: widget.size * (1 + 0.65 * p),
-                      height: widget.size * (1 + 0.65 * p),
+                      width: widget.size * (1 + Phi.major * p),
+                      height: widget.size * (1 + Phi.major * p),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: color.withValues(alpha: 0.20 * (1 - p)),
@@ -1340,7 +1536,7 @@ class _PulsingIconState extends State<PulsingIcon>
                 color: color.withValues(alpha: 0.16),
                 border: Border.all(color: color.withValues(alpha: 0.5)),
               ),
-              child: Icon(widget.icon, size: widget.size * 0.5, color: color),
+              child: Icon(widget.icon, size: widget.size / 2, color: color),
             ),
       ),
     );
@@ -1365,14 +1561,14 @@ class StepIndicator extends StatelessWidget {
         children: [
           for (var i = 0; i < count; i++)
             AnimatedContainer(
-              duration: Motion.of(context, Motion.medium),
-              curve: Motion.settle,
-              margin: const EdgeInsets.symmetric(horizontal: 3),
-              width: 28,
-              height: 6,
+              duration: Motion.of(context, Motion.flip),
+              curve: Motion.enter,
+              margin: const EdgeInsets.symmetric(horizontal: Gap.f4 / 2),
+              width: Gap.f21,
+              height: Sizes.bar,
               decoration: BoxDecoration(
                 color: i <= index ? bt.coral : bt.border,
-                borderRadius: BorderRadius.circular(3),
+                borderRadius: Radii.chip,
               ),
             ),
         ],
@@ -1381,7 +1577,8 @@ class StepIndicator extends StatelessWidget {
   }
 }
 
-/// A bottom sheet in the house style: handle, Bricolage title, cream.
+/// A bottom sheet in the house style: handle, Bricolage title, cream;
+/// slides in over 320 ms (easeOutCubic), out with easeInCubic.
 Future<T?> showBtSheet<T>(
   BuildContext context, {
   required WidgetBuilder builder,
@@ -1390,6 +1587,17 @@ Future<T?> showBtSheet<T>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
+      sheetAnimationStyle: Motion.reduced(context)
+          ? const AnimationStyle(
+              duration: Motion.press,
+              reverseDuration: Motion.press,
+            )
+          : const AnimationStyle(
+              duration: Motion.sheet,
+              reverseDuration: Motion.flip,
+              curve: Motion.enter,
+              reverseCurve: Motion.exit,
+            ),
       builder: builder,
     );
 
@@ -1413,10 +1621,10 @@ class SheetScaffold extends StatelessWidget {
       top: false,
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(
-          Gap.xl,
+          Gap.gutter,
           0,
-          Gap.xl,
-          Gap.xl,
+          Gap.gutter,
+          Gap.related,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1427,10 +1635,10 @@ class SheetScaffold extends StatelessWidget {
               child: Text(title, style: text.headlineMedium),
             ),
             if (lead != null) ...[
-              const SizedBox(height: Gap.xs + 2),
+              const SizedBox(height: Gap.f8),
               DefaultTextStyle.merge(style: text.bodyMedium, child: lead!),
             ],
-            const SizedBox(height: Gap.lg),
+            const SizedBox(height: Gap.related),
             ...children,
           ],
         ),
@@ -1452,18 +1660,18 @@ Future<bool> confirmAction(
   final ok = await showDialog<bool>(
     context: context,
     builder: (context) => AlertDialog(
-      icon: IconBadge(
-        icon: icon,
+      icon: Icon(
+        icon,
+        size: Sizes.iconControl,
         color: destructive ? bt.berryFill : bt.skyInk,
-        size: 48,
       ),
       title: Text(title, textAlign: TextAlign.center),
       content: Text(message),
       actionsPadding: const EdgeInsets.fromLTRB(
-        Gap.lg,
+        Gap.related,
         0,
-        Gap.lg,
-        Gap.lg,
+        Gap.related,
+        Gap.related,
       ),
       actions: [
         TextButton(
@@ -1475,9 +1683,8 @@ Future<bool> confirmAction(
               ? FilledButton.styleFrom(
                   backgroundColor: bt.berryFill,
                   foregroundColor: Colors.white,
-                  minimumSize: const Size(64, 48),
                 )
-              : FilledButton.styleFrom(minimumSize: const Size(64, 48)),
+              : null,
           onPressed: () => Navigator.pop(context, true),
           child: Text(confirmLabel),
         ),
@@ -1512,9 +1719,9 @@ void showStatusSnack(
             Icon(
               ok ? Icons.check_circle_rounded : Icons.error_rounded,
               color: ok ? bt.mint : bt.berry,
-              size: 20,
+              size: Sizes.icon,
             ),
-            const SizedBox(width: Gap.md),
+            const SizedBox(width: Gap.f13),
             Expanded(
               child: Text(message, style: TextStyle(color: bt.onInkFill)),
             ),
@@ -1525,14 +1732,23 @@ void showStatusSnack(
 }
 
 /// A small progress ring that only appears once an action has taken longer
-/// than [delay] (a sign of trouble), so normal actions just flip.
+/// than [delay] (a sign of trouble), so normal actions just flip. Until
+/// then it shows [fallback].
 class DelayedSpinner extends StatefulWidget {
+  // tokens:off: a behaviour threshold (spinner only after 1.5 s).
   static const delay = Duration(milliseconds: 1500);
+  // tokens:on
 
   final Color color;
   final double size;
+  final Widget? fallback;
 
-  const DelayedSpinner({super.key, required this.color, this.size = 14});
+  const DelayedSpinner({
+    super.key,
+    required this.color,
+    this.size = Gap.f13,
+    this.fallback,
+  });
 
   @override
   State<DelayedSpinner> createState() => _DelayedSpinnerState();
@@ -1557,11 +1773,17 @@ class _DelayedSpinnerState extends State<DelayedSpinner> {
   }
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-        width: widget.size,
-        height: widget.size,
-        child: _show
-            ? CircularProgressIndicator(strokeWidth: 2, color: widget.color)
-            : null,
-      );
+  Widget build(BuildContext context) {
+    if (!_show && widget.fallback != null) return widget.fallback!;
+    return SizedBox(
+      width: widget.size,
+      height: widget.size,
+      child: _show
+          ? CircularProgressIndicator(
+              strokeWidth: Sizes.focus,
+              color: widget.color,
+            )
+          : null,
+    );
+  }
 }

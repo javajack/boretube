@@ -157,7 +157,7 @@ void main() {
       await settle(tester);
       // 30 minutes is the default choice.
       expect(
-        tester.widget<PillChoice>(find.byKey(const Key('pause-30'))).selected,
+        tester.widget<BtChip>(find.byKey(const Key('pause-30'))).selected,
         isTrue,
       );
       await tester.tap(find.byKey(const Key('pause-15')));

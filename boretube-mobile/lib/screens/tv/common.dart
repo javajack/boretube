@@ -9,10 +9,10 @@ import '../../ui/tokens.dart';
 import 'activity_section.dart';
 
 const tvListPadding = EdgeInsets.fromLTRB(
-  Gap.page,
-  Gap.sm,
-  Gap.page,
-  Gap.xxl,
+  Gap.gutter,
+  Gap.f8,
+  Gap.gutter,
+  Gap.f34,
 );
 
 /// Shown in Health/Apps when the TV has no authorized ADB.
@@ -25,7 +25,7 @@ class AdbRequired extends StatelessWidget {
     return ListView(
       padding: tvListPadding,
       children: [
-        InfoCard(
+        Surface(
           child: Column(
             children: [
               EmptyState(
@@ -40,7 +40,7 @@ class AdbRequired extends StatelessWidget {
                 icon: const Icon(Icons.lock_open_rounded),
                 label: const Text('Show me how'),
               ),
-              const SizedBox(height: Gap.sm),
+              const SizedBox(height: Gap.f8),
             ],
           ),
         ),
@@ -87,12 +87,12 @@ Future<void> runMaintenance(
             : StatusColors.of(context).bad,
       ),
       title: Text(title, textAlign: TextAlign.center),
-      contentPadding: const EdgeInsets.fromLTRB(0, Gap.lg, 0, 0),
+      contentPadding: const EdgeInsets.fromLTRB(0, Gap.f13, 0, 0),
       content: SizedBox(
         width: double.maxFinite,
         child: fresh.isEmpty
             ? const Padding(
-                padding: EdgeInsets.all(Gap.xl),
+                padding: EdgeInsets.all(Gap.f21),
                 child: Text('Nothing needed changing.'),
               )
             : ListView(
@@ -101,7 +101,7 @@ Future<void> runMaintenance(
                   for (final e in fresh) JournalRow(entry: e, expanded: true),
                   if (error != null)
                     Padding(
-                      padding: const EdgeInsets.all(Gap.lg),
+                      padding: const EdgeInsets.all(Gap.f13),
                       child: Text('Stopped early: $error'),
                     ),
                 ],

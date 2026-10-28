@@ -81,24 +81,24 @@ class WhatWorksSheet extends StatelessWidget {
         Row(
           children: [
             for (final p in Protection.values) ...[
-              if (p != Protection.remote) const SizedBox(width: Gap.sm),
+              if (p != Protection.remote) const SizedBox(width: Gap.f8),
               Expanded(child: _LevelTile(level: p, current: level)),
             ],
           ],
         ),
-        const SizedBox(height: Gap.xs),
+        const SizedBox(height: Gap.f4),
         const Wrap(
-          spacing: Gap.xs,
+          spacing: Gap.f4,
           children: [
             _LearnLink('What\'s Home mode?', LearnTerm.homeMode),
             _LearnLink('What\'s Always On?', LearnTerm.alwaysOn),
           ],
         ),
-        const SizedBox(height: Gap.sm),
-        InfoCard(
+        const SizedBox(height: Gap.f8),
+        Surface(
           padding: const EdgeInsets.symmetric(
-            horizontal: Gap.lg,
-            vertical: Gap.xs,
+            horizontal: Gap.f13,
+            vertical: Gap.f4,
           ),
           child: Column(
             children: [
@@ -114,7 +114,7 @@ class WhatWorksSheet extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: Gap.lg),
+        const SizedBox(height: Gap.f13),
         switch (level) {
           Protection.remote => PrimaryButton(
               key: const Key('works-unlock'),
@@ -138,7 +138,7 @@ class WhatWorksSheet extends StatelessWidget {
                   color: degraded ? bt.berryFill : bt.mintInk,
                   size: 20,
                 ),
-                const SizedBox(width: Gap.sm),
+                const SizedBox(width: Gap.f8),
                 Flexible(
                   child: Text(
                     degraded
@@ -150,7 +150,7 @@ class WhatWorksSheet extends StatelessWidget {
               ],
             ),
         },
-        const SizedBox(height: Gap.sm),
+        const SizedBox(height: Gap.f8),
         if (level != Protection.alwaysOn)
           Text(
             level == Protection.remote
@@ -179,7 +179,7 @@ class _LearnLink extends StatelessWidget {
       key: Key('works-learn-${term.name}'),
       style: TextButton.styleFrom(
         foregroundColor: bt.skyInk,
-        padding: const EdgeInsets.symmetric(horizontal: Gap.sm),
+        padding: const EdgeInsets.symmetric(horizontal: Gap.f8),
       ),
       onPressed: () => showLearnSheet(context, term),
       icon: const Icon(Icons.info_outline_rounded, size: 18),
@@ -213,10 +213,10 @@ class _LevelTile extends StatelessWidget {
       label: '${level.label}: $state',
       excludeSemantics: true,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: Gap.md),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: Gap.f13),
         decoration: BoxDecoration(
           color: here ? level.tone.tint(context) : bt.surface,
-          borderRadius: Radii.tile,
+          borderRadius: Radii.control,
           border: here
               ? Border.all(color: level.tone.hue(context), width: 2)
               : Border.all(
@@ -234,7 +234,7 @@ class _LevelTile extends StatelessWidget {
               size: 22,
               color: done ? bt.mint : (here || next ? ink : bt.faint),
             ),
-            const SizedBox(height: Gap.xs),
+            const SizedBox(height: Gap.f4),
             Text(
               level.label,
               maxLines: 1,
@@ -300,7 +300,7 @@ class _VolumeSheetState extends ConsumerState<VolumeSheet> {
             ),
           ),
         ),
-        const SizedBox(height: Gap.sm),
+        const SizedBox(height: Gap.f8),
         Row(
           children: [
             IconButton(
@@ -363,7 +363,7 @@ class MoreSheet extends StatelessWidget {
       key: const Key('more-sheet'),
       title: 'More',
       children: [
-        GroupCard(
+        RowList(
           children: [
             if (onBore != null)
               StatusRow(
@@ -388,19 +388,19 @@ class MoreSheet extends StatelessWidget {
           ],
         ),
         if (onQuietFor != null) ...[
-          const SectionHeader('Quiet for a while'),
+          const GroupHeading('Quiet for a while'),
           Text(
             'Mutes now; whatever is on keeps playing. Sound comes back by '
             'itself.',
             style: text.bodyMedium,
           ),
-          const SizedBox(height: Gap.md),
+          const SizedBox(height: Gap.f13),
           Row(
             children: [
               for (final m in const [15, 30, 60]) ...[
-                if (m != 15) const SizedBox(width: Gap.sm),
+                if (m != 15) const SizedBox(width: Gap.f8),
                 Expanded(
-                  child: PillChoice(
+                  child: BtChip(
                     key: Key('quiet-$m'),
                     label: m == 60 ? '1 hour' : '$m min',
                     selected: false,

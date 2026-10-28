@@ -98,12 +98,12 @@ class BtNavBar extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: bt.surface,
-        border: Border(top: BorderSide(color: bt.border)),
+        border: Border(top: BorderSide(color: bt.hairline)),
       ),
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(Gap.md, Gap.sm, Gap.md, Gap.sm),
+          padding: const EdgeInsets.fromLTRB(Gap.f13, Gap.f8, Gap.f13, Gap.f8),
           child: Row(
             children: [
               for (var i = 0; i < _items.length; i++)
@@ -115,34 +115,34 @@ class BtNavBar extends StatelessWidget {
                     excludeSemantics: true,
                     child: InkWell(
                       key: Key('tab-${_items[i].$3}'),
-                      borderRadius: Radii.tile,
+                      borderRadius: Radii.control,
                       onTap: () {
                         if (i != index) HapticFeedback.selectionClick();
                         onSelect(i);
                       },
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 2),
+                        padding: const EdgeInsets.symmetric(vertical: Gap.f4),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             AnimatedContainer(
-                              duration: Motion.of(context, Motion.medium),
-                              curve: Motion.spring,
-                              width: i == index ? 56 : 40,
-                              height: 32,
+                              duration: Motion.of(context, Motion.sheet),
+                              curve: Motion.enter,
+                              width: i == index ? Sizes.row : Sizes.chip,
+                              height: Sizes.chip,
                               decoration: BoxDecoration(
                                 color: i == index
                                     ? bt.coralTint
                                     : Colors.transparent,
-                                borderRadius: BorderRadius.circular(Radii.pill),
+                                borderRadius: Radii.chip,
                               ),
                               child: Icon(
                                 i == index ? _items[i].$2 : _items[i].$1,
-                                size: 22,
+                                size: Sizes.iconControl,
                                 color: i == index ? bt.coralInk : bt.muted,
                               ),
                             ),
-                            const SizedBox(height: Gap.xs),
+                            const SizedBox(height: Gap.f4),
                             Text(
                               _items[i].$3,
                               maxLines: 1,
@@ -193,17 +193,17 @@ class TvSwitcher extends ConsumerWidget {
         for (final t in tvs)
           PopupMenuItem(
             value: t.id,
-            height: 56,
+            height: Sizes.row,
             child: Row(
               children: [
                 Icon(
                   t.id == active?.id
                       ? Icons.check_circle_rounded
                       : Icons.tv_rounded,
-                  size: 22,
+                  size: Sizes.icon,
                   color: t.id == active?.id ? bt.mint : bt.muted,
                 ),
-                const SizedBox(width: Gap.md),
+                const SizedBox(width: Gap.f13),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -227,11 +227,11 @@ class TvSwitcher extends ConsumerWidget {
         const PopupMenuDivider(),
         PopupMenuItem(
           value: '+',
-          height: 52,
+          height: Sizes.row,
           child: Row(
             children: [
-              Icon(Icons.add_rounded, size: 22, color: bt.skyInk),
-              const SizedBox(width: Gap.md),
+              Icon(Icons.add_rounded, size: Sizes.icon, color: bt.skyInk),
+              const SizedBox(width: Gap.f13),
               Text(
                 'Add a TV',
                 style: text.titleSmall!.copyWith(color: bt.skyInk),
@@ -241,7 +241,7 @@ class TvSwitcher extends ConsumerWidget {
         ),
       ],
       child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 48),
+        constraints: const BoxConstraints(minHeight: Sizes.touch),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -250,11 +250,11 @@ class TvSwitcher extends ConsumerWidget {
                 active?.name ?? 'Add a TV',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Fonts.bricolage(22, color: bt.ink),
+                style: Fonts.bricolage(TypeSize.headline, color: bt.ink),
               ),
             ),
-            const SizedBox(width: Gap.xs),
-            Icon(Icons.expand_more_rounded, size: 22, color: bt.ink),
+            const SizedBox(width: Gap.f4),
+            Icon(Icons.expand_more_rounded, size: Sizes.icon, color: bt.ink),
           ],
         ),
       ),

@@ -446,10 +446,10 @@ class _HomeTabState extends ConsumerState<HomeTab> {
     final tv = ref.watch(activeTvProvider);
     if (tv == null) {
       return ListView(
-        padding: const EdgeInsets.all(Gap.page),
+        padding: const EdgeInsets.all(Gap.gutter),
         children: [
           const HomeHeader(),
-          const SizedBox(height: Gap.xl),
+          const SizedBox(height: Gap.f21),
           EmptyState(
             icon: Icons.tv_off_rounded,
             tubby: TubbyMood.calm,
@@ -617,9 +617,9 @@ class _HomeTabState extends ConsumerState<HomeTab> {
     final children = <Widget>[
       const HomeHeader(),
       AnimatedSwitcher(
-        duration: Motion.of(context, Motion.medium),
-        switchInCurve: Motion.settle,
-        switchOutCurve: Motion.settle,
+        duration: Motion.of(context, Motion.sheet),
+        switchInCurve: Motion.enter,
+        switchOutCurve: Motion.enter,
         transitionBuilder: (child, a) => FadeTransition(
           opacity: a,
           child: SizeTransition(
@@ -632,7 +632,7 @@ class _HomeTabState extends ConsumerState<HomeTab> {
             ? const SizedBox(key: ValueKey('no-nudge'), width: double.infinity)
             : Padding(
                 key: ValueKey('nudge-${nudge.id.name}'),
-                padding: const EdgeInsets.only(top: Gap.sm),
+                padding: const EdgeInsets.only(top: Gap.f8),
                 child: NudgeCard(
                   key: const Key('home-nudge'),
                   nudge: nudge,
@@ -643,10 +643,10 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                 ),
               ),
       ),
-      const SizedBox(height: Gap.md + 2),
+      const SizedBox(height: Gap.f13 + 2),
       AnimatedSwitcher(
         duration: Motion.of(context, Motion.slow),
-        switchInCurve: Motion.settle,
+        switchInCurve: Motion.enter,
         transitionBuilder: (child, a) => FadeTransition(
           opacity: a,
           child: ScaleTransition(
@@ -677,7 +677,7 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                         actionNote: problem.fixNote,
                         onAction: () => _fix(problem.fix),
                       ),
-                      const SizedBox(height: Gap.md),
+                      const SizedBox(height: Gap.f13),
                       StillWorkingCard(
                         lines: stillWorking(tv),
                         protection: level,
@@ -702,7 +702,7 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                   ),
       ),
       if (problem != null && !problem.serious && !brk.active) ...[
-        const SizedBox(height: Gap.md),
+        const SizedBox(height: Gap.f13),
         NoticeBanner(
           key: const Key('home-info'),
           kind: BannerKind.info,
@@ -713,7 +713,7 @@ class _HomeTabState extends ConsumerState<HomeTab> {
           onAction: () => _fix(problem.fix),
         ),
       ],
-      const SizedBox(height: Gap.md + 2),
+      const SizedBox(height: Gap.f13 + 2),
       if (brk.active) ...[
         Row(
           children: [
@@ -725,7 +725,7 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                 onPressed: _blocked(QuickAction.takeBreak) ? null : _extend,
               ),
             ),
-            const SizedBox(width: Gap.md),
+            const SizedBox(width: Gap.f13),
             Expanded(
               child: PrimaryButton(
                 key: const Key('break-end'),
@@ -736,11 +736,11 @@ class _HomeTabState extends ConsumerState<HomeTab> {
             ),
           ],
         ),
-        const SizedBox(height: Gap.md + 2),
+        const SizedBox(height: Gap.f13 + 2),
         DuringBreakCard(lines: breakLines),
       ] else ...[
         if (supported.isEmpty)
-          InfoCard(
+          Surface(
             child: EmptyState(
               icon: Icons.settings_remote_rounded,
               tubby: TubbyMood.calm,
@@ -766,16 +766,15 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                 ? () => _pause(chosen == 0 ? untilBed! : chosen)
                 : null,
           ),
-          const SizedBox(height: Gap.md),
+          const SizedBox(height: Gap.f13),
           Row(
             children: [
               for (final m in PauseChoiceNotifier.choices) ...[
-                if (m != 15) const SizedBox(width: Gap.sm),
+                if (m != 15) const SizedBox(width: Gap.f8),
                 Expanded(
-                  child: PillChoice(
+                  child: BtChip(
                     key: Key('pause-$m'),
                     label: m == 60 ? '1h' : '${m}m',
-                    radius: Radii.input,
                     semanticLabel: _minutesWords(m),
                     selected: chosen == m,
                     onTap: canPause
@@ -785,12 +784,11 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                 ),
               ],
               if (untilBed != null) ...[
-                const SizedBox(width: Gap.sm),
+                const SizedBox(width: Gap.f8),
                 Expanded(
-                  child: PillChoice(
+                  child: BtChip(
                     key: const Key('pause-bedtime'),
                     label: 'Bedtime',
-                    radius: Radii.input,
                     semanticLabel: 'Until bedtime',
                     selected: chosen == 0,
                     onTap: canPause
@@ -804,17 +802,16 @@ class _HomeTabState extends ConsumerState<HomeTab> {
           // §8 "End after this one": only with Always On reading the
           // video, and only claiming a time when the TV knows it.
           AnimatedSize(
-            duration: Motion.of(context, Motion.medium),
-            curve: Motion.settle,
+            duration: Motion.of(context, Motion.sheet),
+            curve: Motion.enter,
             alignment: Alignment.topCenter,
             child: alwaysOnNow && media != null && armed == null && canPause
                 ? Padding(
-                    padding: const EdgeInsets.only(top: Gap.sm),
-                    child: PillChoice(
+                    padding: const EdgeInsets.only(top: Gap.f8),
+                    child: BtChip(
                       key: const Key('pause-end-after'),
                       label: endAfterLabel(media),
                       icon: Icons.hourglass_bottom_rounded,
-                      radius: Radii.input,
                       selected: false,
                       semanticLabel: media.timed && media.left != null
                           ? 'Pause TV when this video ends, '
@@ -830,7 +827,7 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                   )
                 : const SizedBox(width: double.infinity),
           ),
-          const SizedBox(height: Gap.md + 2),
+          const SizedBox(height: Gap.f13 + 2),
           _SecondaryRow(
             supported: supported,
             muted: muted,
@@ -854,7 +851,7 @@ class _HomeTabState extends ConsumerState<HomeTab> {
         ],
       ],
       if (away != null) ...[
-        const SizedBox(height: Gap.md + 2),
+        const SizedBox(height: Gap.f13 + 2),
         NoticeBanner(
           key: const Key('away-digest'),
           kind: BannerKind.digest,
@@ -886,10 +883,10 @@ class _HomeTabState extends ConsumerState<HomeTab> {
       child: ListView(
         key: const Key('home-list'),
         padding: const EdgeInsets.fromLTRB(
-          Gap.page,
-          Gap.sm,
-          Gap.page,
-          Gap.xxl,
+          Gap.gutter,
+          Gap.f8,
+          Gap.gutter,
+          Gap.f34,
         ),
         children: children,
       ),
@@ -969,7 +966,7 @@ class _SecondaryRow extends StatelessWidget {
       child: Row(
         children: [
           for (var i = 0; i < tiles.length; i++) ...[
-            if (i > 0) const SizedBox(width: Gap.sm + 2),
+            if (i > 0) const SizedBox(width: Gap.f8 + 2),
             Expanded(child: tiles[i]),
           ],
         ],

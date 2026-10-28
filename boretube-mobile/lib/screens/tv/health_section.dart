@@ -144,8 +144,8 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
         if (c != null && c.mounted) {
           Scrollable.ensureVisible(
             c,
-            duration: Motion.of(context, Motion.slow),
-            curve: Motion.settle,
+            duration: Motion.of(context, Motion.sheet),
+            curve: Motion.enter,
             alignment: 0.3,
           );
         }
@@ -174,7 +174,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
         if (checks == null)
           const SkeletonCard(rows: 4)
         else if (error != null && checks.isEmpty)
-          InfoCard(
+          Surface(
             child: EmptyState(
               icon: Icons.wifi_off_rounded,
               tone: Tone.bad,
@@ -188,7 +188,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
             ),
           )
         else if (checks.isEmpty)
-          const InfoCard(
+          const Surface(
             child: EmptyState(
               icon: Icons.monitor_heart_outlined,
               title: 'Nothing checked yet',
@@ -203,9 +203,9 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
               icon: Icons.auto_fix_high_rounded,
               onPressed: () => fixHealth(context, ref, fixable),
             ),
-            const SizedBox(height: Gap.md),
+            const SizedBox(height: Gap.f13),
           ],
-          GroupCard(
+          RowList(
             children: [
               for (final c in checks)
                 StatusRow(
@@ -253,13 +253,13 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
           ),
         ],
         if (readOnly) ...[
-          const SizedBox(height: Gap.sm),
-          InfoCard(
-            padding: const EdgeInsets.all(Gap.md),
+          const SizedBox(height: Gap.f8),
+          Surface(
+            padding: const EdgeInsets.all(Gap.f13),
             child: Row(
               children: [
                 Icon(Icons.info_outline_rounded, size: 20, color: bt.skyInk),
-                const SizedBox(width: Gap.md),
+                const SizedBox(width: Gap.f13),
                 Expanded(
                   child: Text(
                     'boretube hasn\'t been tested on this TV model, so fixes '

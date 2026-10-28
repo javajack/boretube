@@ -113,22 +113,22 @@ class _ClassicLockCardState extends ConsumerState<ClassicLockCard> {
     final text = Theme.of(context).textTheme;
     final bt = context.bt;
     final locked = _active;
-    return InfoCard(
+    return Surface(
       key: const Key('classic-lock'),
       borderColor: locked ? bt.sky : null,
       radius: Radii.hero,
-      padding: const EdgeInsets.all(Gap.lg),
+      padding: const EdgeInsets.all(Gap.f13),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
-              IconBadge(
+              IconTile(
                 icon: locked ? Icons.lock_rounded : Icons.lock_clock_rounded,
                 color: locked ? bt.skyInk : bt.coralInk,
                 size: 44,
               ),
-              const SizedBox(width: Gap.md),
+              const SizedBox(width: Gap.f13),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -149,17 +149,17 @@ class _ClassicLockCardState extends ConsumerState<ClassicLockCard> {
             ],
           ),
           AnimatedSize(
-            duration: Motion.of(context, Motion.medium),
-            curve: Motion.settle,
+            duration: Motion.of(context, Motion.sheet),
+            curve: Motion.enter,
             alignment: Alignment.topCenter,
             child: locked
                 ? _running(context)
                 : Padding(
-                    padding: const EdgeInsets.only(top: Gap.lg),
+                    padding: const EdgeInsets.only(top: Gap.f13),
                     child: _setup(context),
                   ),
           ),
-          const SizedBox(height: Gap.lg),
+          const SizedBox(height: Gap.f13),
           PrimaryButton(
             key: const Key('classic-start-stop'),
             label: locked
@@ -173,7 +173,7 @@ class _ClassicLockCardState extends ConsumerState<ClassicLockCard> {
                 locked ? _stop : (_mode == ClassicMode.none ? null : _start),
           ),
           if (_feed.isNotEmpty || locked) ...[
-            const SizedBox(height: Gap.lg),
+            const SizedBox(height: Gap.f13),
             _feedView(context),
           ],
         ],
@@ -185,12 +185,12 @@ class _ClassicLockCardState extends ConsumerState<ClassicLockCard> {
     final bt = context.bt;
     final text = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsets.only(top: Gap.lg),
+      padding: const EdgeInsets.only(top: Gap.f13),
       child: Container(
-        padding: const EdgeInsets.all(Gap.lg),
+        padding: const EdgeInsets.all(Gap.f13),
         decoration: BoxDecoration(
           color: bt.skyTint,
-          borderRadius: Radii.tile,
+          borderRadius: Radii.control,
         ),
         child: Row(
           children: [
@@ -231,7 +231,7 @@ class _ClassicLockCardState extends ConsumerState<ClassicLockCard> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text('WHAT TO LOCK', style: text.labelSmall),
-        const SizedBox(height: Gap.sm),
+        const SizedBox(height: Gap.f8),
         ChoiceCard(
           key: const Key('classic-mode-apps'),
           selected: _mode == ClassicMode.apps,
@@ -243,7 +243,7 @@ class _ClassicLockCardState extends ConsumerState<ClassicLockCard> {
                 _mode == ClassicMode.apps ? ClassicMode.none : ClassicMode.apps,
           ),
         ),
-        const SizedBox(height: Gap.sm),
+        const SizedBox(height: Gap.f8),
         ChoiceCard(
           key: const Key('classic-mode-volume'),
           selected: _mode == ClassicMode.volume,
@@ -257,8 +257,8 @@ class _ClassicLockCardState extends ConsumerState<ClassicLockCard> {
           ),
         ),
         AnimatedSize(
-          duration: Motion.of(context, Motion.medium),
-          curve: Motion.settle,
+          duration: Motion.of(context, Motion.sheet),
+          curve: Motion.enter,
           alignment: Alignment.topCenter,
           child: _mode == ClassicMode.none
               ? const SizedBox(width: double.infinity)
@@ -266,7 +266,7 @@ class _ClassicLockCardState extends ConsumerState<ClassicLockCard> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     if (_mode == ClassicMode.apps) ...[
-                      const SizedBox(height: Gap.lg),
+                      const SizedBox(height: Gap.f13),
                       Row(
                         children: [
                           Expanded(
@@ -283,8 +283,8 @@ class _ClassicLockCardState extends ConsumerState<ClassicLockCard> {
                         ],
                       ),
                       Wrap(
-                        spacing: Gap.sm,
-                        runSpacing: Gap.sm,
+                        spacing: Gap.f8,
+                        runSpacing: Gap.f8,
                         children: [
                           for (final e in whitelist)
                             _AllowedPill(
@@ -302,7 +302,7 @@ class _ClassicLockCardState extends ConsumerState<ClassicLockCard> {
                       ),
                     ],
                     if (_mode == ClassicMode.volume) ...[
-                      const SizedBox(height: Gap.lg),
+                      const SizedBox(height: Gap.f13),
                       Row(
                         children: [
                           Expanded(
@@ -331,15 +331,15 @@ class _ClassicLockCardState extends ConsumerState<ClassicLockCard> {
                   ],
                 ),
         ),
-        const SizedBox(height: Gap.lg),
+        const SizedBox(height: Gap.f13),
         Text('FOR HOW LONG', style: text.labelSmall),
-        const SizedBox(height: Gap.sm),
+        const SizedBox(height: Gap.f8),
         Wrap(
-          spacing: Gap.sm,
-          runSpacing: Gap.sm,
+          spacing: Gap.f8,
+          runSpacing: Gap.f8,
           children: [
             for (final m in durations)
-              InkPill(
+              BtChip(
                 key: Key('classic-duration-$m'),
                 label: _durationShort(m),
                 selected: !_customDuration && _duration == m,
@@ -348,7 +348,7 @@ class _ClassicLockCardState extends ConsumerState<ClassicLockCard> {
                   _durationCtrl.text = '$m';
                 }),
               ),
-            InkPill(
+            BtChip(
               key: const Key('classic-duration-other'),
               label: 'Other',
               selected: _customDuration || !durations.contains(_duration),
@@ -357,13 +357,13 @@ class _ClassicLockCardState extends ConsumerState<ClassicLockCard> {
           ],
         ),
         AnimatedSize(
-          duration: Motion.of(context, Motion.medium),
-          curve: Motion.settle,
+          duration: Motion.of(context, Motion.sheet),
+          curve: Motion.enter,
           alignment: Alignment.topCenter,
           child: !(_customDuration || !durations.contains(_duration))
               ? const SizedBox(width: double.infinity)
               : Padding(
-                  padding: const EdgeInsets.only(top: Gap.md),
+                  padding: const EdgeInsets.only(top: Gap.f13),
                   child: _NumberField(
                     key: const Key('classic-duration'),
                     label: 'Minutes',
@@ -373,27 +373,27 @@ class _ClassicLockCardState extends ConsumerState<ClassicLockCard> {
                   ),
                 ),
         ),
-        const SizedBox(height: Gap.md),
+        const SizedBox(height: Gap.f13),
         Align(
           alignment: Alignment.centerLeft,
           child: TextButton.icon(
             key: const Key('classic-advanced'),
             style: TextButton.styleFrom(
               foregroundColor: bt.muted,
-              padding: const EdgeInsets.symmetric(horizontal: Gap.sm),
+              padding: const EdgeInsets.symmetric(horizontal: Gap.f8),
             ),
             onPressed: () => setState(() => _advanced = !_advanced),
             icon: AnimatedRotation(
               turns: _advanced ? 0.5 : 0,
-              duration: Motion.of(context, Motion.fast),
+              duration: Motion.of(context, Motion.flip),
               child: const Icon(Icons.expand_more_rounded, size: 20),
             ),
             label: const Text('Advanced options'),
           ),
         ),
         AnimatedSize(
-          duration: Motion.of(context, Motion.medium),
-          curve: Motion.settle,
+          duration: Motion.of(context, Motion.sheet),
+          curve: Motion.enter,
           alignment: Alignment.topCenter,
           child: !_advanced
               ? const SizedBox(width: double.infinity)
@@ -407,7 +407,7 @@ class _ClassicLockCardState extends ConsumerState<ClassicLockCard> {
                       hint: '5–300',
                       controller: _intervalCtrl,
                     ),
-                    const SizedBox(height: Gap.xs),
+                    const SizedBox(height: Gap.f4),
                     Text(
                       'Shorter catches apps sooner but uses more battery.',
                       style: text.bodySmall,
@@ -427,10 +427,10 @@ class _ClassicLockCardState extends ConsumerState<ClassicLockCard> {
       key: const Key('classic-feed'),
       decoration: BoxDecoration(
         color: bt.canvas,
-        borderRadius: Radii.tile,
+        borderRadius: Radii.control,
         border: Border.all(color: bt.hairline),
       ),
-      padding: const EdgeInsets.all(Gap.md),
+      padding: const EdgeInsets.all(Gap.f13),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -449,10 +449,10 @@ class _ClassicLockCardState extends ConsumerState<ClassicLockCard> {
                 ),
             ],
           ),
-          const SizedBox(height: Gap.sm),
+          const SizedBox(height: Gap.f8),
           if (_feed.isEmpty)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: Gap.sm),
+              padding: const EdgeInsets.symmetric(vertical: Gap.f8),
               child:
                   Text('Waiting for the first check…', style: text.bodySmall),
             )

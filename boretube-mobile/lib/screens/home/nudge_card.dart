@@ -33,7 +33,7 @@ class NudgeCard extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final card = Container(
       decoration: BoxDecoration(
-        borderRadius: Radii.card,
+        borderRadius: Radii.control,
         border: Border.all(color: bt.border),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -42,7 +42,7 @@ class NudgeCard extends StatelessWidget {
           colors: [bt.coralWash, bt.surface],
         ),
       ),
-      padding: const EdgeInsets.fromLTRB(Gap.lg, Gap.lg, Gap.sm, Gap.md),
+      padding: const EdgeInsets.fromLTRB(Gap.f13, Gap.f13, Gap.f8, Gap.f13),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -56,7 +56,7 @@ class NudgeCard extends StatelessWidget {
                 legs: false,
                 animate: false,
               ),
-              const SizedBox(width: Gap.md),
+              const SizedBox(width: Gap.f13),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -72,12 +72,12 @@ class NudgeCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: Gap.md),
+          const SizedBox(height: Gap.f13),
           Padding(
-            padding: const EdgeInsets.only(left: 44 + Gap.md),
+            padding: const EdgeInsets.only(left: 44 + Gap.f13),
             child: Wrap(
-              spacing: Gap.xs,
-              runSpacing: Gap.xs,
+              spacing: Gap.f4,
+              runSpacing: Gap.f4,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 IntrinsicWidth(

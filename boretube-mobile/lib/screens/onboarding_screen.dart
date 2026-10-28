@@ -113,8 +113,8 @@ class _OnboardingState extends ConsumerState<OnboardingScreen> {
         body: SafeArea(
           top: false,
           child: AnimatedSwitcher(
-            duration: Motion.of(context, Motion.medium),
-            switchInCurve: Motion.settle,
+            duration: Motion.of(context, Motion.sheet),
+            switchInCurve: Motion.enter,
             transitionBuilder: (child, a) => FadeTransition(
               opacity: a,
               child: SlideTransition(
@@ -173,7 +173,7 @@ class _StepTitle extends StatelessWidget {
           header: true,
           child: Text(title, style: text.headlineLarge, textAlign: align),
         ),
-        const SizedBox(height: Gap.sm),
+        const SizedBox(height: Gap.f8),
         Text(lead, style: text.bodyLarge, textAlign: align),
       ],
     );
@@ -193,10 +193,10 @@ class _Welcome extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, c) => SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(
-              Gap.xl,
-              Gap.xl,
-              Gap.xl,
-              Gap.xl,
+              Gap.f21,
+              Gap.f21,
+              Gap.f21,
+              Gap.f21,
             ),
             child: ConstrainedBox(
               constraints: BoxConstraints(minHeight: c.maxHeight - 48),
@@ -208,7 +208,7 @@ class _Welcome extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       const Wordmark(),
-                      const SizedBox(height: Gap.xl),
+                      const SizedBox(height: Gap.f21),
                       SizedBox(
                         height: 250,
                         child: Stack(
@@ -236,13 +236,13 @@ class _Welcome extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(height: Gap.lg),
+                      const SizedBox(height: Gap.f13),
                       Text(
                         'Calmer TV,\nin a few minutes.',
                         textAlign: TextAlign.center,
                         style: text.displaySmall,
                       ),
-                      const SizedBox(height: Gap.md),
+                      const SizedBox(height: Gap.f13),
                       Text(
                         'Pause it from your phone, set bedtimes that stick, and '
                         'get YouTube without Shorts.',
@@ -254,7 +254,7 @@ class _Welcome extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const SizedBox(height: Gap.xxl),
+                      const SizedBox(height: Gap.f34),
                       PrimaryButton(
                         key: const Key('onboarding-start'),
                         label: 'Let\'s find your TV',
@@ -262,13 +262,13 @@ class _Welcome extends StatelessWidget {
                         height: 60,
                         onPressed: onStart,
                       ),
-                      const SizedBox(height: Gap.md + 2),
+                      const SizedBox(height: Gap.f13 + 2),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.restore_rounded,
                               size: 16, color: bt.mintInk),
-                          const SizedBox(width: Gap.sm),
+                          const SizedBox(width: Gap.f8),
                           Flexible(
                             child: Text(
                               'Nothing changes without your OK. Undo anytime.',
@@ -367,15 +367,15 @@ class _FindTvsStepState extends ConsumerState<FindTvsStep> {
     final saved = {for (final t in ref.watch(savedTvsProvider)) t.id};
     final p = _progress;
     return ListView(
-      padding: const EdgeInsets.fromLTRB(Gap.xl, Gap.sm, Gap.xl, Gap.xl),
+      padding: const EdgeInsets.fromLTRB(Gap.f21, Gap.f8, Gap.f21, Gap.f21),
       children: [
         const _StepTitle(
           'Find your TV',
           'Make sure it\'s on. TVs on this Wi-Fi show up here.',
         ),
-        const SizedBox(height: Gap.lg),
+        const SizedBox(height: Gap.f13),
         AnimatedSwitcher(
-          duration: Motion.of(context, Motion.fast),
+          duration: Motion.of(context, Motion.flip),
           child: _searching
               ? Column(
                   key: const ValueKey('searching'),
@@ -390,7 +390,7 @@ class _FindTvsStepState extends ConsumerState<FindTvsStep> {
                             : p.scanned / p.total,
                       ),
                     ),
-                    const SizedBox(height: Gap.sm),
+                    const SizedBox(height: Gap.f8),
                     Text(
                       'Looking on your Wi-Fi…',
                       style: text.bodySmall,
@@ -407,9 +407,9 @@ class _FindTvsStepState extends ConsumerState<FindTvsStep> {
                   ),
                 ),
         ),
-        const SizedBox(height: Gap.md),
+        const SizedBox(height: Gap.f13),
         if (_found.isEmpty && !_searching)
-          const InfoCard(
+          const Surface(
             child: EmptyState(
               icon: Icons.tv_off_rounded,
               tubby: TubbyMood.asleep,
@@ -427,9 +427,9 @@ class _FindTvsStepState extends ConsumerState<FindTvsStep> {
               saved: saved.contains(tv.id),
               onTap: () => widget.onPicked(tv),
             ),
-            const SizedBox(height: Gap.md),
+            const SizedBox(height: Gap.f13),
           ],
-        const SizedBox(height: Gap.sm),
+        const SizedBox(height: Gap.f8),
         OutlinedButton.icon(
           key: const Key('enter-ip'),
           onPressed: _manual,
@@ -461,16 +461,16 @@ class _FoundTvCard extends StatelessWidget {
         '${tv.manufacturer} ${tv.model}'.trim(),
       tv.ip,
     ].join(' · ');
-    return InfoCard(
+    return Surface(
       onTap: onTap,
       padding: const EdgeInsets.symmetric(
-        horizontal: Gap.lg,
-        vertical: Gap.md + 2,
+        horizontal: Gap.f13,
+        vertical: Gap.f13 + 2,
       ),
       child: Row(
         children: [
-          IconBadge(icon: Icons.tv_rounded, color: bt.sky, size: 48),
-          const SizedBox(width: Gap.md + 2),
+          IconTile(icon: Icons.tv_rounded, color: bt.sky, size: 48),
+          const SizedBox(width: Gap.f13 + 2),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -479,7 +479,7 @@ class _FoundTvCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(sub, style: text.bodySmall!.copyWith(fontSize: 14)),
                 if (saved) ...[
-                  const SizedBox(height: Gap.sm),
+                  const SizedBox(height: Gap.f8),
                   const BtBadge('Already saved', tone: Tone.ok),
                 ],
               ],
@@ -598,22 +598,22 @@ class _FirstWinStepState extends ConsumerState<FirstWinStep> {
     ].join(' · ');
     return LayoutBuilder(
       builder: (context, c) => SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(Gap.xl, Gap.sm, Gap.xl, Gap.xl),
+        padding: const EdgeInsets.fromLTRB(Gap.f21, Gap.f8, Gap.f21, Gap.f21),
         child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: c.maxHeight - Gap.xl - 8),
+          constraints: BoxConstraints(minHeight: c.maxHeight - Gap.f21 - 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              InfoCard(
+              Surface(
                 key: const Key('first-win-tv'),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: Gap.lg,
-                  vertical: Gap.md + 2,
+                  horizontal: Gap.f13,
+                  vertical: Gap.f13 + 2,
                 ),
                 child: Row(
                   children: [
-                    IconBadge(icon: Icons.tv_rounded, color: bt.sky, size: 48),
-                    const SizedBox(width: Gap.md + 2),
+                    IconTile(icon: Icons.tv_rounded, color: bt.sky, size: 48),
+                    const SizedBox(width: Gap.f13 + 2),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -630,7 +630,7 @@ class _FirstWinStepState extends ConsumerState<FirstWinStep> {
                       ),
                     ),
                     AnimatedSwitcher(
-                      duration: Motion.of(context, Motion.fast),
+                      duration: Motion.of(context, Motion.flip),
                       child: probing
                           ? const SizedBox(
                               key: ValueKey('p'),
@@ -657,7 +657,7 @@ class _FirstWinStepState extends ConsumerState<FirstWinStep> {
                   ],
                 ),
               ),
-              const SizedBox(height: Gap.xxl),
+              const SizedBox(height: Gap.f34),
               _StepTitle(
                 _state == _Win.unreachable
                     ? 'Your TV is shy'
@@ -669,7 +669,7 @@ class _FirstWinStepState extends ConsumerState<FirstWinStep> {
                         'setup needed for this part.',
                 center: true,
               ),
-              const SizedBox(height: Gap.xl),
+              const SizedBox(height: Gap.f21),
               Center(
                 child: _MuteButton(
                   key: _button,
@@ -678,17 +678,17 @@ class _FirstWinStepState extends ConsumerState<FirstWinStep> {
                 ),
               ),
               if (_error != null) ...[
-                const SizedBox(height: Gap.md),
+                const SizedBox(height: Gap.f13),
                 Text(
                   _error!,
                   textAlign: TextAlign.center,
                   style: text.bodyMedium!.copyWith(color: bt.berryFill),
                 ),
               ],
-              const SizedBox(height: Gap.xl),
+              const SizedBox(height: Gap.f21),
               AnimatedSwitcher(
-                duration: Motion.of(context, Motion.medium),
-                switchInCurve: Motion.spring,
+                duration: Motion.of(context, Motion.sheet),
+                switchInCurve: Motion.enter,
                 transitionBuilder: (child, a) => FadeTransition(
                   opacity: a,
                   child: ScaleTransition(
@@ -725,7 +725,7 @@ class _FirstWinStepState extends ConsumerState<FirstWinStep> {
                           )
                         : const SizedBox(height: 0),
               ),
-              const SizedBox(height: Gap.lg),
+              const SizedBox(height: Gap.f13),
               PrimaryButton(
                 key: const Key('first-win-continue'),
                 label: won ? 'Continue' : 'Skip this',
@@ -761,11 +761,11 @@ class _MuteButton extends StatelessWidget {
       label: won ? 'The TV is muted' : 'Mute the TV',
       excludeSemantics: true,
       child: AnimatedOpacity(
-        duration: Motion.of(context, Motion.fast),
+        duration: Motion.of(context, Motion.flip),
         opacity: state == _Win.probing || state == _Win.unreachable ? 0.4 : 1,
         child: AnimatedContainer(
-          duration: Motion.of(context, Motion.slow),
-          curve: Motion.spring,
+          duration: Motion.of(context, Motion.sheet),
+          curve: Motion.enter,
           width: 176,
           height: 176,
           margin: const EdgeInsets.all(30),
@@ -844,7 +844,7 @@ class _PinStepState extends ConsumerState<_PinStep> {
     if (!_set) {
       return Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(Gap.xl),
+          padding: const EdgeInsets.all(Gap.f21),
           child: PinSetup(
             onDone: (pin) async {
               await ref.read(appLockProvider.notifier).setPin(pin);
@@ -860,7 +860,7 @@ class _PinStepState extends ConsumerState<_PinStep> {
       );
     }
     return Padding(
-      padding: const EdgeInsets.all(Gap.xl),
+      padding: const EdgeInsets.all(Gap.f21),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -869,8 +869,8 @@ class _PinStepState extends ConsumerState<_PinStep> {
             'Want to open boretube with your fingerprint too? Kids '
                 'can\'t use yours.',
           ),
-          const SizedBox(height: Gap.xl),
-          InfoCard(
+          const SizedBox(height: Gap.f21),
+          Surface(
             padding: EdgeInsets.zero,
             child: SwitchListTile(
               key: const Key('onboarding-fingerprint'),
@@ -972,27 +972,28 @@ class _GoalsStepState extends ConsumerState<GoalsStep> {
       children: [
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(Gap.xl, Gap.sm, Gap.xl, Gap.lg),
+            padding:
+                const EdgeInsets.fromLTRB(Gap.f21, Gap.f8, Gap.f21, Gap.f13),
             children: [
               const _StepTitle(
                 'What\'s bugging you about TV time?',
                 'Pick any. We\'ll build your plan around them. Nothing '
                     'switches on yet.',
               ),
-              const SizedBox(height: Gap.lg),
+              const SizedBox(height: Gap.f13),
               for (final g in _goalLooks) ...[
                 _GoalCard(
                   look: g,
                   on: _picked.contains(g.goal),
                   onTap: () => _toggle(g.goal),
                 ),
-                const SizedBox(height: Gap.sm + 2),
+                const SizedBox(height: Gap.f8 + 2),
               ],
             ],
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(Gap.xl, 0, Gap.xl, Gap.lg),
+          padding: const EdgeInsets.fromLTRB(Gap.f21, 0, Gap.f21, Gap.f13),
           child: PrimaryButton(
             key: const Key('goals-done'),
             label: _picked.isEmpty ? 'Show my plan' : 'Show my calm-TV plan',
@@ -1028,24 +1029,24 @@ class _GoalCard extends StatelessWidget {
       excludeSemantics: true,
       child: AnimatedContainer(
         key: Key('goal-${look.goal.name}'),
-        duration: Motion.of(context, Motion.fast),
-        curve: Motion.settle,
+        duration: Motion.of(context, Motion.flip),
+        curve: Motion.enter,
         decoration: BoxDecoration(
           color: bt.surface,
-          borderRadius: Radii.card,
+          borderRadius: Radii.control,
           border: Border.all(color: on ? hue : bt.border, width: 2),
         ),
         child: Material(
           type: MaterialType.transparency,
           child: InkWell(
-            borderRadius: Radii.card,
+            borderRadius: Radii.control,
             onTap: onTap,
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: 72),
               child: Padding(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: Gap.md + 2,
-                  vertical: Gap.md,
+                  horizontal: Gap.f13 + 2,
+                  vertical: Gap.f13,
                 ),
                 child: Row(
                   children: [
@@ -1054,11 +1055,11 @@ class _GoalCard extends StatelessWidget {
                       height: 44,
                       decoration: BoxDecoration(
                         color: tint,
-                        borderRadius: Radii.icon,
+                        borderRadius: Radii.chip,
                       ),
                       child: Icon(look.icon, color: ink, size: 22),
                     ),
-                    const SizedBox(width: Gap.md + 2),
+                    const SizedBox(width: Gap.f13 + 2),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1071,10 +1072,10 @@ class _GoalCard extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(width: Gap.sm),
+                    const SizedBox(width: Gap.f8),
                     AnimatedContainer(
-                      duration: Motion.of(context, Motion.fast),
-                      curve: Motion.spring,
+                      duration: Motion.of(context, Motion.flip),
+                      curve: Motion.enter,
                       width: 26,
                       height: 26,
                       decoration: BoxDecoration(

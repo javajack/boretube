@@ -25,7 +25,7 @@ class TvGuardCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final link = ref.watch(agentStatusProvider);
     return AnimatedSwitcher(
-      duration: Motion.of(context, Motion.medium),
+      duration: Motion.of(context, Motion.sheet),
       child: link.installed
           ? _InstalledCard(key: const Key('tv-guard-installed'), link: link)
           : const _InstallInvite(key: Key('tv-guard-invite')),
@@ -99,7 +99,7 @@ class _DarkCard extends StatelessWidget {
         borderRadius: Radii.hero,
         border: Border.all(color: _inkButtonBorder.withValues(alpha: 0.6)),
       ),
-      padding: const EdgeInsets.all(Gap.lg),
+      padding: const EdgeInsets.all(Gap.f13),
       child: Theme(
         data: Theme.of(context).copyWith(
           textTheme: Theme.of(context).textTheme.apply(
@@ -138,7 +138,7 @@ class _InstallInvite extends ConsumerWidget {
                 size: 52,
                 animate: false,
               ),
-              const SizedBox(width: Gap.md),
+              const SizedBox(width: Gap.f13),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -162,14 +162,14 @@ class _InstallInvite extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: Gap.md),
+          const SizedBox(height: Gap.f13),
           for (final (icon, line) in points)
             Padding(
-              padding: const EdgeInsets.only(bottom: Gap.sm),
+              padding: const EdgeInsets.only(bottom: Gap.f8),
               child: Row(
                 children: [
                   Icon(icon, size: 18, color: const Color(0xFF7FDDBE)),
-                  const SizedBox(width: Gap.md),
+                  const SizedBox(width: Gap.f13),
                   Expanded(
                     child: Text(
                       line,
@@ -182,7 +182,7 @@ class _InstallInvite extends ConsumerWidget {
                 ],
               ),
             ),
-          const SizedBox(height: Gap.sm),
+          const SizedBox(height: Gap.f8),
           PrimaryButton(
             key: const Key('tv-guard-install'),
             label: hasAdb ? 'Make it Always On' : 'Unlock Home mode first',
@@ -194,7 +194,7 @@ class _InstallInvite extends ConsumerWidget {
                     ? () => runAgentSetup(context, ref, repair: false)
                     : () => context.push('/adb-guide'),
           ),
-          const SizedBox(height: Gap.sm),
+          const SizedBox(height: Gap.f8),
           Text(
             missing
                 ? AgentBundleMissing.message
@@ -303,14 +303,14 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
         ),
         children: [
           if (r.lines.isNotEmpty)
-            InfoCard(
+            Surface(
               child: Column(
                 children: [
                   for (final l in r.lines) CheckLine(l, done: r.ok),
                 ],
               ),
             ),
-          const SizedBox(height: Gap.lg),
+          const SizedBox(height: Gap.f13),
           PrimaryButton(
             label: 'Done',
             kind: ButtonKind.ink,
@@ -400,7 +400,7 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
                 height: 44,
                 decoration: BoxDecoration(
                   color: tileColor,
-                  borderRadius: Radii.tile,
+                  borderRadius: Radii.control,
                 ),
                 child: Icon(
                   tileIcon,
@@ -408,7 +408,7 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
                   size: 24,
                 ),
               ),
-              const SizedBox(width: Gap.md),
+              const SizedBox(width: Gap.f13),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -442,7 +442,7 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
             ],
           ),
           if (s != null) ...[
-            const SizedBox(height: Gap.lg),
+            const SizedBox(height: Gap.f13),
             Row(
               children: [
                 _fact(
@@ -470,7 +470,7 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
               ],
             ),
             if (update != null && !down) ...[
-              const SizedBox(height: Gap.lg),
+              const SizedBox(height: Gap.f13),
               _InkNote(
                 key: const Key('tv-guard-update-note'),
                 color: bt.mint,
@@ -497,7 +497,7 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
             ],
           ],
           if (down) ...[
-            const SizedBox(height: Gap.lg),
+            const SizedBox(height: Gap.f13),
             _InkNote(
               key: const Key('tv-guard-down'),
               color: bt.berry,
@@ -510,7 +510,7 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
             ),
           ],
           if (s != null && s.selfAdb == SelfAdb.needsApproval) ...[
-            const SizedBox(height: Gap.md),
+            const SizedBox(height: Gap.f13),
             _InkNote(
               color: bt.sun,
               icon: Icons.tv_rounded,
@@ -518,7 +518,7 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
                   'can close apps. Tap Repair if the prompt is gone.',
             ),
           ] else if (s != null && s.isLimited) ...[
-            const SizedBox(height: Gap.md),
+            const SizedBox(height: Gap.f13),
             _InkNote(
               key: const Key('tv-guard-limited'),
               color: bt.sun,
@@ -532,7 +532,7 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
             ),
           ],
           if (s != null && s.activeReasons.isNotEmpty) ...[
-            const SizedBox(height: Gap.md),
+            const SizedBox(height: Gap.f13),
             Row(
               key: const Key('tv-guard-active'),
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -542,7 +542,7 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
                   size: 18,
                   color: Color(0xFF7FDDBE),
                 ),
-                const SizedBox(width: Gap.sm),
+                const SizedBox(width: Gap.f8),
                 Expanded(
                   child: Text(
                     'Right now: ${s.activeReasons.join(' · ')}',
@@ -553,7 +553,7 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
             ),
           ],
           if (s != null && s.buildChangedSinceApproval) ...[
-            const SizedBox(height: Gap.md),
+            const SizedBox(height: Gap.f13),
             _InkNote(
               key: const Key('tv-guard-approve-banner'),
               color: bt.sky,
@@ -572,7 +572,7 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
             ),
           ],
           if (s != null && s.clockSkewWarn) ...[
-            const SizedBox(height: Gap.md),
+            const SizedBox(height: Gap.f13),
             _InkNote(
               color: bt.sun,
               icon: Icons.schedule_rounded,
@@ -580,7 +580,7 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
                   'may start or end early.',
             ),
           ],
-          const SizedBox(height: Gap.lg),
+          const SizedBox(height: Gap.f13),
           LayoutBuilder(
             builder: (context, c) {
               final buttons = <Widget>[
@@ -627,17 +627,17 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
                       : () => runAgentSetup(context, ref, repair: true),
                 ),
               ];
-              final w = (c.maxWidth - Gap.sm) / 2;
+              final w = (c.maxWidth - Gap.f8) / 2;
               return Wrap(
-                spacing: Gap.sm,
-                runSpacing: Gap.sm,
+                spacing: Gap.f8,
+                runSpacing: Gap.f8,
                 children: [
                   for (final b in buttons) SizedBox(width: w, child: b),
                 ],
               );
             },
           ),
-          const SizedBox(height: Gap.xs),
+          const SizedBox(height: Gap.f4),
           Align(
             child: TextButton.icon(
               key: const Key('tv-guard-uninstall'),
@@ -666,7 +666,7 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
     return Expanded(
       flex: flex,
       child: Padding(
-        padding: const EdgeInsets.only(right: Gap.sm),
+        padding: const EdgeInsets.only(right: Gap.f8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -766,7 +766,7 @@ class _InkButton extends StatelessWidget {
         child: Material(
           color: highlight ? bt.mint : _inkButton,
           shape: RoundedRectangleBorder(
-            borderRadius: Radii.buttons,
+            borderRadius: Radii.control,
             side: BorderSide(
               color: highlight ? bt.mint : _inkButtonBorder,
             ),
@@ -783,8 +783,8 @@ class _InkButton extends StatelessWidget {
               constraints: const BoxConstraints(minHeight: 48),
               child: Padding(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: Gap.sm,
-                  vertical: Gap.sm,
+                  horizontal: Gap.f8,
+                  vertical: Gap.f8,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -839,10 +839,10 @@ class _InkNote extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(Gap.md),
+      padding: const EdgeInsets.all(Gap.f13),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.16),
-        borderRadius: Radii.tile,
+        borderRadius: Radii.control,
         border: Border.all(color: color.withValues(alpha: 0.45)),
       ),
       child: Column(
@@ -852,7 +852,7 @@ class _InkNote extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(icon, size: 20, color: color),
-              const SizedBox(width: Gap.md),
+              const SizedBox(width: Gap.f13),
               Expanded(
                 child: Text(
                   text,
@@ -865,7 +865,7 @@ class _InkNote extends StatelessWidget {
             ],
           ),
           if (action != null) ...[
-            const SizedBox(height: Gap.md),
+            const SizedBox(height: Gap.f13),
             action!,
           ],
         ],
@@ -971,7 +971,7 @@ class _AgentSetupSheetState extends State<AgentSetupSheet> {
         maxHeight: MediaQuery.sizeOf(context).height * 0.9,
       ),
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(Gap.xl, Gap.lg, Gap.xl, Gap.xl),
+        padding: const EdgeInsets.fromLTRB(Gap.f21, Gap.f13, Gap.f21, Gap.f21),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -985,7 +985,7 @@ class _AgentSetupSheetState extends State<AgentSetupSheet> {
                     beaming: ok,
                     animate: false,
                   ),
-                  const SizedBox(width: Gap.md),
+                  const SizedBox(width: Gap.f13),
                 ],
                 Expanded(
                   child: Text(
@@ -1006,15 +1006,15 @@ class _AgentSetupSheetState extends State<AgentSetupSheet> {
                   ),
               ],
             ),
-            const SizedBox(height: Gap.md),
+            const SizedBox(height: Gap.f13),
             ClipRRect(
-              borderRadius: BorderRadius.circular(Radii.pill),
+              borderRadius: BorderRadius.circular(Radii.chipR),
               child: TweenAnimationBuilder<double>(
                 tween: Tween(
                   end: steps.isEmpty ? 0 : done / steps.length,
                 ),
-                duration: Motion.of(context, Motion.slow),
-                curve: Motion.settle,
+                duration: Motion.of(context, Motion.sheet),
+                curve: Motion.enter,
                 builder: (context, v, _) => LinearProgressIndicator(
                   minHeight: 6,
                   value: steps.isEmpty ? null : v,
@@ -1024,31 +1024,31 @@ class _AgentSetupSheetState extends State<AgentSetupSheet> {
               ),
             ),
             AnimatedSize(
-              duration: Motion.of(context, Motion.medium),
-              curve: Motion.settle,
+              duration: Motion.of(context, Motion.sheet),
+              curve: Motion.enter,
               child: p != null && p.awaitingApproval
                   ? const Padding(
-                      padding: EdgeInsets.only(top: Gap.lg),
+                      padding: EdgeInsets.only(top: Gap.f13),
                       child: _LookAtTv(),
                     )
                   : const SizedBox(width: double.infinity),
             ),
-            const SizedBox(height: Gap.md),
-            InfoCard(
-              padding: const EdgeInsets.symmetric(vertical: Gap.xs),
+            const SizedBox(height: Gap.f13),
+            Surface(
+              padding: const EdgeInsets.symmetric(vertical: Gap.f4),
               child: Column(
                 children: [
                   for (final s in steps) _StepRow(step: s),
                   if (steps.isEmpty)
                     const Padding(
-                      padding: EdgeInsets.all(Gap.lg),
+                      padding: EdgeInsets.all(Gap.f13),
                       child: LinearProgressIndicator(),
                     ),
                 ],
               ),
             ),
             if (finished) ...[
-              const SizedBox(height: Gap.lg),
+              const SizedBox(height: Gap.f13),
               Text(
                 ok
                     ? widget.doneLine ??
@@ -1058,7 +1058,7 @@ class _AgentSetupSheetState extends State<AgentSetupSheet> {
                         'use Repair later.',
                 style: text.bodyMedium,
               ),
-              const SizedBox(height: Gap.lg),
+              const SizedBox(height: Gap.f13),
               Row(
                 children: [
                   if (!ok) ...[
@@ -1070,7 +1070,7 @@ class _AgentSetupSheetState extends State<AgentSetupSheet> {
                         onPressed: _run,
                       ),
                     ),
-                    const SizedBox(width: Gap.md),
+                    const SizedBox(width: Gap.f13),
                   ],
                   Expanded(
                     child: PrimaryButton(
@@ -1099,10 +1099,10 @@ class _LookAtTv extends StatelessWidget {
     final bt = context.bt;
     return Container(
       key: const Key('setup-look-at-tv'),
-      padding: const EdgeInsets.all(Gap.lg),
+      padding: const EdgeInsets.all(Gap.f13),
       decoration: BoxDecoration(
         color: bt.sunTint,
-        borderRadius: Radii.card,
+        borderRadius: Radii.control,
         border: Border.all(color: bt.sun.withValues(alpha: 0.6)),
       ),
       child: Semantics(
@@ -1110,7 +1110,7 @@ class _LookAtTv extends StatelessWidget {
         child: Row(
           children: [
             PulsingIcon(icon: Icons.tv_rounded, size: 40, color: bt.sunInk),
-            const SizedBox(width: Gap.md),
+            const SizedBox(width: Gap.f13),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1161,8 +1161,8 @@ class _StepRow extends StatelessWidget {
     return Padding(
       key: Key('step-${step.id.name}'),
       padding: const EdgeInsets.symmetric(
-        horizontal: Gap.lg,
-        vertical: Gap.sm + 2,
+        horizontal: Gap.f13,
+        vertical: Gap.f8 + 2,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1171,12 +1171,12 @@ class _StepRow extends StatelessWidget {
             width: 24,
             child: Center(
               child: AnimatedSwitcher(
-                duration: Motion.of(context, Motion.fast),
+                duration: Motion.of(context, Motion.flip),
                 child: KeyedSubtree(key: ValueKey(step.state), child: lead),
               ),
             ),
           ),
-          const SizedBox(width: Gap.md),
+          const SizedBox(width: Gap.f13),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

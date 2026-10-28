@@ -11,7 +11,8 @@ import 'package:boretube_mobile/screens/rules/presets.dart';
 import 'package:boretube_mobile/screens/rules/rules_editor.dart';
 import 'package:boretube_mobile/screens/rules_tab.dart';
 import 'package:boretube_mobile/services/tv_service.dart';
-import 'package:boretube_mobile/ui/controls.dart';
+import 'package:boretube_mobile/ui/components.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -173,7 +174,7 @@ void main() {
     }
 
     bool selected(WidgetTester tester, String key) =>
-        tester.widget<InkPill>(find.byKey(Key(key))).selected;
+        tester.widget<BtChip>(find.byKey(Key(key))).selected;
 
     testWidgets('picking a preset shows a summary, then saves it',
         (tester) async {

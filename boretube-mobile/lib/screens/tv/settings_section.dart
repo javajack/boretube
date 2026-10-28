@@ -35,7 +35,7 @@ Future<void> saveEditedTv(TvStore store, Tv before, Tv after) async {
   await store.upsert(after);
 }
 
-const _listPadding = EdgeInsets.fromLTRB(Gap.page, 0, Gap.page, Gap.xxl);
+const _listPadding = EdgeInsets.fromLTRB(Gap.gutter, 0, Gap.gutter, Gap.f34);
 
 /// Settings: your TVs, look, parent PIN, notifications, then everything
 /// technical under Advanced (the only place that says ADB, Cast or agent).
@@ -64,11 +64,10 @@ class _SettingsSectionState extends ConsumerState<SettingsSection> {
       padding: _listPadding,
       children: [
         const _Header(),
-        SectionHeader(
+        GroupHeading(
           'Your TVs',
-          padding: const EdgeInsets.fromLTRB(Gap.xs, Gap.md, Gap.xs, Gap.sm),
         ),
-        GroupCard(
+        RowList(
           children: [
             for (final t in tvs) _TvRow(tv: t, active: t.id == active?.id),
             StatusRow(
@@ -82,10 +81,10 @@ class _SettingsSectionState extends ConsumerState<SettingsSection> {
             ),
           ],
         ),
-        const SectionHeader('Look'),
+        const GroupHeading('Look'),
         const _LookCard(),
-        const SectionHeader('Parent PIN'),
-        GroupCard(
+        const GroupHeading('Parent PIN'),
+        RowList(
           children: [
             StatusRow(
               tone: Tone.accent,
@@ -115,10 +114,10 @@ class _SettingsSectionState extends ConsumerState<SettingsSection> {
             ),
           ],
         ),
-        const SectionHeader('Notifications'),
+        const GroupHeading('Notifications'),
         const NotificationsCard(),
-        const SectionHeader('Your TV'),
-        GroupCard(
+        const GroupHeading('Your TV'),
+        RowList(
           children: [
             StatusRow(
               key: const Key('settings-restore'),
@@ -143,20 +142,20 @@ class _SettingsSectionState extends ConsumerState<SettingsSection> {
             ),
           ],
         ),
-        const SizedBox(height: Gap.xl),
+        const SizedBox(height: Gap.f21),
         _AdvancedToggle(
           open: _advanced,
           onTap: () => setState(() => _advanced = !_advanced),
         ),
         AnimatedSize(
-          duration: Motion.of(context, Motion.medium),
-          curve: Motion.settle,
+          duration: Motion.of(context, Motion.sheet),
+          curve: Motion.enter,
           alignment: Alignment.topCenter,
           child: _advanced
               ? _AdvancedBody(active: active)
               : const SizedBox(width: double.infinity),
         ),
-        const SectionHeader('About and help'),
+        const GroupHeading('About and help'),
         const _AboutCard(),
       ],
     );
@@ -173,7 +172,7 @@ class _Header extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final canPop = Navigator.maybeOf(context)?.canPop() ?? false;
     return Padding(
-      padding: const EdgeInsets.only(top: Gap.sm, bottom: Gap.sm),
+      padding: const EdgeInsets.only(top: Gap.f8, bottom: Gap.f8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -188,7 +187,7 @@ class _Header extends StatelessWidget {
               ),
             )
           else
-            const SizedBox(height: Gap.lg),
+            const SizedBox(height: Gap.f13),
           Semantics(
             header: true,
             child: Text('Settings', style: text.headlineLarge),
@@ -214,13 +213,13 @@ class _LookCard extends ConsumerWidget {
     final theme = ref.watch(themePrefProvider);
     final shown = theme == ThemePref.bedtime ? ThemePref.system : theme;
     void set(ThemePref p) => ref.read(themePrefProvider.notifier).set(p);
-    return InfoCard(
+    return Surface(
       padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(Gap.lg, Gap.lg, Gap.lg, Gap.md),
+            padding: const EdgeInsets.all(Gap.f13),
             child: Row(
               key: const Key('settings-theme'),
               children: [
@@ -229,7 +228,7 @@ class _LookCard extends ConsumerWidget {
                   (ThemePref.light, 'Light'),
                   (ThemePref.dark, 'Dark'),
                 ]) ...[
-                  if (p != ThemePref.system) const SizedBox(width: Gap.sm),
+                  if (p != ThemePref.system) const SizedBox(width: Gap.f8),
                   Expanded(
                     child: _ThemeTile(
                       key: Key('theme-${p.name}'),
@@ -243,7 +242,7 @@ class _LookCard extends ConsumerWidget {
               ],
             ),
           ),
-          const Divider(indent: Gap.lg, endIndent: Gap.lg),
+          const Divider(indent: Gap.f13, endIndent: Gap.f13),
           StatusRow(
             key: const Key('settings-bedtime-dark'),
             tone: Tone.warn,
@@ -343,7 +342,7 @@ class _ThemeTile extends StatelessWidget {
       label: '$label theme',
       excludeSemantics: true,
       child: InkWell(
-        borderRadius: Radii.tile,
+        borderRadius: Radii.control,
         onTap: () {
           HapticFeedback.selectionClick();
           onTap();
@@ -351,12 +350,12 @@ class _ThemeTile extends StatelessWidget {
         child: Column(
           children: [
             AnimatedContainer(
-              duration: Motion.of(context, Motion.fast),
-              curve: Motion.settle,
+              duration: Motion.of(context, Motion.flip),
+              curve: Motion.enter,
               height: 64,
               padding: const EdgeInsets.all(3),
               decoration: BoxDecoration(
-                borderRadius: Radii.tile,
+                borderRadius: Radii.control,
                 border: Border.all(
                   color: selected ? bt.coral : bt.border,
                   width: 2,
@@ -364,12 +363,12 @@ class _ThemeTile extends StatelessWidget {
               ),
               child: ClipRRect(
                 borderRadius: const BorderRadius.all(
-                  Radius.circular(Radii.tileR - 4),
+                  Radius.circular(Radii.controlR - 4),
                 ),
                 child: preview,
               ),
             ),
-            const SizedBox(height: Gap.sm),
+            const SizedBox(height: Gap.f8),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -420,7 +419,7 @@ class NotificationsCard extends ConsumerWidget {
     final text = Theme.of(context).textTheme;
     final bt = context.bt;
     final blocked = on && allowed == false;
-    return GroupCard(
+    return RowList(
       children: [
         StatusRow(
           key: const Key('settings-alerts'),
@@ -443,12 +442,13 @@ class NotificationsCard extends ConsumerWidget {
         if (blocked)
           Padding(
             key: const Key('settings-alerts-blocked'),
-            padding: const EdgeInsets.fromLTRB(Gap.lg, Gap.md, Gap.lg, Gap.lg),
+            padding:
+                const EdgeInsets.fromLTRB(Gap.f13, Gap.f13, Gap.f13, Gap.f13),
             child: Container(
-              padding: const EdgeInsets.all(Gap.md),
+              padding: const EdgeInsets.all(Gap.f13),
               decoration: BoxDecoration(
                 color: bt.sunTint,
-                borderRadius: Radii.tile,
+                borderRadius: Radii.control,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -461,7 +461,7 @@ class NotificationsCard extends ConsumerWidget {
                         size: 20,
                         color: bt.sunInk,
                       ),
-                      const SizedBox(width: Gap.md),
+                      const SizedBox(width: Gap.f13),
                       Expanded(
                         child: Text(
                           'This phone blocks notifications from boretube, '
@@ -472,7 +472,7 @@ class NotificationsCard extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: Gap.sm),
+                  const SizedBox(height: Gap.f8),
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
@@ -492,11 +492,12 @@ class NotificationsCard extends ConsumerWidget {
           ),
         if (on && !blocked)
           Padding(
-            padding: const EdgeInsets.fromLTRB(Gap.lg, Gap.sm, Gap.lg, Gap.md),
+            padding:
+                const EdgeInsets.fromLTRB(Gap.f13, Gap.f8, Gap.f13, Gap.f13),
             child: Row(
               children: [
                 Icon(Icons.schedule_rounded, size: 16, color: bt.muted),
-                const SizedBox(width: Gap.sm),
+                const SizedBox(width: Gap.f8),
                 Expanded(
                   child: Text(
                     'Checked about every 15 minutes on Wi-Fi. Only when '
@@ -534,23 +535,23 @@ class _AdvancedToggle extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     return Semantics(
       expanded: open,
-      child: InfoCard(
+      child: Surface(
         key: const Key('settings-advanced'),
         padding: EdgeInsets.zero,
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(
-            horizontal: Gap.lg,
-            vertical: Gap.md,
+            horizontal: Gap.f13,
+            vertical: Gap.f13,
           ),
           child: Row(
             children: [
-              IconBadge(
+              IconTile(
                 icon: Icons.developer_board_rounded,
                 color: bt.muted,
                 size: 36,
               ),
-              const SizedBox(width: Gap.md),
+              const SizedBox(width: Gap.f13),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -566,7 +567,7 @@ class _AdvancedToggle extends StatelessWidget {
               ),
               AnimatedRotation(
                 turns: open ? 0.5 : 0,
-                duration: Motion.of(context, Motion.fast),
+                duration: Motion.of(context, Motion.flip),
                 child: Icon(Icons.expand_more_rounded, color: bt.muted),
               ),
             ],
@@ -593,11 +594,11 @@ class _AdvancedBody extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (active != null) ...[
-          SectionHeader(
+          GroupHeading(
             'What ${active.name} can do',
             trailing: caps.isLoading
                 ? const Padding(
-                    padding: EdgeInsets.all(Gap.md),
+                    padding: EdgeInsets.all(Gap.f13),
                     child: SizedBox(
                       width: 16,
                       height: 16,
@@ -610,7 +611,7 @@ class _AdvancedBody extends ConsumerWidget {
                     child: const Text('Re-check'),
                   ),
           ),
-          GroupCard(
+          RowList(
             children: [
               for (final c in TvCapability.values)
                 StatusRow(
@@ -626,7 +627,7 @@ class _AdvancedBody extends ConsumerWidget {
                 ),
               if (active.capabilitiesCheckedAt != null)
                 Padding(
-                  padding: const EdgeInsets.all(Gap.md),
+                  padding: const EdgeInsets.all(Gap.f13),
                   child: Text(
                     'Checked ${relativeTime(active.capabilitiesCheckedAt!)}'
                     '${match == null ? '' : ' · ${match.profile.name}'}',
@@ -636,8 +637,8 @@ class _AdvancedBody extends ConsumerWidget {
             ],
           ),
           if (match != null && match.profile.readOnly) ...[
-            const SizedBox(height: Gap.md),
-            GroupCard(
+            const SizedBox(height: Gap.f13),
+            RowList(
               children: [
                 StatusRow(
                   tone: Tone.warn,
@@ -671,13 +672,13 @@ class _AdvancedBody extends ConsumerWidget {
             ),
           ],
         ],
-        const SectionHeader('Refresh what\'s on'),
-        InfoCard(
+        const GroupHeading('Refresh what\'s on'),
+        Surface(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text('Check the TV every', style: text.titleSmall),
-              const SizedBox(height: Gap.md),
+              const SizedBox(height: Gap.f13),
               _Segmented<int>(
                 key: const Key('settings-poll'),
                 values: AppSettings.pollChoices,
@@ -687,16 +688,16 @@ class _AdvancedBody extends ConsumerWidget {
                 onSelect: (s) =>
                     ref.read(appSettingsProvider.notifier).setPollSeconds(s),
               ),
-              const SizedBox(height: Gap.sm),
+              const SizedBox(height: Gap.f8),
               Text('Only while boretube is open.', style: text.bodySmall),
             ],
           ),
         ),
-        const SectionHeader('ADB key'),
+        const GroupHeading('ADB key'),
         const _AdbKeyCard(),
-        const SectionHeader('Baseline snapshot'),
+        const GroupHeading('Baseline snapshot'),
         const BaselineCard(),
-        const SectionHeader('Debug info'),
+        const GroupHeading('Debug info'),
         const _DebugInfoCard(),
       ],
     );
@@ -725,10 +726,10 @@ class _Segmented<T> extends StatelessWidget {
     final bt = context.bt;
     final text = Theme.of(context).textTheme;
     return Container(
-      padding: const EdgeInsets.all(Gap.xs),
+      padding: const EdgeInsets.all(Gap.f4),
       decoration: BoxDecoration(
         color: bt.hairline,
-        borderRadius: Radii.field,
+        borderRadius: Radii.control,
       ),
       child: Row(
         children: [
@@ -746,14 +747,14 @@ class _Segmented<T> extends StatelessWidget {
                     onSelect(v);
                   },
                   child: AnimatedContainer(
-                    duration: Motion.of(context, Motion.fast),
-                    curve: Motion.settle,
+                    duration: Motion.of(context, Motion.flip),
+                    curve: Motion.enter,
                     constraints: const BoxConstraints(minHeight: 44),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: v == selected ? bt.surface : Colors.transparent,
                       borderRadius: const BorderRadius.all(
-                        Radius.circular(Radii.input - 4),
+                        Radius.circular(Radii.controlR - 4),
                       ),
                       border: Border.all(
                         color: v == selected ? bt.border : Colors.transparent,
@@ -829,16 +830,16 @@ class _DebugInfoCard extends ConsumerWidget {
       ),
     ];
     String asText() => [for (final (k, v) in lines) '$k: $v'].join('\n');
-    return InfoCard(
+    return Surface(
       key: const Key('settings-debug'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
-            padding: const EdgeInsets.all(Gap.md),
+            padding: const EdgeInsets.all(Gap.f13),
             decoration: BoxDecoration(
               color: bt.hairline,
-              borderRadius: Radii.field,
+              borderRadius: Radii.control,
             ),
             child: SelectionArea(
               child: Column(
@@ -869,7 +870,7 @@ class _DebugInfoCard extends ConsumerWidget {
               ),
             ),
           ),
-          const SizedBox(height: Gap.md),
+          const SizedBox(height: Gap.f13),
           OutlinedButton.icon(
             key: const Key('settings-debug-copy'),
             onPressed: () async {
@@ -900,7 +901,7 @@ class _AboutCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        GroupCard(
+        RowList(
           children: [
             StatusRow(
               key: const Key('settings-help-always-on'),
@@ -929,12 +930,12 @@ class _AboutCard extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: Gap.md),
-        InfoCard(
+        const SizedBox(height: Gap.f13),
+        Surface(
           child: Row(
             children: [
               const BrandMark(size: 44),
-              const SizedBox(width: Gap.md),
+              const SizedBox(width: Gap.f13),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1031,17 +1032,17 @@ class _AdbKeyCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final key = ref.watch(adbKeyProvider);
     final text = Theme.of(context).textTheme;
-    return InfoCard(
+    return Surface(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('This phone\'s fingerprint', style: text.titleSmall),
-          const SizedBox(height: Gap.xs),
+          const SizedBox(height: Gap.f4),
           Text(
             'The TV shows the same code when it asks to allow debugging.',
             style: text.bodySmall,
           ),
-          const SizedBox(height: Gap.md),
+          const SizedBox(height: Gap.f13),
           key.when(
             loading: () => const Skeleton(height: 14),
             error: (e, _) => Text('Key unavailable: $e', style: text.bodySmall),
@@ -1050,7 +1051,7 @@ class _AdbKeyCard extends ConsumerWidget {
               style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
             ),
           ),
-          const SizedBox(height: Gap.md),
+          const SizedBox(height: Gap.f13),
           OutlinedButton.icon(
             onPressed: () async {
               final ok = await confirmAction(

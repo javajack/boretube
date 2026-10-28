@@ -63,13 +63,13 @@ class AlertsPermissionSheet extends StatelessWidget {
         'phone can tell you, and again when it\'s back.',
       ),
       children: [
-        InfoCard(
+        Surface(
           color: bt.mintTint,
           borderColor: bt.mintTint,
           child: Row(
             children: [
               const Tubby(mood: TubbyMood.guard, size: 52, animate: false),
-              const SizedBox(width: Gap.md),
+              const SizedBox(width: Gap.f13),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,20 +89,20 @@ class AlertsPermissionSheet extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: Gap.md),
+        const SizedBox(height: Gap.f13),
         Text(
           'Only when something changes. Checked about every 15 minutes, '
           'gently on the battery.',
           style: text.bodySmall,
         ),
-        const SizedBox(height: Gap.lg),
+        const SizedBox(height: Gap.f13),
         PrimaryButton(
           key: const Key('alerts-allow'),
           label: 'Allow notifications',
           icon: Icons.notifications_active_rounded,
           onPressed: () => Navigator.pop(context, true),
         ),
-        const SizedBox(height: Gap.sm),
+        const SizedBox(height: Gap.f8),
         TextButton(
           key: const Key('alerts-not-now'),
           onPressed: () => Navigator.pop(context, false),

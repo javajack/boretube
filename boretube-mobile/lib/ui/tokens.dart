@@ -1,61 +1,165 @@
 import 'package:flutter/material.dart';
 
-/// Spacing on an 8-point grid (4 is the half step).
+/// One ratio for everything: φ = 1.618 and its square root √φ ≈ 1.272.
+/// Nothing is sized by eye; every value below is a named step, and screens
+/// reference these tokens only (enforced by test/ui/token_lint_test.dart).
+abstract final class Phi {
+  static const double ratio = 1.618;
+
+  /// The larger part of a golden split (61.8 %).
+  static const double major = 0.618;
+
+  /// The smaller part of a golden split (38.2 %).
+  static const double minor = 0.382;
+
+  /// Flex weights for a 61.8 / 38.2 row (Expanded(flex: ...)).
+  static const int majorFlex = 618;
+  static const int minorFlex = 382;
+}
+
+/// Fibonacci spacing: 4 · 8 · 13 · 21 · 34 · 55.
 abstract final class Gap {
-  static const double xs = 4;
-  static const double sm = 8;
-  static const double md = 12;
-  static const double lg = 16;
-  static const double xl = 24;
-  static const double xxl = 32;
+  static const double f4 = 4;
+  static const double f8 = 8;
+  static const double f13 = 13;
+  static const double f21 = 21;
+  static const double f34 = 34;
+  static const double f55 = 55;
+
+  /// The gap inside a component (icon to label, title to value).
+  static const double inside = f13;
+
+  /// Between related components (a control and its caption, rows' blocks).
+  static const double related = f21;
+
+  /// Between sections of a screen.
+  static const double section = f34;
+
+  /// Around the hero.
+  static const double hero = f55;
 
   /// Horizontal screen gutter.
-  static const double page = 20;
+  static const double gutter = f21;
 }
 
-/// Corner radii. Deliberately tighter than the mockups so nothing feels
-/// pillowy: pills are only for small chips and badges.
+/// The √φ type scale from 13: caption · body · headline · title · display
+/// · hero numerals · TV-card headline. Bricolage at 21 and up, Figtree
+/// below.
+abstract final class TypeSize {
+  static const double caption = 13;
+  static const double body = 16.5;
+  static const double headline = 21;
+  static const double title = 26.5;
+  static const double display = 34;
+  static const double hero = 43;
+  static const double tv = 55;
+
+  /// Line heights: 1.3 on display sizes, 1.5 on body copy.
+  static const double displayLeading = 1.3;
+  static const double bodyLeading = 1.5;
+
+  /// One line of label text (chips, buttons): no extra leading.
+  static const double tightLeading = 1.15;
+}
+
+/// Component heights on φ steps: a primary is φ× a secondary, and a
+/// secondary is φ× a chip, so the hierarchy reads by size alone.
+abstract final class Sizes {
+  /// Small chip or badge.
+  static const double chip = 34;
+
+  /// Secondary control (buttons, steppers); padded to [touch].
+  static const double control = 44;
+
+  /// A list row or tile; also the primary button.
+  static const double row = 55;
+
+  /// The coral primary button (55–60 inside its [band]).
+  static const double primary = 58;
+
+  /// The hero action band around the primary.
+  static const double band = 89;
+
+  /// Minimum touch target.
+  static const double touch = 48;
+
+  /// Inline icon in a row.
+  static const double icon = 20;
+
+  /// Icon inside a 44 control, optically centred.
+  static const double iconControl = 24;
+
+  /// Icon inside a chip or badge.
+  static const double iconSmall = 16;
+
+  /// Small icon tile (Better TV destinations only).
+  static const double tile = 34;
+
+  /// Avatar / round control in the header.
+  static const double avatar = 44;
+
+  /// Lines and bars.
+  static const double hairline = 1;
+  static const double focus = 2;
+  static const double bar = 4;
+  static const double dot = 8;
+
+  /// Tubby: small (rows, banners), medium (status hero), large (empty
+  /// states, paused hero).
+  static const double tubbySmall = 34;
+  static const double tubby = 55;
+  static const double tubbyLarge = 89;
+
+  /// Readable column width on wide screens.
+  static const double maxContent = 610;
+}
+
+/// Corner radii on φ steps, reduced so nothing feels pillowy.
 abstract final class Radii {
-  static const double iconTile = 10;
-  static const double input = 12;
-  static const double button = 14;
-  static const double tileR = 14;
-  static const double cardR = 16;
-  static const double heroR = 20;
-  static const double sheetR = 24;
-  static const double pill = 999;
+  static const double chipR = 8;
+  static const double controlR = 13;
+  static const double heroR = 21;
 
-  // Older names, kept so every screen speaks the same scale.
-  static const double sm = input;
-  static const double md = cardR;
-  static const double lg = heroR;
-  static const double xl = sheetR;
+  /// Only for true circles (avatar, dots).
+  static const double round = 999;
 
-  static const card = BorderRadius.all(Radius.circular(cardR));
+  static const chip = BorderRadius.all(Radius.circular(chipR));
+  static const control = BorderRadius.all(Radius.circular(controlR));
   static const hero = BorderRadius.all(Radius.circular(heroR));
-  static const tile = BorderRadius.all(Radius.circular(tileR));
-  static const buttons = BorderRadius.all(Radius.circular(button));
-  static const icon = BorderRadius.all(Radius.circular(iconTile));
-  static const field = BorderRadius.all(Radius.circular(input));
-  static const sheet = BorderRadius.vertical(top: Radius.circular(sheetR));
+  static const sheet = BorderRadius.vertical(top: Radius.circular(heroR));
 }
 
-/// Motion: short, springy, and skipped when the system asks for less.
+/// Motion on φ steps. No bounce on UI, no animate-on-scroll; reduced
+/// motion turns everything into a 120 ms crossfade.
 abstract final class Motion {
-  static const fast = Duration(milliseconds: 200);
-  static const medium = Duration(milliseconds: 280);
-  static const slow = Duration(milliseconds: 350);
+  /// Press feedback (scale 0.97, opacity).
+  static const press = Duration(milliseconds: 120);
 
-  /// A gentle overshoot that settles quickly (spring-like).
-  static const spring = Cubic(0.34, 1.36, 0.64, 1);
-  static const settle = Curves.easeOutCubic;
+  /// State flips (tile → muted, chip selection).
+  static const flip = Duration(milliseconds: 200);
+
+  /// Sheets and hero state changes (calm → paused); numbers tween.
+  static const sheet = Duration(milliseconds: 320);
+
+  /// Only the pause "dimming" and Tubby falling asleep.
+  static const slow = Duration(milliseconds: 520);
+
+  /// List entrance stagger, for at most [staggerMax] items.
+  static const stagger = Duration(milliseconds: 34);
+  static const staggerMax = 5;
+
+  static const pressScale = 0.97;
+
+  /// Ease in (entering) and out (leaving).
+  static const enter = Curves.easeOutCubic;
+  static const exit = Curves.easeInCubic;
 
   static bool reduced(BuildContext context) =>
       MediaQuery.maybeDisableAnimationsOf(context) ?? false;
 
-  /// [d], or zero when reduced motion is on.
+  /// [d], or the 120 ms crossfade when reduced motion is on.
   static Duration of(BuildContext context, Duration d) =>
-      reduced(context) ? Duration.zero : d;
+      reduced(context) ? press : d;
 }
 
 /// Bundled typefaces (OFL, see assets/fonts). Both are variable fonts:
@@ -72,7 +176,7 @@ abstract final class Fonts {
   static TextStyle bricolage(
     double size, {
     FontWeight weight = FontWeight.w800,
-    double height = 1.15,
+    double height = TypeSize.displayLeading,
     double letterSpacing = 0,
     Color? color,
     bool tabularFigures = false,
@@ -99,8 +203,11 @@ class BtColors extends ThemeExtension<BtColors> {
   /// Stronger outline for outlined buttons and unselected chips.
   final Color borderStrong;
 
-  /// Dividers inside cards.
+  /// The 1 px warm hairline between rows.
   final Color hairline;
+
+  /// Quiet fill: tracks, idle tints, skeletons.
+  final Color wash;
   final Color ink;
 
   /// Body copy one step softer than [ink].
@@ -155,6 +262,7 @@ class BtColors extends ThemeExtension<BtColors> {
     required this.border,
     required this.borderStrong,
     required this.hairline,
+    required this.wash,
     required this.ink,
     required this.inkSoft,
     required this.muted,
@@ -193,7 +301,8 @@ class BtColors extends ThemeExtension<BtColors> {
     surface: Color(0xFFFFFFFF),
     border: Color(0xFFF0E6DA),
     borderStrong: Color(0xFFE0D3C3),
-    hairline: Color(0xFFF4ECE2),
+    hairline: Color(0xFFEADFD1),
+    wash: Color(0xFFF4ECE2),
     ink: Color(0xFF1C1D3A),
     inkSoft: Color(0xFF3A3B57),
     muted: Color(0xFF5B5C78),
@@ -233,7 +342,8 @@ class BtColors extends ThemeExtension<BtColors> {
     surface: Color(0xFF1C1D3A),
     border: Color(0xFF2B2C4C),
     borderStrong: Color(0xFF3B3C60),
-    hairline: Color(0xFF26274A),
+    hairline: Color(0xFF2E2F52),
+    wash: Color(0xFF26274A),
     ink: Color(0xFFF4EEE6),
     inkSoft: Color(0xFFD6D3E4),
     muted: Color(0xFFA9AACB),
@@ -280,6 +390,7 @@ class BtColors extends ThemeExtension<BtColors> {
       border: l(border, other.border),
       borderStrong: l(borderStrong, other.borderStrong),
       hairline: l(hairline, other.hairline),
+      wash: l(wash, other.wash),
       ink: l(ink, other.ink),
       inkSoft: l(inkSoft, other.inkSoft),
       muted: l(muted, other.muted),

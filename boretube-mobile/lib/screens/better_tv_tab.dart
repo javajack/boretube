@@ -61,8 +61,8 @@ class _BetterTvTabState extends ConsumerState<BetterTvTab> {
           if (c != null && c.mounted) {
             Scrollable.ensureVisible(
               c,
-              duration: Motion.of(context, Motion.slow),
-              curve: Motion.settle,
+              duration: Motion.of(context, Motion.sheet),
+              curve: Motion.enter,
               alignment: 0.1,
             );
           }
@@ -88,18 +88,18 @@ class _BetterTvTabState extends ConsumerState<BetterTvTab> {
       },
       child: ListView(
         key: const Key('better-tv-list'),
-        padding: const EdgeInsets.only(bottom: Gap.xxl),
+        padding: const EdgeInsets.only(bottom: Gap.f34),
         children: [
           const TabHeader(
             title: 'Better TV',
             subtitle: 'A calmer, cleaner TV. Undo anything.',
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Gap.page),
+            padding: const EdgeInsets.symmetric(horizontal: Gap.gutter),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: Gap.xs),
+                const SizedBox(height: Gap.f4),
                 if (adb || agent)
                   _Summary(
                     onOpen: () => _open(const HealthScreen()),
@@ -107,25 +107,25 @@ class _BetterTvTabState extends ConsumerState<BetterTvTab> {
                   )
                 else
                   const _UnlockHero(),
-                const SizedBox(height: Gap.md),
+                const SizedBox(height: Gap.f13),
                 _YouTubeRow(
                   locked: !adb,
                   onTap: () => _open(const YouTubeScreen()),
                 ),
-                const SizedBox(height: Gap.sm),
+                const SizedBox(height: Gap.f8),
                 _CleanRow(
                   locked: !adb,
                   onTap: () => _open(const CleanTvScreen()),
                 ),
-                const SizedBox(height: Gap.sm),
+                const SizedBox(height: Gap.f8),
                 _AppsRow(locked: !adb, onTap: () => _open(const AppsScreen())),
                 if (adb || agent) ...[
-                  const SizedBox(height: Gap.sm),
+                  const SizedBox(height: Gap.f8),
                   _HealthRow(onTap: () => _open(const HealthScreen())),
                 ],
-                SectionHeader('Always On', key: _alwaysOnKey),
+                GroupHeading('Always On', key: _alwaysOnKey),
                 const TvGuardCard(),
-                const SizedBox(height: Gap.xl),
+                const SizedBox(height: Gap.f21),
                 PrimaryButton(
                   key: const Key('better-tv-restore'),
                   label: 'Put the TV back the way it was',
@@ -175,7 +175,7 @@ class _Summary extends ConsumerWidget {
     return Semantics(
       container: true,
       liveRegion: !good,
-      child: InfoCard(
+      child: Surface(
         key: const Key('health-summary'),
         radius: Radii.hero,
         color: bg,
@@ -230,7 +230,7 @@ class _Summary extends ConsumerWidget {
               ],
             ),
             if (fixable.isNotEmpty) ...[
-              const SizedBox(height: Gap.md),
+              const SizedBox(height: Gap.f13),
               PrimaryButton(
                 key: const Key('health-fix-all'),
                 label: fixable.length == 1 && issues.length == 1
@@ -242,7 +242,7 @@ class _Summary extends ConsumerWidget {
               ),
             ],
             if (needYou.isNotEmpty) ...[
-              SizedBox(height: fixable.isEmpty ? Gap.md : Gap.xs),
+              SizedBox(height: fixable.isEmpty ? Gap.f13 : Gap.f4),
               _NeedsYouLine(
                 checks: needYou,
                 ink: ink,
@@ -281,16 +281,16 @@ class _NeedsYouLine extends StatelessWidget {
       excludeSemantics: true,
       child: InkWell(
         key: const Key('health-needs-you'),
-        borderRadius: Radii.field,
+        borderRadius: Radii.control,
         onTap: onTap,
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 48),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Gap.xs),
+            padding: const EdgeInsets.symmetric(horizontal: Gap.f4),
             child: Row(
               children: [
                 Icon(Icons.back_hand_rounded, size: 18, color: ink),
-                const SizedBox(width: Gap.sm),
+                const SizedBox(width: Gap.f8),
                 Expanded(
                   child: Text.rich(
                     TextSpan(
@@ -331,12 +331,12 @@ class _UnlockHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final bt = context.bt;
     final text = Theme.of(context).textTheme;
-    return InfoCard(
+    return Surface(
       key: const Key('better-tv-preview'),
       radius: Radii.hero,
       color: bt.lavenderTint,
       borderColor: bt.lavenderTint,
-      padding: const EdgeInsets.all(Gap.xl),
+      padding: const EdgeInsets.all(Gap.f21),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -353,9 +353,9 @@ class _UnlockHero extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: Gap.lg),
+          const SizedBox(height: Gap.f13),
           Text('Make this TV calmer', style: text.headlineMedium),
-          const SizedBox(height: Gap.xs),
+          const SizedBox(height: Gap.f4),
           Row(
             children: [
               Flexible(
@@ -368,7 +368,7 @@ class _UnlockHero extends StatelessWidget {
               const InfoDot(LearnTerm.homeMode),
             ],
           ),
-          const SizedBox(height: Gap.lg),
+          const SizedBox(height: Gap.f13),
           PrimaryButton(
             key: const Key('better-tv-unlock'),
             label: 'Unlock Home mode',
@@ -401,7 +401,7 @@ class _YouTubeRow extends ConsumerWidget {
     final s = locked ? null : ref.watch(stockYouTubeStateProvider).valueOrNull;
     final on = s == AppState.notInstalled || s == AppState.absent;
     final known = s != null;
-    return NavCard(
+    return NavRow(
       key: const Key('better-tv-noShorts'),
       icon: Icons.smart_display_rounded,
       tone: Tone.accent,
@@ -447,7 +447,7 @@ class _CleanRow extends ConsumerWidget {
       detail = '$left app${left == 1 ? '' : 's'} to tidy';
       tone = Tone.warn;
     }
-    return NavCard(
+    return NavRow(
       key: const Key('better-tv-cleanTv'),
       icon: Icons.auto_awesome_rounded,
       tone: Tone.info,
@@ -469,7 +469,7 @@ class _AppsRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final apps = locked ? null : ref.watch(appsProvider).valueOrNull;
     final n = apps?.where((a) => a.launchable).length;
-    return NavCard(
+    return NavRow(
       key: const Key('better-tv-apps'),
       icon: Icons.grid_view_rounded,
       tone: Tone.info,
@@ -496,7 +496,7 @@ class _HealthRow extends ConsumerWidget {
         ?.where((c) =>
             c.status == HealthStatus.warn || c.status == HealthStatus.fail)
         .length;
-    return NavCard(
+    return NavRow(
       key: const Key('better-tv-health'),
       icon: Icons.monitor_heart_rounded,
       tone: issues == null || issues == 0 ? Tone.ok : Tone.warn,

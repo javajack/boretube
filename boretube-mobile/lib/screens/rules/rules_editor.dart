@@ -93,8 +93,8 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
       if (c != null && c.mounted) {
         await Scrollable.ensureVisible(
           c,
-          duration: Motion.of(context, Motion.slow),
-          curve: Motion.settle,
+          duration: Motion.of(context, Motion.sheet),
+          curve: Motion.enter,
           alignment: 0.1,
         );
         return;
@@ -246,37 +246,37 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
             key: const Key('rules-list'),
             controller: _scroll,
             padding: const EdgeInsets.fromLTRB(
-              Gap.page,
+              Gap.gutter,
               0,
-              Gap.page,
-              Gap.xxl,
+              Gap.gutter,
+              Gap.f34,
             ),
             children: [
               _StatusLine(rules: _base, dirty: _dirty),
-              const SizedBox(height: Gap.md),
+              const SizedBox(height: Gap.f13),
               _PresetChips(
                 active: active,
                 onPick: _saving ? null : _choosePreset,
               ),
               if (isBlankRoutine(r)) ...[
-                const SizedBox(height: Gap.md),
+                const SizedBox(height: Gap.f13),
                 _Templates(onPick: _saving ? null : _choosePreset),
               ],
-              const SizedBox(height: Gap.md),
+              const SizedBox(height: Gap.f13),
               _bedtimeCard(context, r),
-              const SizedBox(height: Gap.md),
+              const SizedBox(height: Gap.f13),
               _dailyCard(context, r),
-              const SizedBox(height: Gap.md),
+              const SizedBox(height: Gap.f13),
               _appsCard(context, r),
-              const SizedBox(height: Gap.md),
+              const SizedBox(height: Gap.f13),
               _shortsCard(context, r),
-              const SizedBox(height: Gap.md),
+              const SizedBox(height: Gap.f13),
               _volumeCard(context, r),
-              const SizedBox(height: Gap.md),
+              const SizedBox(height: Gap.f13),
               _silentCard(context, r),
-              const SizedBox(height: Gap.md),
+              const SizedBox(height: Gap.f13),
               _styleCard(context, r),
-              const SectionHeader('Tonight only'),
+              const GroupHeading('Tonight only'),
               _tonightCard(context, r),
             ],
           ),
@@ -306,7 +306,7 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
       children: [
         if (t.schedule.isEmpty)
           Padding(
-            padding: const EdgeInsets.only(bottom: Gap.md),
+            padding: const EdgeInsets.only(bottom: Gap.f13),
             child: Text(
               'No quiet hours yet. In these windows the TV says no, even '
               'when nobody is home to say it.',
@@ -320,7 +320,7 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
             onChanged: (row) => setRows([...t.schedule]..[i] = row),
             onRemove: () => setRows([...t.schedule]..removeAt(i)),
           ),
-          const SizedBox(height: Gap.sm),
+          const SizedBox(height: Gap.f8),
         ],
         DashedAdd(
           key: const Key('rules-add-schedule'),
@@ -364,7 +364,7 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: Gap.xs),
+          padding: const EdgeInsets.symmetric(horizontal: Gap.f4),
           child: Text(
             limit == 0
                 ? 'Slide to set how much TV a day. Bedtime still applies.'
@@ -407,7 +407,7 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
           onChanged: (m) =>
               _edit((r) => r.copyWith(allowedApps: a.copyWith(mode: m))),
         ),
-        const SizedBox(height: Gap.md),
+        const SizedBox(height: Gap.f13),
         Text(
           switch (a.mode) {
             AppsMode.off => 'Every app can open.',
@@ -419,19 +419,19 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
           style: text.bodySmall,
         ),
         AnimatedSize(
-          duration: Motion.of(context, Motion.medium),
-          curve: Motion.settle,
+          duration: Motion.of(context, Motion.sheet),
+          curve: Motion.enter,
           alignment: Alignment.topCenter,
           child: a.mode == AppsMode.off
               ? const SizedBox(width: double.infinity)
               : Padding(
-                  padding: const EdgeInsets.only(top: Gap.md),
+                  padding: const EdgeInsets.only(top: Gap.f13),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       if (a.packages.isEmpty && a.mode == AppsMode.allowlist)
                         Padding(
-                          padding: const EdgeInsets.only(bottom: Gap.sm),
+                          padding: const EdgeInsets.only(bottom: Gap.f8),
                           child: Row(
                             children: [
                               Icon(
@@ -439,7 +439,7 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
                                 size: 18,
                                 color: Tone.warn.color(context),
                               ),
-                              const SizedBox(width: Gap.sm),
+                              const SizedBox(width: Gap.f8),
                               Expanded(
                                 child: Text(
                                   'Nothing picked yet, so no app would open.',
@@ -452,8 +452,8 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
                           ),
                         ),
                       Wrap(
-                        spacing: Gap.sm,
-                        runSpacing: Gap.sm,
+                        spacing: Gap.f8,
+                        runSpacing: Gap.f8,
                         children: [
                           for (final p in a.packages)
                             AppPill(pkg: p, onRemove: () => remove(p)),
@@ -505,7 +505,6 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
         children: [
           SegmentChoice<ShortsMode>(
             keyPrefix: 'rules-shorts',
-            columns: 2,
             options: const [
               (ShortsMode.off, 'Off'),
               (ShortsMode.block, 'Block'),
@@ -521,13 +520,13 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
             ),
           ),
           AnimatedSize(
-            duration: Motion.of(context, Motion.medium),
-            curve: Motion.settle,
+            duration: Motion.of(context, Motion.sheet),
+            curve: Motion.enter,
             alignment: Alignment.topCenter,
             child: mode != ShortsMode.budget
                 ? const SizedBox(width: double.infinity)
                 : Padding(
-                    padding: const EdgeInsets.only(top: Gap.md),
+                    padding: const EdgeInsets.only(top: Gap.f13),
                     child: CountStepper(
                       key: const Key('rules-shorts-per-day'),
                       keyPrefix: 'rules-shorts-per-day',
@@ -539,9 +538,9 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
                     ),
                   ),
           ),
-          const SizedBox(height: Gap.md),
+          const SizedBox(height: Gap.f13),
           AnimatedSwitcher(
-            duration: Motion.of(context, Motion.fast),
+            duration: Motion.of(context, Motion.flip),
             child: Text(
               switch (mode) {
                 ShortsMode.off => 'Shorts play as usual. The TV still counts '
@@ -549,6 +548,8 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
                 ShortsMode.block => 'After three quick Shorts in a row, the '
                     'app closes and the TV goes Home. Full videos keep '
                     'playing.',
+                ShortsMode.cooldown => 'After a run of quick videos, the '
+                    'video apps close for 10 minutes.',
                 ShortsMode.budget => 'The first $perDay '
                     'Short${perDay == 1 ? '' : 's'} each day play. After '
                     'that, the TV says no until midnight.',
@@ -560,18 +561,18 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
             ),
           ),
           AnimatedSize(
-            duration: Motion.of(context, Motion.medium),
-            curve: Motion.settle,
+            duration: Motion.of(context, Motion.sheet),
+            curve: Motion.enter,
             alignment: Alignment.topCenter,
             child: !stops
                 ? const SizedBox(width: double.infinity)
                 : Padding(
-                    padding: const EdgeInsets.only(top: Gap.lg),
+                    padding: const EdgeInsets.only(top: Gap.f13),
                     child: Column(
                       children: [
                         Padding(
                           padding:
-                              const EdgeInsets.symmetric(horizontal: Gap.lg),
+                              const EdgeInsets.symmetric(horizontal: Gap.f13),
                           child: TvSaysNoPreview(
                             key: const Key('rules-shorts-preview'),
                             style: r.style,
@@ -581,7 +582,7 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
                             message: 'Pick a full video instead.',
                           ),
                         ),
-                        const SizedBox(height: Gap.sm),
+                        const SizedBox(height: Gap.f8),
                         Text(
                           friendly
                               ? 'What the TV shows when it stops them.'
@@ -596,12 +597,12 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
           ),
           if (today != null &&
               (today.todayCount > 0 || today.lastDetectedAt != null)) ...[
-            const SizedBox(height: Gap.md),
+            const SizedBox(height: Gap.f13),
             Row(
               key: const Key('rules-shorts-today'),
               children: [
                 Icon(Icons.today_rounded, size: 16, color: bt.muted),
-                const SizedBox(width: Gap.sm),
+                const SizedBox(width: Gap.f8),
                 Expanded(
                   child: Text(
                     _shortsToday(context, today),
@@ -636,15 +637,15 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
   Widget _volumeCard(BuildContext context, AgentRules r) {
     final v = r.volumeLimit;
     final bt = context.bt;
-    return InfoCard(
+    return Surface(
       key: const Key('rules-sound'),
-      padding: const EdgeInsets.fromLTRB(Gap.lg, Gap.sm, Gap.lg, Gap.sm),
+      padding: const EdgeInsets.fromLTRB(Gap.f13, Gap.f8, Gap.f13, Gap.f8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           SwitchLine(
             key: const Key('rules-volume-limit'),
-            leading: IconBadge(
+            leading: IconTile(
               icon: Icons.volume_down_rounded,
               color: v.enabled ? Tone.info.color(context) : bt.muted,
               size: 40,
@@ -659,8 +660,8 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
             ),
           ),
           AnimatedSize(
-            duration: Motion.of(context, Motion.medium),
-            curve: Motion.settle,
+            duration: Motion.of(context, Motion.sheet),
+            curve: Motion.enter,
             alignment: Alignment.topCenter,
             child: !v.enabled
                 ? const SizedBox(width: double.infinity)
@@ -703,12 +704,12 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
 
   Widget _silentCard(BuildContext context, AgentRules r) {
     final bt = context.bt;
-    return InfoCard(
+    return Surface(
       key: const Key('rules-silent'),
-      padding: const EdgeInsets.fromLTRB(Gap.lg, Gap.sm, Gap.lg, Gap.sm),
+      padding: const EdgeInsets.fromLTRB(Gap.f13, Gap.f8, Gap.f13, Gap.f8),
       child: SwitchLine(
         key: const Key('rules-always-mute'),
-        leading: IconBadge(
+        leading: IconTile(
           icon: Icons.volume_off_rounded,
           color: r.alwaysMute ? Tone.warn.color(context) : bt.muted,
           size: 40,
@@ -741,17 +742,17 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
           value: r.style,
           onChanged: (s) => _edit((r) => r.copyWith(style: s)),
         ),
-        const SizedBox(height: Gap.lg),
+        const SizedBox(height: Gap.f13),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: Gap.lg),
+          padding: const EdgeInsets.symmetric(horizontal: Gap.f13),
           child: TvSaysNoPreview(
             style: r.style,
             backAt: bed == null ? null : friendlyTime(context, bed.end),
           ),
         ),
-        const SizedBox(height: Gap.md),
+        const SizedBox(height: Gap.f13),
         AnimatedSwitcher(
-          duration: Motion.of(context, Motion.fast),
+          duration: Motion.of(context, Motion.flip),
           child: Text(
             r.style == RuleStyle.sneaky
                 ? 'The app just closes and the TV goes Home, as if the '
@@ -780,7 +781,7 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
       (o) => o.kind == OverrideKind.allowApp && o.pkg == kStockYouTube,
     );
     final quiet = active.any((o) => o.kind == OverrideKind.muteUntil);
-    return InfoCard(
+    return Surface(
       key: const Key('rules-overrides'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -804,7 +805,7 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
                           ),
                 ),
               ),
-              const SizedBox(width: Gap.sm),
+              const SizedBox(width: Gap.f8),
               Expanded(
                 child: _TonightTile(
                   key: const Key('rules-mute-30'),
@@ -827,10 +828,10 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
             ],
           ),
           if (active.isNotEmpty) ...[
-            const SizedBox(height: Gap.md),
+            const SizedBox(height: Gap.f13),
             for (final o in active)
               Padding(
-                padding: const EdgeInsets.only(top: Gap.xs),
+                padding: const EdgeInsets.only(top: Gap.f4),
                 child: Row(
                   children: [
                     Icon(
@@ -842,7 +843,7 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
                       size: 20,
                       color: bt.mint,
                     ),
-                    const SizedBox(width: Gap.md),
+                    const SizedBox(width: Gap.f13),
                     Expanded(
                       child: Text(
                         '${switch (o.kind) {
@@ -863,7 +864,7 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
                 ),
               ),
           ],
-          const SizedBox(height: Gap.sm),
+          const SizedBox(height: Gap.f8),
           Text(
             'These go to the TV right away and end by themselves.',
             style: text.bodySmall,
@@ -894,7 +895,7 @@ class _StatusLine extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AnimatedSwitcher(
-          duration: Motion.of(context, Motion.fast),
+          duration: Motion.of(context, Motion.flip),
           child: Row(
             key: ValueKey(dirty),
             children: [
@@ -940,11 +941,11 @@ class _PresetChips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Wrap(
-      spacing: Gap.sm,
-      runSpacing: Gap.sm,
+      spacing: Gap.f8,
+      runSpacing: Gap.f8,
       children: [
         for (final p in RulePreset.values)
-          InkPill(
+          BtChip(
             key: Key('preset-${p.name}'),
             label: p.label,
             selected: active == p,
@@ -952,7 +953,7 @@ class _PresetChips extends StatelessWidget {
           ),
         Tooltip(
           message: 'Change anything below and it becomes your own routine',
-          child: InkPill(
+          child: BtChip(
             key: const Key('preset-custom'),
             label: 'Custom',
             icon: Icons.tune_rounded,
@@ -973,7 +974,7 @@ class _Templates extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final bt = context.bt;
-    return InfoCard(
+    return Surface(
       key: const Key('rules-templates'),
       color: bt.sunTint,
       borderColor: bt.sunTint,
@@ -983,7 +984,7 @@ class _Templates extends StatelessWidget {
           Row(
             children: [
               const Tubby(mood: TubbyMood.asleep, size: 52, animate: false),
-              const SizedBox(width: Gap.md),
+              const SizedBox(width: Gap.f13),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -999,14 +1000,14 @@ class _Templates extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: Gap.md),
+          const SizedBox(height: Gap.f13),
           for (final p in RulePreset.values) ...[
-            if (p != RulePreset.schoolNight) const SizedBox(height: Gap.sm),
-            InfoCard(
+            if (p != RulePreset.schoolNight) const SizedBox(height: Gap.f8),
+            Surface(
               key: Key('template-${p.name}'),
               padding: const EdgeInsets.symmetric(
-                horizontal: Gap.lg,
-                vertical: Gap.md,
+                horizontal: Gap.f13,
+                vertical: Gap.f13,
               ),
               onTap: onPick == null ? null : () => onPick!(p),
               child: Row(
@@ -1076,12 +1077,12 @@ class _WindowEditor extends StatelessWidget {
           excludeSemantics: true,
           child: InkWell(
             key: Key(from ? 'schedule-from' : 'schedule-to'),
-            borderRadius: Radii.field,
+            borderRadius: Radii.control,
             onTap: () => _pick(context, from),
             child: Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: 6,
-                vertical: Gap.sm,
+                vertical: Gap.f8,
               ),
               child: Text(
                 hhmmLabel(v, h24: h24),
@@ -1100,10 +1101,10 @@ class _WindowEditor extends StatelessWidget {
           ),
         );
     return Container(
-      padding: const EdgeInsets.fromLTRB(Gap.sm, Gap.xs, Gap.xs, Gap.md),
+      padding: const EdgeInsets.fromLTRB(Gap.f8, Gap.f4, Gap.f4, Gap.f13),
       decoration: BoxDecoration(
         color: bt.canvas,
-        borderRadius: Radii.tile,
+        borderRadius: Radii.control,
         border: Border.all(color: bt.hairline),
       ),
       child: Column(
@@ -1139,7 +1140,7 @@ class _WindowEditor extends StatelessWidget {
             ],
           ),
           Padding(
-            padding: const EdgeInsets.only(left: Gap.xs, right: Gap.sm),
+            padding: const EdgeInsets.only(left: Gap.f4, right: Gap.f8),
             child: LayoutBuilder(
               builder: (context, c) {
                 final dot = (c.maxWidth / 7 - 3).clamp(28.0, 36.0);
@@ -1167,9 +1168,9 @@ class _WindowEditor extends StatelessWidget {
               },
             ),
           ),
-          const SizedBox(height: Gap.sm),
+          const SizedBox(height: Gap.f8),
           Padding(
-            padding: const EdgeInsets.only(left: Gap.sm),
+            padding: const EdgeInsets.only(left: Gap.f8),
             child: Text(daysLabel(row.days), style: text.bodySmall),
           ),
         ],
@@ -1212,8 +1213,8 @@ class _DayDot extends StatelessWidget {
           height: 48,
           child: Center(
             child: AnimatedContainer(
-              duration: Motion.of(context, Motion.fast),
-              curve: Motion.settle,
+              duration: Motion.of(context, Motion.flip),
+              curve: Motion.enter,
               width: size,
               height: size,
               alignment: Alignment.center,
@@ -1260,7 +1261,7 @@ class _TonightTile extends StatelessWidget {
       child: Material(
         color: on ? bt.mintTint : bt.canvas,
         shape: RoundedRectangleBorder(
-          borderRadius: Radii.tile,
+          borderRadius: Radii.control,
           side: BorderSide(color: on ? bt.mint : bt.border),
         ),
         clipBehavior: Clip.antiAlias,
@@ -1274,13 +1275,13 @@ class _TonightTile extends StatelessWidget {
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: 88),
             child: Padding(
-              padding: const EdgeInsets.all(Gap.md),
+              padding: const EdgeInsets.all(Gap.f13),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Icon(icon, color: on ? bt.mintInk : bt.skyInk, size: 24),
-                  const SizedBox(height: Gap.sm),
+                  const SizedBox(height: Gap.f8),
                   Text(
                     label,
                     style: text.labelLarge!.copyWith(fontSize: 14),
@@ -1313,23 +1314,23 @@ class _SaveBar extends StatelessWidget {
     final bt = context.bt;
     final text = Theme.of(context).textTheme;
     return AnimatedSize(
-      duration: Motion.of(context, Motion.medium),
-      curve: Motion.settle,
+      duration: Motion.of(context, Motion.sheet),
+      curve: Motion.enter,
       child: !visible
           ? const SizedBox(width: double.infinity)
           : Padding(
               padding: const EdgeInsets.fromLTRB(
-                Gap.md,
-                Gap.xs,
-                Gap.md,
-                Gap.md,
+                Gap.f13,
+                Gap.f4,
+                Gap.f13,
+                Gap.f13,
               ),
               child: Container(
                 key: const Key('rules-save-bar'),
-                padding: const EdgeInsets.fromLTRB(Gap.lg, 6, 6, 6),
+                padding: const EdgeInsets.fromLTRB(Gap.f13, 6, 6, 6),
                 decoration: BoxDecoration(
                   color: bt.inkFill,
-                  borderRadius: Radii.card,
+                  borderRadius: Radii.control,
                 ),
                 child: Row(
                   children: [
@@ -1349,7 +1350,7 @@ class _SaveBar extends StatelessWidget {
                       onPressed: saving ? null : onDiscard,
                       child: const Text('Discard'),
                     ),
-                    const SizedBox(width: Gap.xs),
+                    const SizedBox(width: Gap.f4),
                     SizedBox(
                       width: 112,
                       child: PrimaryButton(
@@ -1384,7 +1385,7 @@ class PresetSheet extends StatelessWidget {
       title: preset.label,
       lead: Text(preset.blurb),
       children: [
-        InfoCard(
+        Surface(
           child: Column(
             children: [
               for (final l in shapeSummary(preset.shape, h24: h24))
@@ -1392,11 +1393,11 @@ class PresetSheet extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: Gap.md),
+        const SizedBox(height: Gap.f13),
         Row(
           children: [
             Icon(Icons.apps_rounded, size: 16, color: bt.muted),
-            const SizedBox(width: Gap.sm),
+            const SizedBox(width: Gap.f8),
             Expanded(
               child: Text(
                 'Your allowed apps, Shorts and Tonight only stay as they '
@@ -1406,13 +1407,13 @@ class PresetSheet extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: Gap.lg),
+        const SizedBox(height: Gap.f13),
         PrimaryButton(
           key: const Key('preset-confirm'),
           label: 'Use ${preset.label}',
           onPressed: () => Navigator.pop(context, true),
         ),
-        const SizedBox(height: Gap.sm),
+        const SizedBox(height: Gap.f8),
         TextButton(
           onPressed: () => Navigator.pop(context, false),
           child: const Text('Keep my settings'),
@@ -1447,15 +1448,15 @@ class ConflictSheet extends StatelessWidget {
       children: [
         if (diff.isNotEmpty) ...[
           Text('WHAT\'S DIFFERENT', style: text.labelSmall),
-          const SizedBox(height: Gap.sm),
+          const SizedBox(height: Gap.f8),
           Wrap(
-            spacing: Gap.sm,
-            runSpacing: Gap.sm,
+            spacing: Gap.f8,
+            runSpacing: Gap.f8,
             children: [
               for (final d in diff) BtBadge(d, tone: Tone.warn),
             ],
           ),
-          const SizedBox(height: Gap.lg),
+          const SizedBox(height: Gap.f13),
         ],
         ChoiceCard(
           key: const Key('rules-reload'),
@@ -1466,7 +1467,7 @@ class ConflictSheet extends StatelessWidget {
           body: 'Keep what\'s on the TV now. Your edits here are dropped.',
           onTap: () => Navigator.pop(context, 'theirs'),
         ),
-        const SizedBox(height: Gap.sm),
+        const SizedBox(height: Gap.f8),
         ChoiceCard(
           key: const Key('rules-overwrite'),
           selected: false,
@@ -1475,7 +1476,7 @@ class ConflictSheet extends StatelessWidget {
           body: 'Send my changes. They replace what $by set.',
           onTap: () => Navigator.pop(context, 'mine'),
         ),
-        const SizedBox(height: Gap.md),
+        const SizedBox(height: Gap.f13),
         Text(
           'Either way, the TV keeps running a routine the whole time.',
           textAlign: TextAlign.center,
@@ -1510,7 +1511,7 @@ class AppPill extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           AppAvatar(pkg: pkg, size: 28),
-          const SizedBox(width: Gap.sm),
+          const SizedBox(width: Gap.f8),
           Text(name, style: text.labelLarge!.copyWith(fontSize: 14)),
           if (onRemove != null)
             Semantics(
@@ -1528,7 +1529,7 @@ class AppPill extends StatelessWidget {
               ),
             )
           else
-            const SizedBox(width: Gap.md),
+            const SizedBox(width: Gap.f13),
         ],
       ),
     );
@@ -1622,7 +1623,7 @@ class _AppPickerSheetState extends ConsumerState<AppPickerSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(Gap.xl, 0, Gap.xl, Gap.md),
+              padding: const EdgeInsets.fromLTRB(Gap.f21, 0, Gap.f21, Gap.f13),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1630,7 +1631,7 @@ class _AppPickerSheetState extends ConsumerState<AppPickerSheet> {
                     widget.blocklist ? 'Apps to block' : 'Apps that can open',
                     style: text.headlineMedium,
                   ),
-                  const SizedBox(height: Gap.md),
+                  const SizedBox(height: Gap.f13),
                   TextField(
                     key: const Key('pick-search'),
                     onChanged: (v) => setState(() => _q = v.toLowerCase()),
@@ -1645,7 +1646,7 @@ class _AppPickerSheetState extends ConsumerState<AppPickerSheet> {
             Expanded(
               child: apps.when(
                 loading: () => const Padding(
-                  padding: EdgeInsets.all(Gap.lg),
+                  padding: EdgeInsets.all(Gap.f13),
                   child: SkeletonCard(rows: 5),
                 ),
                 error: (e, _) => const EmptyState(
@@ -1673,7 +1674,7 @@ class _AppPickerSheetState extends ConsumerState<AppPickerSheet> {
                     );
                   }
                   return ListView(
-                    padding: const EdgeInsets.symmetric(horizontal: Gap.md),
+                    padding: const EdgeInsets.symmetric(horizontal: Gap.f13),
                     children: [
                       for (final p in shown)
                         _PickRow(
@@ -1688,7 +1689,7 @@ class _AppPickerSheetState extends ConsumerState<AppPickerSheet> {
                         ),
                       if (shown.isEmpty)
                         Padding(
-                          padding: const EdgeInsets.all(Gap.xl),
+                          padding: const EdgeInsets.all(Gap.f21),
                           child: Text(
                             'No app called "$_q" on this TV.',
                             textAlign: TextAlign.center,
@@ -1701,7 +1702,7 @@ class _AppPickerSheetState extends ConsumerState<AppPickerSheet> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(Gap.xl, Gap.md, Gap.xl, 0),
+              padding: const EdgeInsets.fromLTRB(Gap.f21, Gap.f13, Gap.f21, 0),
               child: PrimaryButton(
                 key: const Key('pick-done'),
                 kind: ButtonKind.ink,
@@ -1741,7 +1742,7 @@ class _PickRow extends StatelessWidget {
       excludeSemantics: true,
       button: true,
       child: InkWell(
-        borderRadius: Radii.tile,
+        borderRadius: Radii.control,
         onTap: () {
           HapticFeedback.selectionClick();
           onTap();
@@ -1749,14 +1750,14 @@ class _PickRow extends StatelessWidget {
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 60),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Gap.md),
+            padding: const EdgeInsets.symmetric(horizontal: Gap.f13),
             child: Row(
               children: [
                 AppAvatar(pkg: pkg, size: 40),
-                const SizedBox(width: Gap.md),
+                const SizedBox(width: Gap.f13),
                 Expanded(child: Text(appLabel(pkg), style: text.titleSmall)),
                 AnimatedContainer(
-                  duration: Motion.of(context, Motion.fast),
+                  duration: Motion.of(context, Motion.flip),
                   width: 26,
                   height: 26,
                   decoration: BoxDecoration(

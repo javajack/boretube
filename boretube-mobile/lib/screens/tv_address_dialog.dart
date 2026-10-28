@@ -96,7 +96,7 @@ class _TvAddressDialogState extends State<_TvAddressDialog> {
               ),
               onSubmitted: (_) => _save(),
             ),
-            const SizedBox(height: Gap.md),
+            const SizedBox(height: Gap.f13),
             TextField(
               controller: _name,
               decoration: const InputDecoration(
@@ -105,7 +105,7 @@ class _TvAddressDialogState extends State<_TvAddressDialog> {
                 prefixIcon: Icon(Icons.tv_outlined),
               ),
             ),
-            const SizedBox(height: Gap.sm),
+            const SizedBox(height: Gap.f8),
             Align(
               alignment: Alignment.centerLeft,
               child: TextButton.icon(
@@ -126,7 +126,7 @@ class _TvAddressDialogState extends State<_TvAddressDialog> {
                     ('DIAL', _dial),
                     ('ADB', _adb),
                   ]) ...[
-                    if (label != 'Cast') const SizedBox(width: Gap.sm),
+                    if (label != 'Cast') const SizedBox(width: Gap.f8),
                     Expanded(
                       child: TextField(
                         controller: c,

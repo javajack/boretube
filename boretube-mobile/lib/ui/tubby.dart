@@ -56,7 +56,9 @@ class Tubby extends StatefulWidget {
 class _TubbyState extends State<Tubby> with SingleTickerProviderStateMixin {
   late final AnimationController _c = AnimationController(
     vsync: this,
+    // tokens:off: an ambient breathing loop, not UI motion.
     duration: const Duration(milliseconds: 4200),
+    // tokens:on
   );
 
   bool _running = false;
@@ -140,6 +142,7 @@ class _TubbyState extends State<Tubby> with SingleTickerProviderStateMixin {
 
 /// Paints Tubby in a 120×110 box scaled to fit. [t] (0–1, repeating)
 /// drives the idle animation.
+// tokens:off: illustration geometry on a 120 × 110 artboard.
 class TubbyPainter extends CustomPainter {
   final TubbyMood mood;
   final Color body;
@@ -381,3 +384,4 @@ class TubbyPainter extends CustomPainter {
       old.cheeks != cheeks ||
       old.beaming != beaming;
 }
+// tokens:on

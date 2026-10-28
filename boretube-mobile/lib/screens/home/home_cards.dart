@@ -42,10 +42,10 @@ class TodayStrip extends StatelessWidget {
         child: Row(
           children: [
             Icon(l.icon, size: 20, color: l.color),
-            const SizedBox(width: Gap.md),
+            const SizedBox(width: Gap.f13),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: Gap.sm),
+                padding: const EdgeInsets.symmetric(vertical: Gap.f8),
                 child: Text.rich(
                   TextSpan(
                     style: text.bodyMedium!.copyWith(color: bt.ink),
@@ -84,15 +84,14 @@ class TodayStrip extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SectionHeader(
+        const GroupHeading(
           'Today',
-          padding: EdgeInsets.fromLTRB(Gap.xs, Gap.lg, Gap.xs, Gap.sm),
         ),
-        InfoCard(
+        Surface(
           key: const Key('today-strip'),
           padding: const EdgeInsets.symmetric(
-            horizontal: Gap.md + 2,
-            vertical: Gap.xs,
+            horizontal: Gap.f13 + 2,
+            vertical: Gap.f4,
           ),
           child: Column(
             children: [
@@ -127,33 +126,32 @@ class PlanCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SectionHeader(
+        GroupHeading(
           'Your calm-TV plan',
-          padding: const EdgeInsets.fromLTRB(Gap.xs, Gap.lg, Gap.xs, Gap.sm),
           trailing: Text(
             '$done of ${items.length} done',
             style: text.labelMedium,
           ),
         ),
-        InfoCard(
+        Surface(
           key: const Key('plan-card'),
           padding: EdgeInsets.zero,
           child: Column(
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(
-                  Gap.lg,
-                  Gap.lg,
-                  Gap.lg,
-                  Gap.sm,
+                  Gap.f13,
+                  Gap.f13,
+                  Gap.f13,
+                  Gap.f8,
                 ),
                 child: Row(
                   children: [
                     for (var i = 0; i < items.length; i++) ...[
-                      if (i > 0) const SizedBox(width: Gap.xs),
+                      if (i > 0) const SizedBox(width: Gap.f4),
                       Expanded(
                         child: AnimatedContainer(
-                          duration: Motion.of(context, Motion.slow),
+                          duration: Motion.of(context, Motion.sheet),
                           height: 6,
                           decoration: BoxDecoration(
                             color: items[i].done ? bt.mint : bt.border,
@@ -171,7 +169,7 @@ class PlanCard extends StatelessWidget {
                   isNext: identical(item, next),
                   onTap: item.done ? null : () => onStep(item.step),
                 ),
-              const SizedBox(height: Gap.xs),
+              const SizedBox(height: Gap.f4),
             ],
           ),
         ),
@@ -203,13 +201,13 @@ class _PlanRow extends StatelessWidget {
           constraints: const BoxConstraints(minHeight: 60),
           child: Padding(
             padding: const EdgeInsets.symmetric(
-              horizontal: Gap.lg,
-              vertical: Gap.sm,
+              horizontal: Gap.f13,
+              vertical: Gap.f8,
             ),
             child: Row(
               children: [
                 AnimatedContainer(
-                  duration: Motion.of(context, Motion.medium),
+                  duration: Motion.of(context, Motion.sheet),
                   width: 28,
                   height: 28,
                   decoration: BoxDecoration(
@@ -234,7 +232,7 @@ class _PlanRow extends StatelessWidget {
                           color: isNext ? bt.coralInk : bt.muted,
                         ),
                 ),
-                const SizedBox(width: Gap.md),
+                const SizedBox(width: Gap.f13),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -259,7 +257,7 @@ class _PlanRow extends StatelessWidget {
                 ),
                 if (isNext)
                   const Padding(
-                    padding: EdgeInsets.only(left: Gap.sm),
+                    padding: EdgeInsets.only(left: Gap.f8),
                     child: BtBadge('Next', tone: Tone.accent),
                   )
                 else if (!item.done)
@@ -282,17 +280,17 @@ class DuringBreakCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    return InfoCard(
+    return Surface(
       key: const Key('during-break'),
-      padding: const EdgeInsets.fromLTRB(Gap.lg, Gap.md + 2, Gap.lg, Gap.sm),
+      padding: const EdgeInsets.fromLTRB(Gap.f13, Gap.f13 + 2, Gap.f13, Gap.f8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('DURING THIS BREAK', style: text.labelSmall),
-          const SizedBox(height: Gap.xs),
+          const SizedBox(height: Gap.f4),
           if (lines.isEmpty)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: Gap.sm),
+              padding: const EdgeInsets.symmetric(vertical: Gap.f8),
               child: Text(
                 'Nothing to stop so far. Anything the TV closes shows up '
                 'here.',
@@ -323,9 +321,9 @@ class StillWorkingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    return InfoCard(
+    return Surface(
       key: const Key('still-working'),
-      padding: const EdgeInsets.fromLTRB(Gap.lg, Gap.md, Gap.md, Gap.sm),
+      padding: const EdgeInsets.fromLTRB(Gap.f13, Gap.f13, Gap.f13, Gap.f8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -346,7 +344,7 @@ class StillWorkingCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: Gap.xs),
+          const SizedBox(height: Gap.f4),
           for (final (l, ok) in lines) CheckLine(l, done: ok, minHeight: 36),
         ],
       ),

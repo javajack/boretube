@@ -8,71 +8,78 @@ abstract final class AppTheme {
 
   static ThemeData dark() => _build(BtColors.dark, Brightness.dark);
 
+  /// The √φ scale (13 · 16.5 · 21 · 26.5 · 34 · 43): Bricolage from 21 up,
+  /// Figtree below; 1.3 leading on display sizes, 1.5 on body copy.
   static TextTheme _text(BtColors c) {
     TextStyle ui(
       double size, {
       FontWeight weight = FontWeight.w400,
-      double height = 1.45,
+      double height = TypeSize.bodyLeading,
       Color? color,
-      double letterSpacing = 0,
     }) =>
         TextStyle(
           fontFamily: Fonts.ui,
           fontSize: size,
           fontWeight: weight,
           height: height,
-          letterSpacing: letterSpacing,
           color: color ?? c.ink,
         );
     return TextTheme(
-      // Countdown and the biggest numbers.
+      // Hero numerals: countdown and clock.
       displayMedium: Fonts.bricolage(
-        56,
-        height: 1,
-        letterSpacing: -1,
+        TypeSize.hero,
+        height: TypeSize.tightLeading,
         color: c.ink,
         tabularFigures: true,
       ),
-      // Display 34.
-      displaySmall: Fonts.bricolage(
-        34,
-        height: 1.12,
-        letterSpacing: -0.5,
-        color: c.ink,
-      ),
-      // Onboarding page titles.
-      headlineLarge: Fonts.bricolage(
-        30,
-        letterSpacing: -0.4,
-        color: c.ink,
-      ),
-      // Title 24.
-      headlineMedium: Fonts.bricolage(24, height: 1.15, color: c.ink),
-      // Headline 20.
+      // Display 34: page titles.
+      displaySmall: Fonts.bricolage(TypeSize.display, color: c.ink),
+      // Onboarding page titles (display 34).
+      headlineLarge: Fonts.bricolage(TypeSize.display, color: c.ink),
+      // Title 26.5: sheet titles, hero headlines.
+      headlineMedium: Fonts.bricolage(TypeSize.title, color: c.ink),
+      // Headline 21.
       headlineSmall: Fonts.bricolage(
-        20,
+        TypeSize.headline,
         weight: FontWeight.w700,
-        height: 1.2,
         color: c.ink,
       ),
+      // Group headings: sentence case, Bricolage 21/700.
       titleLarge: Fonts.bricolage(
-        20,
+        TypeSize.headline,
         weight: FontWeight.w700,
-        height: 1.25,
         color: c.ink,
       ),
-      titleMedium: ui(16, weight: FontWeight.w700, height: 1.35),
-      titleSmall: ui(15, weight: FontWeight.w600, height: 1.35),
-      bodyLarge: ui(16, height: 1.5, color: c.inkSoft),
-      bodyMedium: ui(15, height: 1.5, color: c.inkSoft),
-      // Caption 13.
-      bodySmall: ui(13, height: 1.4, color: c.muted),
-      labelLarge: ui(16, weight: FontWeight.w700, height: 1.2),
-      labelMedium: ui(13, weight: FontWeight.w600, color: c.muted),
-      labelSmall: ui(
-        12,
+      titleMedium: ui(
+        TypeSize.body,
         weight: FontWeight.w700,
-        letterSpacing: 1.4,
+        height: TypeSize.displayLeading,
+      ),
+      titleSmall: ui(
+        TypeSize.body,
+        weight: FontWeight.w600,
+        height: TypeSize.displayLeading,
+      ),
+      bodyLarge: ui(TypeSize.body, color: c.inkSoft),
+      bodyMedium: ui(TypeSize.body, color: c.inkSoft),
+      // Caption 13.
+      bodySmall: ui(TypeSize.caption, color: c.muted),
+      labelLarge: ui(
+        TypeSize.body,
+        weight: FontWeight.w700,
+        height: TypeSize.tightLeading,
+      ),
+      labelMedium: ui(
+        TypeSize.caption,
+        weight: FontWeight.w600,
+        height: TypeSize.tightLeading,
+        color: c.muted,
+      ),
+      // Kept for the TV-card preview only (no uppercase eyebrows).
+      labelSmall: ui(
+        TypeSize.caption,
+        weight: FontWeight.w700,
+        height: TypeSize.tightLeading,
         color: c.muted,
       ),
     );
@@ -116,8 +123,8 @@ abstract final class AppTheme {
     );
     final text = _text(c);
     final status = dark ? StatusColors.dark : StatusColors.light;
-    const buttonShape = RoundedRectangleBorder(borderRadius: Radii.buttons);
-    const buttonSize = Size(64, 52);
+    const buttonShape = RoundedRectangleBorder(borderRadius: Radii.control);
+    const buttonSize = Size(Sizes.control, Sizes.control);
     WidgetStateProperty<Color?> overlay(Color base) =>
         WidgetStateProperty.resolveWith(
           (s) => s.contains(WidgetState.pressed)
@@ -154,7 +161,7 @@ abstract final class AppTheme {
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: Radii.card,
+          borderRadius: Radii.control,
           side: BorderSide(color: c.border),
         ),
       ),
@@ -188,7 +195,6 @@ abstract final class AppTheme {
             (s) => BorderSide(
               color:
                   s.contains(WidgetState.disabled) ? c.border : c.borderStrong,
-              width: 2,
             ),
           ),
           overlayColor: overlay(c.ink),
@@ -196,10 +202,11 @@ abstract final class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: ButtonStyle(
-          minimumSize: const WidgetStatePropertyAll(Size(48, 48)),
+          minimumSize:
+              const WidgetStatePropertyAll(Size(Sizes.touch, Sizes.touch)),
           shape: const WidgetStatePropertyAll(buttonShape),
           textStyle: WidgetStatePropertyAll(
-            text.labelLarge!.copyWith(fontSize: 15),
+            text.labelLarge,
           ),
           foregroundColor: WidgetStateProperty.resolveWith(
             (s) => s.contains(WidgetState.disabled) ? c.faint : c.skyInk,
@@ -209,20 +216,21 @@ abstract final class AppTheme {
       ),
       iconButtonTheme: IconButtonThemeData(
         style: ButtonStyle(
-          minimumSize: const WidgetStatePropertyAll(Size(48, 48)),
+          minimumSize:
+              const WidgetStatePropertyAll(Size(Sizes.touch, Sizes.touch)),
           foregroundColor: WidgetStatePropertyAll(c.ink),
           overlayColor: overlay(c.ink),
         ),
       ),
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: SegmentedButton.styleFrom(
-          minimumSize: const Size(48, 48),
+          minimumSize: const Size(Sizes.touch, Sizes.touch),
           backgroundColor: c.surface,
           foregroundColor: c.ink,
           selectedBackgroundColor: c.coralWash,
           selectedForegroundColor: c.coralInk,
           side: BorderSide(color: c.borderStrong),
-          textStyle: text.labelLarge!.copyWith(fontSize: 14),
+          textStyle: text.labelMedium,
           shape: buttonShape,
         ),
       ),
@@ -230,38 +238,38 @@ abstract final class AppTheme {
         backgroundColor: c.surface,
         selectedColor: c.coralWash,
         side: BorderSide(color: c.borderStrong),
-        labelStyle: text.labelLarge!.copyWith(fontSize: 14),
-        shape: const StadiumBorder(),
+        labelStyle: text.labelMedium,
+        shape: const RoundedRectangleBorder(borderRadius: Radii.chip),
         showCheckmark: false,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: c.surface,
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: Gap.lg,
-          vertical: Gap.md,
+          horizontal: Gap.f13,
+          vertical: Gap.f13,
         ),
         labelStyle: text.bodyMedium!.copyWith(color: c.muted),
         hintStyle: text.bodyMedium!.copyWith(color: c.faint),
         border: OutlineInputBorder(
-          borderRadius: Radii.field,
+          borderRadius: Radii.control,
           borderSide: BorderSide(color: c.borderStrong),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: Radii.field,
+          borderRadius: Radii.control,
           borderSide: BorderSide(color: c.borderStrong),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: Radii.field,
-          borderSide: BorderSide(color: c.skyInk, width: 2),
+          borderRadius: Radii.control,
+          borderSide: BorderSide(color: c.skyInk, width: Sizes.focus),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: Radii.field,
+          borderRadius: Radii.control,
           borderSide: BorderSide(color: c.berryFill),
         ),
       ),
       sliderTheme: SliderThemeData(
-        trackHeight: 8,
+        trackHeight: Sizes.bar,
         activeTrackColor: c.sky,
         inactiveTrackColor: c.skyTint,
         thumbColor: c.surface,
@@ -271,7 +279,7 @@ abstract final class AppTheme {
           color: c.onInkFill,
         ),
         thumbShape: const RoundSliderThumbShape(
-          enabledThumbRadius: 12,
+          enabledThumbRadius: Gap.f13 - Sizes.hairline,
           elevation: 2,
           pressedElevation: 4,
         ),
@@ -294,15 +302,13 @@ abstract final class AppTheme {
           (s) => s.contains(WidgetState.selected) ? c.mintInk : null,
         ),
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(6)),
+          borderRadius: BorderRadius.all(Radius.circular(Radii.chipR / 2)),
         ),
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: c.canvas,
         surfaceTintColor: Colors.transparent,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(Radii.sheetR)),
-        ),
+        shape: const RoundedRectangleBorder(borderRadius: Radii.hero),
         titleTextStyle: text.titleLarge,
         contentTextStyle: text.bodyMedium,
       ),
@@ -312,14 +318,14 @@ abstract final class AppTheme {
         modalBarrierColor: c.ink.withValues(alpha: 0.45),
         showDragHandle: true,
         dragHandleColor: c.borderStrong,
-        dragHandleSize: const Size(44, 5),
+        dragHandleSize: const Size(Gap.f34, Sizes.bar),
         shape: const RoundedRectangleBorder(borderRadius: Radii.sheet),
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         backgroundColor: c.inkFill,
         contentTextStyle: text.bodyMedium!.copyWith(color: c.onInkFill),
-        shape: const RoundedRectangleBorder(borderRadius: Radii.tile),
+        shape: const RoundedRectangleBorder(borderRadius: Radii.control),
         elevation: 0,
       ),
       tabBarTheme: TabBarThemeData(
@@ -327,15 +333,12 @@ abstract final class AppTheme {
         indicatorSize: TabBarIndicatorSize.tab,
         indicator: BoxDecoration(
           color: c.coralTint,
-          borderRadius: const BorderRadius.all(Radius.circular(Radii.pill)),
+          borderRadius: Radii.chip,
         ),
         labelColor: c.coralInk,
         unselectedLabelColor: c.muted,
-        labelStyle: text.labelLarge!.copyWith(fontSize: 14),
-        unselectedLabelStyle: text.labelLarge!.copyWith(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-        ),
+        labelStyle: text.labelMedium,
+        unselectedLabelStyle: text.labelMedium,
         overlayColor: const WidgetStatePropertyAll(Colors.transparent),
       ),
       popupMenuTheme: PopupMenuThemeData(
@@ -344,22 +347,22 @@ abstract final class AppTheme {
         elevation: 6,
         shadowColor: c.ink.withValues(alpha: 0.2),
         shape: RoundedRectangleBorder(
-          borderRadius: Radii.card,
+          borderRadius: Radii.control,
           side: BorderSide(color: c.border),
         ),
         textStyle: text.titleSmall,
       ),
       listTileTheme: ListTileThemeData(
-        contentPadding: const EdgeInsets.symmetric(horizontal: Gap.lg),
-        minVerticalPadding: Gap.md,
+        contentPadding: EdgeInsets.zero,
+        minVerticalPadding: Gap.f13,
         iconColor: c.muted,
         titleTextStyle: text.titleSmall,
         subtitleTextStyle: text.bodySmall,
       ),
       dividerTheme: DividerThemeData(
         color: c.hairline,
-        thickness: 1,
-        space: 1,
+        thickness: Sizes.hairline,
+        space: Sizes.hairline,
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
         color: c.sky,

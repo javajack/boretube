@@ -55,7 +55,9 @@ class ConfettiBurst extends StatefulWidget {
     this.origin,
     this.onDone,
     this.count = 70,
+    // tokens:off: a one-off celebration, not UI motion.
     this.duration = const Duration(milliseconds: 1900),
+    // tokens:on
   });
 
   @override
@@ -108,6 +110,7 @@ class _ConfettiBurstState extends State<ConfettiBurst>
       );
 }
 
+// tokens:off: confetti geometry.
 class _ConfettiPainter extends CustomPainter {
   final Animation<double> t;
   final List<_Bit> bits;
@@ -162,3 +165,4 @@ class _ConfettiPainter extends CustomPainter {
   @override
   bool shouldRepaint(_ConfettiPainter old) => false;
 }
+// tokens:on

@@ -33,16 +33,16 @@ class RulesTab extends ConsumerWidget {
         padding: rulesListPadding,
         children: const [
           SkeletonCard(rows: 1),
-          SizedBox(height: Gap.md),
+          SizedBox(height: Gap.f13),
           SkeletonCard(rows: 3),
-          SizedBox(height: Gap.md),
+          SizedBox(height: Gap.f13),
           SkeletonCard(rows: 3),
         ],
       ),
       error: (e, _) => ListView(
         padding: rulesListPadding,
         children: [
-          InfoCard(
+          Surface(
             child: EmptyState(
               icon: Icons.portable_wifi_off_rounded,
               tone: Tone.bad,
@@ -66,10 +66,10 @@ class RulesTab extends ConsumerWidget {
 }
 
 const rulesListPadding = EdgeInsets.fromLTRB(
-  Gap.page,
-  Gap.sm,
-  Gap.page,
-  Gap.xxl,
+  Gap.gutter,
+  Gap.f8,
+  Gap.gutter,
+  Gap.f34,
 );
 
 class _RulesExplainer extends StatelessWidget {
@@ -125,9 +125,9 @@ class AlwaysOnPreview extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        InfoCard(
+        Surface(
           key: const Key('always-on-preview'),
-          padding: const EdgeInsets.all(Gap.xl),
+          padding: const EdgeInsets.all(Gap.f21),
           radius: Radii.hero,
           gradient: LinearGradient(
             begin: const Alignment(-0.6, -1),
@@ -149,17 +149,17 @@ class AlwaysOnPreview extends ConsumerWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: Gap.lg),
+              const SizedBox(height: Gap.f13),
               Text('Bedtimes that stick', style: text.headlineMedium),
-              const SizedBox(height: Gap.xs),
+              const SizedBox(height: Gap.f4),
               const TermTitle('With Always On', LearnTerm.alwaysOn),
-              const SizedBox(height: Gap.sm),
+              const SizedBox(height: Gap.f8),
               Text(
                 'Always On is a tiny helper on the TV. Routines live there '
                 'and keep working when your phone is away or switched off.',
                 style: text.bodyMedium,
               ),
-              const SizedBox(height: Gap.lg),
+              const SizedBox(height: Gap.f13),
               PrimaryButton(
                 key: const Key('rules-install'),
                 label: hasAdb ? 'Make it Always On' : 'Unlock Home mode first',
@@ -169,7 +169,7 @@ class AlwaysOnPreview extends ConsumerWidget {
                     ? () => runAgentSetup(context, ref, repair: false)
                     : () => context.push('/adb-guide'),
               ),
-              const SizedBox(height: Gap.sm),
+              const SizedBox(height: Gap.f8),
               Text(
                 hasAdb
                     ? 'One tap here, one OK on the TV. Remove it any time.'
@@ -181,8 +181,8 @@ class AlwaysOnPreview extends ConsumerWidget {
             ],
           ),
         ),
-        const SectionHeader('What you can set'),
-        GroupCard(
+        const GroupHeading('What you can set'),
+        RowList(
           children: [
             for (final (icon, title, body) in items)
               StatusRow(

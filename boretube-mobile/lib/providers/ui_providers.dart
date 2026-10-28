@@ -8,9 +8,13 @@ import 'providers.dart';
 
 // ── Theme ──
 
-enum ThemePref { system, light, dark, bedtime }
+/// Theme choices, in the order Settings offers them. Cream light is the
+/// identity and the default whatever the phone says; "Follow phone" is
+/// last and never the default.
+enum ThemePref { light, bedtime, dark, system }
 
-/// [ThemePref.bedtime]: light by day, bedtime dark from 7 pm to 7 am.
+/// [ThemePref.bedtime]: light by day, bedtime dark after sunset (7 pm to
+/// 7 am).
 ThemeMode themeModeFor(ThemePref p, DateTime now) => switch (p) {
       ThemePref.system => ThemeMode.system,
       ThemePref.light => ThemeMode.light,
@@ -23,10 +27,12 @@ class ThemePrefNotifier extends StateNotifier<ThemePref> {
   static const key = 'ui.theme';
   final SharedPreferences _prefs;
 
+  /// Installs that never chose a theme (no stored value) get Light; the
+  /// old default followed the phone, which hid the brand in dark mode.
   ThemePrefNotifier(this._prefs)
       : super(
           ThemePref.values.asNameMap()[_prefs.getString(key)] ??
-              ThemePref.system,
+              ThemePref.light,
         );
 
   Future<void> set(ThemePref p) async {

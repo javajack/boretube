@@ -19,7 +19,7 @@ class TabHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(Gap.page, Gap.md, Gap.md, Gap.sm),
+      padding: const EdgeInsets.fromLTRB(Gap.gutter, Gap.f13, Gap.f13, Gap.f8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -31,7 +31,7 @@ class TabHeader extends StatelessWidget {
                   header: true,
                   child: Text(title, style: text.headlineLarge),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: Gap.f4),
                 Text(subtitle, style: text.bodyMedium),
               ],
             ),

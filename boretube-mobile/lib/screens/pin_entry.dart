@@ -115,14 +115,14 @@ class PinEntryState extends State<PinEntry>
           textAlign: TextAlign.center,
         ),
         if (widget.subtitle != null) ...[
-          const SizedBox(height: Gap.sm),
+          const SizedBox(height: Gap.f8),
           Text(
             widget.subtitle!,
             style: text.bodyMedium,
             textAlign: TextAlign.center,
           ),
         ],
-        const SizedBox(height: Gap.xl),
+        const SizedBox(height: Gap.f21),
         AnimatedBuilder(
           animation: _shake,
           builder: (context, child) {
@@ -156,7 +156,7 @@ class PinEntryState extends State<PinEntry>
             ],
           ),
         ),
-        const SizedBox(height: Gap.md),
+        const SizedBox(height: Gap.f13),
         SizedBox(
           height: 22,
           child: AnimatedSwitcher(
@@ -171,7 +171,7 @@ class PinEntryState extends State<PinEntry>
             ),
           ),
         ),
-        const SizedBox(height: Gap.lg),
+        const SizedBox(height: Gap.f13),
         _Keypad(
           onDigit: _digit,
           onBack: _back,
@@ -179,7 +179,7 @@ class PinEntryState extends State<PinEntry>
           busy: _busy,
         ),
         if (widget.footer != null) ...[
-          const SizedBox(height: Gap.lg),
+          const SizedBox(height: Gap.f13),
           widget.footer!,
         ],
       ],
@@ -282,7 +282,7 @@ class _Key extends StatelessWidget {
             : bt.surface;
     final fg = filled ? bt.onInkFill : bt.ink;
     return Padding(
-      padding: const EdgeInsets.all(Gap.sm),
+      padding: const EdgeInsets.all(Gap.f8),
       child: Semantics(
         button: true,
         label: semantics,

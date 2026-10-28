@@ -39,7 +39,7 @@ class Wordmark extends StatelessWidget {
           'boretube',
           style: Fonts.bricolage(size, letterSpacing: -0.5, color: bt.ink),
         ),
-        const SizedBox(width: Gap.sm),
+        const SizedBox(width: Gap.f8),
         Flexible(
           child: Text(
             'TV PARENTAL CONTROLS',
@@ -140,14 +140,14 @@ class _GateScaffold extends StatelessWidget {
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(
-              horizontal: Gap.page,
-              vertical: Gap.xl,
+              horizontal: Gap.gutter,
+              vertical: Gap.f21,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 const BrandMark(size: 88),
-                const SizedBox(height: Gap.lg),
+                const SizedBox(height: Gap.f13),
                 child,
               ],
             ),
@@ -180,10 +180,10 @@ Future<void> showChangePinSheet(BuildContext context, WidgetRef ref) async {
       builder: (context, setState) => SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(
-            Gap.page,
+            Gap.gutter,
             0,
-            Gap.page,
-            Gap.xl,
+            Gap.gutter,
+            Gap.f21,
           ),
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 250),

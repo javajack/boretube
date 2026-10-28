@@ -44,15 +44,15 @@ class TvSaysNoPreview extends StatelessWidget {
             padding: const EdgeInsets.all(5),
             decoration: BoxDecoration(
               color: bt.screen,
-              borderRadius: BorderRadius.circular(Radii.tileR),
+              borderRadius: BorderRadius.circular(Radii.controlR),
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(Radii.tileR - 4),
+              borderRadius: BorderRadius.circular(Radii.controlR - 4),
               child: AspectRatio(
                 aspectRatio: 16 / 9,
                 child: AnimatedSwitcher(
-                  duration: Motion.of(context, Motion.slow),
-                  switchInCurve: Motion.settle,
+                  duration: Motion.of(context, Motion.sheet),
+                  switchInCurve: Motion.enter,
                   child: friendly
                       ? _Friendly(
                           key: const ValueKey('friendly'),

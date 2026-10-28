@@ -254,8 +254,11 @@ class AgentEndAfter {
       };
 }
 
-/// What the TV does about Shorts (`rules.shorts.mode`).
-enum ShortsMode { off, block, budget, report }
+/// What the TV does about Shorts and video hopping (`rules.shorts.mode`).
+/// [cooldown] (agent 1.3.0+) closes the video apps for
+/// `rules.shorts.cooldownMin` minutes; [budget] is still read but no longer
+/// offered in the app.
+enum ShortsMode { off, block, cooldown, budget, report }
 
 /// `status.shorts` (1.1.0+): today's Shorts count and the rule in force.
 class AgentShorts {
@@ -269,12 +272,17 @@ class AgentShorts {
   /// The daily budget (budget mode only).
   final int? perDay;
 
+  /// Video apps stay closed until then (cool-down mode); null when no
+  /// cool-down is running or the agent is older.
+  final DateTime? cooldownUntil;
+
   const AgentShorts({
     this.mode = ShortsMode.off,
     this.todayCount = 0,
     this.lastDetectedAt,
     this.active = false,
     this.perDay,
+    this.cooldownUntil,
   });
 
   factory AgentShorts.fromJson(Map<String, dynamic> j) => AgentShorts(
@@ -283,6 +291,7 @@ class AgentShorts {
         lastDetectedAt: parseAgentTime(j['lastDetectedAt']),
         active: _bool(j['active']),
         perDay: AgentMedia._optInt(j['perDay']),
+        cooldownUntil: parseAgentTime(j['cooldownUntil']),
       );
 
   Map<String, dynamic> toJson() => {
@@ -292,6 +301,8 @@ class AgentShorts {
           'lastDetectedAt': lastDetectedAt!.millisecondsSinceEpoch,
         'active': active,
         if (perDay != null) 'perDay': perDay,
+        if (cooldownUntil != null)
+          'cooldownUntil': cooldownUntil!.millisecondsSinceEpoch,
       };
 }
 
@@ -612,15 +623,20 @@ class ShortsRule {
 
   /// Shorts a day before the TV says no ([ShortsMode.budget] only).
   final int perDay;
+
+  /// Minutes the video apps stay closed ([ShortsMode.cooldown] only).
+  final int cooldownMin;
   final Map<String, dynamic> extra;
 
   static const defaultPerDay = 5;
   static const minPerDay = 1;
   static const maxPerDay = 20;
+  static const defaultCooldownMin = 10;
 
   const ShortsRule({
     this.mode = ShortsMode.off,
     this.perDay = defaultPerDay,
+    this.cooldownMin = defaultCooldownMin,
     this.extra = const {},
   });
 
@@ -629,9 +645,13 @@ class ShortsRule {
         perDay: j['perDay'] == null
             ? defaultPerDay
             : _int(j['perDay'], defaultPerDay).clamp(0, 1000),
+        cooldownMin: j['cooldownMin'] == null
+            ? defaultCooldownMin
+            : _int(j['cooldownMin'], defaultCooldownMin).clamp(1, 240),
         extra: {
           for (final e in j.entries)
-            if (e.key != 'mode' && e.key != 'perDay') e.key: e.value,
+            if (e.key != 'mode' && e.key != 'perDay' && e.key != 'cooldownMin')
+              e.key: e.value,
         },
       );
 
@@ -639,11 +659,15 @@ class ShortsRule {
         ...extra,
         'mode': mode.name,
         'perDay': perDay,
+        if (mode == ShortsMode.cooldown || cooldownMin != defaultCooldownMin)
+          'cooldownMin': cooldownMin,
       };
 
-  ShortsRule copyWith({ShortsMode? mode, int? perDay}) => ShortsRule(
+  ShortsRule copyWith({ShortsMode? mode, int? perDay, int? cooldownMin}) =>
+      ShortsRule(
         mode: mode ?? this.mode,
         perDay: perDay ?? this.perDay,
+        cooldownMin: cooldownMin ?? this.cooldownMin,
         extra: extra,
       );
 }

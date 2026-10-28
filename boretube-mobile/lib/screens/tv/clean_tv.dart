@@ -235,7 +235,7 @@ class _CleanTvScreenState extends ConsumerState<CleanTvScreen> {
         ...status.when(
           loading: () => const [SkeletonCard(rows: 5)],
           error: (e, _) => [
-            InfoCard(
+            Surface(
               child: EmptyState(
                 icon: Icons.wifi_off_rounded,
                 tone: Tone.bad,
@@ -264,7 +264,7 @@ class _CleanTvScreenState extends ConsumerState<CleanTvScreen> {
             ];
             if (groups.isEmpty) {
               return const [
-                InfoCard(
+                Surface(
                   child: EmptyState(
                     icon: Icons.auto_awesome_rounded,
                     tone: Tone.ok,
@@ -277,7 +277,7 @@ class _CleanTvScreenState extends ConsumerState<CleanTvScreen> {
             }
             return [
               _CleanSummary(todo: todo.length, tidied: tidied.length),
-              const SizedBox(height: Gap.md),
+              const SizedBox(height: Gap.f13),
               if (todo.isNotEmpty)
                 PrimaryButton(
                   key: const Key('clean-fix'),
@@ -287,7 +287,7 @@ class _CleanTvScreenState extends ConsumerState<CleanTvScreen> {
                   onPressed: canWrite ? () => _tidy(ops, todo.length) : null,
                 ),
               if (tidied.isNotEmpty) ...[
-                const SizedBox(height: Gap.sm),
+                const SizedBox(height: Gap.f8),
                 PrimaryButton(
                   key: const Key('clean-undo'),
                   label: 'Undo · bring them back',
@@ -298,7 +298,7 @@ class _CleanTvScreenState extends ConsumerState<CleanTvScreen> {
                 ),
               ],
               if (!canWrite) ...[
-                const SizedBox(height: Gap.sm),
+                const SizedBox(height: Gap.f8),
                 Text(
                   'boretube hasn\'t been tested on this TV model, so this is '
                   'a preview. Allow changes in Settings › Advanced.',
@@ -306,25 +306,19 @@ class _CleanTvScreenState extends ConsumerState<CleanTvScreen> {
                 ),
               ],
               for (final e in groups.entries) ...[
-                SectionHeader(
+                GroupHeading(
                   '${e.key.title} · ${e.value.length}',
-                  padding: const EdgeInsets.fromLTRB(
-                    Gap.xs,
-                    Gap.xl,
-                    Gap.xs,
-                    Gap.xs,
-                  ),
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(
-                    Gap.xs,
+                    Gap.f4,
                     0,
-                    Gap.xs,
-                    Gap.sm,
+                    Gap.f4,
+                    Gap.f8,
                   ),
                   child: Text(e.key.blurb, style: text.bodySmall),
                 ),
-                GroupCard(
+                RowList(
                   key: Key('clean-group-${e.key.name}'),
                   children: [
                     for (final i in e.value)
@@ -341,11 +335,11 @@ class _CleanTvScreenState extends ConsumerState<CleanTvScreen> {
                   ],
                 ),
               ],
-              const SizedBox(height: Gap.lg),
+              const SizedBox(height: Gap.f13),
               Row(
                 children: [
                   Icon(Icons.verified_user_rounded, size: 18, color: bt.muted),
-                  const SizedBox(width: Gap.sm),
+                  const SizedBox(width: Gap.f8),
                   Expanded(
                     child: Text(
                       'Wi-Fi setup, the Google TV home screen and the voice '
@@ -373,7 +367,7 @@ class _CleanSummary extends StatelessWidget {
     final bt = context.bt;
     final text = Theme.of(context).textTheme;
     final done = todo == 0;
-    return InfoCard(
+    return Surface(
       key: const Key('clean-summary'),
       color: done ? bt.mintTint : bt.lavenderTint,
       borderColor: done ? bt.mintTint : bt.lavenderTint,

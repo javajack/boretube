@@ -120,9 +120,8 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
     final matches = _confirm.text.trim().toUpperCase() == _confirmWord;
     final canRun = ready != null && !ready.isEmpty && matches;
     return [
-      const SectionHeader(
+      const GroupHeading(
         'How far back',
-        padding: EdgeInsets.fromLTRB(Gap.xs, 0, Gap.xs, Gap.sm),
       ),
       ChoiceCard(
         key: const Key('restore-undo'),
@@ -133,7 +132,7 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
             'YouTube returns if boretube hid it, and Always On is removed.',
         onTap: () => setState(() => _target = RestoreTarget.undoBoretube),
       ),
-      const SizedBox(height: Gap.sm),
+      const SizedBox(height: Gap.f8),
       ChoiceCard(
         key: const Key('restore-stock'),
         selected: _target == RestoreTarget.stock,
@@ -153,7 +152,7 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
               )
             : null,
       ),
-      SectionHeader(
+      GroupHeading(
         'What will happen',
         trailing: TextButton(
           key: const Key('restore-show-commands'),
@@ -164,7 +163,7 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
       ),
       plan.when(
         loading: () => const SkeletonCard(rows: 4),
-        error: (e, _) => InfoCard(
+        error: (e, _) => Surface(
           child: EmptyState(
             icon: Icons.wifi_off_rounded,
             tone: Tone.bad,
@@ -179,8 +178,8 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
             : _PlanPreview(plan: p, commands: _commands),
       ),
       if (ready != null && !ready.isEmpty) ...[
-        const SizedBox(height: Gap.xl),
-        InfoCard(
+        const SizedBox(height: Gap.f21),
+        Surface(
           key: const Key('restore-confirm-card'),
           color: bt.berryTint,
           borderColor: bt.berryBorder,
@@ -202,7 +201,7 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: Gap.sm),
+              const SizedBox(height: Gap.f8),
               TextField(
                 key: const Key('restore-confirm'),
                 controller: _confirm,
@@ -213,7 +212,7 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
                 decoration: InputDecoration(
                   hintText: _confirmWord,
                   suffixIcon: AnimatedSwitcher(
-                    duration: Motion.of(context, Motion.fast),
+                    duration: Motion.of(context, Motion.flip),
                     child: matches
                         ? Icon(
                             Icons.check_circle_rounded,
@@ -224,7 +223,7 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: Gap.md),
+              const SizedBox(height: Gap.f13),
               PrimaryButton(
                 key: const Key('restore-run'),
                 kind: ButtonKind.berry,
@@ -236,7 +235,7 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
             ],
           ),
         ),
-        const SizedBox(height: Gap.md),
+        const SizedBox(height: Gap.f13),
         Text(
           'Keep this app open while it runs, and wait a minute before '
           'restarting the TV so the changes stick.',
@@ -256,12 +255,12 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
     final failed = finished.where((r) => !r.ok).toList();
     return [
       if (_done)
-        InfoCard(
+        Surface(
           key: const Key('restore-summary'),
           radius: Radii.hero,
           color: failed.isEmpty ? bt.mintTint : bt.sunTint,
           borderColor: failed.isEmpty ? bt.mintTint : bt.sunTint,
-          padding: const EdgeInsets.all(Gap.xl),
+          padding: const EdgeInsets.all(Gap.f21),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -271,7 +270,7 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
                 beaming: failed.isEmpty,
                 animate: false,
               ),
-              const SizedBox(height: Gap.lg),
+              const SizedBox(height: Gap.f13),
               Text(
                 failed.isEmpty
                     ? 'The TV is back the way it was'
@@ -279,7 +278,7 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
                         '${finished.length} steps worked',
                 style: text.headlineMedium,
               ),
-              const SizedBox(height: Gap.sm),
+              const SizedBox(height: Gap.f8),
               Text(
                 failed.isEmpty
                     ? 'Every step was checked on the TV. Wait a minute '
@@ -289,7 +288,7 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
                         'TV.',
                 style: text.bodyMedium,
               ),
-              const SizedBox(height: Gap.lg),
+              const SizedBox(height: Gap.f13),
               PrimaryButton(
                 label: 'Done',
                 kind: ButtonKind.ink,
@@ -299,7 +298,7 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
           ),
         )
       else
-        InfoCard(
+        Surface(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -318,15 +317,15 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
                   const DelayedSpinner(color: Color(0xFF3A8DFF), size: 18),
                 ],
               ),
-              const SizedBox(height: Gap.md),
+              const SizedBox(height: Gap.f13),
               ClipRRect(
-                borderRadius: BorderRadius.circular(Radii.pill),
+                borderRadius: BorderRadius.circular(Radii.chipR),
                 child: TweenAnimationBuilder<double>(
                   tween: Tween(
                     end: actions.isEmpty ? 0 : finished.length / actions.length,
                   ),
-                  duration: Motion.of(context, Motion.slow),
-                  curve: Motion.settle,
+                  duration: Motion.of(context, Motion.sheet),
+                  curve: Motion.enter,
                   builder: (context, v, _) => LinearProgressIndicator(
                     minHeight: 8,
                     value: v,
@@ -335,13 +334,13 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: Gap.sm),
+              const SizedBox(height: Gap.f8),
               Text('Keep this app open', style: text.bodySmall),
             ],
           ),
         ),
-      SectionHeader('Steps · ${actions.length}'),
-      GroupCard(
+      GroupHeading('Steps · ${actions.length}'),
+      RowList(
         children: [
           for (var i = 0; i < actions.length; i++)
             _ResultRow(
@@ -367,7 +366,7 @@ class _PlanPreview extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final bt = context.bt;
     var n = 0;
-    return GroupCard(
+    return RowList(
       children: [
         if (plan.isEmpty)
           const StatusRow(
@@ -379,8 +378,8 @@ class _PlanPreview extends StatelessWidget {
         for (final s in plan.steps)
           Padding(
             padding: const EdgeInsets.symmetric(
-              horizontal: Gap.lg,
-              vertical: Gap.md,
+              horizontal: Gap.f13,
+              vertical: Gap.f13,
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -408,7 +407,7 @@ class _PlanPreview extends StatelessWidget {
                           color: bt.muted,
                         ),
                 ),
-                const SizedBox(width: Gap.md),
+                const SizedBox(width: Gap.f13),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -417,10 +416,10 @@ class _PlanPreview extends StatelessWidget {
                       if (s.why.isNotEmpty && (commands || !s.runs))
                         Text(s.why, style: text.bodySmall),
                       if (commands && s.command != null) ...[
-                        const SizedBox(height: Gap.xs),
+                        const SizedBox(height: Gap.f4),
                         Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.all(Gap.sm),
+                          padding: const EdgeInsets.all(Gap.f8),
                           decoration: BoxDecoration(
                             color: bt.hairline,
                             borderRadius: BorderRadius.circular(8),
@@ -545,29 +544,29 @@ class BaselineCard extends ConsumerWidget {
     final baseline = ref.watch(baselineProvider);
     return baseline.when(
       loading: () => const SkeletonCard(rows: 1),
-      error: (e, _) => InfoCard(
+      error: (e, _) => Surface(
         child: Text('Couldn\'t read the baseline: $e', style: text.bodySmall),
       ),
       data: (b) => b == null
-          ? InfoCard(
+          ? Surface(
               child: Text(
                 'Captured automatically the first time this phone connects '
                 'to the TV directly.',
                 style: text.bodySmall,
               ),
             )
-          : InfoCard(
+          : Surface(
               key: const Key('restore-baseline'),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Row(
                     children: [
-                      IconBadge(
+                      IconTile(
                         icon: Icons.photo_camera_back_rounded,
                         color: Tone.info.color(context),
                       ),
-                      const SizedBox(width: Gap.md),
+                      const SizedBox(width: Gap.f13),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -587,7 +586,7 @@ class BaselineCard extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: Gap.sm),
+                  const SizedBox(height: Gap.f8),
                   Text(
                     b.buildFingerprint,
                     maxLines: 2,
@@ -597,7 +596,7 @@ class BaselineCard extends ConsumerWidget {
                       fontFamilyFallback: const ['Roboto'],
                     ),
                   ),
-                  const SizedBox(height: Gap.md),
+                  const SizedBox(height: Gap.f13),
                   Row(
                     children: [
                       Expanded(
@@ -608,7 +607,7 @@ class BaselineCard extends ConsumerWidget {
                           label: const Text('View JSON'),
                         ),
                       ),
-                      const SizedBox(width: Gap.md),
+                      const SizedBox(width: Gap.f13),
                       Expanded(
                         child: OutlinedButton.icon(
                           key: const Key('baseline-copy'),

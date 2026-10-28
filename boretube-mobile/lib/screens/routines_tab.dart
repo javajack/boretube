@@ -31,7 +31,7 @@ class RoutinesTab extends ConsumerWidget {
     }
     return ListView(
       key: const Key('routines-list'),
-      padding: const EdgeInsets.only(bottom: Gap.xxl),
+      padding: const EdgeInsets.only(bottom: Gap.f34),
       children: const [
         TabHeader(
           title: 'Routines',
@@ -39,16 +39,15 @@ class RoutinesTab extends ConsumerWidget {
           trailing: InfoDot(LearnTerm.alwaysOn),
         ),
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: Gap.page),
+          padding: EdgeInsets.symmetric(horizontal: Gap.gutter),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SectionHeader(
+              GroupHeading(
                 'Lock for a while',
-                padding: EdgeInsets.fromLTRB(Gap.xs, Gap.sm, Gap.xs, Gap.sm),
               ),
               ClassicLockCard(),
-              SectionHeader('Routines that run by themselves'),
+              GroupHeading('Routines that run by themselves'),
               AlwaysOnPreview(),
             ],
           ),

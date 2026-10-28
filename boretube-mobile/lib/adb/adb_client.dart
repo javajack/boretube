@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'adb_connection.dart';
 import 'adb_key.dart';
 import 'adb_message.dart';
 
@@ -24,7 +25,7 @@ class AdbShellResult {
 }
 
 /// Pure-Dart ADB client over TCP (legacy port 5555 transport).
-class AdbClient {
+class AdbClient implements AdbConnection {
   final String host;
   final int port;
   final AdbKey key;
@@ -44,18 +45,27 @@ class AdbClient {
     this.keyName = 'boretube',
   });
 
+  Completer<void> _closed = Completer<void>()..complete();
+
+  @override
   bool get isConnected => _socket != null;
+
+  @override
+  Future<void> get closed => _closed.future;
 
   /// Connects and authenticates. If the TV doesn't know our key yet, sends
   /// the public key (TV shows "Allow USB debugging?") and waits up to
   /// [promptTimeout] for the user to accept.
+  @override
   Future<void> connect({
     Duration timeout = const Duration(seconds: 5),
     Duration promptTimeout = const Duration(seconds: 60),
+    void Function()? onAwaitingApproval,
   }) async {
     final socket = await Socket.connect(host, port, timeout: timeout);
     socket.setOption(SocketOption.tcpNoDelay, true);
     _socket = socket;
+    _closed = Completer<void>();
     _sub = socket.listen(_onData,
         onError: (Object e) => _incoming.addError(e),
         onDone: _onDone);
@@ -89,6 +99,7 @@ class AdbClient {
         sentPublicKey = true;
         _send(AdbMessage.text(AdbCommand.auth, AdbAuthType.rsaPublicKey, 0,
             key.publicKeyString(keyName)));
+        onAwaitingApproval?.call();
       } else {
         await close();
         throw const AdbAuthPendingException('TV did not accept the key');
@@ -97,6 +108,7 @@ class AdbClient {
   }
 
   /// Runs a shell command and returns its output and exit code.
+  @override
   Future<AdbShellResult> shell(String command,
       {Duration timeout = const Duration(seconds: 30)}) async {
     const marker = '__BTEXIT:';
@@ -194,11 +206,13 @@ class AdbClient {
 
   void _onDone() {
     _socket = null;
+    if (!_closed.isCompleted) _closed.complete();
     _waiter?.complete();
     _waiter = null;
     _incoming.addError(const SocketException('ADB connection closed'));
   }
 
+  @override
   Future<void> close() async {
     await _sub?.cancel();
     _sub = null;
@@ -208,5 +222,6 @@ class AdbClient {
     _pending.clear();
     await s?.close();
     s?.destroy();
+    if (!_closed.isCompleted) _closed.complete();
   }
 }

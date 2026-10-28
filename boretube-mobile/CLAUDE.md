@@ -1,58 +1,30 @@
-# Boretube Mobile — Flutter App
+# Boretube 2 (phone app): Flutter
 
-## Project Overview
-- **App name**: Boretube
-- **Package**: com.rakesh.boretube_mobile
-- **Purpose**: Parental control for Sony Bravia Google TV via CastV2 + DIAL protocols
-- **Flutter SDK**: 3.27.4 (stable), Dart 3.6.2
-- **State management**: Riverpod
-- **Navigation**: GoRouter
-- **Target platform**: Android (primary)
+Read `../AGENTS.md` and `README.md` first. Device facts are in `../docs/knowledge/`.
 
-## Development Environment
-- **Flutter**: `~/development/flutter/bin/flutter`
-- **JDK**: `~/development/jdk-17.0.2` (JAVA_HOME)
-- **Android SDK**: `~/Android/Sdk` (ANDROID_HOME)
+## Project
+- **Label / app id**: "Boretube 2" / `com.rakesh.boretube`. The legacy v1 is `com.rakesh.boretube_mobile`, signed with a different key, and installs side by side.
+- **Kotlin namespace**: `com.rakesh.boretube_mobile` (`MainActivity` holds the multicast lock and the low-latency WifiLock).
+- **Flutter** 3.41+ (Dart 3.11). Riverpod + GoRouter. minSdk 24. Android is the target platform.
+- **Gradle needs JDK 17.** Point `JAVA_HOME` or `flutter config --jdk-dir` at a JDK 17. Flutter may otherwise pick a newer bundled JDK that Gradle can't run.
 
-### Quick start
-```bash
-bash scripts/run-android.sh           # debug mode
-bash scripts/run-android.sh --release # release APK
-```
+## Layout (`lib/`)
+- `adb/`: pure-Dart ADB client, key identity, `AdbSession` (queue with an urgent lane)
+- `discovery/`: mDNS, SSDP and subnet sweep, plus merge and relocation by stable id
+- `tv/`: `Tv` model, `TvStore`, `CapabilityProber`
+- `ops/`: `TvOps` (typed TV ops with guards, verify reads and journal), device profiles, health, baseline, restore planner
+- `actions/`: instant actions (agent → ADB → Cast fallback)
+- `agent/`: TV Guard client and installer
+- `protocols/`, `services/`: legacy Cast/DIAL/Sony REST and the classic lock (kept)
+- `providers/`, `security/`, `ui/` (design system), `screens/`
 
-## Architecture
-Simple flat structure (not feature-first — this is a small, single-purpose app):
+## Code style
+- `flutter analyze` must report **zero** issues. Run `dart format`.
+- Use `const`, `final`, trailing commas and `super.key`. Keep lines to 80 columns.
+- UI must use the `lib/ui` components and tokens. Keep it polished, not skeletal.
+- Never send a raw shell command from the UI. Every TV write goes through `TvOps`, `ActionsService` or `AgentClient`.
 
-```
-lib/
-  main.dart              # Entry point
-  app.dart               # MaterialApp.router + GoRouter + theme
-  protocols/             # Low-level TV protocol clients
-    castv2_client.dart   # CastV2 TLS + protobuf (port 8009)
-    dial_client.dart     # DIAL HTTP (port 8008)
-  proto/                 # Generated protobuf classes
-  models/                # Data classes
-  services/              # High-level TV operations
-  providers/             # Riverpod providers
-  screens/               # Full-page widgets
-  widgets/               # Reusable widgets
-```
-
-## Protocols
-- **CastV2** (port 8009): TLS + protobuf framing + JSON payloads. Controls volume, stops apps, gets status.
-- **DIAL** (port 8008): HTTP DELETE to kill specific apps (YouTube, Netflix).
-
-## Code Style
-- `flutter analyze` must pass with zero issues
-- Use `const` constructors where possible
-- Prefer `final` over `var`
-- Use trailing commas for widget trees
-- Use `super.key` in constructors
-- Max line length: 80 characters
-
-## Build Commands
-```bash
-flutter analyze
-flutter build apk --debug
-flutter build apk --release
-```
+## Tests
+- `flutter test` covers unit, widget and golden tests. Update goldens with `flutter test --update-goldens test/goldens`.
+- Opt-in live tests: `BORETUBE_TV`, `BORETUBE_ADBKEY`, `BORETUBE_LIVE`. They are read-only.
+- Debug builds log `BTIME` timing lines: `adb logcat -s flutter | grep BTIME`.

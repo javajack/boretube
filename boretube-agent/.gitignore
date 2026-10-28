@@ -1,0 +1,11 @@
+# Build output
+.gradle/
+build/
+app/build/
+local.properties
+*.iml
+.idea/
+
+# Signing secrets: never commit. See keystore/README.md to regenerate.
+keystore/agent-release.jks
+keystore/keystore.properties

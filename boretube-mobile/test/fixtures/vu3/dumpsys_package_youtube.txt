@@ -1,0 +1,334 @@
+Activity Resolver Table:
+  Schemes:
+      vnd.youtube:
+        8a06a4c com.google.android.youtube.tv/com.google.android.apps.youtube.tv.activity.ShellActivity filter 59b1f9b
+          Action: "android.intent.action.VIEW"
+          Action: "android.media.action.MEDIA_PLAY_FROM_SEARCH"
+          Category: "android.intent.category.DEFAULT"
+          Category: "android.intent.category.BROWSABLE"
+          Scheme: "vnd.youtube"
+          Scheme: "vnd.youtube.launch"
+          AutoVerify=true
+      http:
+        8a06a4c com.google.android.youtube.tv/com.google.android.apps.youtube.tv.activity.ShellActivity filter 9b167aa
+          Action: "android.intent.action.VIEW"
+          Action: "android.media.action.MEDIA_PLAY_FROM_SEARCH"
+          Category: "android.intent.category.DEFAULT"
+          Category: "android.intent.category.BROWSABLE"
+          Scheme: "http"
+          Scheme: "https"
+          Authority: "youtube.com": -1
+          Authority: "www.youtube.com": -1
+          Authority: "m.youtube.com": -1
+          Authority: "youtu.be": -1
+          Path: "PatternMatcher{GLOB: .*}"
+          AutoVerify=true
+      https:
+        8a06a4c com.google.android.youtube.tv/com.google.android.apps.youtube.tv.activity.ShellActivity filter 9b167aa
+          Action: "android.intent.action.VIEW"
+          Action: "android.media.action.MEDIA_PLAY_FROM_SEARCH"
+          Category: "android.intent.category.DEFAULT"
+          Category: "android.intent.category.BROWSABLE"
+          Scheme: "http"
+          Scheme: "https"
+          Authority: "youtube.com": -1
+          Authority: "www.youtube.com": -1
+          Authority: "m.youtube.com": -1
+          Authority: "youtu.be": -1
+          Path: "PatternMatcher{GLOB: .*}"
+          AutoVerify=true
+        8a06a4c com.google.android.youtube.tv/com.google.android.apps.youtube.tv.activity.ShellActivity filter 38fdf38
+          Action: "com.google.android.gms.cast.tv.action.LAUNCH"
+          Category: "android.intent.category.DEFAULT"
+          Scheme: "https"
+          Authority: "www.youtube.com": -1
+          Path: "PatternMatcher{GLOB: .*}"
+      vnd.youtube.launch:
+        8a06a4c com.google.android.youtube.tv/com.google.android.apps.youtube.tv.activity.ShellActivity filter 59b1f9b
+          Action: "android.intent.action.VIEW"
+          Action: "android.media.action.MEDIA_PLAY_FROM_SEARCH"
+          Category: "android.intent.category.DEFAULT"
+          Category: "android.intent.category.BROWSABLE"
+          Scheme: "vnd.youtube"
+          Scheme: "vnd.youtube.launch"
+          AutoVerify=true
+
+  Non-Data Actions:
+      android.intent.action.MAIN:
+        8a06a4c com.google.android.youtube.tv/com.google.android.apps.youtube.tv.activity.ShellActivity filter f789a95
+          Action: "android.intent.action.MAIN"
+          Category: "android.intent.category.LAUNCHER"
+          Category: "android.intent.category.LEANBACK_LAUNCHER"
+          Category: "android.intent.category.DEFAULT"
+          AutoVerify=true
+      com.google.android.gms.cast.tv.action.LAUNCH:
+        8a06a4c com.google.android.youtube.tv/com.google.android.apps.youtube.tv.activity.ShellActivity filter 7954b11
+          Action: "com.google.android.gms.cast.tv.action.LAUNCH"
+          Category: "android.intent.category.DEFAULT"
+
+Receiver Resolver Table:
+  Non-Data Actions:
+      android.accounts.action.ACCOUNT_REMOVED:
+        7965476 com.google.android.youtube.tv/com.google.android.libraries.phenotype.client.stable.AccountRemovedBroadcastReceiver filter 2021a77
+          Action: "android.accounts.action.ACCOUNT_REMOVED"
+      android.media.tv.action.INITIALIZE_PROGRAMS:
+        a0b4202 com.google.android.youtube.tv/com.google.android.libraries.youtube.tv.recommendations.RecommendationsScheduler$Receiver filter 473e713
+          Action: "android.media.tv.action.INITIALIZE_PROGRAMS"
+          Action: "android.intent.action.BOOT_COMPLETED"
+      android.intent.action.BOOT_COMPLETED:
+        a0b4202 com.google.android.youtube.tv/com.google.android.libraries.youtube.tv.recommendations.RecommendationsScheduler$Receiver filter 473e713
+          Action: "android.media.tv.action.INITIALIZE_PROGRAMS"
+          Action: "android.intent.action.BOOT_COMPLETED"
+        1735d50 com.google.android.youtube.tv/androidx.work.impl.background.systemalarm.RescheduleReceiver filter 6d4b49
+          Action: "android.intent.action.BOOT_COMPLETED"
+      androidx.work.diagnostics.REQUEST_DIAGNOSTICS:
+        eef7c4e com.google.android.youtube.tv/androidx.work.impl.diagnostics.DiagnosticsReceiver filter 62be16f
+          Action: "androidx.work.diagnostics.REQUEST_DIAGNOSTICS"
+      com.google.android.gms.phenotype.UPDATE:
+        dffb6e4 com.google.android.youtube.tv/com.google.android.libraries.phenotype.client.stable.PhenotypeUpdateBackgroundBroadcastReceiver filter 7f2874d
+          Action: "com.google.android.gms.phenotype.UPDATE"
+
+Service Resolver Table:
+  Non-Data Actions:
+      com.google.android.build.data.Properties:
+        cb0f5a com.google.android.youtube.tv/com.google.android.build.data.PropertiesServiceHolder filter ebf258b
+          Action: "com.google.android.build.data.Properties"
+      com.google.android.libraries.phenotype.registration.PhenotypeMetadataHolderService:
+        a38fe7c com.google.android.youtube.tv/com.google.android.libraries.phenotype.registration.PhenotypeMetadataHolderService filter 7b65305
+          Action: "com.google.android.libraries.phenotype.registration.PhenotypeMetadataHolderService"
+
+Domain verification status:
+  com.google.android.youtube.tv:
+    ID: d081a060-8c50-4085-b070-823848e0881a
+    Signatures: [21:19:9D:11:2C:EC:E4:28:C8:2C:B0:DF:22:1D:A2:4F:F8:67:4C:7A:98:2A:83:A1:7A:97:0E:EC:43:30:5B:4A]
+    Domain verification state:
+      youtu.be: verified
+      m.youtube.com: verified
+      youtube.com: verified
+      www.youtube.com: verified
+    User all:
+      Verification link handling allowed: true
+      Selection state:
+        Disabled:
+          youtu.be
+          m.youtube.com
+          youtube.com
+          www.youtube.com
+
+Permissions:
+  Permission [com.google.android.youtube.tv.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION] (f7724):
+    sourcePackage=com.google.android.youtube.tv
+    uid=10092 gids=[] type=0 prot=signature
+    perm=PermissionInfo{6bae28d com.google.android.youtube.tv.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION}
+    flags=0x0
+
+Key Set Manager:
+  [com.google.android.youtube.tv]
+      Signing KeySets: 26
+
+Packages:
+  Package [com.google.android.youtube.tv] (4a79c42):
+    appId=10092
+    pkg=Package{a05d453 com.google.android.youtube.tv}
+    codePath=/data/app/~~D56OP4XoH4fQ0XczbG85Gw==/com.google.android.youtube.tv-HOQa3Z43e8Ut_8oR8EEOkQ==
+    resourcePath=/data/app/~~D56OP4XoH4fQ0XczbG85Gw==/com.google.android.youtube.tv-HOQa3Z43e8Ut_8oR8EEOkQ==
+    legacyNativeLibraryDir=/data/app/~~D56OP4XoH4fQ0XczbG85Gw==/com.google.android.youtube.tv-HOQa3Z43e8Ut_8oR8EEOkQ==/lib
+    extractNativeLibs=false
+    primaryCpuAbi=armeabi-v7a
+    secondaryCpuAbi=null
+    cpuAbiOverride=null
+    versionCode=727302320 minSdk=32 targetSdk=36
+    minExtensionVersions=[]
+    versionName=7.27.302
+    usesNonSdkApi=false
+    splits=[base, config.armeabi_v7a]
+    apkSigningVersion=3
+    flags=[ SYSTEM HAS_CODE ALLOW_CLEAR_USER_DATA UPDATED_SYSTEM_APP ALLOW_BACKUP ]
+    privateFlags=[ PRIVATE_FLAG_ACTIVITIES_RESIZE_MODE_RESIZEABLE_VIA_SDK_VERSION ALLOW_AUDIO_PLAYBACK_CAPTURE HAS_DOMAIN_URLS PARTIALLY_DIRECT_BOOT_AWARE PRODUCT PRIVATE_FLAG_ALLOW_NATIVE_HEAP_POINTER_TAGGING ]
+    forceQueryable=false
+    queriesPackages=[com.google.android.katniss, com.google.android.apps.maps, com.android.vending, com.google.android.engage.verifyapp]
+    queriesIntents=[Intent { act=com.android.vending.billing.InAppBillingService.BIND }, Intent { act=com.google.android.apps.play.billingtestcompanion.BillingOverrideService.BIND }, Intent { act=androidx.window.extensions.layout.EngagementModeService }]
+    dataDir=/data/user/0/com.google.android.youtube.tv
+    supportsScreens=[small, medium, large, xlarge, resizeable, anyDensity]
+    usesOptionalLibraries:
+      android.ext.adservices
+      androidx.window.extensions
+      androidx.window.sidecar
+    timeStamp=2026-10-15 05:32:27
+    lastUpdateTime=2026-10-15 05:32:27
+    installerPackageName=com.android.vending
+    installerPackageUid=10086
+    initiatingPackageName=com.android.vending
+    originatingPackageName=null
+    packageSource=0
+    appMetadataFilePath=/data/app/~~D56OP4XoH4fQ0XczbG85Gw==/com.google.android.youtube.tv-HOQa3Z43e8Ut_8oR8EEOkQ==/app.metadata
+    signatures=PackageSignatures{65ee190 version:3, signatures:[816bda7e], past signatures:[]}
+    installPermissionsFixed=true
+    pkgFlags=[ SYSTEM HAS_CODE ALLOW_CLEAR_USER_DATA UPDATED_SYSTEM_APP ALLOW_BACKUP ]
+    privatePkgFlags=[ PRIVATE_FLAG_ACTIVITIES_RESIZE_MODE_RESIZEABLE_VIA_SDK_VERSION ALLOW_AUDIO_PLAYBACK_CAPTURE HAS_DOMAIN_URLS PARTIALLY_DIRECT_BOOT_AWARE PRODUCT PRIVATE_FLAG_ALLOW_NATIVE_HEAP_POINTER_TAGGING ]
+    apexModuleName=null
+    declared permissions:
+      com.google.android.youtube.tv.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION: prot=signature
+    requested permissions:
+      android.permission.ACCESS_NETWORK_STATE
+      android.permission.INTERNET
+      android.permission.MODIFY_AUDIO_SETTINGS
+      android.permission.RECORD_AUDIO
+      android.permission.WAKE_LOCK
+      android.permission.ACCESS_WIFI_STATE
+      android.permission.RECEIVE_BOOT_COMPLETED
+      com.google.android.providers.gsf.permission.READ_GSERVICES
+      com.android.providers.tv.permission.READ_EPG_DATA
+      com.android.providers.tv.permission.WRITE_EPG_DATA
+      com.google.android.gms.permission.AD_ID
+    install permissions:
+      android.permission.MODIFY_AUDIO_SETTINGS: granted=true
+      com.google.android.providers.gsf.permission.READ_GSERVICES: granted=true
+      android.permission.RECEIVE_BOOT_COMPLETED: granted=true
+      com.android.providers.tv.permission.READ_EPG_DATA: granted=true
+      android.permission.INTERNET: granted=true
+      com.android.providers.tv.permission.WRITE_EPG_DATA: granted=true
+      android.permission.ACCESS_NETWORK_STATE: granted=true
+      android.permission.ACCESS_WIFI_STATE: granted=true
+      com.google.android.gms.permission.AD_ID: granted=true
+      android.permission.WAKE_LOCK: granted=true
+    User 0: ceDataInode=0 installed=false hidden=false suspended=false distractionFlags=0 stopped=true notLaunched=true enabled=0 instant=false virtual=false
+      installReason=0
+      firstInstallTime=2026-10-15 05:32:27
+      uninstallReason=0
+      overlay paths:
+        /data/resource-cache/com.android.systemui-neutral-SI7f.frro
+        /data/resource-cache/com.android.systemui-accent-nAWe.frro
+        /data/resource-cache/com.android.systemui-dynamic-WB3m.frro
+      gids=[3003]
+      runtime permissions:
+        android.permission.RECORD_AUDIO: granted=false, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+      disabledComponents:
+        android.app.AppDetailsActivity
+      enabledComponents:
+        androidx.work.impl.background.systemalarm.RescheduleReceiver
+        androidx.work.impl.background.systemjob.SystemJobService
+    User 10: ceDataInode=0 installed=false hidden=false suspended=false distractionFlags=0 stopped=true notLaunched=false enabled=0 instant=false virtual=false
+      installReason=0
+      firstInstallTime=1970-01-01 05:30:00
+      uninstallReason=0
+      gids=[3003]
+      runtime permissions:
+        android.permission.RECORD_AUDIO: granted=false
+
+Hidden system packages:
+  Package [com.google.android.youtube.tv] (4801a89):
+    appId=10092
+    pkg=Package{1973a8e com.google.android.youtube.tv}
+    codePath=/product/app/YouTubeLeanback
+    resourcePath=/product/app/YouTubeLeanback
+    legacyNativeLibraryDir=/product/app/YouTubeLeanback/lib
+    extractNativeLibs=false
+    primaryCpuAbi=armeabi-v7a
+    secondaryCpuAbi=null
+    cpuAbiOverride=null
+    versionCode=530304320 minSdk=24 targetSdk=34
+    minExtensionVersions=[]
+    versionName=5.30.304
+    usesNonSdkApi=false
+    splits=[base]
+    apkSigningVersion=0
+    flags=[ SYSTEM HAS_CODE ALLOW_CLEAR_USER_DATA ALLOW_BACKUP ]
+    privateFlags=[ PRIVATE_FLAG_ACTIVITIES_RESIZE_MODE_RESIZEABLE_VIA_SDK_VERSION ALLOW_AUDIO_PLAYBACK_CAPTURE HAS_DOMAIN_URLS PARTIALLY_DIRECT_BOOT_AWARE PRODUCT PRIVATE_FLAG_ALLOW_NATIVE_HEAP_POINTER_TAGGING ]
+    forceQueryable=false
+    queriesPackages=[com.google.android.katniss, com.google.android.apps.maps, com.android.vending, com.google.android.engage.verifyapp]
+    queriesIntents=[Intent { act=com.android.vending.billing.InAppBillingService.BIND }, Intent { act=com.google.android.apps.play.billingtestcompanion.BillingOverrideService.BIND }]
+    dataDir=/data/user/0/com.google.android.youtube.tv
+    supportsScreens=[small, medium, large, xlarge, resizeable, anyDensity]
+    usesOptionalLibraries:
+      org.apache.http.legacy
+      androidx.window.extensions
+      androidx.window.sidecar
+    timeStamp=2009-01-01 05:30:00
+    lastUpdateTime=1970-01-01 05:29:59
+    installerPackageName=null
+    installerPackageUid=-1
+    initiatingPackageName=null
+    originatingPackageName=null
+    packageSource=0
+    appMetadataFilePath=null
+    signatures=PackageSignatures{90f62af version:0, signatures:[], past signatures:[]}
+    installPermissionsFixed=false
+    pkgFlags=[ SYSTEM HAS_CODE ALLOW_CLEAR_USER_DATA ALLOW_BACKUP ]
+    privatePkgFlags=[ PRIVATE_FLAG_ACTIVITIES_RESIZE_MODE_RESIZEABLE_VIA_SDK_VERSION ALLOW_AUDIO_PLAYBACK_CAPTURE HAS_DOMAIN_URLS PARTIALLY_DIRECT_BOOT_AWARE PRODUCT PRIVATE_FLAG_ALLOW_NATIVE_HEAP_POINTER_TAGGING ]
+    apexModuleName=null
+    declared permissions:
+      com.google.android.youtube.tv.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION: prot=signature
+    requested permissions:
+      android.permission.ACCESS_NETWORK_STATE
+      android.permission.INTERNET
+      android.permission.MODIFY_AUDIO_SETTINGS
+      android.permission.RECORD_AUDIO
+      android.permission.WAKE_LOCK
+      android.permission.ACCESS_WIFI_STATE
+      android.permission.RECEIVE_BOOT_COMPLETED
+      com.google.android.providers.gsf.permission.READ_GSERVICES
+      com.android.providers.tv.permission.READ_EPG_DATA
+      com.android.providers.tv.permission.WRITE_EPG_DATA
+      com.google.android.gms.permission.AD_ID
+    install permissions:
+      android.permission.MODIFY_AUDIO_SETTINGS: granted=true
+      com.google.android.providers.gsf.permission.READ_GSERVICES: granted=true
+      android.permission.RECEIVE_BOOT_COMPLETED: granted=true
+      com.android.providers.tv.permission.READ_EPG_DATA: granted=true
+      android.permission.INTERNET: granted=true
+      com.android.providers.tv.permission.WRITE_EPG_DATA: granted=true
+      android.permission.ACCESS_NETWORK_STATE: granted=true
+      android.permission.ACCESS_WIFI_STATE: granted=true
+      com.google.android.gms.permission.AD_ID: granted=true
+      android.permission.WAKE_LOCK: granted=true
+    User 0: ceDataInode=0 installed=true hidden=false suspended=false distractionFlags=0 stopped=false notLaunched=false enabled=0 instant=false virtual=false
+      installReason=0
+      firstInstallTime=1970-01-01 05:29:59
+      uninstallReason=0
+      gids=[3003]
+      runtime permissions:
+        android.permission.RECORD_AUDIO: granted=false, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+    User 10: ceDataInode=0 installed=true hidden=false suspended=false distractionFlags=0 stopped=false notLaunched=false enabled=0 instant=false virtual=false
+      installReason=0
+      firstInstallTime=1970-01-01 05:30:00
+      uninstallReason=0
+      gids=[3003]
+      runtime permissions:
+        android.permission.RECORD_AUDIO: granted=false
+
+Queries:
+  system apps queryable: false
+  queries via forceQueryable:
+  queries via package name:
+    com.google.android.youtube.tvmusic:
+      [app id 10092 not installed]
+    org.smarttube.stable:
+      [app id 10092 not installed]
+  queries via component:
+    com.sony.dtv.smarthelp:
+      [app id 10092 not installed]
+    com.sony.dtv.sonyselect:
+      [app id 10092 not installed]
+    com.android.settings.intelligence:
+      [app id 10092 not installed]
+    com.google.android.play.games:
+      [app id 10092 not installed]
+    org.smarttube.stable:
+      [app id 10092 not installed]
+    com.gathin.tvhome:
+      [app id 10092 not installed]
+  queryable via interaction:
+    User 0:
+    User 10:
+  queryable via uses-library:
+
+Dexopt state:
+  [com.google.android.youtube.tv]
+    path: /data/app/~~D56OP4XoH4fQ0XczbG85Gw==/com.google.android.youtube.tv-HOQa3Z43e8Ut_8oR8EEOkQ==/base.apk
+      arm: [status=speed-profile] [reason=bg-dexopt] [primary-abi]
+        [location is /data/app/~~D56OP4XoH4fQ0XczbG85Gw==/com.google.android.youtube.tv-HOQa3Z43e8Ut_8oR8EEOkQ==/oat/arm/base.odex]
+
+Compiler stats:
+  [com.google.android.youtube.tv]
+    (No recorded stats)

@@ -1,0 +1,278 @@
+Activity Resolver Table:
+  Non-Data Actions:
+      android.speech.tts.FORCE_ENABLE_TNT:
+        aecd470 com.google.android.tts/com.google.android.apps.speech.tts.googletts.settings.asr.ForceEnableTntComponentsActivity filter e30c3e9
+          Action: "android.speech.tts.FORCE_ENABLE_TNT"
+          Category: "android.intent.category.DEFAULT"
+      android.speech.tts.engine.INSTALL_TTS_DATA:
+        bd94746 com.google.android.tts/com.google.android.apps.speech.tts.googletts.local.voicepack.ui.VoiceDataInstallActivity filter 55edd07
+          Action: "android.speech.tts.engine.INSTALL_TTS_DATA"
+          Category: "android.intent.category.DEFAULT"
+      com.google.recognition.action.DOWNLOAD_LANGUAGE:
+        b266e34 com.google.android.tts/com.google.android.libraries.speech.modelmanager.languagepack.legacy.DownloadActivity filter 528f45d
+          Action: "com.google.recognition.action.DOWNLOAD_LANGUAGE"
+          Category: "android.intent.category.DEFAULT"
+      android.speech.action.RECOGNIZE_SPEECH:
+        9d291d2 com.google.android.tts/com.google.android.apps.speech.tts.googletts.service.GoogleTTSActivity filter 18242a3
+          Action: "android.speech.action.RECOGNIZE_SPEECH"
+          Category: "android.intent.category.DEFAULT"
+          mPriority=1, mOrder=0, mHasStaticPartialTypes=false, mHasDynamicPartialTypes=false
+      android.speech.tts.engine.CHECK_TTS_DATA:
+        822c79c com.google.android.tts/com.google.android.apps.speech.tts.googletts.settings.CheckVoiceData filter e48b5a5
+          Action: "android.speech.tts.engine.CHECK_TTS_DATA"
+          Category: "android.intent.category.DEFAULT"
+      android.intent.action.VIEW_PERMISSION_USAGE:
+        5aa986e com.google.android.tts/com.google.android.apps.speech.tts.googletts.settings.privacydashboard.PrivacyDashboardActivity filter 7289b0f
+          Action: "android.intent.action.VIEW_PERMISSION_USAGE"
+          Action: "android.intent.action.VIEW_PERMISSION_USAGE_FOR_PERIOD"
+          Category: "android.intent.category.DEFAULT"
+      com.google.android.libraries.speech.modelmanager.languagepack.settings.AddLanguagesActivity:
+        5d6dc22 com.google.android.tts/com.google.android.libraries.speech.modelmanager.languagepack.settings.AddLanguagesActivity filter 7da46b3
+          Action: "com.google.android.libraries.speech.modelmanager.languagepack.settings.AddLanguagesActivity"
+          Category: "android.intent.category.DEFAULT"
+      android.speech.tts.engine.GET_SAMPLE_TEXT:
+        eebcd7a com.google.android.tts/com.google.android.apps.speech.tts.googletts.settings.GetSampleText filter 95dd92b
+          Action: "android.speech.tts.engine.GET_SAMPLE_TEXT"
+          Category: "android.intent.category.DEFAULT"
+      com.google.android.libraries.speech.modelmanager.languagepack.settings.SettingsActivity:
+        3c9fc04 com.google.android.tts/com.google.android.libraries.speech.modelmanager.languagepack.settings.SettingsActivity filter 6e1b5ed
+          Action: "com.google.android.libraries.speech.modelmanager.languagepack.settings.SettingsActivity"
+          Category: "android.intent.category.DEFAULT"
+      .settings.EngineSettings:
+        762c188 com.google.android.tts/com.google.android.apps.speech.tts.googletts.settings.EngineSettings filter 3340721
+          Action: ".settings.EngineSettings"
+          Category: "android.intent.category.DEFAULT"
+      android.intent.action.VIEW_PERMISSION_USAGE_FOR_PERIOD:
+        5aa986e com.google.android.tts/com.google.android.apps.speech.tts.googletts.settings.privacydashboard.PrivacyDashboardActivity filter 7289b0f
+          Action: "android.intent.action.VIEW_PERMISSION_USAGE"
+          Action: "android.intent.action.VIEW_PERMISSION_USAGE_FOR_PERIOD"
+          Category: "android.intent.category.DEFAULT"
+
+Receiver Resolver Table:
+  Non-Data Actions:
+      android.accounts.action.ACCOUNT_REMOVED:
+        aa3f91e com.google.android.tts/com.google.android.libraries.phenotype.client.stable.AccountRemovedBroadcastReceiver filter 8ec65ff
+          Action: "android.accounts.action.ACCOUNT_REMOVED"
+      android.speech.action.GET_LANGUAGE_DETAILS:
+        e92892a com.google.android.tts/com.google.android.libraries.speech.modelmanager.languagepack.legacy.LanguagePackDetailsReceiver_Receiver filter aab631b
+          Action: "android.speech.action.GET_LANGUAGE_DETAILS"
+      android.intent.action.LOCALE_CHANGED:
+        1d639a0 com.google.android.tts/com.google.android.apps.speech.tts.googletts.local.voicepack.VoicepackUpdater_Receiver filter f857959
+          Action: "android.intent.action.LOCALE_CHANGED"
+          Action: "android.intent.action.PACKAGE_CHANGED"
+          Action: "android.intent.action.MY_PACKAGE_REPLACED"
+      android.intent.action.PACKAGE_CHANGED:
+        1d639a0 com.google.android.tts/com.google.android.apps.speech.tts.googletts.local.voicepack.VoicepackUpdater_Receiver filter f857959
+          Action: "android.intent.action.LOCALE_CHANGED"
+          Action: "android.intent.action.PACKAGE_CHANGED"
+          Action: "android.intent.action.MY_PACKAGE_REPLACED"
+      android.intent.action.BOOT_COMPLETED:
+        3280df6 com.google.android.tts/androidx.work.impl.background.systemalarm.RescheduleReceiver filter e9315f7
+          Action: "android.intent.action.BOOT_COMPLETED"
+      androidx.work.diagnostics.REQUEST_DIAGNOSTICS:
+        95bcc64 com.google.android.tts/androidx.work.impl.diagnostics.DiagnosticsReceiver filter db4aecd
+          Action: "androidx.work.diagnostics.REQUEST_DIAGNOSTICS"
+      android.intent.action.MY_PACKAGE_REPLACED:
+        1d639a0 com.google.android.tts/com.google.android.apps.speech.tts.googletts.local.voicepack.VoicepackUpdater_Receiver filter f857959
+          Action: "android.intent.action.LOCALE_CHANGED"
+          Action: "android.intent.action.PACKAGE_CHANGED"
+          Action: "android.intent.action.MY_PACKAGE_REPLACED"
+      com.google.android.gms.phenotype.UPDATE:
+        5f54fcc com.google.android.tts/com.google.android.libraries.phenotype.client.stable.PhenotypeUpdateBackgroundBroadcastReceiver filter b8b5215
+          Action: "com.google.android.gms.phenotype.UPDATE"
+        50d9cb8 com.google.android.tts/com.google.apps.tiktok.experiments.phenotype.ConfigurationUpdatedReceiver_Receiver filter adbfa91
+          Action: "com.google.android.gms.phenotype.UPDATE"
+
+Service Resolver Table:
+  Non-Data Actions:
+      android.speech.RecognitionService:
+        23b4ad0 com.google.android.tts/com.google.android.apps.speech.tts.googletts.service.GoogleTTSRecognitionService filter ea6ac9
+          Action: "android.speech.RecognitionService"
+          Category: "android.intent.category.DEFAULT"
+      com.google.android.build.data.Properties:
+        ef790da com.google.android.tts/com.google.android.build.data.PropertiesServiceHolder filter 27490b
+          Action: "com.google.android.build.data.Properties"
+      android.view.InputMethod:
+        75243fc com.google.android.tts/com.google.android.apps.speech.tts.googletts.settings.asr.voiceime.VoiceInputMethodService filter fa5ea85 permission android.permission.BIND_INPUT_METHOD
+          Action: "android.view.InputMethod"
+      com.google.android.libraries.phenotype.registration.PhenotypeMetadataHolderService:
+        2bf1382 com.google.android.tts/com.google.android.libraries.phenotype.registration.PhenotypeMetadataHolderService filter bd91a93
+          Action: "com.google.android.libraries.phenotype.registration.PhenotypeMetadataHolderService"
+      android.intent.action.TTS_SERVICE:
+        cee5ce com.google.android.tts/com.google.android.apps.speech.tts.googletts.service.GoogleTtsService filter d70ccef
+          Action: "android.intent.action.TTS_SERVICE"
+          Category: "android.intent.category.DEFAULT"
+          mPriority=100, mOrder=0, mHasStaticPartialTypes=false, mHasDynamicPartialTypes=false
+
+Domain verification status:
+
+Permissions:
+  Permission [com.google.android.tts.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION] (a2bb919):
+    sourcePackage=com.google.android.tts
+    uid=10081 gids=[] type=0 prot=signature
+    perm=PermissionInfo{8bb4252 com.google.android.tts.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION}
+    flags=0x0
+
+Registered ContentProviders:
+  com.google.android.tts/com.android.car.ui.core.SearchResultsProvider:
+    Provider{35c6923 com.google.android.tts/com.android.car.ui.core.SearchResultsProvider}
+  com.google.android.tts/com.android.car.ui.core.CarUiInstaller:
+    Provider{a739e20 com.google.android.tts/com.android.car.ui.core.CarUiInstaller}
+  com.google.android.tts/androidx.lifecycle.ProcessLifecycleOwnerInitializer:
+    Provider{a2843d9 com.google.android.tts/androidx.lifecycle.ProcessLifecycleOwnerInitializer}
+  com.google.android.tts/com.google.android.libraries.speech.transcription.recording.AudioRecordingProvider$AudioRecordingFileProvider:
+    Provider{aa7319e com.google.android.tts/com.google.android.libraries.speech.transcription.recording.AudioRecordingProvider$AudioRecordingFileProvider}
+
+ContentProvider Authorities:
+  [com.google.android.tts.CarUiInstaller]:
+    Provider{a739e20 com.google.android.tts/com.android.car.ui.core.CarUiInstaller}
+      applicationInfo=ApplicationInfo{9599dde com.google.android.tts}
+  [com.google.android.tts.SearchResultsProvider]:
+    Provider{35c6923 com.google.android.tts/com.android.car.ui.core.SearchResultsProvider}
+      applicationInfo=ApplicationInfo{f60bbf com.google.android.tts}
+  [com.google.android.tts.lifecycle-process]:
+    Provider{a2843d9 com.google.android.tts/androidx.lifecycle.ProcessLifecycleOwnerInitializer}
+      applicationInfo=ApplicationInfo{511628c com.google.android.tts}
+  [com.google.android.tts.AudioRecordingProvider]:
+    Provider{aa7319e com.google.android.tts/com.google.android.libraries.speech.transcription.recording.AudioRecordingProvider$AudioRecordingFileProvider}
+      applicationInfo=ApplicationInfo{8b5cdd5 com.google.android.tts}
+
+Key Set Manager:
+  [com.google.android.tts]
+      Signing KeySets: 20
+
+Packages:
+  Package [com.google.android.tts] (bd3d99b):
+    appId=10081
+    pkg=Package{e631138 com.google.android.tts}
+    codePath=/product/priv-app/GoogleTTS
+    resourcePath=/product/priv-app/GoogleTTS
+    legacyNativeLibraryDir=/product/priv-app/GoogleTTS/lib
+    extractNativeLibs=false
+    primaryCpuAbi=armeabi-v7a
+    secondaryCpuAbi=null
+    cpuAbiOverride=null
+    versionCode=210598193 minSdk=26 targetSdk=36
+    minExtensionVersions=[]
+    versionName=googletts.google-speech-apk_20251028.02_p2.827711934
+    usesNonSdkApi=false
+    splits=[base]
+    apkSigningVersion=3
+    flags=[ SYSTEM HAS_CODE ALLOW_CLEAR_USER_DATA ALLOW_BACKUP KILL_AFTER_RESTORE RESTORE_ANY_VERSION ]
+    privateFlags=[ PRIVATE_FLAG_ACTIVITIES_RESIZE_MODE_RESIZEABLE_VIA_SDK_VERSION ALLOW_AUDIO_PLAYBACK_CAPTURE PARTIALLY_DIRECT_BOOT_AWARE PRIVILEGED PRODUCT PRIVATE_FLAG_ALLOW_NATIVE_HEAP_POINTER_TAGGING ]
+    forceQueryable=true
+    queriesIntents=[Intent { act=androidx.window.extensions.layout.ACTION_ENGAGEMENT_MODE_SERVICE }]
+    dataDir=/data/user/0/com.google.android.tts
+    supportsScreens=[small, medium, large, xlarge, resizeable, anyDensity]
+    usesOptionalLibraries:
+      androidx.window.extensions
+      androidx.window.sidecar
+    usesOptionalNativeLibraries:
+      libedgetpu_util.so
+      libedgetpu_client.google.so
+      libedgetpu_util.so
+      libedgetpu_client.google.so
+    timeStamp=2009-01-01 05:30:00
+    lastUpdateTime=2009-01-01 05:30:00
+    installerPackageName=null
+    installerPackageUid=-1
+    initiatingPackageName=null
+    originatingPackageName=null
+    packageSource=0
+    appMetadataFilePath=null
+    signatures=PackageSignatures{8bd9511 version:3, signatures:[98deb0ca], past signatures:[e3ca78d8 flags: 17, 98deb0ca flags: 17]}
+    installPermissionsFixed=true
+    pkgFlags=[ SYSTEM HAS_CODE ALLOW_CLEAR_USER_DATA ALLOW_BACKUP KILL_AFTER_RESTORE RESTORE_ANY_VERSION ]
+    privatePkgFlags=[ PRIVATE_FLAG_ACTIVITIES_RESIZE_MODE_RESIZEABLE_VIA_SDK_VERSION ALLOW_AUDIO_PLAYBACK_CAPTURE PARTIALLY_DIRECT_BOOT_AWARE PRIVILEGED PRODUCT PRIVATE_FLAG_ALLOW_NATIVE_HEAP_POINTER_TAGGING ]
+    apexModuleName=null
+    declared permissions:
+      com.google.android.tts.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION: prot=signature
+    requested permissions:
+      android.permission.INTERNET
+      android.permission.DOWNLOAD_WITHOUT_NOTIFICATION
+      android.permission.FOREGROUND_SERVICE
+      com.google.android.gms.permission.INTERNAL_BROADCAST
+      android.permission.POST_NOTIFICATIONS
+      android.permission.FOREGROUND_SERVICE_DATA_SYNC
+      android.permission.CHANGE_NETWORK_STATE
+      android.permission.WRITE_SETTINGS
+      com.google.android.providers.gsf.permission.READ_GSERVICES
+      android.permission.ACCESS_NETWORK_STATE
+      android.permission.GET_PACKAGE_SIZE
+      android.permission.WAKE_LOCK
+      android.permission.RECEIVE_BOOT_COMPLETED
+      android.permission.QUERY_ALL_PACKAGES
+      android.permission.RECORD_AUDIO
+      android.permission.UPDATE_APP_OPS_STATS
+      android.permission.START_ACTIVITIES_FROM_BACKGROUND
+      android.permission.SYSTEM_ALERT_WINDOW
+      com.google.android.apps.aicore.service.BIND_SERVICE
+    install permissions:
+      android.permission.DOWNLOAD_WITHOUT_NOTIFICATION: granted=true
+      android.permission.WRITE_SETTINGS: granted=true
+      com.google.android.providers.gsf.permission.READ_GSERVICES: granted=true
+      android.permission.SYSTEM_ALERT_WINDOW: granted=false
+      android.permission.CHANGE_NETWORK_STATE: granted=true
+      android.permission.FOREGROUND_SERVICE: granted=true
+      android.permission.RECEIVE_BOOT_COMPLETED: granted=true
+      android.permission.INTERNET: granted=true
+      android.permission.GET_PACKAGE_SIZE: granted=true
+      com.google.android.gms.permission.INTERNAL_BROADCAST: granted=true
+      android.permission.FOREGROUND_SERVICE_DATA_SYNC: granted=true
+      android.permission.ACCESS_NETWORK_STATE: granted=true
+      android.permission.START_ACTIVITIES_FROM_BACKGROUND: granted=true
+      android.permission.QUERY_ALL_PACKAGES: granted=true
+      android.permission.WAKE_LOCK: granted=true
+      android.permission.UPDATE_APP_OPS_STATS: granted=true
+    User 0: ceDataInode=252603 installed=true hidden=false suspended=false distractionFlags=0 stopped=false notLaunched=false enabled=0 instant=false virtual=false
+      installReason=0
+      firstInstallTime=2009-01-01 05:30:00
+      uninstallReason=0
+      overlay paths:
+        /data/resource-cache/com.android.systemui-neutral-SI7f.frro
+        /data/resource-cache/com.android.systemui-accent-nAWe.frro
+        /data/resource-cache/com.android.systemui-dynamic-WB3m.frro
+      lastDisabledCaller: com.android.vending
+      gids=[3003]
+      runtime permissions:
+        android.permission.POST_NOTIFICATIONS: granted=true, flags=[ USER_SENSITIVE_WHEN_GRANTED]
+        android.permission.RECORD_AUDIO: granted=true, flags=[ USER_SENSITIVE_WHEN_GRANTED|GRANTED_BY_ROLE]
+      enabledComponents:
+        androidx.work.impl.background.systemalarm.RescheduleReceiver
+        androidx.work.impl.background.systemjob.SystemJobService
+    User 10: ceDataInode=0 installed=true hidden=false suspended=false distractionFlags=0 stopped=false notLaunched=false enabled=0 instant=false virtual=false
+      installReason=0
+      firstInstallTime=1970-01-01 05:30:00
+      uninstallReason=0
+      gids=[3003]
+      runtime permissions:
+        android.permission.POST_NOTIFICATIONS: granted=true, flags=[ USER_SENSITIVE_WHEN_GRANTED]
+        android.permission.RECORD_AUDIO: granted=true, flags=[ USER_SENSITIVE_WHEN_GRANTED|GRANTED_BY_ROLE]
+
+Queries:
+  system apps queryable: false
+  queries via forceQueryable:
+  forceQueryable:
+    com.google.android.tts
+  queries via package name:
+  queries via component:
+  queryable via interaction:
+    User 0:
+      [com.android.dynsystem,com.sony.dtv.sonysystemservice,com.sony.dtv.multiscreendemo,com.realtek.tvsetup.partnercustomizer,com.android.wallpaperbackup,com.sony.dtv.smartui,com.realtek.servicemenu,com.sony.dtv.b2b.vendorprotocol,com.sony.qrmt,com.android.inputdevices,android,com.realtek.usbupdate,com.realtek.tv.atv,com.realtek.tv.passthrough,com.android.location.fused,com.android.localtransport,com.android.tv.settings,com.android.providers.settings,com.realtek.dtv,com.android.keychain,com.sony.dtv.remotecontrolsettings,com.realtek.advancesetting]:
+        com.google.android.tts
+      com.google.android.tts:
+        [com.android.dynsystem,com.sony.dtv.sonysystemservice,com.sony.dtv.multiscreendemo,com.realtek.tvsetup.partnercustomizer,com.android.wallpaperbackup,com.sony.dtv.smartui,com.realtek.servicemenu,com.sony.dtv.b2b.vendorprotocol,com.sony.qrmt,com.android.inputdevices,android,com.realtek.usbupdate,com.realtek.tv.atv,com.realtek.tv.passthrough,com.android.location.fused,com.android.localtransport,com.android.tv.settings,com.android.providers.settings,com.realtek.dtv,com.android.keychain,com.sony.dtv.remotecontrolsettings,com.realtek.advancesetting]
+      [com.google.android.gms,com.google.android.gsf]:
+        com.google.android.tts
+    User 10:
+  queryable via uses-library:
+
+Dexopt state:
+  [com.google.android.tts]
+    path: /product/priv-app/GoogleTTS/GoogleTTS.apk
+      arm: [status=verify] [reason=prebuilt] [primary-abi]
+        [location is /product/priv-app/GoogleTTS/oat/arm/GoogleTTS.odex]
+
+Compiler stats:
+  [com.google.android.tts]
+     base.apk - 16885

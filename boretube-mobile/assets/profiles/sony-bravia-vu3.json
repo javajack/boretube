@@ -1,0 +1,76 @@
+{
+  "id": "sony-bravia-vu3",
+  "name": "Sony BRAVIA VU3 (Google TV 14)",
+  "readOnly": false,
+  "match": {
+    "manufacturer": "Sony",
+    "device": ["BRAVIA_VU3", "BRAVIA_VU3_2K", "BRAVIA_VU3_4K"],
+    "build": ["UKR1.240726.001"]
+  },
+  "cleanup": [
+    {"pkg": "com.sony.dtv.promos", "comment": "Sony promo banners"},
+    {"pkg": "com.sony.dtv.sonyselect", "comment": "Sony Select app store ads"},
+    {"pkg": "com.sony.dtv.sonytab", "comment": "Sony tab on the home screen"},
+    {"pkg": "com.sony.dtv.multiscreendemo", "comment": "Store demo mode"},
+    {"pkg": "com.sony.dtv.smarthelp", "comment": "Help app"},
+    {"pkg": "com.sony.dtv.helpguidecontents", "comment": "Help guide content"},
+    {"pkg": "com.sonypicturescore", "comment": "Sony Pictures Core"},
+    {"pkg": "com.android.adservices.api", "comment": "Ad services"},
+    {"pkg": "com.android.federatedcompute.services", "comment": "Federated compute"},
+    {"pkg": "com.android.ondevicepersonalization.services", "comment": "On-device personalization"},
+    {"pkg": "com.google.android.feedback", "comment": "Feedback reporter"},
+    {"pkg": "com.google.android.play.games", "comment": "Play Games"},
+    {"pkg": "com.google.android.partnersetup", "comment": "Partner setup"},
+    {"pkg": "com.google.android.onetimeinitializer", "comment": "One-time initializer"},
+    {"pkg": "com.google.android.syncadapters.calendar", "comment": "Calendar sync"},
+    {"pkg": "com.android.printspooler", "comment": "Print spooler"},
+    {"pkg": "android.autoinstalls.config.google.gtvpai", "comment": "Play auto-installs (pushes promoted apps)"},
+    {"pkg": "com.android.gallery3d", "comment": "Gallery"}
+  ],
+  "extras": [
+    {"pkg": "com.sonyliv", "comment": "SonyLIV streaming app"},
+    {"pkg": "com.amazon.amazonvideo.livingroom", "comment": "Prime Video"},
+    {"pkg": "com.apple.atve.androidtv.appletv", "comment": "Apple TV"}
+  ],
+  "neverTouch": [
+    "com.google.android.tungsten.setupwraith",
+    "com.google.android.apps.tv.launcherx",
+    "com.google.android.apps.tv.dreamx",
+    "com.sony.dtv.smartui",
+    "com.realtek.dtv",
+    "com.realtek.tv.atv",
+    "com.realtek.tv.passthrough",
+    "com.realtek.advancesetting",
+    "com.android.tv",
+    "com.google.android.gms",
+    "com.android.vending",
+    "com.google.android.katniss",
+    "com.google.android.tts",
+    "com.rakesh.boretube.agent",
+    "com.gathin.tvhome",
+    "org.smarttube.stable",
+    "android",
+    "com.android.systemui",
+    "com.android.settings",
+    "com.android.tv.settings"
+  ],
+  "knownGood": {
+    "com.google.android.tts": "googletts.google-speech-apk_20251028.02_p2.827711934"
+  },
+  "stockYouTube": {
+    "pkg": "com.google.android.youtube.tv",
+    "companions": ["com.google.android.youtube.tvmusic"]
+  },
+  "launcher": {
+    "pkg": "com.gathin.tvhome",
+    "homeActivity": "com.gathin.tvhome/.MainActivity",
+    "a11yService": "com.gathin.tvhome/.HomeKeyService"
+  },
+  "quirks": [
+    "absoluteVolumeIgnored: cmd media_session volume --set and Cast SET_VOLUME level are ignored; use KEYCODE_VOLUME_UP/DOWN steps or Sony REST",
+    "castVolumeWrong: Cast reports volume 0; read volume from Sony REST or dumpsys audio",
+    "homeViaA11y: HOME resolves to launcherx; com.gathin.tvhome redirects the Home key through its accessibility service",
+    "rebootWait60s: wait at least 60 s after a disable before any reboot, or the change is lost",
+    "ttsUpdateBreaksSpeech: newer com.google.android.tts updates break voice search; roll back to the factory build"
+  ]
+}

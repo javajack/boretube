@@ -1,0 +1,9 @@
+- STREAM_MUSIC:
+   Muted: false
+   Muted Internally: false
+   Min: 0
+   Max: 100
+   streamVolume:12
+   Current: 2 (speaker): 12, 8 (headphone): 25, 400 (hdmi): 25, 40000000 (default): 25
+   Devices: speaker(2)
+   Volume Group: AUDIO_STREAM_MUSIC

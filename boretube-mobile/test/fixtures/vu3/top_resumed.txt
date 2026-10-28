@@ -1,0 +1,1 @@
+    topResumedActivity=ActivityRecord{6253481 u0 org.smarttube.stable/com.liskovsoft.smartyoutubetv2.tv.ui.playback.PlaybackActivity t3685}

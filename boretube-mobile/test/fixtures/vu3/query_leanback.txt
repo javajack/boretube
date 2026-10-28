@@ -1,0 +1,34 @@
+11 activities found:
+  Activity #0:
+    priority=3 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=false
+    com.android.tv.settings/.MainSettings
+  Activity #1:
+    priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true
+    com.android.tv/.TvActivity
+  Activity #2:
+    priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true
+    com.android.vending/com.google.android.finsky.tvmainactivity.TvMainActivity
+  Activity #3:
+    priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true
+    org.smarttube.stable/com.liskovsoft.smartyoutubetv2.tv.ui.main.SplashActivity
+  Activity #4:
+    priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=false
+    com.netflix.ninja/.MainActivity
+  Activity #5:
+    priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=false
+    com.realtek.tvmediaplay/.activity.MainActivity
+  Activity #6:
+    priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=false
+    com.sony.dtv.ecodashboard/.presentation.activity.EcoDashboardActivity
+  Activity #7:
+    priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=false
+    com.sony.dtv.m2.seeds.iot/.app.activity.InitialActivity
+  Activity #8:
+    priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=false
+    com.sony.dtv.timers/.activity.TimersMainActivity
+  Activity #9:
+    priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=false
+    com.sony.dtv.timers/com.sony.dtv.activity.TimersMainActivity
+  Activity #10:
+    priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=false
+    com.gathin.tvhome/.MainActivity

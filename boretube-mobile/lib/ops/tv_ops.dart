@@ -15,6 +15,23 @@ const kBaselineNeverTouch = {
   'com.rakesh.boretube.agent',
 };
 
+/// Packages that must not be force-stopped: system, Home, input/key
+/// plumbing and the agent. Ordinary apps on the never-touch list (e.g.
+/// SmartTube) may be stopped; they just can't be disabled or removed.
+const kNeverStop = {
+  'android',
+  'com.android.systemui',
+  'com.google.android.gms',
+  'com.google.android.katniss',
+  'com.google.android.apps.tv.launcherx',
+  'com.google.android.tungsten.setupwraith',
+  'com.realtek.advancesetting',
+  'com.realtek.dtv',
+  'com.realtek.tv.passthrough',
+  'com.sony.dtv.smartui',
+  'com.rakesh.boretube.agent',
+};
+
 const kTtsPackage = 'com.google.android.tts';
 
 final _pkgPattern = RegExp(r'^[a-zA-Z0-9_.]+$');
@@ -229,6 +246,9 @@ class TvOps {
 
   bool isProtected(String pkg) => neverTouch.contains(pkg);
 
+  bool isStopProtected(String pkg) =>
+      kNeverStop.contains(pkg) || pkg == profile.launcher?.pkg;
+
   // ── guards ──
 
   static String checkPackage(String pkg) {
@@ -374,7 +394,8 @@ class TvOps {
 
   /// `am force-stop`. Verified by the process being gone or restarted.
   Future<JournalEntry> stopApp(String pkg) async {
-    _guard(pkg);
+    checkPackage(pkg);
+    if (isStopProtected(pkg)) throw NeverTouchException(pkg);
     final before = (await _sh('pidof $pkg')).stdout.trim();
     final r = await _sh('am force-stop $pkg');
     final after = (await _sh('pidof $pkg')).stdout.trim();
@@ -387,9 +408,9 @@ class TvOps {
     );
   }
 
-  /// Stops whatever is on screen, then goes Home. A protected foreground
-  /// app (launcher, SmartTube, Live TV...) is not force-stopped; it only
-  /// gets the Home key.
+  /// Stops whatever is on screen, then goes Home. A stop-protected
+  /// foreground app (Home, system UI...) is not force-stopped; it only gets
+  /// the Home key.
   Future<StopOutcome> stopForegroundApp() async {
     final fg = await foregroundPackage();
     if (fg == null) {
@@ -403,7 +424,7 @@ class TvOps {
     }
     JournalEntry? entry;
     var detail = '';
-    if (isProtected(fg) || !_pkgPattern.hasMatch(fg)) {
+    if (isStopProtected(fg) || !_pkgPattern.hasMatch(fg)) {
       detail = '$fg is protected; sent Home instead of force-stop';
     } else {
       entry = await stopApp(fg);

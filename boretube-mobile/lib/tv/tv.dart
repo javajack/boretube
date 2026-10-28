@@ -2,7 +2,7 @@
 enum TvCapability { cast, dial, sonyRest, adb, agent }
 
 /// A TV the app knows about, keyed by a stable [id] that survives IP
-/// changes (agent id > ADB serial > Cast/UDN uuid > "ip:<addr>").
+/// changes (agent id > ADB serial > Cast/UDN uuid > `ip:ADDR`).
 class Tv {
   final String id;
   final String name;

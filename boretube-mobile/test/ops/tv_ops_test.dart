@@ -118,10 +118,12 @@ void main() {
           ops.setAppEnabled(p, false),
           throwsA(isA<NeverTouchException>()),
         );
-        await expectLater(
-          ops.stopApp(p),
-          throwsA(isA<NeverTouchException>()),
-        );
+        if (ops.isStopProtected(p)) {
+          await expectLater(
+            ops.stopApp(p),
+            throwsA(isA<NeverTouchException>()),
+          );
+        }
       }
       expect(tv.writes, isEmpty);
     });
@@ -197,12 +199,31 @@ void main() {
       expect(e.ok, isTrue);
     });
 
-    test('stopForegroundApp: protected app only gets Home', () async {
+    test('stopForegroundApp: SmartTube is never-touch but still stoppable',
+        () async {
+      tv.running['org.smarttube.stable'] = 9;
       final s = await ops.stopForegroundApp();
       expect(s.pkg, 'org.smarttube.stable');
+      expect(s.forceStopped, isTrue);
+      expect(tv.writes, [
+        'am force-stop org.smarttube.stable',
+        'input keyevent KEYCODE_HOME',
+      ]);
+    });
+
+    test('stopForegroundApp: stop-protected app only gets Home', () async {
+      tv.foreground = 'com.sony.dtv.smartui';
+      final s = await ops.stopForegroundApp();
       expect(s.forceStopped, isFalse);
       expect(s.sentHome, isTrue);
       expect(tv.writes, ['input keyevent KEYCODE_HOME']);
+    });
+
+    test('stopApp refuses Home and system packages', () async {
+      expect(() => ops.stopApp('com.gathin.tvhome'),
+          throwsA(isA<NeverTouchException>()));
+      expect(() => ops.stopApp('com.google.android.apps.tv.launcherx'),
+          throwsA(isA<NeverTouchException>()));
     });
 
     test('stopForegroundApp: normal app is force-stopped then Home', () async {

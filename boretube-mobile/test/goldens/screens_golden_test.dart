@@ -13,7 +13,10 @@ import 'package:boretube_mobile/providers/agent_providers.dart';
 import 'package:boretube_mobile/screens/restore_screen.dart';
 import 'package:boretube_mobile/screens/rules_tab.dart';
 import 'package:boretube_mobile/screens/rules/rules_editor.dart';
+import 'package:boretube_mobile/screens/tv/apps_section.dart';
+import 'package:boretube_mobile/screens/tv/clean_tv.dart';
 import 'package:boretube_mobile/screens/tv/tv_guard_card.dart';
+import 'package:boretube_mobile/ui/components.dart';
 import 'package:boretube_mobile/actions/actions_service.dart';
 import 'package:boretube_mobile/ops/health.dart';
 import 'package:boretube_mobile/ops/journal.dart';
@@ -22,7 +25,6 @@ import 'package:boretube_mobile/providers/now_playing.dart';
 import 'package:boretube_mobile/providers/tv_providers.dart';
 import 'package:boretube_mobile/screens/adb_guide_screen.dart';
 import 'package:boretube_mobile/screens/history_screen.dart';
-import 'package:boretube_mobile/screens/settings_screen.dart';
 import 'package:boretube_mobile/providers/ui_providers.dart';
 import 'package:boretube_mobile/tv/capabilities.dart';
 import 'package:boretube_mobile/screens/lock_screen.dart';
@@ -438,11 +440,12 @@ void main() {
     await shot(tester, 'volume_sheet_light');
   });
 
-  testWidgets('Routines · Lock for a while', (tester) async {
+  both('Routines · Lock for a while', (tester, dark, sfx) async {
     final env = await TestEnv.create(tvs: [adbSony]);
     await pumpScreen(
       tester,
       const ShellScreen(),
+      dark: dark,
       size: const Size(360, 1800),
       overrides: [
         ...env.overrides(now: playing, probeCaps: adbSony.capabilities),
@@ -453,16 +456,17 @@ void main() {
     await tester.tap(find.byKey(const Key('tab-Routines')));
     await settle(tester);
     await tester.tap(find.byKey(const Key('classic-mode-apps')));
-    await shot(tester, 'routines_lock_light');
+    await shot(tester, 'routines_lock$sfx');
   });
 
-  testWidgets('Routines (Always On rules)', (tester) async {
+  both('Routines (Always On rules)', (tester, dark, sfx) async {
     final now = DateTime(2026, 10, 28, 19, 5);
     final env = await TestEnv.create(tvs: [adbSony]);
     await pumpScreen(
       tester,
       const ShellScreen(),
-      size: const Size(360, 2400),
+      dark: dark,
+      size: const Size(360, 2600),
       overrides: [
         ...env.overrides(now: playing, probeCaps: adbSony.capabilities),
         ...guardOverrides(guardLink()),
@@ -474,7 +478,7 @@ void main() {
     await tester.tap(find.byKey(const Key('tab-Routines')));
     await settle(tester);
     await tester.tap(find.byKey(const Key('rules-always-mute')));
-    await shot(tester, 'routines_rules_light');
+    await shot(tester, 'routines_rules$sfx');
   });
 
   both('Better TV · health with Always On', (tester, dark, sfx) async {
@@ -495,18 +499,113 @@ void main() {
     await shot(tester, 'better_tv$sfx');
   });
 
-  testWidgets('Settings', (tester) async {
-    final env = await TestEnv.create(tvs: [adbSony, castOnlySony]);
-    await env.store.setActive(adbSony.id);
+  testWidgets('Better TV · Remote only, preview cards', (tester) async {
+    final env = await TestEnv.create(tvs: [castOnlySony]);
     await pumpScreen(
       tester,
-      const SettingsScreen(),
-      size: const Size(360, 1800),
-      overrides: env.overrides(now: playing, probeCaps: adbSony.capabilities),
+      const ShellScreen(),
+      size: const Size(360, 1300),
+      overrides: [
+        ...env.overrides(probeCaps: castOnlySony.capabilities),
+        ...guardOverrides(AgentLink.none),
+      ],
     );
     await settle(tester);
-    await tester.tap(find.byKey(const Key('settings-advanced')));
-    await shot(tester, 'settings_light');
+    await tester.tap(find.byKey(const Key('tab-Better TV')));
+    await shot(tester, 'better_tv_preview_light');
+  });
+
+  both('Always On card', (tester, dark, sfx) async {
+    final env = await TestEnv.create(tvs: [adbSony]);
+    await pumpScreen(
+      tester,
+      const SingleChildScrollView(
+        padding: EdgeInsets.all(20),
+        child: Column(
+          children: [TvGuardCard(), SizedBox(height: 16), _InviteCard()],
+        ),
+      ),
+      scaffold: true,
+      dark: dark,
+      size: const Size(360, 1250),
+      overrides: [
+        ...env.overrides(),
+        ...guardOverrides(guardLink(buildChanged: true)),
+      ],
+    );
+    await shot(tester, 'always_on_card$sfx');
+  });
+
+  both('Clean TV', (tester, dark, sfx) async {
+    final env = await TestEnv.create(tvs: [adbSony]);
+    await pumpScreen(
+      tester,
+      const CleanTvScreen(),
+      dark: dark,
+      size: const Size(360, 1900),
+      overrides: [
+        ...env.overrides(
+          ops: TvOps(
+            adb: FakeTv(),
+            profile: loadProfile('sony-bravia-vu3'),
+            tvId: adbSony.id,
+          ),
+        ),
+        ...guardOverrides(AgentLink.none),
+      ],
+    );
+    await shot(tester, 'clean_tv$sfx');
+  });
+
+  testWidgets('YouTube without Shorts', (tester) async {
+    final env = await TestEnv.create(tvs: [adbSony]);
+    await pumpScreen(
+      tester,
+      const YouTubeScreen(),
+      size: const Size(360, 1000),
+      overrides: [
+        ...env.overrides(
+          ops: TvOps(
+            adb: FakeTv(),
+            profile: loadProfile('sony-bravia-vu3'),
+            tvId: adbSony.id,
+          ),
+        ),
+        ...guardOverrides(guardLink()),
+        rulesProvider.overrideWith((ref) async => goldenRules(evening)),
+      ],
+    );
+    await shot(tester, 'youtube_light');
+  });
+
+  testWidgets('Rules conflict sheet', (tester) async {
+    final env = await TestEnv.create(tvs: [adbSony]);
+    final mine = goldenRules(evening);
+    final theirs = mine.copyWith(
+      version: 8,
+      updatedBy: 'Priya\'s phone',
+      updatedAt: DateTime(2026, 10, 28, 19, 20).toUtc().toIso8601String(),
+      alwaysMute: true,
+      volumeLimit: const VolumeLimit(maxPercent: 20, enabled: true),
+    );
+    await pumpScreen(
+      tester,
+      Builder(
+        builder: (context) => Center(
+          child: FilledButton(
+            onPressed: () => showBtSheet<void>(
+              context,
+              builder: (_) => ConflictSheet(theirs: theirs, mine: mine),
+            ),
+            child: const Text('open'),
+          ),
+        ),
+      ),
+      scaffold: true,
+      overrides: env.overrides(),
+    );
+    await tester.tap(find.text('open'));
+    await shot(tester, 'rules_conflict_light');
   });
 
   testWidgets('History', (tester) async {
@@ -577,12 +676,13 @@ void main() {
     await c.close();
   });
 
-  testWidgets('Put the TV back', (tester) async {
+  both('Put the TV back', (tester, dark, sfx) async {
     final env = await TestEnv.create(tvs: [adbSony]);
     final fake = FakeTv();
     await pumpScreen(
       tester,
       const RestoreScreen(),
+      dark: dark,
       size: const Size(360, 2800),
       overrides: [
         ...env.overrides(
@@ -602,7 +702,12 @@ void main() {
     await tester.tap(find.byKey(const Key('restore-helper')));
     await settle(tester);
     await tester.tap(find.byKey(const Key('restore-show-commands')));
-    await shot(tester, 'restore_light');
+    await settle(tester, 12);
+    final confirm = find.byKey(const Key('restore-confirm'));
+    if (confirm.evaluate().isNotEmpty) {
+      await tester.enterText(confirm, 'RESTORE');
+    }
+    await shot(tester, 'restore$sfx');
   });
 
   both('Lock screen', (tester, dark, sfx) async {
@@ -775,4 +880,18 @@ void main() {
     await tester.tap(find.byKey(const Key('adb-connect')));
     await shot(tester, 'helper_look_at_tv$sfx');
   });
+}
+
+/// The not-installed invitation, shown under the installed card.
+class _InviteCard extends StatelessWidget {
+  const _InviteCard();
+
+  @override
+  Widget build(BuildContext context) => ProviderScope(
+        overrides: [
+          agentStatusProvider
+              .overrideWith((ref) => AgentStatusNotifier.fixed(AgentLink.none)),
+        ],
+        child: const TvGuardCard(),
+      );
 }

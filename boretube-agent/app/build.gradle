@@ -55,6 +55,10 @@ android {
             excludes += ['META-INF/*.version', 'META-INF/*.kotlin_module', 'DebugProbesKt.bin']
         }
     }
+    androidResources {
+        // The TV card font is mmapped straight from the APK.
+        noCompress 'ttf'
+    }
     buildFeatures {
         buildConfig true
     }

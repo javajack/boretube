@@ -145,6 +145,9 @@ class RuleEngineTest {
         assertTrue(explicit.forceStop)
         val sched = closes(decide(Rules(style = "explicit", tvTime = nightly), now = at(26, 22))).single()
         assertEquals("TV time is over · back at 07:00", sched.card!!.text)
+        assertEquals(CardMood.guard, explicit.card!!.mood)
+        assertEquals(CardMood.asleep, sched.card!!.mood)
+        assertEquals("Back at 07:00.", sched.card!!.subLine)
     }
 
     // ── sound ──

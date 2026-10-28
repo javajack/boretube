@@ -13,9 +13,24 @@ data class Observed(
     val tvTimeUsedMs: Long = 0,
 )
 
+/** Tubby's face on the TV card: asleep (time is up), calm (a nudge), guard (not allowed). */
+enum class CardMood { asleep, calm, guard }
+
 /** The explicit-style full-screen card. */
-data class Card(val message: String, val backAt: String?, val sub: String? = null) {
+data class Card(val message: String, val backAt: String?, val sub: String? = null, val mood: CardMood = CardMood.guard) {
     val text: String get() = if (backAt != null) "$message · back at $backAt" else if (sub != null) "$message $sub" else message
+
+    /** The card's sub-line: [sub], then "Back at HH:MM." when [backAt] is set. */
+    val subLine: String? get() = listOfNotNull(sub, backAt?.let { "Back at $it." }).joinToString(" ").ifEmpty { null }
+
+    companion object {
+        /** Sample cards for the `previewCard` action, one per mood. */
+        fun preview(mood: CardMood): Card = when (mood) {
+            CardMood.asleep -> Card("That's all for tonight.", "07:00", "The TV is resting.", CardMood.asleep)
+            CardMood.calm -> Card(MediaGuard.HOP_TITLE, null, MediaGuard.HOP_SUB, CardMood.calm)
+            CardMood.guard -> Card("This app isn't allowed", null, "Ask a grown-up to unlock it.", CardMood.guard)
+        }
+    }
 }
 
 sealed class Decision {
@@ -88,14 +103,15 @@ object RuleEngine {
 
         if (fg != null && observed.screenOn && !guard.isHome(fg) && fg !in NEVER_ENFORCE) {
             val close: Pair<String, Card>? = when {
-                breakEnd != null -> "break" to Card("Break time", backAt(breakEnd))
+                breakEnd != null -> "break" to Card("Break time", backAt(breakEnd), mood = CardMood.asleep)
                 fg in allowNow -> null
-                scheduleEnd != null -> "tvTimeSchedule" to Card("TV time is over", HHMM.format(scheduleEnd))
+                scheduleEnd != null -> "tvTimeSchedule" to Card("TV time is over", HHMM.format(scheduleEnd), mood = CardMood.asleep)
                 limitHit -> "dailyLimit" to Card(
                     "Today's TV time is used up",
                     HHMM.format(now.toLocalDate().plusDays(1).atStartOfDay(zone)),
+                    mood = CardMood.asleep,
                 )
-                appRuleBlocks(rules.allowedApps, fg, guard) -> "appNotAllowed" to Card("This app isn't allowed", null)
+                appRuleBlocks(rules.allowedApps, fg, guard) -> "appNotAllowed" to Card("This app isn't allowed", null, mood = CardMood.guard)
                 else -> null
             }
             if (close != null) {

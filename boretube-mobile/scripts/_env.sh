@@ -4,17 +4,16 @@
 # Source this, don't execute it directly.
 #
 
-# ---- Detect / set JAVA_HOME ----
+# ---- Detect / set JAVA_HOME (Gradle needs JDK 17) ----
 
-if [[ -z "${JAVA_HOME:-}" ]] || ! "$JAVA_HOME/bin/java" -version &>/dev/null; then
-  if [[ -d "$HOME/development/jdk-17.0.2" ]]; then
-    export JAVA_HOME="$HOME/development/jdk-17.0.2"
-  elif command -v java &>/dev/null; then
-    export JAVA_HOME="$(dirname "$(dirname "$(readlink -f "$(command -v java)")")")"
-  else
-    echo "ERROR: No JDK found. Install JDK 17 or set JAVA_HOME."
-    exit 1
-  fi
+is_jdk17() { [[ -x "$1/bin/java" ]] && "$1/bin/java" -version 2>&1 | grep -q 'version "17'; }
+if ! is_jdk17 "${JAVA_HOME:-}"; then
+  JAVA_HOME=""
+  for c in "${BORETUBE_JDK17:-}" "$HOME"/development/jdk-17* /usr/lib/jvm/*17* \
+           /Library/Java/JavaVirtualMachines/*17*/Contents/Home; do
+    if is_jdk17 "$c"; then export JAVA_HOME="$c"; break; fi
+  done
+  [[ -n "$JAVA_HOME" ]] || { echo "ERROR: JDK 17 not found. Install it or set BORETUBE_JDK17."; exit 1; }
 fi
 
 # ---- Detect / set ANDROID_HOME ----
@@ -35,6 +34,8 @@ fi
 FLUTTER_BIN=""
 if [[ -x "$HOME/development/flutter/bin/flutter" ]]; then
   FLUTTER_BIN="$HOME/development/flutter/bin/flutter"
+elif [[ -x /opt/flutter/bin/flutter ]]; then
+  FLUTTER_BIN=/opt/flutter/bin/flutter
 elif command -v flutter &>/dev/null; then
   FLUTTER_BIN="$(command -v flutter)"
 else
@@ -47,6 +48,12 @@ export PATH="$(dirname "$FLUTTER_BIN"):$JAVA_HOME/bin:$ANDROID_HOME/platform-too
 # ---- Project dir ----
 
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Flutter prefers Android Studio's bundled JDK over JAVA_HOME. Pin JDK 17 in a
+# private Flutter config so the user's global settings stay untouched.
+export XDG_CONFIG_HOME="$PROJECT_DIR/.dart_tool/boretube-flutter-config"
+mkdir -p "$XDG_CONFIG_HOME"
+"$FLUTTER_BIN" --suppress-analytics config --jdk-dir "$JAVA_HOME" >/dev/null
 
 # ---- Device helper ----
 

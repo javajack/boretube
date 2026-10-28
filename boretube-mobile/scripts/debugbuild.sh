@@ -23,8 +23,8 @@ adb -s "$DEVICE_SERIAL" install -r build/app/outputs/flutter-apk/app-debug.apk
 
 echo ""
 echo "==> Launching app..."
-adb -s "$DEVICE_SERIAL" shell am force-stop com.rakesh.boretube_mobile
-adb -s "$DEVICE_SERIAL" shell am start -n com.rakesh.boretube_mobile/.MainActivity
+adb -s "$DEVICE_SERIAL" shell am force-stop com.rakesh.boretube
+adb -s "$DEVICE_SERIAL" shell am start -n com.rakesh.boretube/.MainActivity
 
 echo ""
 echo "==> Tailing logs (Ctrl+C to stop)..."

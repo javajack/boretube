@@ -74,11 +74,9 @@ class _ClassicLockCardState extends ConsumerState<ClassicLockCard> {
     if (tv == null) return;
     final whitelist = ref.read(whitelistProvider);
     final ls = ref.read(lockServiceProvider);
-    final interval =
-        (int.tryParse(_intervalCtrl.text) ?? 10).clamp(5, 300);
+    final interval = (int.tryParse(_intervalCtrl.text) ?? 10).clamp(5, 300);
     final maxVol = (int.tryParse(_maxVolCtrl.text) ?? 15).clamp(1, 100);
-    final duration =
-        (int.tryParse(_durationCtrl.text) ?? 60).clamp(1, 1440);
+    final duration = (int.tryParse(_durationCtrl.text) ?? 60).clamp(1, 1440);
     _intervalCtrl.text = '$interval';
     _maxVolCtrl.text = '$maxVol';
     _durationCtrl.text = '$duration';
@@ -192,13 +190,12 @@ class _ClassicLockCardState extends ConsumerState<ClassicLockCard> {
           const SizedBox(height: Gap.lg),
           FilledButton.icon(
             key: const Key('classic-start-stop'),
-            onPressed: _active
-                ? _stop
-                : (_mode == ClassicMode.none ? null : _start),
+            onPressed:
+                _active ? _stop : (_mode == ClassicMode.none ? null : _start),
             style: _active
                 ? FilledButton.styleFrom(
-                    backgroundColor: status.info,
-                    foregroundColor: Palette.ink,
+                    backgroundColor: context.bt.berryFill,
+                    foregroundColor: Colors.white,
                   )
                 : null,
             icon: Icon(_active ? Icons.stop_rounded : Icons.lock_rounded),

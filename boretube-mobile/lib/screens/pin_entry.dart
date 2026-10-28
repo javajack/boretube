@@ -104,21 +104,21 @@ class PinEntryState extends State<PinEntry>
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final scheme = Theme.of(context).colorScheme;
+    final bt = context.bt;
     final slots = math.max(PinStore.minLength, _pin.length);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           widget.title,
-          style: text.headlineSmall,
+          style: text.headlineMedium,
           textAlign: TextAlign.center,
         ),
         if (widget.subtitle != null) ...[
           const SizedBox(height: Gap.sm),
           Text(
             widget.subtitle!,
-            style: text.bodySmall,
+            style: text.bodyMedium,
             textAlign: TextAlign.center,
           ),
         ],
@@ -143,12 +143,12 @@ class PinEntryState extends State<PinEntry>
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: i < _pin.length
-                        ? (_error != null ? scheme.error : scheme.primary)
+                        ? (_error != null ? bt.berryFill : bt.coral)
                         : Colors.transparent,
                     border: Border.all(
                       color: i < _pin.length
                           ? Colors.transparent
-                          : scheme.outline,
+                          : bt.borderStrong,
                       width: 2,
                     ),
                   ),
@@ -164,7 +164,10 @@ class PinEntryState extends State<PinEntry>
             child: Text(
               _error ?? '',
               key: ValueKey(_error),
-              style: text.bodySmall?.copyWith(color: scheme.error),
+              style: text.bodyMedium?.copyWith(
+                color: bt.berryFill,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ),
@@ -199,7 +202,7 @@ class _Keypad extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final bt = context.bt;
     Widget key(String d) => _Key(
           label: d,
           semantics: d,
@@ -238,7 +241,7 @@ class _Keypad extends StatelessWidget {
                       height: 24,
                       child: CircularProgressIndicator(
                         strokeWidth: 2.4,
-                        color: scheme.onPrimary,
+                        color: bt.onInkFill,
                       ),
                     )
                   : null,
@@ -271,13 +274,13 @@ class _Key extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final bt = context.bt;
     final bg = filled
-        ? scheme.primary
+        ? bt.inkFill
         : subtle
             ? Colors.transparent
-            : scheme.surfaceContainer;
-    final fg = filled ? scheme.onPrimary : scheme.onSurface;
+            : bt.surface;
+    final fg = filled ? bt.onInkFill : bt.ink;
     return Padding(
       padding: const EdgeInsets.all(Gap.sm),
       child: Semantics(
@@ -286,7 +289,11 @@ class _Key extends StatelessWidget {
         excludeSemantics: true,
         child: Material(
           color: bg,
-          shape: const CircleBorder(),
+          shape: CircleBorder(
+            side: filled || subtle
+                ? BorderSide.none
+                : BorderSide(color: bt.border),
+          ),
           child: InkWell(
             key: Key('pin-key-$semantics'),
             customBorder: const CircleBorder(),
@@ -299,10 +306,11 @@ class _Key extends StatelessWidget {
                     (label != null
                         ? Text(
                             label!,
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w500,
+                            style: Fonts.bricolage(
+                              28,
+                              weight: FontWeight.w700,
                               color: fg,
+                              height: 1,
                             ),
                           )
                         : Icon(icon, color: fg, size: 26)),
@@ -345,7 +353,7 @@ class _PinSetupState extends State<PinSetup> {
         title: confirming ? 'Enter it again' : widget.title,
         subtitle: confirming
             ? 'Just to be sure.'
-            : '4–6 digits. Kids shouldn\'t know it.',
+            : '4–6 digits. So only grown-ups can change the TV.',
         onSubmit: (pin) async {
           if (!confirming) {
             setState(() {

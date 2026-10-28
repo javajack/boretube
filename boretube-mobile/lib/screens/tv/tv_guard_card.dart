@@ -37,12 +37,12 @@ Future<void> runAgentSetup(
   final installer = await ref.read(agentInstallerProvider.future);
   if (!context.mounted) return;
   if (installer == null) {
-    showStatusSnack(context, 'Connect over ADB first', ok: false);
+    showStatusSnack(context, 'Unlock Home mode first', ok: false);
     return;
   }
   await showAgentSetupSheet(
     context,
-    title: repair ? 'Repairing TV Guard' : 'Installing TV Guard',
+    title: repair ? 'Repairing Always On' : 'Setting up Always On',
     start: repair ? installer.repair : installer.install,
   );
   ref.invalidate(agentTokenProvider);
@@ -94,7 +94,7 @@ class _InstallInvite extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('TV Guard', style: text.titleLarge),
+                    Text('Always On', style: text.titleLarge),
                     Text('Not installed', style: text.bodySmall),
                   ],
                 ),
@@ -121,7 +121,7 @@ class _InstallInvite extends ConsumerWidget {
                 ? null
                 : () => runAgentSetup(context, ref, repair: false),
             icon: const Icon(Icons.download_rounded),
-            label: const Text('Install TV Guard'),
+            label: const Text('Set up Always On'),
           ),
           const SizedBox(height: Gap.sm),
           Text(
@@ -172,7 +172,7 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
         !await confirmAction(
           context,
           title: 'Turn on safe mode?',
-          message: 'TV Guard stops enforcing rules and the watchdog makes '
+          message: 'Always On stops enforcing rules and the watchdog makes '
               'no changes. It keeps reporting, so you can see what it '
               'would do. Turn it off here any time.',
           confirmLabel: 'Safe mode',
@@ -184,8 +184,8 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
       m.name,
       (c) => c.setMode(m),
       done: switch (m) {
-        AgentMode.normal => 'TV Guard is back on',
-        AgentMode.paused => 'TV Guard paused',
+        AgentMode.normal => 'Always On is back on',
+        AgentMode.paused => 'Always On paused',
         AgentMode.safe => 'Safe mode on',
       },
     );
@@ -196,7 +196,7 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
     final ok = await confirmAction(
       context,
       title: 'Approve this TV update?',
-      message: 'The TV installed a software update. TV Guard paused its '
+      message: 'The TV installed a software update. Always On paused its '
           'clean-up until you approve, in case the update changed '
           'something.\n\n$fp\n\nApprove if the TV works normally.',
       confirmLabel: 'Approve',
@@ -225,7 +225,7 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
               ? StatusColors.of(context).ok
               : StatusColors.of(context).warn,
         ),
-        title: const Text('TV Guard checks', textAlign: TextAlign.center),
+        title: const Text('Always On checks', textAlign: TextAlign.center),
         content: SizedBox(
           width: double.maxFinite,
           child: ListView(
@@ -265,7 +265,7 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
   Future<void> _uninstall() async {
     final ok = await confirmAction(
       context,
-      title: 'Uninstall TV Guard?',
+      title: 'Remove Always On?',
       message: 'Rules, breaks and the watchdog stop on the TV. Nothing '
           'else changes — the TV keeps working normally. You can install '
           'it again later.',
@@ -281,7 +281,9 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
       if (!mounted) return;
       showStatusSnack(
         context,
-        done ? 'TV Guard removed' : 'Couldn\'t remove TV Guard (needs ADB)',
+        done
+            ? 'Always On removed'
+            : 'Couldn\'t remove Always On (needs Home mode)',
         ok: done,
       );
       ref.invalidate(agentTokenProvider);
@@ -300,7 +302,7 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
     final text = Theme.of(context).textTheme;
     final scheme = Theme.of(context).colorScheme;
     final state = guardStateOf(link: link, onBreak: false, classic: false);
-    final (label, tone) = GuardPill.look(state);
+    final (label, tone) = guardLook(state);
     final color = tone.color(context);
     final down = state == GuardState.down;
     final mode = s?.mode;
@@ -356,7 +358,7 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('TV Guard', style: text.titleLarge),
+                    Text('Always On', style: text.titleLarge),
                     Text(
                       s == null
                           ? (down ? 'Not answering' : 'Checking…')
@@ -403,8 +405,8 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
               tone: Tone.bad,
               icon: Icons.portable_wifi_off_rounded,
               text: link.kind == AgentLinkKind.authFailed
-                  ? 'TV Guard doesn\'t recognise this phone any more.'
-                  : 'TV Guard isn\'t answering. Rules may not be running.',
+                  ? 'Always On doesn\'t recognise this phone any more.'
+                  : 'Always On isn\'t answering. Rules may not be running.',
             ),
           ],
           if (s != null && s.selfAdb == SelfAdb.needsApproval) ...[
@@ -412,7 +414,7 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
             const _Banner(
               tone: Tone.warn,
               icon: Icons.tv_rounded,
-              text: 'Look at the TV and choose "Always allow" so TV Guard '
+              text: 'Look at the TV and choose "Always allow" so Always On '
                   'can close apps. Tap Repair if the prompt is gone.',
             ),
           ] else if (s != null && s.isLimited) ...[
@@ -422,7 +424,7 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
               tone: Tone.warn,
               icon: Icons.gpp_maybe_rounded,
               text: s.limitedReasons.isEmpty
-                  ? 'TV Guard is running in limited mode. Repair may fix '
+                  ? 'Always On is running in limited mode. Repair may fix '
                       'it.'
                   : 'Limited: ${s.limitedReasons.join(' · ')}'
                       '${s.needsPhoneGrant ? '. Repair gives it the '
@@ -713,7 +715,7 @@ class _AgentSetupSheetState extends State<AgentSetupSheet> {
                   Expanded(
                     child: Text(
                       finished
-                          ? (p!.ok ? 'TV Guard is ready' : 'Didn\'t finish')
+                          ? (p!.ok ? 'Always On is ready' : 'Didn\'t finish')
                           : widget.title,
                       style: text.titleLarge,
                     ),
@@ -819,7 +821,7 @@ class _LookAtTv extends StatelessWidget {
                 Text('Look at the TV', style: text.titleMedium),
                 const SizedBox(height: 2),
                 Text(
-                  'It asks "Allow USB debugging?" for TV Guard. Tick '
+                  'It asks "Allow USB debugging?" for Always On. Tick '
                   '"Always allow", then choose Allow.',
                   style: text.bodySmall,
                 ),

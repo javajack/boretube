@@ -40,18 +40,18 @@ String _agentCheckTitle(String id) => switch (id) {
       'speech' || 'tts' => 'Speech watchdog',
       'cleanup' => 'Clean-up watchdog',
       'launcher' || 'home' => 'Home watchdog',
-      'selfAdb' => 'TV Guard\'s TV access',
+      'selfAdb' => 'Always On\'s TV access',
       'usage' || 'usageStats' || 'usageAccess' => 'Usage access',
       'overlay' => 'Explicit card permission',
-      'notifications' => 'TV Guard notification',
+      'notifications' => 'Always On notification',
       'profile' => 'TV profile',
       'build' => 'TV software',
       'watchdog' => 'Watchdog',
       'sound' => 'Sound control',
       'clock' => 'TV clock',
-      'mode' => 'TV Guard mode',
+      'mode' => 'Always On mode',
       _ => id.isEmpty
-          ? 'TV Guard check'
+          ? 'Always On check'
           : '${id[0].toUpperCase()}${id.substring(1)}',
     };
 
@@ -63,7 +63,7 @@ List<HealthCheck> agentHealthChecks(AgentLink link) {
   return [
     HealthCheck(
       id: 'agent',
-      title: s == null ? 'TV Guard' : 'TV Guard v${s.version}',
+      title: s == null ? 'Always On' : 'Always On',
       status: up
           ? (s!.mode == AgentMode.normal ? HealthStatus.ok : HealthStatus.warn)
           : link.kind == AgentLinkKind.checking
@@ -85,7 +85,7 @@ List<HealthCheck> agentHealthChecks(AgentLink link) {
           id: 'agent.${h.id}',
           title: _agentCheckTitle(h.id),
           status: _fromAgent(h.status),
-          detail: h.detail.isEmpty ? 'Checked by TV Guard' : h.detail,
+          detail: h.detail.isEmpty ? 'Checked by Always On' : h.detail,
         ),
   ];
 }

@@ -1,13 +1,18 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'providers/security_providers.dart';
 import 'providers/tv_providers.dart';
+import 'providers/ui_providers.dart';
 import 'screens/adb_guide_screen.dart';
+import 'screens/history_screen.dart';
 import 'screens/lock_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/restore_screen.dart';
+import 'screens/settings_screen.dart';
 import 'screens/shell_screen.dart';
 import 'screens/whitelist_screen.dart';
 import 'security/app_lock.dart';
@@ -76,6 +81,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const RestoreScreen(),
       ),
       GoRoute(
+        path: '/settings',
+        builder: (_, __) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/history',
+        builder: (_, __) => const HistoryScreen(),
+      ),
+      GoRoute(
         path: '/whitelist',
         builder: (_, __) => const WhitelistScreen(),
       ),
@@ -98,6 +111,9 @@ class BoretubeApp extends ConsumerStatefulWidget {
 class _BoretubeAppState extends ConsumerState<BoretubeApp> {
   late final AppLifecycleListener _lifecycle;
 
+  /// Re-checks "bedtime dark after sunset" every few minutes.
+  Timer? _clock;
+
   @override
   void initState() {
     super.initState();
@@ -109,24 +125,31 @@ class _BoretubeAppState extends ConsumerState<BoretubeApp> {
       onShow: () {
         ref.read(appForegroundProvider.notifier).state = true;
         ref.read(appLockProvider.notifier).onForeground();
+        if (mounted) setState(() {});
       },
     );
+    _clock = Timer.periodic(const Duration(minutes: 5), (_) {
+      if (mounted && ref.read(themePrefProvider) == ThemePref.bedtime) {
+        setState(() {});
+      }
+    });
   }
 
   @override
   void dispose() {
     _lifecycle.dispose();
+    _clock?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'Boretube',
+      title: 'boretube',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
-      themeMode: ThemeMode.dark,
+      themeMode: themeModeFor(ref.watch(themePrefProvider), DateTime.now()),
       routerConfig: ref.watch(routerProvider),
     );
   }

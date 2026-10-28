@@ -7,6 +7,7 @@ import '../providers/agent_providers.dart';
 import '../providers/tv_providers.dart';
 import '../ui/components.dart';
 import '../ui/tokens.dart';
+import '../ui/tubby.dart';
 import 'rules/rules_editor.dart';
 import 'tv/tv_guard_card.dart';
 
@@ -17,7 +18,7 @@ final rulesProvider = FutureProvider.autoDispose<AgentRules?>((ref) async {
   return c.rules();
 });
 
-/// Rules for TV Guard TVs; an explainer and Install button elsewhere.
+/// Routines on Always On TVs; a preview and the way there elsewhere.
 class RulesTab extends ConsumerWidget {
   const RulesTab({super.key});
 
@@ -44,12 +45,12 @@ class RulesTab extends ConsumerWidget {
             child: EmptyState(
               icon: Icons.portable_wifi_off_rounded,
               tone: Tone.bad,
-              title: 'Couldn\'t reach TV Guard',
+              title: 'Couldn\'t reach Always On',
               message: e is AgentAuthException
-                  ? 'TV Guard doesn\'t recognise this phone. Use Repair on '
-                      'the TV tab.'
-                  : 'Rules keep running on the TV. Check it\'s on, then '
-                      'try again. ($e)',
+                  ? 'Always On doesn\'t recognise this phone. Use Repair '
+                      'in Better TV.'
+                  : 'Routines keep running on the TV. Check it\'s on, then '
+                      'try again.',
               actionLabel: 'Try again',
               onAction: () => ref.invalidate(rulesProvider),
             ),
@@ -70,82 +71,105 @@ const rulesListPadding = EdgeInsets.fromLTRB(
   Gap.xxl,
 );
 
-class _RulesExplainer extends ConsumerWidget {
+class _RulesExplainer extends StatelessWidget {
   const _RulesExplainer();
+
+  @override
+  Widget build(BuildContext context) => ListView(
+        padding: rulesListPadding,
+        children: const [AlwaysOnPreview()],
+      );
+}
+
+/// What Always On adds, with the one button that gets there.
+class AlwaysOnPreview extends ConsumerWidget {
+  const AlwaysOnPreview({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final text = Theme.of(context).textTheme;
-    final scheme = Theme.of(context).colorScheme;
+    final bt = context.bt;
     final hasAdb = ref.watch(activeHasAdbProvider);
     const items = [
-      (Icons.apps_rounded, 'Allowed apps', 'Only the apps you pick open.'),
-      (Icons.volume_down_rounded, 'Volume limit', 'A cap kids can\'t beat.'),
-      (Icons.schedule_rounded, 'TV time', 'Daily limits and quiet hours.'),
       (
-        Icons.visibility_off_rounded,
-        'Sneaky or explicit',
-        'Quietly stop, '
-            'or show a friendly "TV time is over" card.'
+        Icons.bedtime_rounded,
+        'Bedtime and quiet hours',
+        'The TV switches '
+            'off on time, every night.'
+      ),
+      (
+        Icons.timer_rounded,
+        'Daily TV time',
+        'A limit per day that the TV '
+            'keeps by itself.'
+      ),
+      (Icons.apps_rounded, 'Allowed apps', 'Only the apps you pick open.'),
+      (
+        Icons.volume_down_rounded,
+        'Volume limit',
+        'A cap the remote can\'t '
+            'beat.'
+      ),
+      (
+        Icons.chat_bubble_rounded,
+        'How the TV says no',
+        'Quietly, or with a friendly "TV time is over" card.',
       ),
     ];
-    return ListView(
-      padding: rulesListPadding,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         InfoCard(
+          key: const Key('always-on-preview'),
           padding: const EdgeInsets.all(Gap.xl),
+          radius: Radii.hero,
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color.alphaBlend(
-                StatusColors.of(context).ok.withValues(alpha: 0.14),
-                scheme.surfaceContainerLow,
-              ),
-              scheme.surfaceContainerLow,
-            ],
+            begin: const Alignment(-0.6, -1),
+            end: const Alignment(0.6, 1),
+            stops: const [0, 0.75],
+            colors: [bt.mintTint, bt.surface],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
                 children: [
-                  IconBadge(
-                    icon: Icons.shield_moon_rounded,
-                    color: StatusColors.of(context).ok,
-                    size: 52,
-                  ),
+                  const Tubby(mood: TubbyMood.guard, size: 64),
                   const Spacer(),
-                  const TagChip('Optional add-on', tone: Tone.ok),
+                  BtBadge(
+                    hasAdb ? 'One step away' : 'Two steps away',
+                    tone: Tone.ok,
+                    icon: Icons.shield_rounded,
+                  ),
                 ],
               ),
               const SizedBox(height: Gap.lg),
-              Text('Rules run on TV Guard', style: text.headlineSmall),
+              Text('Bedtimes that stick', style: text.headlineMedium),
               const SizedBox(height: Gap.sm),
               Text(
-                'TV Guard is a small helper on the TV. Rules live there and '
-                'work 24/7 — even when your phone is away or off.',
+                'Always On is a tiny helper on the TV. Routines live there '
+                'and keep working when your phone is away or switched off.',
                 style: text.bodyMedium,
               ),
               const SizedBox(height: Gap.lg),
-              FilledButton.icon(
+              PrimaryButton(
                 key: const Key('rules-install'),
+                label: hasAdb ? 'Make it Always On' : 'Unlock Home mode first',
+                icon: hasAdb ? Icons.shield_rounded : Icons.home_rounded,
+                kind: hasAdb ? ButtonKind.mint : ButtonKind.ink,
                 onPressed: hasAdb
                     ? () => runAgentSetup(context, ref, repair: false)
                     : () => context.push('/adb-guide'),
-                icon: Icon(
-                  hasAdb ? Icons.download_rounded : Icons.lock_open_rounded,
-                ),
-                label: Text(hasAdb ? 'Install TV Guard' : 'Unlock with ADB'),
               ),
-              if (!hasAdb) ...[
-                const SizedBox(height: Gap.sm),
-                Text(
-                  'Installing needs developer access to the TV first.',
-                  textAlign: TextAlign.center,
-                  style: text.bodySmall,
-                ),
-              ],
+              const SizedBox(height: Gap.sm),
+              Text(
+                hasAdb
+                    ? 'One tap here, one OK on the TV. Remove it any time.'
+                    : 'Always On needs Home mode on the TV first. About 3 '
+                        'minutes.',
+                textAlign: TextAlign.center,
+                style: text.bodySmall,
+              ),
             ],
           ),
         ),
@@ -154,29 +178,13 @@ class _RulesExplainer extends ConsumerWidget {
           children: [
             for (final (icon, title, body) in items)
               StatusRow(
-                tone: Tone.idle,
+                tone: Tone.ok,
                 icon: icon,
                 title: title,
                 detail: body,
                 detailLines: 2,
               ),
           ],
-        ),
-        const SectionHeader('Without TV Guard'),
-        InfoCard(
-          child: Row(
-            children: [
-              Icon(Icons.lock_clock_rounded, color: scheme.primary),
-              const SizedBox(width: Gap.md),
-              Expanded(
-                child: Text(
-                  'Use the Classic lock on the Now tab. It runs from this '
-                  'phone while it\'s on home Wi-Fi.',
-                  style: text.bodySmall,
-                ),
-              ),
-            ],
-          ),
         ),
       ],
     );

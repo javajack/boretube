@@ -100,8 +100,7 @@ class AppsSection extends ConsumerWidget {
       else
         GroupCard(
           children: [
-            for (final a in shown)
-              _AppRow(app: a, canWrite: canWrite),
+            for (final a in shown) _AppRow(app: a, canWrite: canWrite),
           ],
         ),
     ];
@@ -150,7 +149,7 @@ class _AppRow extends ConsumerWidget {
     final Widget trailing;
     if (app.protected) {
       trailing = Tooltip(
-        message: 'Protected — Boretube never changes this app',
+        message: 'Protected — boretube never changes this app',
         child: Icon(
           Icons.lock_rounded,
           color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -196,9 +195,7 @@ class _YouTubeCard extends ConsumerWidget {
     final ops = ref.read(tvOpsProvider).valueOrNull;
     final tvId = ref.read(activeTvIdProvider);
     if (ops == null || tvId == null) return;
-    await ref
-        .read(appSettingsProvider.notifier)
-        .setAllowStockYouTube(tvId, on);
+    await ref.read(appSettingsProvider.notifier).setAllowStockYouTube(tvId, on);
     if (!context.mounted) return;
     await runMaintenance(
       context,
@@ -302,13 +299,13 @@ class _AdbAppsTip extends StatelessWidget {
             icon: Icons.lock_outline_rounded,
             tone: Tone.accent,
             title: 'See every app on the TV',
-            message: 'Unlock with ADB to turn apps on or off and manage '
+            message: 'Unlock Home mode to turn apps on or off and manage '
                 'stock YouTube.',
           ),
           FilledButton.icon(
             onPressed: () => context.push('/adb-guide'),
             icon: const Icon(Icons.lock_open_rounded),
-            label: const Text('Unlock with ADB'),
+            label: const Text('Unlock Home mode'),
           ),
           const SizedBox(height: Gap.sm),
         ],

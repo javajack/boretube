@@ -1,22 +1,22 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../providers/agent_providers.dart';
-import '../providers/break_provider.dart';
 import '../providers/now_playing.dart';
 import '../providers/tv_providers.dart';
+import '../providers/ui_providers.dart';
 import '../tv/tv.dart';
 import '../ui/components.dart';
-import '../ui/format.dart';
 import '../ui/tokens.dart';
-import 'now/now_tab.dart';
-import 'rules_tab.dart';
-import 'tv/tv_tab.dart';
+import 'better_tv_tab.dart';
+import 'home/home_tab.dart';
+import 'routines_tab.dart';
 
-/// Main app: TV switcher + status pill on top, Now / Rules / TV tabs.
+/// Main app: Home · Routines · Better TV. Settings sits behind the avatar.
 class ShellScreen extends ConsumerStatefulWidget {
   const ShellScreen({super.key});
 
@@ -25,7 +25,6 @@ class ShellScreen extends ConsumerStatefulWidget {
 }
 
 class _ShellScreenState extends ConsumerState<ShellScreen> {
-  int _tab = 0;
   StreamSubscription<String>? _messages;
 
   @override
@@ -56,48 +55,119 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
         ref.read(capabilityProvider.notifier).probe();
       }
     });
-    return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: 64,
-        titleSpacing: Gap.sm,
-        title: const TvSwitcher(),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: Gap.page),
-            child: GuardPill(),
+    final tab = ref.watch(shellTabProvider);
+    return PopScope(
+      canPop: tab == 0,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) ref.read(shellTabProvider.notifier).state = 0;
+      },
+      child: Scaffold(
+        body: SafeArea(
+          bottom: false,
+          child: IndexedStack(
+            index: tab,
+            children: const [HomeTab(), RoutinesTab(), BetterTvTab()],
           ),
-        ],
-      ),
-      body: IndexedStack(
-        index: _tab,
-        children: const [NowTab(), RulesTab(), TvTab()],
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _tab,
-        onDestinationSelected: (i) => setState(() => _tab = i),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.play_circle_outline_rounded),
-            selectedIcon: Icon(Icons.play_circle_rounded),
-            label: 'Now',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.rule_rounded),
-            selectedIcon: Icon(Icons.rule_folder_rounded),
-            label: 'Rules',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.tv_outlined),
-            selectedIcon: Icon(Icons.tv_rounded),
-            label: 'TV',
-          ),
-        ],
+        ),
+        bottomNavigationBar: BtNavBar(
+          index: tab,
+          onSelect: (i) => ref.read(shellTabProvider.notifier).state = i,
+        ),
       ),
     );
   }
 }
 
-/// Active TV name with a menu of saved TVs and "Add TV".
+/// The bottom bar: three tabs, the active one in a coral-tinted pill.
+class BtNavBar extends StatelessWidget {
+  final int index;
+  final ValueChanged<int> onSelect;
+
+  const BtNavBar({super.key, required this.index, required this.onSelect});
+
+  static const _items = [
+    (Icons.home_outlined, Icons.home_rounded, 'Home'),
+    (Icons.calendar_month_outlined, Icons.calendar_month_rounded, 'Routines'),
+    (Icons.auto_awesome_outlined, Icons.auto_awesome_rounded, 'Better TV'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final bt = context.bt;
+    final text = Theme.of(context).textTheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: bt.surface,
+        border: Border(top: BorderSide(color: bt.border)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(Gap.md, Gap.sm, Gap.md, Gap.sm),
+          child: Row(
+            children: [
+              for (var i = 0; i < _items.length; i++)
+                Expanded(
+                  child: Semantics(
+                    button: true,
+                    selected: i == index,
+                    label: _items[i].$3,
+                    excludeSemantics: true,
+                    child: InkWell(
+                      key: Key('tab-${_items[i].$3}'),
+                      borderRadius: Radii.tile,
+                      onTap: () {
+                        if (i != index) HapticFeedback.selectionClick();
+                        onSelect(i);
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 2),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            AnimatedContainer(
+                              duration: Motion.of(context, Motion.medium),
+                              curve: Motion.spring,
+                              width: i == index ? 56 : 40,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: i == index
+                                    ? bt.coralTint
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(Radii.pill),
+                              ),
+                              child: Icon(
+                                i == index ? _items[i].$2 : _items[i].$1,
+                                size: 22,
+                                color: i == index ? bt.coralInk : bt.muted,
+                              ),
+                            ),
+                            const SizedBox(height: Gap.xs),
+                            Text(
+                              _items[i].$3,
+                              maxLines: 1,
+                              style: text.labelMedium!.copyWith(
+                                color: i == index ? bt.coralInk : bt.muted,
+                                fontWeight: i == index
+                                    ? FontWeight.w700
+                                    : FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Active TV name with a menu of saved TVs and "Add a TV".
 class TvSwitcher extends ConsumerWidget {
   const TvSwitcher({super.key});
 
@@ -106,17 +176,12 @@ class TvSwitcher extends ConsumerWidget {
     final tvs = ref.watch(savedTvsProvider);
     final active = ref.watch(activeTvProvider);
     final now = ref.watch(nowPlayingProvider);
+    final bt = context.bt;
     final text = Theme.of(context).textTheme;
-    final scheme = Theme.of(context).colorScheme;
-    final status = now.loading
-        ? 'Connecting…'
-        : now.online
-            ? 'Online'
-            : 'Offline';
     return PopupMenuButton<String>(
+      key: const Key('tv-switcher'),
       tooltip: 'Switch TV',
       position: PopupMenuPosition.under,
-      shape: const RoundedRectangleBorder(borderRadius: Radii.tile),
       onSelected: (id) {
         if (id == '+') {
           context.push('/onboarding?add=1');
@@ -128,22 +193,31 @@ class TvSwitcher extends ConsumerWidget {
         for (final t in tvs)
           PopupMenuItem(
             value: t.id,
+            height: 56,
             child: Row(
               children: [
                 Icon(
                   t.id == active?.id
                       ? Icons.check_circle_rounded
                       : Icons.tv_rounded,
-                  size: 20,
-                  color: t.id == active?.id ? scheme.primary : null,
+                  size: 22,
+                  color: t.id == active?.id ? bt.mint : bt.muted,
                 ),
                 const SizedBox(width: Gap.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(t.name, style: text.titleSmall),
-                      Text(t.ip, style: text.bodySmall),
+                      Text(
+                        [
+                          if (t.manufacturer.isNotEmpty) t.manufacturer,
+                          if (t.id == active?.id)
+                            now.online ? 'on' : 'not answering',
+                        ].join(' · '),
+                        style: text.bodySmall,
+                      ),
                     ],
                   ),
                 ),
@@ -151,47 +225,36 @@ class TvSwitcher extends ConsumerWidget {
             ),
           ),
         const PopupMenuDivider(),
-        const PopupMenuItem(
+        PopupMenuItem(
           value: '+',
+          height: 52,
           child: Row(
             children: [
-              Icon(Icons.add_rounded, size: 20),
-              SizedBox(width: Gap.md),
-              Text('Add TV'),
+              Icon(Icons.add_rounded, size: 22, color: bt.skyInk),
+              const SizedBox(width: Gap.md),
+              Text(
+                'Add a TV',
+                style: text.titleSmall!.copyWith(color: bt.skyInk),
+              ),
             ],
           ),
         ),
       ],
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: Gap.sm,
-          vertical: Gap.xs,
-        ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 48),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Flexible(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    active?.name ?? 'No TV',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: text.titleMedium,
-                  ),
-                  Text(
-                    active == null ? 'Add a TV' : '$status · ${active.ip}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: text.bodySmall,
-                  ),
-                ],
+              child: Text(
+                active?.name ?? 'Add a TV',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Fonts.bricolage(22, color: bt.ink),
               ),
             ),
             const SizedBox(width: Gap.xs),
-            const Icon(Icons.expand_more_rounded, size: 22),
+            Icon(Icons.expand_more_rounded, size: 22, color: bt.ink),
           ],
         ),
       ),
@@ -199,169 +262,26 @@ class TvSwitcher extends ConsumerWidget {
   }
 }
 
-/// One glance at what protects the TV: TV Guard on / limited / paused /
-/// down / safe mode, a break, the Classic lock, or nothing.
-class GuardPill extends ConsumerWidget {
-  const GuardPill({super.key});
+/// Words and tone for each Always On state (used by the Always On card).
+(String, Tone) guardLook(GuardState s) => switch (s) {
+      GuardState.on => ('Always On', Tone.ok),
+      GuardState.limited => ('Limited', Tone.warn),
+      GuardState.paused => ('Paused', Tone.warn),
+      GuardState.down => ('Not answering', Tone.bad),
+      GuardState.safe => ('Hands off', Tone.info),
+      GuardState.onBreak => ('On a break', Tone.warn),
+      GuardState.classic => ('Lock running', Tone.info),
+      GuardState.notGuarded => ('Not set up', Tone.idle),
+      GuardState.checking => ('Checking…', Tone.idle),
+    };
 
-  static (String, Tone) look(GuardState s) => switch (s) {
-        GuardState.on => ('TV Guard on', Tone.ok),
-        GuardState.limited => ('Limited', Tone.warn),
-        GuardState.paused => ('Paused', Tone.warn),
-        GuardState.down => ('TV Guard down', Tone.bad),
-        GuardState.safe => ('🛟 Safe mode', Tone.info),
-        GuardState.onBreak => ('☕ Break', Tone.warn),
-        GuardState.classic => ('Classic lock', Tone.info),
-        GuardState.notGuarded => ('Not guarded', Tone.idle),
-        GuardState.checking => ('TV Guard…', Tone.idle),
-      };
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final classic = ref.watch(classicLockActiveProvider).valueOrNull ?? false;
-    final onBreak = ref.watch(breakProvider).active;
-    final link = ref.watch(agentStatusProvider);
-    final state = guardStateOf(
-      link: link,
-      onBreak: onBreak,
-      classic: classic,
-    );
-    final (label, tone) = look(state);
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 250),
-      child: StatusPill(
-        key: ValueKey(label),
-        label: label,
-        tone: tone,
-        onTap: () => _explain(context, state, link),
-      ),
-    );
-  }
-
-  static String _meaning(GuardState s, AgentLink link) => switch (s) {
-        GuardState.on => 'Rules run on the TV itself, 24/7, even with this '
-            'phone away or off.',
-        GuardState.limited => 'TV Guard is running but the TV hasn\'t '
-            'allowed its own debugging yet, so it can\'t close apps. Use '
-            'Repair on the TV tab.',
-        GuardState.paused => 'TV Guard is paused: nothing is enforced and '
-            'the watchdog makes no changes. Resume on the TV tab.',
-        GuardState.down => link.kind == AgentLinkKind.authFailed
-            ? 'TV Guard answers but doesn\'t know this phone any more. '
-                'Repair on the TV tab pairs it again.'
-            : 'TV Guard isn\'t answering. The TV may be off, or TV Guard '
-                'was turned off. Repair on the TV tab.',
-        GuardState.safe => 'Safe mode: TV Guard only reports. It makes no '
-            'changes until you turn safe mode off.',
-        GuardState.onBreak => 'The TV stays closed and muted until the '
-            'break ends.',
-        GuardState.classic => 'This phone is checking the TV and enforcing '
-            'the lock. It stops if the phone leaves home Wi-Fi.',
-        GuardState.notGuarded => 'Nothing is limiting the TV right now. '
-            'Start a Classic lock on the Now tab, or install TV Guard from '
-            'the TV tab.',
-        GuardState.checking => 'Checking TV Guard on the TV…',
-      };
-
-  void _explain(BuildContext context, GuardState state, AgentLink link) {
-    final text = Theme.of(context).textTheme;
-    final (label, tone) = look(state);
-    showModalBottomSheet<void>(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            Gap.xl,
-            0,
-            Gap.xl,
-            Gap.xl,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Protection', style: text.titleLarge),
-              const SizedBox(height: Gap.lg),
-              _PillLegend(
-                tone: tone,
-                title: label,
-                body: _meaning(state, link),
-              ),
-              if (!link.installed) ...[
-                const SizedBox(height: Gap.md),
-                const _PillLegend(
-                  tone: Tone.ok,
-                  title: 'TV Guard',
-                  body: 'Rules that live on the TV and work 24/7, even '
-                      'with the phone away. Install it from TV › Health.',
-                ),
-              ],
-              if (link.lastOk != null && state == GuardState.down) ...[
-                const SizedBox(height: Gap.md),
-                Text(
-                  'Last answered ${relativeTime(link.lastOk!)}',
-                  style: text.bodySmall,
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _PillLegend extends StatelessWidget {
-  final Tone tone;
-  final String title;
-  final String body;
-
-  const _PillLegend({
-    required this.tone,
-    required this.title,
-    required this.body,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 6),
-          child: Container(
-            width: 10,
-            height: 10,
-            decoration: BoxDecoration(
-              color: tone.color(context),
-              shape: BoxShape.circle,
-            ),
-          ),
-        ),
-        const SizedBox(width: Gap.md),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: text.titleSmall),
-              const SizedBox(height: 2),
-              Text(body, style: text.bodySmall),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Plain-language meaning of each capability.
+/// Plain-language meaning of each capability (Settings › Advanced).
 String capabilityMeaning(TvCapability c) => switch (c) {
       TvCapability.cast => 'See what\'s playing, stop Cast apps, mute',
       TvCapability.dial => 'Close YouTube and Netflix',
       TvCapability.sonyRest => 'Accurate volume and mute (Sony)',
-      TvCapability.adb => 'Strong stop, apps, health and clean-up',
-      TvCapability.agent => 'TV Guard rules that run 24/7',
+      TvCapability.adb => 'Home mode: strong stop, apps, health, clean-up',
+      TvCapability.agent => 'Always On: rules that run on the TV 24/7',
     };
 
 String capabilityTitle(TvCapability c) => switch (c) {
@@ -369,5 +289,5 @@ String capabilityTitle(TvCapability c) => switch (c) {
       TvCapability.dial => 'DIAL',
       TvCapability.sonyRest => 'Sony IP control',
       TvCapability.adb => 'ADB (developer access)',
-      TvCapability.agent => 'TV Guard',
+      TvCapability.agent => 'TV Guard (Always On)',
     };

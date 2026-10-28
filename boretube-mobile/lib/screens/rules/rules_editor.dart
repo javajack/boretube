@@ -295,8 +295,8 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
             icon: Icons.smart_display_rounded,
             title: 'Let stock YouTube stay',
             subtitle: r.stockYouTubeAllowed
-                ? 'TV Guard leaves YouTube installed'
-                : 'TV Guard removes YouTube if it comes back',
+                ? 'Always On leaves YouTube installed'
+                : 'Always On removes YouTube if it comes back',
             value: r.stockYouTubeAllowed,
             onChanged: (v) => _edit((r) => r.copyWith(stockYouTubeAllowed: v)),
           ),
@@ -620,7 +620,7 @@ class _Header extends StatelessWidget {
                 Text('Rules on $tvName', style: text.titleMedium),
                 Text(
                   rules.updatedBy.isEmpty
-                      ? 'Enforced by TV Guard, 24/7'
+                      ? 'Enforced by Always On, 24/7'
                       : '${rules.updatedBy}'
                           '${when == null ? '' : ' · ${relativeTime(when)}'}',
                   key: const Key('rules-updated'),
@@ -1008,7 +1008,7 @@ class _AppPickerSheetState extends ConsumerState<AppPickerSheet> {
                     return const EmptyState(
                       icon: Icons.apps_rounded,
                       title: 'No apps found',
-                      message: 'Listing apps needs ADB to the TV.',
+                      message: 'Listing apps needs Home mode.',
                     );
                   }
                   return ListView(

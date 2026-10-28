@@ -112,7 +112,7 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
               Expanded(
                 child: Text(
                   'Put the TV back the way it was. This runs from your '
-                  'phone over ADB, so it works even if TV Guard is broken. '
+                  'phone directly, so it works even if Always On is broken. '
                   'Every step is checked and logged in Activity.',
                   style: text.bodyMedium,
                 ),
@@ -125,10 +125,10 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
           key: const Key('restore-undo'),
           selected: _target == RestoreTarget.undoBoretube,
           icon: Icons.undo_rounded,
-          title: 'Undo Boretube',
-          body: 'Reverses only what Boretube changed: turns back on the '
-              'apps it turned off, puts stock YouTube back if Boretube '
-              'removed it, and removes TV Guard.',
+          title: 'Undo boretube',
+          body: 'Reverses only what boretube changed: turns back on the '
+              'apps it turned off, puts stock YouTube back if boretube '
+              'removed it, and removes Always On.',
           onTap: () => setState(() => _target = RestoreTarget.undoBoretube),
         ),
         const SizedBox(height: Gap.md),
@@ -138,7 +138,7 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
           icon: Icons.tv_rounded,
           title: 'Back to stock',
           body: 'Like a new TV: turns every clean-up app back on, puts back '
-              'YouTube and YouTube Music, and removes TV Guard. System apps '
+              'YouTube and YouTube Music, and removes Always On. System apps '
               '(Wi-Fi setup, Google TV home, screensaver) are never touched.',
           onTap: () => setState(() => _target = RestoreTarget.stock),
           footer: _target == RestoreTarget.stock
@@ -560,7 +560,7 @@ class _BaselineCard extends ConsumerWidget {
           ? InfoCard(
               child: Text(
                 'Captured automatically the first time this phone connects '
-                'to the TV over ADB.',
+                'to the TV directly.',
                 style: text.bodySmall,
               ),
             )

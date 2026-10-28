@@ -5,32 +5,50 @@ import '../providers/security_providers.dart';
 import '../security/app_lock.dart';
 import '../ui/components.dart';
 import '../ui/tokens.dart';
+import '../ui/tubby.dart';
 import 'pin_entry.dart';
 
-/// Brand mark used on full-screen gates.
+/// The logo: Tubby with rosy cheeks.
 class BrandMark extends StatelessWidget {
   final double size;
   const BrandMark({super.key, this.size = 56});
 
   @override
+  Widget build(BuildContext context) => Tubby(
+        size: size,
+        cheeks: true,
+        animate: false,
+        semanticLabel: 'boretube',
+      );
+}
+
+/// Logo and wordmark: "boretube · TV parental controls".
+class Wordmark extends StatelessWidget {
+  final double size;
+  const Wordmark({super.key, this.size = 24});
+
+  @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(size * 0.3),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [scheme.primary, Palette.amberDeep],
+    final bt = context.bt;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        Text(
+          'boretube',
+          style: Fonts.bricolage(size, letterSpacing: -0.5, color: bt.ink),
         ),
-      ),
-      child: Icon(
-        Icons.tv_rounded,
-        color: scheme.onPrimary,
-        size: size * 0.52,
-      ),
+        const SizedBox(width: Gap.sm),
+        Flexible(
+          child: Text(
+            'TV PARENTAL CONTROLS',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.labelSmall,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -77,7 +95,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
     return _GateScaffold(
       child: PinEntry(
         title: 'Enter parent PIN',
-        subtitle: 'Boretube is locked to keep the remote with grown-ups.',
+        subtitle: 'boretube is locked, so the remote stays with grown-ups.',
         onSubmit: (pin) async {
           if (ctrl.coolingDown) return 'Too many tries. Wait 30 seconds.';
           final ok = await ctrl.unlock(pin);
@@ -128,8 +146,8 @@ class _GateScaffold extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const BrandMark(),
-                const SizedBox(height: Gap.xl),
+                const BrandMark(size: 88),
+                const SizedBox(height: Gap.lg),
                 child,
               ],
             ),
@@ -147,7 +165,7 @@ class SplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      body: Center(child: BrandMark(size: 72)),
+      body: Center(child: BrandMark(size: 96)),
     );
   }
 }

@@ -6,7 +6,7 @@ import '../../ops/journal.dart';
 import '../../providers/tv_providers.dart';
 import '../../ui/components.dart';
 import '../../ui/tokens.dart';
-import '../now/now_tab.dart';
+import 'activity_section.dart';
 
 const tvListPadding = EdgeInsets.fromLTRB(
   Gap.page,
@@ -31,8 +31,8 @@ class AdbRequired extends StatelessWidget {
               EmptyState(
                 icon: Icons.lock_outline_rounded,
                 tone: Tone.accent,
-                title: 'Unlock with ADB',
-                message: '$what needs developer access to the TV. It\'s '
+                title: 'Unlock Home mode',
+                message: '$what needs Home mode on the TV. It\'s '
                     'a one-time setup and takes about two minutes.',
               ),
               FilledButton.icon(
@@ -58,8 +58,7 @@ Future<void> runMaintenance(
 }) async {
   final tvId = ref.read(activeTvIdProvider);
   final journal = ref.read(journalProvider);
-  final before =
-      tvId == null ? 0 : (await journal.entries(tvId)).length;
+  final before = tvId == null ? 0 : (await journal.entries(tvId)).length;
   Object? error;
   try {
     await run();

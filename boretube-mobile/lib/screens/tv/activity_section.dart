@@ -7,9 +7,11 @@ import '../../providers/tv_providers.dart';
 import '../../ui/components.dart';
 import '../../ui/format.dart';
 import '../../ui/tokens.dart';
+import '../../ui/tubby.dart';
+import '../../ops/journal.dart';
 import 'common.dart';
 
-/// Phone and TV Guard journals together, newest first. What TV Guard did
+/// Phone and Always On journals together, newest first. What TV Guard did
 /// since the app was last opened is grouped as "While you were away".
 class ActivitySection extends ConsumerWidget {
   const ActivitySection({super.key});
@@ -47,9 +49,11 @@ class ActivitySection extends ConsumerWidget {
                   InfoCard(
                     child: EmptyState(
                       icon: Icons.history_rounded,
-                      title: 'No activity yet',
-                      message: 'Every change Boretube or TV Guard makes to '
-                          'the TV — with before and after — is listed here.',
+                      tubby: TubbyMood.calm,
+                      title: 'Nothing has happened yet',
+                      message: 'Every change boretube or Always On makes to '
+                          'the TV shows up here, with what it was before. '
+                          'So you can always see, and undo.',
                     ),
                   ),
                 ];
@@ -102,12 +106,12 @@ class ActivitySection extends ConsumerWidget {
   }
 }
 
-/// "Phone" / "TV Guard" / "Watchdog" / "Rule".
+/// Who made a change: "Phone", "Always On", "Tidy-up" or "Routine".
 (String, Tone) sourceBadge(JournalSource s) => switch (s) {
       JournalSource.phone => ('Phone', Tone.idle),
-      JournalSource.agent => ('TV Guard', Tone.ok),
-      JournalSource.watchdog => ('Watchdog', Tone.info),
-      JournalSource.rule => ('Rule', Tone.warn),
+      JournalSource.agent => ('Always On', Tone.ok),
+      JournalSource.watchdog => ('Tidy-up', Tone.info),
+      JournalSource.rule => ('Routine', Tone.warn),
     };
 
 class ActivityRow extends StatelessWidget {
@@ -131,6 +135,27 @@ class ActivityRow extends StatelessWidget {
           expanded ? '${relativeTime(e.time)}$change' : relativeTime(e.time),
       detailLines: expanded ? 3 : 1,
       trailing: TagChip(label, tone: tone),
+    );
+  }
+}
+
+/// One phone journal entry as a status row.
+class JournalRow extends StatelessWidget {
+  final JournalEntry entry;
+  final bool expanded;
+
+  const JournalRow({super.key, required this.entry, this.expanded = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return StatusRow(
+      tone: entry.ok ? Tone.ok : Tone.bad,
+      icon: journalIcon(entry.op),
+      title: journalTitle(entry),
+      detail: expanded
+          ? '${relativeTime(entry.time)} · ${entry.before} → ${entry.after}'
+          : relativeTime(entry.time),
+      detailLines: expanded ? 3 : 1,
     );
   }
 }

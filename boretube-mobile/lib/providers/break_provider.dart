@@ -186,6 +186,35 @@ class BreakController extends StateNotifier<BreakState> {
     }
   }
 
+  /// Adds [by] to the running break ("+15 min"). Unlike [start], a TV
+  /// that refuses leaves the running break exactly as it was.
+  Future<ActionResult?> extend(Duration by) async {
+    final until = state.until;
+    final a = actions();
+    if (until == null || a == null) return null;
+    final target = until.add(by);
+    final minutes = (target.difference(clock()).inSeconds / 60).ceil();
+    final silence = state.silenceOnly;
+    ActionResult r;
+    try {
+      r = silence
+          ? await a.muteFor(minutes, now: clock())
+          : await a.startBreak(minutes, now: clock());
+    } catch (e) {
+      return ActionResult(false, ActionTransport.none, detail: '$e');
+    }
+    if (r.ok) {
+      _startedAt = clock();
+      final byTv = r.via == ActionTransport.agent;
+      await _set(
+        byTv ? (r.until ?? target) : target,
+        byTv: byTv,
+        silenceOnly: silence,
+      );
+    }
+    return r;
+  }
+
   /// Ends the break now and unmutes (same as Restore).
   Future<ActionResult?> end() async {
     await _set(null);

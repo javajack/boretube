@@ -62,6 +62,17 @@ class ReadOnlyProfileException implements Exception {
       'ReadOnlyProfileException: profile $profileId is read-only';
 }
 
+/// A restart was asked for too soon after a package change: the TV keeps
+/// package state in memory for a while, and a reboot before
+/// [TvOps.rebootSettle] has passed loses the change (verified on the VU3).
+class RestartTooSoonException implements Exception {
+  /// How much longer to wait.
+  final Duration wait;
+  const RestartTooSoonException(this.wait);
+  @override
+  String toString() => 'RestartTooSoonException: wait ${wait.inSeconds} s more';
+}
+
 enum AppState { enabled, disabled, notInstalled, absent }
 
 /// `pm list packages` -u / plain / -d in one read.
@@ -273,6 +284,59 @@ class TvOps {
   Future<AdbShellResult> _sh(String cmd, {bool urgent = false}) {
     final a = adb;
     return urgent && a is PriorityAdbShell ? a.shellUrgent(cmd) : a.shell(cmd);
+  }
+
+  // ── package writes and restarts ──
+
+  /// How long the TV needs after a package change before a reboot keeps
+  /// it (profile quirk `rebootWait60s`).
+  static const rebootSettle = Duration(seconds: 60);
+
+  static const rebootCommand = 'reboot';
+
+  DateTime? _lastPackageWrite;
+
+  /// When this TvOps last changed package state (enable, disable,
+  /// install, remove, roll back), or null.
+  DateTime? get lastPackageWrite => _lastPackageWrite;
+
+  void _notePackageWrite() => _lastPackageWrite = _now();
+
+  /// How much longer a restart must wait; zero when it may go now.
+  Duration get restartWait {
+    final at = _lastPackageWrite;
+    if (at == null) return Duration.zero;
+    final left = rebootSettle - _now().difference(at);
+    return left.isNegative ? Duration.zero : left;
+  }
+
+  /// Restarts the TV (`reboot`). Refuses with [RestartTooSoonException]
+  /// within [rebootSettle] of the last package write. Checks the TV
+  /// answers first, so a throw before the reboot means nothing was sent;
+  /// the connection dropping while the reboot goes out is expected.
+  Future<JournalEntry> restartTv() async {
+    _requireMaintenance();
+    final wait = restartWait;
+    if (wait > Duration.zero) throw RestartTooSoonException(wait);
+    await _sh('echo ok');
+    AdbShellResult? r;
+    try {
+      r = await _sh(rebootCommand);
+    } catch (_) {
+      // The TV went down while answering: the reboot is under way.
+      r = null;
+    }
+    return _record(
+      op: 'restartTv',
+      target: 'tv',
+      before: 'on',
+      after: r == null
+          ? 'restarting (connection dropped)'
+          : r.ok
+              ? 'restarting'
+              : 'refused: ${r.stdout.trim()}',
+      ok: r == null || r.ok,
+    );
   }
 
   // ── last known state (from polls and actions) ──
@@ -547,6 +611,7 @@ class TvOps {
     _guard(pkg);
     final before = await appState(pkg);
     final r = await _sh(_enableCmd(pkg, on));
+    _notePackageWrite();
     final after = await appState(pkg);
     return _record(
       op: on ? 'enableApp' : 'disableApp',
@@ -581,6 +646,7 @@ class TvOps {
     final installCmd = 'cmd package install-existing $pkg';
     final removeCmd = 'pm uninstall -k --user 0 $pkg';
     final r = await _sh(on ? installCmd : removeCmd);
+    _notePackageWrite();
     final mid = await packages();
     final st = mid.state(pkg);
     out.add(
@@ -614,6 +680,7 @@ class TvOps {
     if (!d.needed) return null;
     const cmd = 'pm uninstall-system-updates $kTtsPackage';
     final r = await _sh(cmd);
+    _notePackageWrite();
     final after = await packageVersion(kTtsPackage);
     return _record(
       op: 'speechRollback',
@@ -664,6 +731,7 @@ class TvOps {
     final results = <String, AdbShellResult>{};
     for (final p in todo) {
       results[p] = await _sh(_enableCmd(p, on));
+      _notePackageWrite();
     }
     final after = await packages();
     final want = on ? AppState.enabled : AppState.disabled;
@@ -847,8 +915,8 @@ class TvOps {
   Future<JournalEntry?> setMuted(bool muted) async {
     final cached = cachedVolume;
     if (cached != null && cached.muted != muted) {
-      final sent = await _sh('input keyevent KEYCODE_VOLUME_MUTE',
-          urgent: true);
+      final sent =
+          await _sh('input keyevent KEYCODE_VOLUME_MUTE', urgent: true);
       if (sent.ok) {
         final predicted = VolumeState(
           level: cached.level,

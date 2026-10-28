@@ -43,6 +43,13 @@ class FakeTv implements AdbShell {
   /// When false, the TV ignores mute key events (dumpsys stays the same).
   bool muteReflected = true;
 
+  /// `reboot` calls, and whether the connection drops while it goes out.
+  int reboots = 0;
+  bool dropOnReboot = false;
+
+  /// When true, every command fails at the transport (the TV is away).
+  bool unreachable = false;
+
   FakeTv() {
     all = TvOps.parsePackageList(fixture('pm_list_u.txt'));
     installed = TvOps.parsePackageList(fixture('pm_list.txt'));
@@ -81,7 +88,13 @@ class FakeTv implements AdbShell {
 
   @override
   Future<AdbShellResult> shell(String c) async {
+    if (unreachable) throw StateError('TV unreachable');
     log.add(c);
+    if (c == 'reboot' && dropOnReboot) {
+      ran.add(c);
+      reboots++;
+      throw StateError('connection closed');
+    }
     return _exec(c);
   }
 
@@ -137,6 +150,10 @@ class FakeTv implements AdbShell {
   AdbShellResult? _run(String c) {
     if (failing.any(c.startsWith)) return const AdbShellResult('Error', 1);
     if (c == 'true' || c.startsWith('sleep ')) return _ok();
+    if (c == 'reboot') {
+      reboots++;
+      return _ok();
+    }
     if (c.startsWith('echo ')) return _ok('${c.substring(5)}\n');
     if (c == PackageSnapshot.command) {
       return _ok(

@@ -43,6 +43,7 @@ void main() {
       tester,
       const HealthSection(),
       scaffold: true,
+      size: const Size(360, 1400),
       overrides: [
         ...env.overrides(),
         healthProvider.overrideWith((ref) async => checks),
@@ -85,6 +86,7 @@ void main() {
       tester,
       const HealthSection(),
       scaffold: true,
+      size: const Size(360, 1400),
       overrides: [
         ...env.overrides(),
         healthProvider.overrideWith(
@@ -110,6 +112,7 @@ void main() {
       tester,
       const HealthSection(),
       scaffold: true,
+      size: const Size(360, 1400),
       overrides: env.overrides(),
     );
     await settle(tester);

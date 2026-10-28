@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../agent/agent_models.dart';
 import '../../ops/health.dart';
+import '../../providers/agent_providers.dart';
 import '../../providers/tv_providers.dart';
 import '../../ui/components.dart';
 import '../../ui/tokens.dart';
 import 'common.dart';
+import 'tv_guard_card.dart';
 
 Tone healthTone(HealthStatus s) => switch (s) {
       HealthStatus.ok => Tone.ok,
@@ -20,8 +23,72 @@ IconData healthIcon(String id) => switch (id) {
       'stockYouTube' => Icons.smart_display_rounded,
       'speech' => Icons.record_voice_over_rounded,
       'launcher' => Icons.home_rounded,
+      'agent' => Icons.shield_rounded,
+      _ when id.startsWith('agent.') => Icons.shield_outlined,
       _ => Icons.monitor_heart_rounded,
     };
+
+HealthStatus _fromAgent(AgentHealthStatus s) => switch (s) {
+      AgentHealthStatus.ok => HealthStatus.ok,
+      AgentHealthStatus.warn => HealthStatus.warn,
+      AgentHealthStatus.fail => HealthStatus.fail,
+      AgentHealthStatus.unknown => HealthStatus.unknown,
+    };
+
+String _agentCheckTitle(String id) => switch (id) {
+      'youtube' || 'stockYouTube' => 'YouTube watchdog',
+      'speech' || 'tts' => 'Speech watchdog',
+      'cleanup' => 'Clean-up watchdog',
+      'launcher' || 'home' => 'Home watchdog',
+      'selfAdb' => 'TV Guard\'s TV access',
+      'usage' || 'usageStats' || 'usageAccess' => 'Usage access',
+      'overlay' => 'Explicit card permission',
+      'notifications' => 'TV Guard notification',
+      'profile' => 'TV profile',
+      'build' => 'TV software',
+      'watchdog' => 'Watchdog',
+      'sound' => 'Sound control',
+      'clock' => 'TV clock',
+      'mode' => 'TV Guard mode',
+      _ => id.isEmpty
+          ? 'TV Guard check'
+          : '${id[0].toUpperCase()}${id.substring(1)}',
+    };
+
+/// TV Guard's own checks (and an "Agent vX" line) as Health rows.
+List<HealthCheck> agentHealthChecks(AgentLink link) {
+  if (!link.installed) return const [];
+  final s = link.status;
+  final up = link.up;
+  return [
+    HealthCheck(
+      id: 'agent',
+      title: s == null ? 'TV Guard' : 'TV Guard v${s.version}',
+      status: up
+          ? (s!.mode == AgentMode.normal ? HealthStatus.ok : HealthStatus.warn)
+          : link.kind == AgentLinkKind.checking
+              ? HealthStatus.unknown
+              : HealthStatus.fail,
+      detail: up
+          ? switch (s!.mode) {
+              AgentMode.normal => 'Running and enforcing',
+              AgentMode.paused => 'Paused',
+              AgentMode.safe => 'Safe mode: reporting only',
+            }
+          : link.kind == AgentLinkKind.checking
+              ? 'Checking…'
+              : 'Not answering — use Repair above',
+    ),
+    if (up)
+      for (final h in s!.health)
+        HealthCheck(
+          id: 'agent.${h.id}',
+          title: _agentCheckTitle(h.id),
+          status: _fromAgent(h.status),
+          detail: h.detail.isEmpty ? 'Checked by TV Guard' : h.detail,
+        ),
+  ];
+}
 
 class HealthSection extends ConsumerWidget {
   const HealthSection({super.key});
@@ -29,7 +96,10 @@ class HealthSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (!ref.watch(activeHasAdbProvider)) {
-      return const AdbRequired(what: 'TV health');
+      if (!ref.watch(hasAgentProvider)) {
+        return const AdbRequired(what: 'TV health');
+      }
+      return const HealthList(checks: []);
     }
     final health = ref.watch(healthProvider);
     return RefreshIndicator(
@@ -37,12 +107,19 @@ class HealthSection extends ConsumerWidget {
       child: health.when(
         loading: () => ListView(
           padding: tvListPadding,
-          children: const [SkeletonCard(rows: 1), SizedBox(height: Gap.md),
-            SkeletonCard(rows: 4)],
+          children: const [
+            TvGuardCard(),
+            SizedBox(height: Gap.md),
+            SkeletonCard(rows: 1),
+            SizedBox(height: Gap.md),
+            SkeletonCard(rows: 4),
+          ],
         ),
         error: (e, _) => ListView(
           padding: tvListPadding,
           children: [
+            const TvGuardCard(),
+            const SizedBox(height: Gap.md),
             InfoCard(
               child: EmptyState(
                 icon: Icons.wifi_off_rounded,
@@ -65,6 +142,7 @@ class HealthSection extends ConsumerWidget {
 }
 
 class HealthList extends ConsumerWidget {
+  /// Phone-side checks; TV Guard's own are merged in.
   final List<HealthCheck> checks;
   const HealthList({super.key, required this.checks});
 
@@ -101,6 +179,10 @@ class HealthList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final text = Theme.of(context).textTheme;
     final status = StatusColors.of(context);
+    final checks = [
+      ...this.checks,
+      ...agentHealthChecks(ref.watch(agentStatusProvider)),
+    ];
     final issues = checks.where((c) => c.status != HealthStatus.ok).toList();
     final fixable = checks.where((c) => c.fix != null).toList();
     final ops = ref.watch(tvOpsProvider).valueOrNull;
@@ -110,6 +192,8 @@ class HealthList extends ConsumerWidget {
     return ListView(
       padding: tvListPadding,
       children: [
+        const TvGuardCard(),
+        const SizedBox(height: Gap.md),
         InfoCard(
           key: const Key('health-summary'),
           padding: const EdgeInsets.all(Gap.lg),

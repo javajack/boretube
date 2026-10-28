@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../actions/actions_service.dart';
+import '../agent/agent_models.dart';
 import '../ops/journal.dart';
+import 'agent_providers.dart';
 import 'now_playing.dart';
 import 'providers.dart';
 import 'tv_providers.dart';
@@ -12,7 +14,14 @@ import 'tv_providers.dart';
 /// A running break: the TV stays closed and muted until [until].
 class BreakState {
   final DateTime? until;
-  const BreakState([this.until]);
+
+  /// TV Guard enforces it on the TV; the phone doesn't need to.
+  final bool byTv;
+
+  /// "Silence only": muted, but apps keep running (agent `muteFor`).
+  final bool silenceOnly;
+
+  const BreakState([this.until, this.byTv = false, this.silenceOnly = false]);
 
   /// The controller clears [until] when the break ends.
   bool get active => until != null;
@@ -54,8 +63,13 @@ class BreakController extends StateNotifier<BreakState> {
     final raw = id == null ? null : prefs.getString(keyFor(id));
     final until = raw == null ? null : DateTime.tryParse(raw);
     if (until == null) return;
+    final flags = prefs.getString(flagsKeyFor(id!)) ?? '';
     if (until.isAfter(clock())) {
-      state = BreakState(until);
+      state = BreakState(
+        until,
+        flags.contains('tv'),
+        flags.contains('silence'),
+      );
       _schedule(until);
     } else {
       // Ran out while the app was closed: bring the sound back once.
@@ -64,6 +78,12 @@ class BreakController extends StateNotifier<BreakState> {
   }
 
   static String keyFor(String tvId) => 'break.until.$tvId';
+  static String flagsKeyFor(String tvId) => 'break.flags.$tvId';
+
+  /// Ignore "no break" from agent polls this soon after starting one: a
+  /// poll that was already on the wire predates it.
+  static const syncGrace = Duration(seconds: 10);
+  DateTime? _startedAt;
 
   Duration remaining() {
     final u = state.until;
@@ -77,15 +97,24 @@ class BreakController extends StateNotifier<BreakState> {
     _timer = Timer(until.difference(clock()), _expire);
   }
 
-  Future<void> _set(DateTime? until) async {
+  Future<void> _set(
+    DateTime? until, {
+    bool byTv = false,
+    bool silenceOnly = false,
+  }) async {
     _timer?.cancel();
-    if (mounted) state = BreakState(until);
+    if (mounted) state = BreakState(until, byTv, silenceOnly);
     final id = tvId;
     if (id == null) return;
     if (until == null) {
       await prefs.remove(keyFor(id));
+      await prefs.remove(flagsKeyFor(id));
     } else {
       await prefs.setString(keyFor(id), until.toIso8601String());
+      await prefs.setString(
+        flagsKeyFor(id),
+        [if (byTv) 'tv', if (silenceOnly) 'silence'].join(','),
+      );
       _schedule(until);
     }
   }
@@ -111,19 +140,50 @@ class BreakController extends StateNotifier<BreakState> {
     return r;
   }
 
-  /// Closes the app, mutes, and starts the countdown. Shown at once; rolled
-  /// back if the TV didn't take it.
-  Future<ActionResult?> start(int minutes) async {
+  /// Closes the app, mutes, and starts the countdown ([silenceOnly]: just
+  /// mutes). Shown at once; rolled back if the TV didn't take it. With TV
+  /// Guard healthy the TV enforces it, even with this app closed.
+  Future<ActionResult?> start(int minutes, {bool silenceOnly = false}) async {
     final a = actions();
     if (a == null) return null;
     final until = clock().add(Duration(minutes: minutes));
-    await _set(until);
+    _startedAt = clock();
+    await _set(until, silenceOnly: silenceOnly);
     final r = await _optimistic(
-      (s) => s.atHome().copyWith(muted: true),
-      () => a.startBreak(minutes, now: clock()),
+      (s) => silenceOnly
+          ? s.copyWith(muted: true)
+          : s.atHome().copyWith(muted: true),
+      () => silenceOnly
+          ? a.muteFor(minutes, now: clock())
+          : a.startBreak(minutes, now: clock()),
     );
-    if (r == null || !r.ok) await _set(null);
+    if (r == null || !r.ok) {
+      await _set(null);
+    } else if (r.via == ActionTransport.agent) {
+      await _set(r.until ?? until, byTv: true, silenceOnly: silenceOnly);
+    }
     return r;
+  }
+
+  /// Follows a break the TV reports (started by another phone, or ended
+  /// there).
+  Future<void> syncFromAgent(AgentBreak b) async {
+    final end = b.endsAt;
+    if (b.active && end != null && end.isAfter(clock())) {
+      if (!state.active || state.silenceOnly || state.until != end) {
+        await _set(end, byTv: true);
+      }
+      return;
+    }
+    final started = _startedAt;
+    final fresh = started != null && clock().difference(started) < syncGrace;
+    if (!b.active &&
+        state.active &&
+        state.byTv &&
+        !state.silenceOnly &&
+        !fresh) {
+      await _set(null);
+    }
   }
 
   /// Ends the break now and unmutes (same as Restore).
@@ -136,6 +196,12 @@ class BreakController extends StateNotifier<BreakState> {
 
   Future<void> _expire() async {
     if (!mounted) return;
+    if (state.byTv) {
+      // The TV ends it and brings the sound back by itself.
+      await _set(null);
+      onJournal?.call();
+      return;
+    }
     final r = await end();
     await _log('over: sound back on', r);
   }
@@ -143,7 +209,8 @@ class BreakController extends StateNotifier<BreakState> {
   /// Called with each fresh poll: re-mutes and closes apps while a break
   /// runs.
   Future<void> enforce(NowPlaying now) async {
-    if (!state.active || _enforcing || !now.online || now.loading) return;
+    if (!state.active || state.byTv || _enforcing) return;
+    if (!now.online || now.loading) return;
     final a = actions();
     if (a == null) return;
     final t = clock();
@@ -151,7 +218,10 @@ class BreakController extends StateNotifier<BreakState> {
         last == null || t.difference(last) >= enforceGap;
     _enforcing = true;
     try {
-      if (!now.isHome && now.id != null && due(_lastClose)) {
+      if (!state.silenceOnly &&
+          !now.isHome &&
+          now.id != null &&
+          due(_lastClose)) {
         _lastClose = t;
         final name = now.appName.isEmpty ? now.id! : now.appName;
         final r = await _optimistic((s) => s.atHome(), a.stopCurrentApp);
@@ -214,6 +284,12 @@ final breakProvider = StateNotifierProvider<BreakController, BreakState>((ref) {
   // A real poll stamps lastSeen; optimistic patches keep it.
   ref.listen<NowPlaying>(nowPlayingProvider, (prev, next) {
     if (next.lastSeen != prev?.lastSeen) unawaited(c.enforce(next));
+  });
+  ref.listen<AgentLink>(agentStatusProvider, (prev, next) {
+    final s = next.status;
+    if (next.up && s != null && !identical(s, prev?.status)) {
+      unawaited(c.syncFromAgent(s.breakState));
+    }
   });
   return c;
 });

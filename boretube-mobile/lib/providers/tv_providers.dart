@@ -17,6 +17,7 @@ import '../platform/multicast_lock.dart';
 import '../tv/capabilities.dart';
 import '../tv/tv.dart';
 import '../tv/tv_store.dart';
+import 'agent_providers.dart';
 import 'providers.dart';
 import 'settings_provider.dart';
 
@@ -145,12 +146,15 @@ final tvOpsProvider = FutureProvider<TvOps?>((ref) async {
 final actionsServiceProvider = Provider<ActionsService?>((ref) {
   final tv = ref.watch(activeTvProvider);
   if (tv == null) return null;
-  return ActionsService(tv, adb: ref.watch(tvOpsProvider).valueOrNull);
+  return ActionsService(
+    tv,
+    adb: ref.watch(tvOpsProvider).valueOrNull,
+    agent: ref.watch(agentForActionsProvider),
+  );
 });
 
 /// Journal of the active TV, newest first.
-final journalEntriesProvider =
-    FutureProvider<List<JournalEntry>>((ref) async {
+final journalEntriesProvider = FutureProvider<List<JournalEntry>>((ref) async {
   final id = ref.watch(activeTvIdProvider);
   if (id == null) return const [];
   final list = await ref.watch(journalProvider).entries(id);
@@ -215,8 +219,9 @@ class CapabilityController
   }
 }
 
-final capabilityProvider = StateNotifierProvider<CapabilityController,
-    AsyncValue<CapabilityReport?>>((ref) {
+final capabilityProvider =
+    StateNotifierProvider<CapabilityController, AsyncValue<CapabilityReport?>>(
+        (ref) {
   ref.watch(activeTvIdProvider);
   return CapabilityController(ref);
 });

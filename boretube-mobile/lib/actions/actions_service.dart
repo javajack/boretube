@@ -1,11 +1,12 @@
 import 'package:flutter/foundation.dart';
 
+import '../agent/agent_client.dart';
 import '../ops/tv_ops.dart';
 import '../protocols/castv2_client.dart';
 import '../protocols/dial_client.dart';
 import '../tv/tv.dart';
 
-enum ActionTransport { sonyRest, adb, cast, dial, none }
+enum ActionTransport { agent, sonyRest, adb, cast, dial, none }
 
 class ActionResult {
   final bool ok;
@@ -47,11 +48,15 @@ class _DialSonyAudio implements SonyAudio {
 }
 
 /// The instant actions (Mute, Stop, Bore, Volume → N, Break, Restore).
-/// Each tries the transports the TV supports, best first: Sony REST, then
-/// ADB, then Cast. The first that succeeds wins.
+/// Each tries the transports the TV supports, best first: TV Guard (when
+/// healthy), then Sony REST, then ADB, then Cast. The first that succeeds
+/// wins.
 class ActionsService {
   final Tv tv;
   final TvOps? adb;
+
+  /// A healthy TV Guard agent; null routes everything over ADB/Cast.
+  final AgentClient? agent;
   final SonyAudio _sony;
   final CastV2Client Function() _cast;
   final DialClient _dial;
@@ -59,6 +64,7 @@ class ActionsService {
   ActionsService(
     this.tv, {
     this.adb,
+    this.agent,
     CastV2Client Function()? cast,
     SonyAudio? sony,
     @visibleForTesting DialClient? dial,
@@ -67,6 +73,7 @@ class ActionsService {
         _sony = sony ??
             _DialSonyAudio(dial ?? DialClient(host: tv.ip, port: tv.dialPort));
 
+  bool get _hasAgent => agent != null;
   bool get _hasSony => tv.can(TvCapability.sonyRest);
   bool get _hasAdb => adb != null && tv.can(TvCapability.adb);
   bool get _hasCast => tv.can(TvCapability.cast);
@@ -104,7 +111,25 @@ class ActionsService {
     }
   }
 
+  Future<ActionResult> _agentDo(AgentAction a) async {
+    final r = await agent!.action(a);
+    return ActionResult(
+      r.ok,
+      ActionTransport.agent,
+      detail: r.detail,
+      until: r.endsAt,
+    );
+  }
+
+  (ActionTransport, bool, Future<ActionResult> Function()) _viaAgent(
+    AgentAction a,
+  ) =>
+      (ActionTransport.agent, _hasAgent, () => _agentDo(a));
+
   Future<ActionResult> _setMuted(bool muted) => _first([
+        _viaAgent(
+          AgentAction(muted ? AgentActionKind.mute : AgentActionKind.unmute),
+        ),
         (
           ActionTransport.sonyRest,
           _hasSony,
@@ -139,6 +164,7 @@ class ActionsService {
   /// Stops the foreground app. ADB force-stops it (protected apps only get
   /// Home); Cast stops the receiver app and DIAL kills YouTube/Netflix.
   Future<ActionResult> stopCurrentApp() => _first([
+        _viaAgent(const AgentAction(AgentActionKind.stop)),
         (
           ActionTransport.adb,
           _hasAdb,
@@ -165,6 +191,12 @@ class ActionsService {
   /// Stop + mute. When mute goes over Sony REST (not ADB), both run at
   /// once; otherwise one after the other.
   Future<ActionResult> bore() async {
+    if (_hasAgent) {
+      final r = await _first([
+        _viaAgent(const AgentAction(AgentActionKind.bore)),
+      ]);
+      if (r.ok) return r;
+    }
     final ActionResult stop;
     final ActionResult m;
     if (_hasSony && _hasAdb) {
@@ -188,6 +220,7 @@ class ActionsService {
   Future<ActionResult> setVolume(int target) {
     final t = target.clamp(0, 100);
     return _first([
+      _viaAgent(AgentAction.volume(t)),
       (
         ActionTransport.sonyRest,
         _hasSony,
@@ -209,17 +242,46 @@ class ActionsService {
     return ActionResult(e.ok, ActionTransport.adb, detail: e.after);
   }
 
-  /// Starts a break: stop + mute now, and returns when it ends. The
-  /// caller keeps it going (re-mutes, closes apps) and restores at the end.
-  Future<ActionResult> startBreak(int minutes, {DateTime? now}) async {
-    final r = await bore();
-    return ActionResult(
-      r.ok,
-      r.via,
-      detail: r.detail,
-      until: (now ?? DateTime.now()).add(Duration(minutes: minutes)),
-    );
+  /// Starts a break: stop + mute now, and returns when it ends. With TV
+  /// Guard the TV enforces it ([ActionResult.via] is
+  /// [ActionTransport.agent]); otherwise the caller keeps it going
+  /// (re-mutes, closes apps) and restores at the end.
+  Future<ActionResult> startBreak(int minutes, {DateTime? now}) =>
+      _timed(AgentAction.startBreak(minutes), minutes, bore, now);
+
+  /// Mutes for [minutes] without closing anything ("Silence only").
+  Future<ActionResult> muteFor(int minutes, {DateTime? now}) =>
+      _timed(AgentAction.muteFor(minutes), minutes, mute, now);
+
+  Future<ActionResult> _timed(
+    AgentAction a,
+    int minutes,
+    Future<ActionResult> Function() local,
+    DateTime? now,
+  ) async {
+    final until = (now ?? DateTime.now()).add(Duration(minutes: minutes));
+    if (_hasAgent) {
+      try {
+        final r = await _agentDo(a);
+        if (r.ok) {
+          return ActionResult(
+            true,
+            ActionTransport.agent,
+            detail: r.detail,
+            until: r.until ?? until,
+          );
+        }
+      } catch (_) {
+        // Fall back to the phone keeping it going.
+      }
+    }
+    final r = await local();
+    return ActionResult(r.ok, r.via, detail: r.detail, until: until);
   }
 
-  Future<ActionResult> restore() => unmute();
+  /// Ends breaks and timed mutes on the TV, and unmutes.
+  Future<ActionResult> restore() => _first([
+        _viaAgent(const AgentAction(AgentActionKind.restore)),
+        (ActionTransport.none, true, unmute),
+      ]);
 }

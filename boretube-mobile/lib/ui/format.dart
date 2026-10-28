@@ -52,6 +52,12 @@ String journalTitle(JournalEntry e) {
         'toggleMute' => 'Mute toggled',
         'mute' => 'Muted',
         'unmute' => 'Unmuted',
+        'restore' => 'Restore: $target',
+        'agentInstall' => 'TV Guard installed',
+        'agentRepair' => 'TV Guard repaired',
+        'agentUninstall' => 'TV Guard removed',
+        'blockedApp' || 'closedApp' => 'Closed $target',
+        'clampVolume' => 'Volume capped',
         _ => '${e.op} $target'.trim(),
       } +
       (e.ok ? '' : ' (failed)');
@@ -70,6 +76,11 @@ IconData journalIcon(String op) => switch (op) {
       'toggleMute' || 'mute' => Icons.volume_off_outlined,
       'unmute' => Icons.volume_up_outlined,
       'break' => Icons.coffee_outlined,
+      'restore' => Icons.settings_backup_restore_rounded,
+      'agentInstall' ||
+      'agentRepair' ||
+      'agentUninstall' =>
+        Icons.shield_outlined,
       _ => Icons.build_outlined,
     };
 

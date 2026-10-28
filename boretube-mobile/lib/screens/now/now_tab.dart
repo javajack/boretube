@@ -7,7 +7,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../actions/actions_service.dart';
+import '../../agent/agent_models.dart';
 import '../../ops/journal.dart';
+import '../../providers/agent_providers.dart';
 import '../../providers/break_provider.dart';
 import '../../providers/now_playing.dart';
 import '../../providers/tv_providers.dart';
@@ -15,6 +17,7 @@ import '../../tv/tv.dart';
 import '../../ui/components.dart';
 import '../../ui/format.dart';
 import '../../ui/tokens.dart';
+import '../tv/activity_section.dart';
 import 'classic_lock_card.dart';
 import 'quick_actions.dart';
 
@@ -52,7 +55,7 @@ class NowTab extends ConsumerWidget {
           const NowOnTvCard(),
           const SectionHeader('Quick actions'),
           QuickActionsPanel(tv: tv),
-          if (!tv.can(TvCapability.agent)) ...[
+          if (!ref.watch(hasAgentProvider)) ...[
             const SectionHeader('Classic lock'),
             const ClassicLockCard(),
           ],
@@ -213,6 +216,7 @@ class _NowSkeleton extends StatelessWidget {
 }
 
 String transportLabel(ActionTransport t) => switch (t) {
+      ActionTransport.agent => 'TV Guard',
       ActionTransport.sonyRest => 'Sony IP control',
       ActionTransport.adb => 'ADB',
       ActionTransport.cast => 'Cast',
@@ -234,7 +238,6 @@ class QuickActionsPanel extends ConsumerStatefulWidget {
 class _QuickActionsState extends ConsumerState<QuickActionsPanel> {
   final _inflight = <QuickAction>{};
   double? _dragVolume;
-
 
   /// Can [a] start while the actions in flight run? Mute, volume and
   /// stop each touch one thing; Bore and Break touch both.
@@ -295,12 +298,17 @@ class _QuickActionsState extends ConsumerState<QuickActionsPanel> {
   BreakController get _break => ref.read(breakProvider.notifier);
 
   Future<void> _startBreak() async {
-    final minutes = await showModalBottomSheet<int>(
+    final byTv = ref.read(agentForActionsProvider) != null;
+    final pick = await showModalBottomSheet<BreakChoice>(
       context: context,
-      builder: (context) => const BreakSheet(),
+      isScrollControlled: true,
+      builder: (context) => BreakSheet(enforcedByTv: byTv),
     );
-    if (minutes == null || !mounted) return;
-    await _run(QuickAction.takeBreak, () => _break.start(minutes));
+    if (pick == null || !mounted) return;
+    await _run(
+      QuickAction.takeBreak,
+      () => _break.start(pick.minutes, silenceOnly: pick.silenceOnly),
+    );
   }
 
   Future<void> _endBreak(QuickAction via) => _run(via, () => _break.end());
@@ -400,7 +408,9 @@ class _QuickActionsState extends ConsumerState<QuickActionsPanel> {
           QuickAction.takeBreak,
           key: 'action-break',
           icon: brk.active ? Icons.timer_rounded : Icons.coffee_rounded,
-          label: brk.active ? 'End break' : 'Break',
+          label: brk.active
+              ? (brk.silenceOnly ? 'End mute' : 'End break')
+              : 'Break',
           state: brk.active
               ? 'Until ${clockTime(brk.until!)}'
               : '15 · 30 · 60 min',
@@ -444,6 +454,14 @@ class _QuickActionsState extends ConsumerState<QuickActionsPanel> {
             icon: const Icon(Icons.restart_alt_rounded),
             label: const Text('Restore TV (unmute)'),
           ),
+        ],
+        if (ref.watch(
+          agentStatusProvider.select(
+            (l) => l.up && l.status!.mode == AgentMode.safe,
+          ),
+        )) ...[
+          const SizedBox(height: Gap.md),
+          const _SafeModeTip(),
         ],
         if (!widget.tv.can(TvCapability.adb)) ...[
           const SizedBox(height: Gap.md),
@@ -502,25 +520,47 @@ class _QuickActionsState extends ConsumerState<QuickActionsPanel> {
   }
 }
 
-/// Picks 15, 30 or 60 minutes for a break.
-class BreakSheet extends StatelessWidget {
-  const BreakSheet({super.key});
+/// What the Break sheet picked.
+typedef BreakChoice = ({int minutes, bool silenceOnly});
+
+/// Picks 15, 30 or 60 minutes for a break, or "Silence only" (mute for
+/// that long, apps keep running).
+class BreakSheet extends StatefulWidget {
+  /// TV Guard will enforce it (shown in the footnote).
+  final bool enforcedByTv;
+
+  const BreakSheet({super.key, this.enforcedByTv = false});
+
+  @override
+  State<BreakSheet> createState() => _BreakSheetState();
+}
+
+class _BreakSheetState extends State<BreakSheet> {
+  bool _silence = false;
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final scheme = Theme.of(context).colorScheme;
+    final ok = StatusColors.of(context).ok;
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(Gap.xl, 0, Gap.xl, Gap.xl),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(Gap.xl, Gap.lg, Gap.xl, Gap.xl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Take a break', style: text.titleLarge),
+            Text(
+              _silence ? 'Mute for a while' : 'Take a break',
+              style: text.titleLarge,
+            ),
             const SizedBox(height: Gap.xs),
             Text(
-              'Closes the app and mutes now. Sound comes back '
-              'automatically.',
+              _silence
+                  ? 'Mutes now; whatever is on keeps playing. Sound comes '
+                      'back automatically.'
+                  : 'Closes the app and mutes now. Sound comes back '
+                      'automatically.',
               style: text.bodyMedium,
             ),
             const SizedBox(height: Gap.lg),
@@ -531,18 +571,53 @@ class BreakSheet extends StatelessWidget {
                   Expanded(
                     child: FilledButton.tonal(
                       key: Key('break-$m'),
-                      onPressed: () => Navigator.pop(context, m),
+                      onPressed: () => Navigator.pop<BreakChoice>(
+                        context,
+                        (minutes: m, silenceOnly: _silence),
+                      ),
                       child: Text('$m min'),
                     ),
                   ),
                 ],
               ],
             ),
+            const SizedBox(height: Gap.md),
+            Material(
+              color: scheme.surfaceContainer,
+              shape: const RoundedRectangleBorder(borderRadius: Radii.tile),
+              clipBehavior: Clip.antiAlias,
+              child: SwitchListTile(
+                key: const Key('break-silence'),
+                value: _silence,
+                onChanged: (v) => setState(() => _silence = v),
+                secondary: const Icon(Icons.volume_off_rounded),
+                title: const Text('Silence only'),
+                subtitle: const Text('Mute without closing the app'),
+              ),
+            ),
             const SizedBox(height: Gap.lg),
-            Text(
-              'Keeps working while Boretube is open. TV Guard (coming '
-              'soon) will enforce it even when your phone is away.',
-              style: text.bodySmall,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  widget.enforcedByTv
+                      ? Icons.verified_user_rounded
+                      : Icons.phone_android_rounded,
+                  size: 16,
+                  color: widget.enforcedByTv ? ok : scheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: Gap.sm),
+                Expanded(
+                  child: Text(
+                    widget.enforcedByTv
+                        ? 'Enforced by TV Guard on the TV — works even if '
+                            'you close this app.'
+                        : 'Keeps working while Boretube is open. Install TV '
+                            'Guard to enforce it with your phone away.',
+                    style: text.bodySmall,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -610,7 +685,7 @@ class _BreakBannerState extends ConsumerState<BreakBanner> {
 
   @override
   Widget build(BuildContext context) {
-    ref.watch(breakProvider);
+    final brk = ref.watch(breakProvider);
     final left = ref.read(breakProvider.notifier).remaining();
     final text = Theme.of(context).textTheme;
     final warn = Tone.warn.color(context);
@@ -624,18 +699,66 @@ class _BreakBannerState extends ConsumerState<BreakBanner> {
       padding: const EdgeInsets.fromLTRB(Gap.lg, Gap.md, Gap.md, Gap.md),
       child: Row(
         children: [
-          Icon(Icons.coffee_rounded, color: warn),
+          Icon(
+            brk.silenceOnly ? Icons.volume_off_rounded : Icons.coffee_rounded,
+            color: warn,
+          ),
           const SizedBox(width: Gap.md),
           Expanded(
-            child: Text(
-              'Break · ${countdown(left)} left',
-              style: text.titleMedium,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${brk.silenceOnly ? 'Muted' : 'Break'} · '
+                  '${countdown(left)} left',
+                  style: text.titleMedium,
+                ),
+                if (brk.byTv)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      'Enforced by TV — works even if you close this app',
+                      key: const Key('break-by-tv'),
+                      style: text.bodySmall,
+                    ),
+                  ),
+              ],
             ),
           ),
           FilledButton.tonal(
             key: const Key('break-end'),
             onPressed: _ending ? null : _end,
             child: const Text('End now'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SafeModeTip extends StatelessWidget {
+  const _SafeModeTip();
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return InfoCard(
+      key: const Key('safe-mode-tip'),
+      padding: const EdgeInsets.all(Gap.md),
+      child: Row(
+        children: [
+          Icon(
+            Icons.health_and_safety_rounded,
+            color: Tone.info.color(context),
+            size: 20,
+          ),
+          const SizedBox(width: Gap.md),
+          Expanded(
+            child: Text(
+              'TV Guard is in safe mode, so these go straight over ADB or '
+              'Cast, and breaks run from this phone.',
+              style: text.bodySmall,
+            ),
           ),
         ],
       ),
@@ -679,13 +802,13 @@ class _AdbTip extends StatelessWidget {
   }
 }
 
-/// Last five journal entries.
+/// Last five changes, from this phone and from TV Guard.
 class RecentEvents extends ConsumerWidget {
   const RecentEvents({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final entries = ref.watch(journalEntriesProvider);
+    final entries = ref.watch(activityProvider);
     return entries.when(
       loading: () => const SkeletonCard(rows: 2),
       error: (e, _) => InfoCard(
@@ -707,7 +830,10 @@ class RecentEvents extends ConsumerWidget {
             )
           : GroupCard(
               children: [
-                for (final e in list.take(5)) JournalRow(entry: e),
+                for (final i in list.take(5))
+                  i.source == JournalSource.phone
+                      ? JournalRow(entry: i.entry)
+                      : ActivityRow(item: i, expanded: false),
               ],
             ),
     );

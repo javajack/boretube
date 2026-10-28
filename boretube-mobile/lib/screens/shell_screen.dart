@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../providers/agent_providers.dart';
 import '../providers/break_provider.dart';
 import '../providers/now_playing.dart';
 import '../providers/tv_providers.dart';
 import '../tv/tv.dart';
 import '../ui/components.dart';
+import '../ui/format.dart';
 import '../ui/tokens.dart';
 import 'now/now_tab.dart';
 import 'rules_tab.dart';
@@ -46,6 +48,8 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Snapshot the TV the first time ADB works (kept for Restore).
+    ref.listen(baselineProvider, (_, __) {});
     // Re-probe when the active TV changes.
     ref.listen<String?>(activeTvIdProvider, (prev, next) {
       if (next != null && prev != next) {
@@ -195,33 +199,73 @@ class TvSwitcher extends ConsumerWidget {
   }
 }
 
-/// ☕ Break / 🔵 Classic lock running / ⚪ Not guarded. TV Guard states
-/// arrive in P2.
+/// One glance at what protects the TV: TV Guard on / limited / paused /
+/// down / safe mode, a break, the Classic lock, or nothing.
 class GuardPill extends ConsumerWidget {
   const GuardPill({super.key});
+
+  static (String, Tone) look(GuardState s) => switch (s) {
+        GuardState.on => ('TV Guard on', Tone.ok),
+        GuardState.limited => ('Limited', Tone.warn),
+        GuardState.paused => ('Paused', Tone.warn),
+        GuardState.down => ('TV Guard down', Tone.bad),
+        GuardState.safe => ('🛟 Safe mode', Tone.info),
+        GuardState.onBreak => ('☕ Break', Tone.warn),
+        GuardState.classic => ('Classic lock', Tone.info),
+        GuardState.notGuarded => ('Not guarded', Tone.idle),
+        GuardState.checking => ('TV Guard…', Tone.idle),
+      };
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final classic = ref.watch(classicLockActiveProvider).valueOrNull ?? false;
     final onBreak = ref.watch(breakProvider).active;
-    final (label, tone) = onBreak
-        ? ('☕ Break', Tone.warn)
-        : classic
-            ? ('Classic lock', Tone.info)
-            : ('Not guarded', Tone.idle);
+    final link = ref.watch(agentStatusProvider);
+    final state = guardStateOf(
+      link: link,
+      onBreak: onBreak,
+      classic: classic,
+    );
+    final (label, tone) = look(state);
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 250),
       child: StatusPill(
         key: ValueKey(label),
         label: label,
         tone: tone,
-        onTap: () => _explain(context, classic, onBreak),
+        onTap: () => _explain(context, state, link),
       ),
     );
   }
 
-  void _explain(BuildContext context, bool classic, bool onBreak) {
+  static String _meaning(GuardState s, AgentLink link) => switch (s) {
+        GuardState.on => 'Rules run on the TV itself, 24/7, even with this '
+            'phone away or off.',
+        GuardState.limited => 'TV Guard is running but the TV hasn\'t '
+            'allowed its own debugging yet, so it can\'t close apps. Use '
+            'Repair on the TV tab.',
+        GuardState.paused => 'TV Guard is paused: nothing is enforced and '
+            'the watchdog makes no changes. Resume on the TV tab.',
+        GuardState.down => link.kind == AgentLinkKind.authFailed
+            ? 'TV Guard answers but doesn\'t know this phone any more. '
+                'Repair on the TV tab pairs it again.'
+            : 'TV Guard isn\'t answering. The TV may be off, or TV Guard '
+                'was turned off. Repair on the TV tab.',
+        GuardState.safe => 'Safe mode: TV Guard only reports. It makes no '
+            'changes until you turn safe mode off.',
+        GuardState.onBreak => 'The TV stays closed and muted until the '
+            'break ends.',
+        GuardState.classic => 'This phone is checking the TV and enforcing '
+            'the lock. It stops if the phone leaves home Wi-Fi.',
+        GuardState.notGuarded => 'Nothing is limiting the TV right now. '
+            'Start a Classic lock on the Now tab, or install TV Guard from '
+            'the TV tab.',
+        GuardState.checking => 'Checking TV Guard on the TV…',
+      };
+
+  void _explain(BuildContext context, GuardState state, AgentLink link) {
     final text = Theme.of(context).textTheme;
+    final (label, tone) = look(state);
     showModalBottomSheet<void>(
       context: context,
       builder: (context) => SafeArea(
@@ -238,31 +282,27 @@ class GuardPill extends ConsumerWidget {
             children: [
               Text('Protection', style: text.titleLarge),
               const SizedBox(height: Gap.lg),
-              if (onBreak) ...[
-                const _PillLegend(
-                  tone: Tone.warn,
-                  title: 'On a break',
-                  body: 'The TV stays closed and muted until the break '
-                      'ends, while Boretube is open.',
-                ),
-                const SizedBox(height: Gap.md),
-              ],
               _PillLegend(
-                tone: classic ? Tone.info : Tone.idle,
-                title: classic ? 'Classic lock running' : 'Not guarded',
-                body: classic
-                    ? 'This phone is checking the TV and enforcing the '
-                        'lock. It stops if the phone leaves home Wi-Fi.'
-                    : 'Nothing is limiting the TV right now. Start a '
-                        'Classic lock from the Now tab.',
+                tone: tone,
+                title: label,
+                body: _meaning(state, link),
               ),
-              const SizedBox(height: Gap.md),
-              const _PillLegend(
-                tone: Tone.ok,
-                title: 'TV Guard: coming soon',
-                body: 'Rules that live on the TV and work 24/7, even '
-                    'with the phone away.',
-              ),
+              if (!link.installed) ...[
+                const SizedBox(height: Gap.md),
+                const _PillLegend(
+                  tone: Tone.ok,
+                  title: 'TV Guard',
+                  body: 'Rules that live on the TV and work 24/7, even '
+                      'with the phone away. Install it from TV › Health.',
+                ),
+              ],
+              if (link.lastOk != null && state == GuardState.down) ...[
+                const SizedBox(height: Gap.md),
+                Text(
+                  'Last answered ${relativeTime(link.lastOk!)}',
+                  style: text.bodySmall,
+                ),
+              ],
             ],
           ),
         ),

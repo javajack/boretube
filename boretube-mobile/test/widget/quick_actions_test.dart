@@ -151,7 +151,10 @@ void main() {
             'automatically.'),
         findsOneWidget,
       );
-      expect(find.textContaining('TV Guard (coming soon)'), findsOneWidget);
+      expect(
+        find.textContaining('Keeps working while Boretube is open'),
+        findsOneWidget,
+      );
       await tester.tap(find.byKey(const Key('break-15')));
       await settle(tester);
 

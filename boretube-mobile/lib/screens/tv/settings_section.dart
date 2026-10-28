@@ -89,12 +89,10 @@ class SettingsSection extends ConsumerWidget {
               for (final c in TvCapability.values)
                 StatusRow(
                   tone: active.can(c) ? Tone.ok : Tone.idle,
-                  icon: active.can(c)
-                      ? Icons.check_rounded
-                      : Icons.close_rounded,
+                  icon:
+                      active.can(c) ? Icons.check_rounded : Icons.close_rounded,
                   title: capabilityTitle(c),
-                  detail: !active.can(c) &&
-                          caps.valueOrNull?.detail(c) != null
+                  detail: !active.can(c) && caps.valueOrNull?.detail(c) != null
                       ? '${capabilityMeaning(c)} · '
                           '${caps.valueOrNull!.detail(c)}'
                       : capabilityMeaning(c),
@@ -139,6 +137,22 @@ class SettingsSection extends ConsumerWidget {
             ),
           ],
         ],
+        const SectionHeader('Safety'),
+        GroupCard(
+          children: [
+            StatusRow(
+              key: const Key('settings-restore'),
+              tone: Tone.accent,
+              icon: Icons.settings_backup_restore_rounded,
+              title: 'Restore TV',
+              detail: 'Undo Boretube, or go back to stock · baseline '
+                  'snapshot',
+              detailLines: 2,
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => context.push('/restore'),
+            ),
+          ],
+        ),
         const SectionHeader('Now on TV'),
         InfoCard(
           child: Column(
@@ -185,9 +199,8 @@ class SettingsSection extends ConsumerWidget {
                 title: 'Unlock with fingerprint',
                 trailing: Switch(
                   value: lock.biometricEnabled,
-                  onChanged: (v) => ref
-                      .read(appLockProvider.notifier)
-                      .setBiometricEnabled(v),
+                  onChanged: (v) =>
+                      ref.read(appLockProvider.notifier).setBiometricEnabled(v),
                 ),
               ),
             StatusRow(

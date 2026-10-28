@@ -7,6 +7,7 @@ import 'providers/tv_providers.dart';
 import 'screens/adb_guide_screen.dart';
 import 'screens/lock_screen.dart';
 import 'screens/onboarding_screen.dart';
+import 'screens/restore_screen.dart';
 import 'screens/shell_screen.dart';
 import 'screens/whitelist_screen.dart';
 import 'security/app_lock.dart';
@@ -69,6 +70,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/adb-guide',
         builder: (_, __) => const AdbGuideScreen(),
+      ),
+      GoRoute(
+        path: '/restore',
+        builder: (_, __) => const RestoreScreen(),
       ),
       GoRoute(
         path: '/whitelist',

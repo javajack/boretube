@@ -76,25 +76,42 @@ void main() {
     await settle(tester, 3);
   }
 
+  /// Opens the Video hopping sheet from its row.
+  Future<void> open(WidgetTester tester) async {
+    await show(tester, 'rules-shorts');
+    await tester.tap(key('rules-shorts'));
+    await settle(tester);
+    expect(key('rules-sheet-shorts'), findsOneWidget);
+  }
+
   Map<String, dynamic> lastPut() =>
       jsonDecode(sent.lastWhere((r) => r.method == 'PUT').body)
           as Map<String, dynamic>;
 
   Future<void> save(WidgetTester tester) async {
+    if (key('rules-sheet-done').evaluate().isNotEmpty) {
+      await tester.tap(key('rules-sheet-done'));
+      await settle(tester);
+    }
     await tester.ensureVisible(key('rules-save'));
     await tester.tap(key('rules-save'));
     await settle(tester);
   }
 
-  testWidgets('placed right after Allowed apps, with ⓘ', (tester) async {
+  testWidgets('a row right after Allowed apps; ⓘ in its sheet', (tester) async {
     await pump(tester, {...contractRules});
     final apps = tester.getTopLeft(key('rules-apps')).dy;
     final shorts = tester.getTopLeft(key('rules-shorts')).dy;
     final sound = tester.getTopLeft(key('rules-sound')).dy;
     expect(apps < shorts && shorts < sound, isTrue);
     expect(
+      find.descendant(of: key('rules-shorts'), matching: find.text('Off')),
+      findsOneWidget,
+    );
+    await open(tester);
+    expect(
       find.descendant(
-        of: key('rules-shorts'),
+        of: key('rules-sheet-shorts'),
         matching: key('info-shorts'),
       ),
       findsOneWidget,
@@ -103,42 +120,77 @@ void main() {
 
   testWidgets('modes, helper copy and the TV preview', (tester) async {
     await pump(tester, {...contractRules, 'style': 'explicit'});
-    await show(tester, 'rules-shorts');
-    expect(find.textContaining('Shorts play as usual'), findsOneWidget);
+    await open(tester);
+    expect(find.textContaining('Videos play as usual'), findsOneWidget);
     expect(key('rules-shorts-preview'), findsNothing);
+    // "Allow a few" is not offered on a TV that doesn't have it.
+    expect(key('rules-shorts-budget'), findsNothing);
 
     await tester.tap(key('rules-shorts-block'));
     await settle(tester);
-    expect(find.textContaining('three quick Shorts in a row'), findsOneWidget);
-    expect(find.text('Shorts aren\'t on in this house.'), findsOneWidget);
+    expect(find.text('Gentle nudge'), findsWidgets);
+    expect(find.text('That\'s a lot of quick videos.'), findsOneWidget);
     expect(find.text('Pick a full video instead.'), findsOneWidget);
-    expect(key('rules-shorts-per-day'), findsNothing);
+    expect(key('rules-shorts-cool-min'), findsNothing);
 
-    await tester.tap(key('rules-shorts-budget'));
+    await tester.tap(key('rules-shorts-cooldown'));
     await settle(tester);
-    expect(find.text('That\'s all the Shorts for today.'), findsOneWidget);
-    expect(key('rules-shorts-per-day'), findsOneWidget);
-    expect(find.text('5 a day'), findsOneWidget);
+    expect(find.text('Time for a video break.'), findsOneWidget);
+    expect(find.text('Video apps are back in 10 min.'), findsOneWidget);
+    expect(find.byType(CountStepper), findsOneWidget);
 
     await tester.tap(key('rules-shorts-report'));
     await settle(tester);
-    expect(find.textContaining('Nothing is stopped'), findsOneWidget);
+    expect(find.textContaining('Nothing stops'), findsOneWidget);
     expect(key('rules-shorts-preview'), findsNothing);
   });
 
   testWidgets('quiet style says the app just closes', (tester) async {
     await pump(tester, {...contractRules});
-    await show(tester, 'rules-shorts');
+    await open(tester);
     await tester.tap(key('rules-shorts-block'));
     await settle(tester);
-    expect(find.textContaining('Pick "Friendly'), findsOneWidget);
+    expect(find.textContaining('the app just closes'), findsOneWidget);
   });
 
-  testWidgets('the stepper stays within 1–20 and saves perDay', (tester) async {
+  testWidgets('cool-down minutes step by 5 within 5–30 and save',
+      (tester) async {
+    await pump(tester, {...contractRules});
+    await open(tester);
+    await tester.tap(key('rules-shorts-cooldown'));
+    await settle(tester);
+    final stepper = find.byType(CountStepper);
+    expect(tester.widget<CountStepper>(stepper).value, 10);
+    for (var i = 0; i < 6; i++) {
+      await tester.tap(key('rules-shorts-cool-min-plus'));
+      await tester.pump();
+    }
+    await settle(tester);
+    expect(tester.widget<CountStepper>(stepper).value, 30);
+    for (var i = 0; i < 8; i++) {
+      await tester.tap(key('rules-shorts-cool-min-minus'));
+      await tester.pump();
+    }
+    await settle(tester);
+    expect(tester.widget<CountStepper>(stepper).value, 5);
+    await tester.tap(key('rules-shorts-cool-min-plus'));
+    await settle(tester);
+    await save(tester);
+    expect(
+      lastPut()['shorts'],
+      {'mode': 'cooldown', 'perDay': 5, 'cooldownMin': 10},
+    );
+  });
+
+  testWidgets('a budget rule stays readable and its stepper saves perDay',
+      (tester) async {
     await pump(tester, {
       ...contractRules,
       'shorts': {'mode': 'budget', 'perDay': 2},
     });
+    expect(find.text('2 a day'), findsOneWidget);
+    await open(tester);
+    expect(key('rules-shorts-budget'), findsOneWidget);
     await show(tester, 'rules-shorts-per-day');
     await tester.tap(key('rules-shorts-per-day-minus'));
     await settle(tester);
@@ -158,7 +210,7 @@ void main() {
     expect(lastPut()['shorts'], {'mode': 'budget', 'perDay': 20});
   });
 
-  testWidgets('saving another card keeps rules.shorts', (tester) async {
+  testWidgets('saving another rule keeps rules.shorts', (tester) async {
     await pump(tester, {
       ...contractRules,
       'shorts': {'mode': 'block', 'perDay': 10, 'later': true},
@@ -173,7 +225,7 @@ void main() {
   testWidgets('back to Off on a TV without the rule is not an edit',
       (tester) async {
     await pump(tester, {...contractRules});
-    await show(tester, 'rules-shorts');
+    await open(tester);
     await tester.tap(key('rules-shorts-block'));
     await settle(tester);
     expect(key('rules-save-bar'), findsOneWidget);
@@ -182,14 +234,18 @@ void main() {
     expect(key('rules-save-bar'), findsNothing);
   });
 
-  testWidgets('presets never touch Shorts', (tester) async {
+  testWidgets('presets never touch video hopping', (tester) async {
     await pump(tester, {
       ...contractRules,
       'shorts': {'mode': 'budget', 'perDay': 3},
     });
+    await show(tester, 'preset-schoolNight');
     await tester.tap(key('preset-schoolNight'));
     await settle(tester);
-    expect(find.textContaining('Shorts and Tonight only stay'), findsOneWidget);
+    expect(
+      find.textContaining('video hopping and Tonight only stay'),
+      findsOneWidget,
+    );
     await tester.tap(key('preset-confirm'));
     await settle(tester);
     expect(lastPut()['shorts'], {'mode': 'budget', 'perDay': 3});
@@ -209,11 +265,23 @@ void main() {
       ),
       RulePreset.weekend,
     );
-    expect(rulesDiff(a, const AgentRules()), contains('Shorts'));
-    expect(rulesDiff(a, a), isNot(contains('Shorts')));
+    expect(rulesDiff(a, const AgentRules()), contains('Video hopping'));
+    expect(rulesDiff(a, a), isNot(contains('Video hopping')));
+    const c = AgentRules(shorts: ShortsRule(mode: ShortsMode.cooldown));
+    expect(
+      rulesDiff(
+        c,
+        const AgentRules(
+          shorts: ShortsRule(mode: ShortsMode.cooldown, cooldownMin: 20),
+        ),
+      ),
+      contains('Video hopping'),
+    );
+    expect(
+        hoppingLabel(const ShortsRule(mode: ShortsMode.block)), 'Gentle nudge');
   });
 
-  testWidgets('status line: today and last time', (tester) async {
+  testWidgets('today and last time, in the sheet', (tester) async {
     await pump(
       tester,
       {...contractRules},
@@ -222,16 +290,20 @@ void main() {
         lastDetectedAt: DateTime(2026, 10, 28, 18, 42),
       ),
     );
+    expect(find.text('7 today'), findsOneWidget);
+    await open(tester);
     await show(tester, 'rules-shorts-today');
     expect(find.text('Today: 7 Shorts · last at 6:42 pm'), findsOneWidget);
   });
 
-  testWidgets('a nudge scrolls to the card', (tester) async {
+  testWidgets('a nudge opens the Video hopping sheet', (tester) async {
     await pump(tester, {...contractRules}, focus: 'shorts', height: 700);
     await settle(tester, 6);
-    final box = tester.getRect(key('rules-shorts'));
-    expect(box.top, lessThan(700));
-    expect(box.top, greaterThanOrEqualTo(0));
+    expect(key('rules-sheet-shorts'), findsOneWidget);
+    await tester.tap(key('rules-sheet-done'));
+    await settle(tester);
+    // Once only.
+    expect(key('rules-sheet-shorts'), findsNothing);
   });
 
   testWidgets('fits 360 dp at 1.3× text', (tester) async {
@@ -243,7 +315,7 @@ void main() {
       },
       textScale: 1.3,
     );
-    await show(tester, 'rules-shorts');
+    await open(tester);
     expect(tester.takeException(), isNull);
   });
 }

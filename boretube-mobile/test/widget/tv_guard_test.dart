@@ -338,7 +338,7 @@ void main() {
       conflictOnce = false;
       await pumpRules(tester);
       expect(
-        find.text('Saved to Living Room TV · runs even when you\'re away'),
+        find.text('Saved to the TV · runs even when you\'re away'),
         findsOneWidget,
       );
       expect(find.textContaining('Rakesh\'s Pixel'), findsOneWidget);
@@ -412,12 +412,14 @@ void main() {
       expect(sent.where((r) => r.method == 'PUT'), hasLength(1));
       expect(find.textContaining('Other phone'), findsOneWidget);
       expect(find.byKey(const Key('rules-save-bar')), findsNothing);
-      expect(find.textContaining('A friendly card'), findsOneWidget);
+      expect(find.text('Friendly'), findsOneWidget);
     });
 
     testWidgets('quick overrides save at once', (tester) async {
       conflictOnce = false;
       await pumpRules(tester);
+      await tester.tap(find.byKey(const Key('rules-overrides')));
+      await settle(tester);
       await tester.tap(find.byKey(const Key('rules-mute-30')));
       await settle(tester);
       final body = jsonDecode(
@@ -434,6 +436,9 @@ void main() {
     testWidgets('add a quiet-hours row', (tester) async {
       conflictOnce = false;
       await pumpRules(tester);
+      await tester.tap(find.byKey(const Key('rules-tv-time')));
+      await settle(tester);
+      expect(find.byKey(const Key('rules-schedule-0')), findsOneWidget);
       expect(find.byKey(const Key('rules-schedule-1')), findsNothing);
       await tester.ensureVisible(find.byKey(const Key('rules-add-schedule')));
       await tester.tap(find.byKey(const Key('rules-add-schedule')));

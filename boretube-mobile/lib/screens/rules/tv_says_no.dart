@@ -38,6 +38,7 @@ class TvSaysNoPreview extends StatelessWidget {
           ? 'On the TV: Tubby says ${headline ?? 'that\'s all for tonight'}'
           : 'On the TV: the app closes and the home screen shows',
       excludeSemantics: true,
+      // tokens:off — a drawn TV (bezel, stand); not layout.
       child: Column(
         children: [
           Container(
@@ -78,6 +79,7 @@ class TvSaysNoPreview extends StatelessWidget {
           ),
         ],
       ),
+      // tokens:on
     );
   }
 }
@@ -91,6 +93,7 @@ class _Friendly extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    // tokens:off — the TV card drawn to scale ([k]); illustration only.
     return LayoutBuilder(
       builder: (context, c) {
         final w = c.maxWidth;
@@ -188,6 +191,7 @@ class _Friendly extends StatelessWidget {
         );
       },
     );
+    // tokens:on
   }
 }
 
@@ -203,6 +207,7 @@ class _Quiet extends StatelessWidget {
       Color(0xFF113CCF),
       Color(0xFF1DB954),
     ];
+    // tokens:off — a drawn TV home screen, scaled by [k]; illustration only.
     return LayoutBuilder(
       builder: (context, c) {
         final k = (c.maxWidth / 300).clamp(0.7, 1.3);
@@ -268,5 +273,6 @@ class _Quiet extends StatelessWidget {
         );
       },
     );
+    // tokens:on
   }
 }

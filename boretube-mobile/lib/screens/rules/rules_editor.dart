@@ -15,8 +15,9 @@ import '../../ui/controls.dart';
 import '../../ui/format.dart';
 import '../../ui/learn.dart';
 import '../../ui/tokens.dart';
-import '../../ui/tubby.dart';
 import '../home/home_logic.dart';
+import '../tab_header.dart';
+import 'day_ribbon.dart';
 import 'presets.dart';
 import 'tv_says_no.dart';
 
@@ -43,8 +44,27 @@ const _dayWord = {
   7: 'Sunday',
 };
 
+/// Cool-down minutes offered in the Video hopping sheet.
+const _coolMin = 5;
+const _coolMax = 30;
+const _coolStep = 5;
+
+/// What Video hopping is set to, in a word or two.
+String hoppingLabel(ShortsRule s) => switch (s.mode) {
+      ShortsMode.off => 'Off',
+      ShortsMode.block => 'Gentle nudge',
+      ShortsMode.cooldown => 'Cool-down',
+      ShortsMode.budget => '${s.perDay} a day',
+      ShortsMode.report => 'Just tell me',
+    };
+
 /// Edits the rules document as a draft; Save sends it with its version
 /// and handles "the TV has newer rules" (409) with a friendly sheet.
+///
+/// The screen is a day ribbon (the hero), the preset chips, and one plain
+/// row per rule. Each row opens a focused sheet with that rule's controls;
+/// the sheets edit the same draft, and the ink save bar appears once
+/// anything changed.
 class RulesEditor extends ConsumerStatefulWidget {
   final AgentRules initial;
   const RulesEditor({super.key, required this.initial});
@@ -57,58 +77,32 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
   late AgentRules _base = widget.initial;
   late AgentRules _draft = widget.initial;
   bool _saving = false;
-  final _shortsKey = GlobalKey();
-  final _scroll = ScrollController();
+
+  /// Ticks on every state change so open sheets rebuild with the draft.
+  final _changes = ValueNotifier<int>(0);
+
+  @override
+  void setState(VoidCallback fn) {
+    super.setState(fn);
+    _changes.value++;
+  }
 
   @override
   void dispose() {
-    _scroll.dispose();
+    _changes.dispose();
     super.dispose();
   }
 
   DateTime _now() => ref.read(rulesClockProvider)();
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final f = ref.read(routinesFocusProvider);
-      if (f != null) _focus(f);
-    });
-  }
+  bool _focusing = false;
 
-  /// Brings a card into view once (a nudge asked for it).
+  /// Opens a rule's sheet once (a nudge asked for it), once this tab is
+  /// on screen.
   void _focus(String id) {
+    _focusing = false;
     ref.read(routinesFocusProvider.notifier).state = null;
-    final key = switch (id) {
-      'shorts' => _shortsKey,
-      _ => null,
-    };
-    if (key == null) return;
-    // The list builds lazily: step down until the card exists, then
-    // bring it into view.
-    Future<void> reveal(int tries) async {
-      if (!mounted) return;
-      final c = key.currentContext;
-      if (c != null && c.mounted) {
-        await Scrollable.ensureVisible(
-          c,
-          duration: Motion.of(context, Motion.sheet),
-          curve: Motion.enter,
-          alignment: 0.1,
-        );
-        return;
-      }
-      if (tries == 0 || !_scroll.hasClients) return;
-      final p = _scroll.position;
-      if (p.pixels >= p.maxScrollExtent) return;
-      _scroll.jumpTo(
-        (p.pixels + p.viewportDimension * 0.8).clamp(0, p.maxScrollExtent),
-      );
-      WidgetsBinding.instance.addPostFrameCallback((_) => reveal(tries - 1));
-    }
-
-    WidgetsBinding.instance.addPostFrameCallback((_) => reveal(12));
+    if (id == 'shorts' && mounted) _openShorts();
   }
 
   bool get _dirty => jsonEncode(_draft.toJson()) != jsonEncode(_base.toJson());
@@ -232,52 +226,100 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
     await _save(draft: next);
   }
 
+  /// One rule's focused editor. The sheet rebuilds with every draft change.
+  Future<void> _open(
+    String id,
+    String title,
+    List<Widget> Function(BuildContext c, AgentRules r) body, {
+    Widget Function(BuildContext c)? lead,
+  }) =>
+      showBtSheet<void>(
+        context,
+        builder: (_) => ValueListenableBuilder<int>(
+          valueListenable: _changes,
+          builder: (c, tick, child) => SheetScaffold(
+            key: Key('rules-sheet-$id'),
+            title: title,
+            lead: lead?.call(c),
+            children: [
+              ...body(c, _draft),
+              const SizedBox(height: Gap.related),
+              PrimaryButton(
+                key: const Key('rules-sheet-done'),
+                label: 'Done',
+                kind: ButtonKind.ink,
+                onPressed: () => Navigator.pop(c),
+              ),
+            ],
+          ),
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
-    ref.listen<String?>(routinesFocusProvider, (_, next) {
-      if (next != null) _focus(next);
-    });
+    // A nudge can ask for a rule while this tab is still off stage (the
+    // shell keeps tabs alive); open its sheet once the tab shows.
+    final focus = ref.watch(routinesFocusProvider);
+    if (focus != null && !_focusing && Visibility.of(context)) {
+      _focusing = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _focus(focus);
+      });
+    }
     final r = _draft;
     final active = detectPreset(r);
+    final text = Theme.of(context).textTheme;
+    final when = _base.updatedAtTime;
     return Column(
       children: [
         Expanded(
           child: ListView(
             key: const Key('rules-list'),
-            controller: _scroll,
-            padding: const EdgeInsets.fromLTRB(
-              Gap.gutter,
-              0,
-              Gap.gutter,
-              Gap.f34,
-            ),
+            padding: const EdgeInsets.only(bottom: Gap.section),
             children: [
-              _StatusLine(rules: _base, dirty: _dirty),
-              const SizedBox(height: Gap.f13),
-              _PresetChips(
-                active: active,
-                onPick: _saving ? null : _choosePreset,
+              TabHeader(
+                title: 'Routines',
+                status: _StatusLine(dirty: _dirty),
               ),
-              if (isBlankRoutine(r)) ...[
-                const SizedBox(height: Gap.f13),
-                _Templates(onPick: _saving ? null : _choosePreset),
-              ],
-              const SizedBox(height: Gap.f13),
-              _bedtimeCard(context, r),
-              const SizedBox(height: Gap.f13),
-              _dailyCard(context, r),
-              const SizedBox(height: Gap.f13),
-              _appsCard(context, r),
-              const SizedBox(height: Gap.f13),
-              _shortsCard(context, r),
-              const SizedBox(height: Gap.f13),
-              _volumeCard(context, r),
-              const SizedBox(height: Gap.f13),
-              _silentCard(context, r),
-              const SizedBox(height: Gap.f13),
-              _styleCard(context, r),
-              const GroupHeading('Tonight only'),
-              _tonightCard(context, r),
+              const SizedBox(height: Gap.related),
+              StaggerIn(
+                index: 0,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: Gap.gutter),
+                  child: _DayHero(rules: r, now: _now()),
+                ),
+              ),
+              const SizedBox(height: Gap.related),
+              StaggerIn(
+                index: 1,
+                child: _PresetChips(
+                  active: active,
+                  onPick: _saving ? null : _choosePreset,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: Gap.gutter),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (isBlankRoutine(r))
+                      _Templates(onPick: _saving ? null : _choosePreset),
+                    const SizedBox(height: Gap.f13),
+                    StaggerIn(index: 2, child: _rules(context, r)),
+                    if (_base.updatedBy.isNotEmpty) ...[
+                      const SizedBox(height: Gap.related),
+                      Text(
+                        'Last changed by ${_base.updatedBy}'
+                        '${when == null ? '' : ' · ${relativeTime(when)}'}',
+                        key: const Key('rules-updated'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: text.bodySmall,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -291,333 +333,475 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
     );
   }
 
-  // ── cards ──
+  // ── the rows ──
 
-  Widget _bedtimeCard(BuildContext context, AgentRules r) {
-    final text = Theme.of(context).textTheme;
+  Widget _rules(BuildContext context, AgentRules r) {
+    final now = _now();
+    final h24 = MediaQuery.alwaysUse24HourFormatOf(context);
     final t = r.tvTime;
-    void setRows(List<ScheduleRow> rows) =>
-        _edit((r) => r.copyWith(tvTime: t.copyWith(schedule: rows)));
-    return SettingCard(
-      key: const Key('rules-tv-time'),
-      icon: Icons.bedtime_rounded,
-      tone: Tone.warn,
-      title: const Text('Bedtime and quiet hours'),
+    final a = r.allowedApps;
+    final v = r.volumeLimit;
+    final today = ref.watch(
+      agentStatusProvider.select((l) => l.up ? l.status!.shorts : null),
+    );
+    final activeOverrides = [
+      for (final o in r.overrides)
+        if (o.activeAt(now)) o,
+    ];
+    return RowList(
       children: [
-        if (t.schedule.isEmpty)
-          Padding(
-            padding: const EdgeInsets.only(bottom: Gap.f13),
-            child: Text(
-              'No quiet hours yet. In these windows the TV says no, even '
-              'when nobody is home to say it.',
+        ListRow(
+          key: const Key('rules-tv-time'),
+          icon: Icons.bedtime_rounded,
+          title: 'Bedtime and quiet hours',
+          subtitle: t.schedule.isEmpty
+              ? 'None yet'
+              : [
+                  for (final w in t.schedule)
+                    '${daysLabel(w.days)} ${hhmmLabel(w.from, h24: h24)}',
+                ].join(' · '),
+          value: t.schedule.isEmpty ? 'Off' : null,
+          onTap: _openBedtime,
+        ),
+        ListRow(
+          key: const Key('rules-daily'),
+          icon: Icons.timer_rounded,
+          title: 'Daily TV time',
+          value:
+              t.dailyLimitMin == 0 ? 'No limit' : minutesLabel(t.dailyLimitMin),
+          onTap: _openDaily,
+        ),
+        ListRow(
+          key: const Key('rules-apps'),
+          icon: Icons.apps_rounded,
+          title: 'Allowed apps',
+          subtitle: a.mode == AppsMode.off || a.packages.isEmpty
+              ? null
+              : [for (final p in a.packages) appLabel(p)].join(', '),
+          value: switch (a.mode) {
+            AppsMode.off => 'Any',
+            AppsMode.allowlist => 'Only these',
+            AppsMode.blocklist => 'Block these',
+          },
+          onTap: _openApps,
+        ),
+        ListRow(
+          key: const Key('rules-shorts'),
+          icon: Icons.swipe_vertical_rounded,
+          title: 'Video hopping',
+          subtitle: today == null || today.todayCount == 0
+              ? null
+              : '${today.todayCount} today',
+          value: hoppingLabel(r.shortsRule),
+          onTap: _openShorts,
+        ),
+        ListRow(
+          key: const Key('rules-sound'),
+          icon: Icons.volume_down_rounded,
+          title: 'Volume',
+          value: v.enabled ? 'Up to ${v.maxPercent}%' : 'Any',
+          onTap: _openVolume,
+        ),
+        SwitchLine(
+          key: const Key('rules-always-mute'),
+          leading: Icon(
+            Icons.volume_off_rounded,
+            size: Sizes.icon,
+            color: context.bt.inkSoft,
+          ),
+          title: 'Keep it silent',
+          subtitle: r.alwaysMute ? 'Stays muted all the time' : null,
+          value: r.alwaysMute,
+          onChanged: (on) => _edit((r) => r.copyWith(alwaysMute: on)),
+        ),
+        ListRow(
+          key: const Key('rules-style'),
+          icon: Icons.chat_bubble_rounded,
+          title: 'How the TV says no',
+          value: r.style == RuleStyle.explicit ? 'Friendly' : 'Quietly',
+          onTap: _openStyle,
+        ),
+        ListRow(
+          key: const Key('rules-overrides'),
+          icon: Icons.event_rounded,
+          title: 'Tonight only',
+          value: activeOverrides.isEmpty
+              ? 'Nothing on'
+              : '${activeOverrides.length} on now',
+          onTap: _openTonight,
+        ),
+      ],
+    );
+  }
+
+  // ── the sheets ──
+
+  Future<void> _openBedtime() => _open(
+        'tv-time',
+        'Bedtime and quiet hours',
+        lead: (_) => const Text(
+          'The TV says no in these windows, even when nobody is home.',
+        ),
+        (c, r) {
+          final t = r.tvTime;
+          void setRows(List<ScheduleRow> rows) => _edit(
+                (d) => d.copyWith(tvTime: d.tvTime.copyWith(schedule: rows)),
+              );
+          return [
+            if (t.schedule.isNotEmpty) ...[
+              RowList(
+                edges: true,
+                children: [
+                  for (var i = 0; i < t.schedule.length; i++)
+                    _WindowEditor(
+                      key: Key('rules-schedule-$i'),
+                      row: t.schedule[i],
+                      onChanged: (row) => setRows([...t.schedule]..[i] = row),
+                      onRemove: () => setRows([...t.schedule]..removeAt(i)),
+                    ),
+                ],
+              ),
+              const SizedBox(height: Gap.inside),
+            ],
+            DashedAdd(
+              key: const Key('rules-add-schedule'),
+              label: t.schedule.isEmpty ? 'Add a bedtime' : 'Add quiet hours',
+              expand: true,
+              onTap: () => setRows([
+                ...t.schedule,
+                ScheduleRow(
+                  days:
+                      t.schedule.isEmpty ? const [1, 2, 3, 4, 7] : const [5, 6],
+                  from: t.schedule.isEmpty ? '21:00' : '22:30',
+                  to: t.schedule.isEmpty ? '07:00' : '08:30',
+                ),
+              ]),
+            ),
+          ];
+        },
+      );
+
+  Future<void> _openDaily() => _open(
+        'daily',
+        'Daily TV time',
+        (c, r) {
+          final text = Theme.of(c).textTheme;
+          final bt = c.bt;
+          final limit = r.tvTime.dailyLimitMin;
+          final label = limit == 0 ? 'No limit' : minutesLabel(limit);
+          return [
+            Text(
+              label,
+              style: Fonts.bricolage(
+                TypeSize.title,
+                color: limit == 0 ? bt.muted : bt.ink,
+                tabularFigures: true,
+              ),
+            ),
+            Slider(
+              key: const Key('rules-daily-slider'),
+              value: limit.clamp(0, 300).toDouble(),
+              max: 300,
+              divisions: 20,
+              label: label,
+              semanticFormatterCallback: (x) =>
+                  x == 0 ? 'No limit' : minutesLabel(x.round()),
+              onChanged: (x) => _edit(
+                (d) => d.copyWith(
+                  tvTime: d.tvTime.copyWith(dailyLimitMin: x.round()),
+                ),
+              ),
+            ),
+            Text(
+              limit == 0
+                  ? 'Slide to set how much TV a day. Bedtime still applies.'
+                  : 'Screen-on time on the TV\'s clock. Resets at midnight.',
               style: text.bodySmall,
             ),
-          ),
-        for (var i = 0; i < t.schedule.length; i++) ...[
-          _WindowEditor(
-            key: Key('rules-schedule-$i'),
-            row: t.schedule[i],
-            onChanged: (row) => setRows([...t.schedule]..[i] = row),
-            onRemove: () => setRows([...t.schedule]..removeAt(i)),
-          ),
-          const SizedBox(height: Gap.f8),
-        ],
-        DashedAdd(
-          key: const Key('rules-add-schedule'),
-          label: t.schedule.isEmpty ? 'Add a bedtime' : 'Add quiet hours',
-          expand: true,
-          onTap: () => setRows([
-            ...t.schedule,
-            ScheduleRow(
-              days: t.schedule.isEmpty ? const [1, 2, 3, 4, 7] : const [5, 6],
-              from: t.schedule.isEmpty ? '21:00' : '22:30',
-              to: t.schedule.isEmpty ? '07:00' : '08:30',
-            ),
-          ]),
-        ),
-      ],
-    );
-  }
+          ];
+        },
+      );
 
-  Widget _dailyCard(BuildContext context, AgentRules r) {
-    final text = Theme.of(context).textTheme;
-    final t = r.tvTime;
-    final limit = t.dailyLimitMin;
-    return SettingCard(
-      key: const Key('rules-daily'),
-      icon: Icons.timer_rounded,
-      tone: Tone.info,
-      title: const Text('Daily TV time'),
-      value: limit == 0 ? 'No limit' : minutesLabel(limit),
-      dim: limit == 0,
-      children: [
-        Slider(
-          key: const Key('rules-daily-slider'),
-          value: limit.clamp(0, 300).toDouble(),
-          max: 300,
-          divisions: 20,
-          label: limit == 0 ? 'No limit' : minutesLabel(limit),
-          semanticFormatterCallback: (x) =>
-              x == 0 ? 'No limit' : minutesLabel(x.round()),
-          onChanged: (x) => _edit(
-            (r) => r.copyWith(tvTime: t.copyWith(dailyLimitMin: x.round())),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: Gap.f4),
-          child: Text(
-            limit == 0
-                ? 'Slide to set how much TV a day. Bedtime still applies.'
-                : 'Counts screen-on time only, on the TV\'s clock. Resets '
-                    'at midnight.',
-            style: text.bodySmall,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _appsCard(BuildContext context, AgentRules r) {
-    final text = Theme.of(context).textTheme;
-    final a = r.allowedApps;
-    void remove(String p) => _edit(
-          (r) => r.copyWith(
-            allowedApps: a.copyWith(
-              packages: [
-                for (final x in a.packages)
-                  if (x != p) x,
-              ],
-            ),
-          ),
-        );
-    return SettingCard(
-      key: const Key('rules-apps'),
-      icon: Icons.apps_rounded,
-      tone: Tone.ok,
-      title: const Text('Allowed apps'),
-      children: [
-        SegmentChoice<AppsMode>(
-          keyPrefix: 'rules-apps',
-          options: const [
-            (AppsMode.off, 'Any'),
-            (AppsMode.allowlist, 'Only these'),
-            (AppsMode.blocklist, 'Block these'),
-          ],
-          value: a.mode,
-          onChanged: (m) =>
-              _edit((r) => r.copyWith(allowedApps: a.copyWith(mode: m))),
-        ),
-        const SizedBox(height: Gap.f13),
-        Text(
-          switch (a.mode) {
-            AppsMode.off => 'Every app can open.',
-            AppsMode.allowlist => 'Only the apps below open. Anything else '
-                'closes and the TV goes Home.',
-            AppsMode.blocklist => 'The apps below close as soon as they '
-                'open.',
-          },
-          style: text.bodySmall,
-        ),
-        AnimatedSize(
-          duration: Motion.of(context, Motion.sheet),
-          curve: Motion.enter,
-          alignment: Alignment.topCenter,
-          child: a.mode == AppsMode.off
-              ? const SizedBox(width: double.infinity)
-              : Padding(
-                  padding: const EdgeInsets.only(top: Gap.f13),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (a.packages.isEmpty && a.mode == AppsMode.allowlist)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: Gap.f8),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.warning_amber_rounded,
-                                size: 18,
-                                color: Tone.warn.color(context),
-                              ),
-                              const SizedBox(width: Gap.f8),
-                              Expanded(
-                                child: Text(
-                                  'Nothing picked yet, so no app would open.',
-                                  style: text.bodySmall!.copyWith(
-                                    color: Tone.warn.color(context),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      Wrap(
-                        spacing: Gap.f8,
-                        runSpacing: Gap.f8,
-                        children: [
-                          for (final p in a.packages)
-                            AppPill(pkg: p, onRemove: () => remove(p)),
-                          DashedAdd(
-                            key: const Key('rules-pick-apps'),
-                            label: a.packages.isEmpty ? 'Choose apps' : 'Add',
-                            onTap: _pickApps,
-                          ),
-                        ],
-                      ),
+  Future<void> _openApps() => _open(
+        'apps',
+        'Allowed apps',
+        (c, r) {
+          final text = Theme.of(c).textTheme;
+          final a = r.allowedApps;
+          void remove(String p) => _edit(
+                (d) => d.copyWith(
+                  allowedApps: d.allowedApps.copyWith(
+                    packages: [
+                      for (final x in d.allowedApps.packages)
+                        if (x != p) x,
                     ],
                   ),
                 ),
-        ),
-      ],
-    );
-  }
+              );
+          return [
+            RadioList<AppsMode>(
+              keyPrefix: 'rules-apps',
+              options: const [
+                RadioOption(
+                  AppsMode.off,
+                  'Any app',
+                  detail: 'Every app can open.',
+                ),
+                RadioOption(
+                  AppsMode.allowlist,
+                  'Only these',
+                  detail: 'Anything else closes and the TV goes Home.',
+                ),
+                RadioOption(
+                  AppsMode.blocklist,
+                  'Block these',
+                  detail: 'These close as soon as they open.',
+                ),
+              ],
+              value: a.mode,
+              onChanged: (m) => _edit(
+                (d) => d.copyWith(allowedApps: d.allowedApps.copyWith(mode: m)),
+              ),
+            ),
+            AnimatedSize(
+              duration: Motion.of(c, Motion.sheet),
+              curve: Motion.enter,
+              alignment: Alignment.topCenter,
+              child: a.mode == AppsMode.off
+                  ? const SizedBox(width: double.infinity)
+                  : Padding(
+                      padding: const EdgeInsets.only(top: Gap.related),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (a.packages.isEmpty &&
+                              a.mode == AppsMode.allowlist)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: Gap.f13),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.warning_amber_rounded,
+                                    size: Sizes.iconSmall,
+                                    color: Tone.warn.color(c),
+                                  ),
+                                  const SizedBox(width: Gap.f8),
+                                  Expanded(
+                                    child: Text(
+                                      'Nothing picked yet, so no app would '
+                                      'open.',
+                                      style: text.bodySmall!.copyWith(
+                                        color: Tone.warn.color(c),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          Wrap(
+                            spacing: Gap.f8,
+                            runSpacing: Gap.f8,
+                            children: [
+                              for (final p in a.packages)
+                                AppPill(pkg: p, onRemove: () => remove(p)),
+                              DashedAdd(
+                                key: const Key('rules-pick-apps'),
+                                label:
+                                    a.packages.isEmpty ? 'Choose apps' : 'Add',
+                                onTap: _pickApps,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+            ),
+          ];
+        },
+      );
 
-  Widget _shortsCard(BuildContext context, AgentRules r) {
-    final text = Theme.of(context).textTheme;
-    final bt = context.bt;
+  Future<void> _openShorts() => _open(
+        'shorts',
+        'Video hopping',
+        lead: (c) => Row(
+          children: [
+            const Expanded(
+              child: Text('Quick videos, one after another.'),
+            ),
+            InfoDot(LearnTerm.shorts, color: c.bt.muted),
+          ],
+        ),
+        _shortsBody,
+      );
+
+  List<Widget> _shortsBody(BuildContext c, AgentRules r) {
+    final text = Theme.of(c).textTheme;
+    final bt = c.bt;
     final rule = r.shortsRule;
     final mode = rule.mode;
     final perDay =
         rule.perDay.clamp(ShortsRule.minPerDay, ShortsRule.maxPerDay);
-    final today = ref.watch(
-      agentStatusProvider.select((l) => l.up ? l.status!.shorts : null),
-    );
-    // Back to Off on a TV that never had a Shorts rule: leave it absent,
-    // so the draft matches what's saved.
+    final cool = rule.cooldownMin;
+    final today = ref.read(agentStatusProvider).up
+        ? ref.read(agentStatusProvider).status!.shorts
+        : null;
+    // Back to Off on a TV that never had the rule: leave it absent, so the
+    // draft matches what's saved.
     void set(ShortsRule s) => _edit(
-          (r) => s.mode == ShortsMode.off &&
+          (d) => s.mode == ShortsMode.off &&
                   _base.shorts == null &&
                   s.extra.isEmpty
-              ? r.copyWith(clearShorts: true)
-              : r.copyWith(shorts: s),
+              ? d.copyWith(clearShorts: true)
+              : d.copyWith(shorts: s),
         );
+    // "Allow a few" is no longer offered; it stays readable while the TV
+    // has it.
+    final budget =
+        mode == ShortsMode.budget || _base.shortsRule.mode == ShortsMode.budget;
     final friendly = r.style == RuleStyle.explicit;
-    final stops = mode == ShortsMode.block || mode == ShortsMode.budget;
-    return KeyedSubtree(
-      key: _shortsKey,
-      child: SettingCard(
-        key: const Key('rules-shorts'),
-        icon: Icons.swipe_vertical_rounded,
-        tone: Tone.accent,
-        title: const TermTitle('Shorts', LearnTerm.shorts),
-        value: mode == ShortsMode.budget ? '$perDay a day' : null,
-        dim: mode == ShortsMode.off,
-        children: [
-          SegmentChoice<ShortsMode>(
-            keyPrefix: 'rules-shorts',
-            options: const [
-              (ShortsMode.off, 'Off'),
-              (ShortsMode.block, 'Block'),
-              (ShortsMode.budget, 'Allow a few'),
-              (ShortsMode.report, 'Just tell me'),
-            ],
-            value: mode,
-            onChanged: (m) => set(
-              rule.copyWith(
-                mode: m,
-                perDay: m == ShortsMode.budget ? perDay : null,
+    final stops = mode == ShortsMode.block ||
+        mode == ShortsMode.cooldown ||
+        mode == ShortsMode.budget;
+    Widget reveal(bool on, Widget child) => AnimatedSize(
+          duration: Motion.of(c, Motion.sheet),
+          curve: Motion.enter,
+          alignment: Alignment.topCenter,
+          child: on ? child : const SizedBox(width: double.infinity),
+        );
+    return [
+      RadioList<ShortsMode>(
+        keyPrefix: 'rules-shorts',
+        options: [
+          const RadioOption(
+            ShortsMode.off,
+            'Off',
+            detail: 'Videos play as usual, still counted.',
+          ),
+          const RadioOption(
+            ShortsMode.block,
+            'Gentle nudge',
+            detail: 'Closes the app with a friendly card.',
+          ),
+          RadioOption(
+            ShortsMode.cooldown,
+            'Cool-down',
+            detail: 'Closes it, then video apps rest for $cool min.',
+          ),
+          if (budget)
+            RadioOption(
+              ShortsMode.budget,
+              'Allow a few',
+              detail: 'The first $perDay each day play, then the TV says no.',
+            ),
+          const RadioOption(
+            ShortsMode.report,
+            'Just tell me',
+            detail: 'Nothing stops. You see how many, on Home.',
+          ),
+        ],
+        value: mode,
+        onChanged: (m) => set(
+          rule.copyWith(
+            mode: m,
+            perDay: m == ShortsMode.budget ? perDay : null,
+          ),
+        ),
+      ),
+      reveal(
+        mode == ShortsMode.cooldown,
+        RowList(
+          edges: true,
+          children: [
+            ListRow(
+              title: 'Video apps rest for',
+              trailing: CountStepper(
+                key: const Key('rules-shorts-cool-min'),
+                keyPrefix: 'rules-shorts-cool-min',
+                value: cool,
+                min: cool < _coolMin ? cool : _coolMin,
+                max: cool > _coolMax ? cool : _coolMax,
+                step: _coolStep,
+                unit: 'min',
+                onChanged: (n) => set(rule.copyWith(cooldownMin: n)),
               ),
             ),
-          ),
-          AnimatedSize(
-            duration: Motion.of(context, Motion.sheet),
-            curve: Motion.enter,
-            alignment: Alignment.topCenter,
-            child: mode != ShortsMode.budget
-                ? const SizedBox(width: double.infinity)
-                : Padding(
-                    padding: const EdgeInsets.only(top: Gap.f13),
-                    child: CountStepper(
-                      key: const Key('rules-shorts-per-day'),
-                      keyPrefix: 'rules-shorts-per-day',
-                      value: perDay,
-                      min: ShortsRule.minPerDay,
-                      max: ShortsRule.maxPerDay,
-                      unit: perDay == 1 ? 'Short per day' : 'Shorts per day',
-                      onChanged: (n) => set(rule.copyWith(perDay: n)),
-                    ),
-                  ),
-          ),
-          const SizedBox(height: Gap.f13),
-          AnimatedSwitcher(
-            duration: Motion.of(context, Motion.flip),
-            child: Text(
-              switch (mode) {
-                ShortsMode.off => 'Shorts play as usual. The TV still counts '
-                    'them, so you can see how many.',
-                ShortsMode.block => 'After three quick Shorts in a row, the '
-                    'app closes and the TV goes Home. Full videos keep '
-                    'playing.',
-                ShortsMode.cooldown => 'After a run of quick videos, the '
-                    'video apps close for 10 minutes.',
-                ShortsMode.budget => 'The first $perDay '
-                    'Short${perDay == 1 ? '' : 's'} each day play. After '
-                    'that, the TV says no until midnight.',
-                ShortsMode.report => 'Nothing is stopped. You\'ll see how '
-                    'many Shorts were watched, on Home and in History.',
-              },
-              key: ValueKey('shorts-help-$mode-$perDay'),
-              style: text.bodySmall,
-            ),
-          ),
-          AnimatedSize(
-            duration: Motion.of(context, Motion.sheet),
-            curve: Motion.enter,
-            alignment: Alignment.topCenter,
-            child: !stops
-                ? const SizedBox(width: double.infinity)
-                : Padding(
-                    padding: const EdgeInsets.only(top: Gap.f13),
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding:
-                              const EdgeInsets.symmetric(horizontal: Gap.f13),
-                          child: TvSaysNoPreview(
-                            key: const Key('rules-shorts-preview'),
-                            style: r.style,
-                            headline: mode == ShortsMode.block
-                                ? 'Shorts aren\'t on in this house.'
-                                : 'That\'s all the Shorts for today.',
-                            message: 'Pick a full video instead.',
-                          ),
-                        ),
-                        const SizedBox(height: Gap.f8),
-                        Text(
-                          friendly
-                              ? 'What the TV shows when it stops them.'
-                              : 'The app just closes. Pick "Friendly '
-                                  'message" below and Tubby says why.',
-                          textAlign: TextAlign.center,
-                          style: text.bodySmall,
-                        ),
-                      ],
-                    ),
-                  ),
-          ),
-          if (today != null &&
-              (today.todayCount > 0 || today.lastDetectedAt != null)) ...[
-            const SizedBox(height: Gap.f13),
-            Row(
-              key: const Key('rules-shorts-today'),
-              children: [
-                Icon(Icons.today_rounded, size: 16, color: bt.muted),
-                const SizedBox(width: Gap.f8),
-                Expanded(
-                  child: Text(
-                    _shortsToday(context, today),
-                    style: text.labelMedium!.copyWith(
-                      color: bt.inkSoft,
-                      fontFeatures: Fonts.tabular,
-                    ),
-                  ),
-                ),
-              ],
+          ],
+        ),
+      ),
+      reveal(
+        mode == ShortsMode.budget,
+        RowList(
+          edges: true,
+          children: [
+            ListRow(
+              title: 'Shorts a day',
+              trailing: CountStepper(
+                key: const Key('rules-shorts-per-day'),
+                keyPrefix: 'rules-shorts-per-day',
+                value: perDay,
+                min: ShortsRule.minPerDay,
+                max: ShortsRule.maxPerDay,
+                unit: '',
+                onChanged: (n) => set(rule.copyWith(perDay: n)),
+              ),
             ),
           ],
-        ],
+        ),
       ),
-    );
+      reveal(
+        stops,
+        Padding(
+          padding: const EdgeInsets.only(top: Gap.related),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: Gap.f34),
+                child: TvSaysNoPreview(
+                  key: const Key('rules-shorts-preview'),
+                  style: r.style,
+                  headline: switch (mode) {
+                    ShortsMode.cooldown => 'Time for a video break.',
+                    ShortsMode.budget => 'That\'s all the Shorts for today.',
+                    _ => 'That\'s a lot of quick videos.',
+                  },
+                  message: mode == ShortsMode.cooldown
+                      ? 'Video apps are back in $cool min.'
+                      : 'Pick a full video instead.',
+                ),
+              ),
+              const SizedBox(height: Gap.f8),
+              Text(
+                friendly
+                    ? 'What the TV shows when it steps in.'
+                    : 'Quiet style: the app just closes, no card.',
+                textAlign: TextAlign.center,
+                style: text.bodySmall,
+              ),
+            ],
+          ),
+        ),
+      ),
+      if (today != null &&
+          (today.todayCount > 0 || today.lastDetectedAt != null)) ...[
+        const SizedBox(height: Gap.related),
+        Row(
+          key: const Key('rules-shorts-today'),
+          children: [
+            Icon(Icons.today_rounded, size: Sizes.iconSmall, color: bt.muted),
+            const SizedBox(width: Gap.f8),
+            Expanded(
+              child: Text(
+                _shortsToday(c, today),
+                style: text.labelMedium!.copyWith(
+                  color: bt.inkSoft,
+                  fontFeatures: Fonts.tabular,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    ];
   }
 
   /// "Today: 7 Shorts · last at 6:42 pm".
@@ -634,166 +818,144 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
     ].join(' · ');
   }
 
-  Widget _volumeCard(BuildContext context, AgentRules r) {
-    final v = r.volumeLimit;
-    final bt = context.bt;
-    return Surface(
-      key: const Key('rules-sound'),
-      padding: const EdgeInsets.fromLTRB(Gap.f13, Gap.f8, Gap.f13, Gap.f8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SwitchLine(
-            key: const Key('rules-volume-limit'),
-            leading: IconTile(
-              icon: Icons.volume_down_rounded,
-              color: v.enabled ? Tone.info.color(context) : bt.muted,
-              size: 40,
+  Future<void> _openVolume() => _open(
+        'sound',
+        'Volume',
+        (c, r) {
+          final v = r.volumeLimit;
+          final bt = c.bt;
+          return [
+            RowList(
+              edges: true,
+              children: [
+                SwitchLine(
+                  key: const Key('rules-volume-limit'),
+                  title: 'Volume limit',
+                  subtitle: v.enabled
+                      ? 'Past ${v.maxPercent}% it snaps back'
+                      : 'Any volume',
+                  value: v.enabled,
+                  onChanged: (on) => _edit(
+                    (d) => d.copyWith(
+                      volumeLimit: d.volumeLimit.copyWith(enabled: on),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            title: 'Volume limit',
-            subtitle: v.enabled
-                ? 'Turning it up past ${v.maxPercent}% snaps back'
-                : 'Any volume',
-            value: v.enabled,
-            onChanged: (on) => _edit(
-              (r) => r.copyWith(volumeLimit: v.copyWith(enabled: on)),
-            ),
-          ),
-          AnimatedSize(
-            duration: Motion.of(context, Motion.sheet),
-            curve: Motion.enter,
-            alignment: Alignment.topCenter,
-            child: !v.enabled
-                ? const SizedBox(width: double.infinity)
-                : Row(
-                    children: [
-                      Expanded(
-                        child: Slider(
-                          key: const Key('rules-volume-slider'),
-                          value: v.maxPercent.clamp(5, 100).toDouble(),
-                          min: 5,
-                          max: 100,
-                          divisions: 19,
-                          label: '${v.maxPercent}%',
-                          onChanged: (x) => _edit(
-                            (r) => r.copyWith(
-                              volumeLimit: v.copyWith(maxPercent: x.round()),
+            AnimatedSize(
+              duration: Motion.of(c, Motion.sheet),
+              curve: Motion.enter,
+              alignment: Alignment.topCenter,
+              child: !v.enabled
+                  ? const SizedBox(width: double.infinity)
+                  : Padding(
+                      padding: const EdgeInsets.only(top: Gap.f13),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Slider(
+                              key: const Key('rules-volume-slider'),
+                              value: v.maxPercent.clamp(5, 100).toDouble(),
+                              min: 5,
+                              max: 100,
+                              divisions: 19,
+                              label: '${v.maxPercent}%',
+                              onChanged: (x) => _edit(
+                                (d) => d.copyWith(
+                                  volumeLimit: d.volumeLimit
+                                      .copyWith(maxPercent: x.round()),
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      ),
-                      SizedBox(
-                        width: 60,
-                        child: Text(
-                          '${v.maxPercent}%',
-                          textAlign: TextAlign.right,
-                          style: Fonts.bricolage(
-                            20,
-                            color: bt.ink,
-                            tabularFigures: true,
+                          ConstrainedBox(
+                            constraints:
+                                const BoxConstraints(minWidth: Sizes.row),
+                            child: Text(
+                              '${v.maxPercent}%',
+                              textAlign: TextAlign.right,
+                              style: Fonts.bricolage(
+                                TypeSize.headline,
+                                color: bt.ink,
+                                tabularFigures: true,
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
-          ),
-        ],
-      ),
-    );
-  }
+                    ),
+            ),
+          ];
+        },
+      );
 
-  Widget _silentCard(BuildContext context, AgentRules r) {
-    final bt = context.bt;
-    return Surface(
-      key: const Key('rules-silent'),
-      padding: const EdgeInsets.fromLTRB(Gap.f13, Gap.f8, Gap.f13, Gap.f8),
-      child: SwitchLine(
-        key: const Key('rules-always-mute'),
-        leading: IconTile(
-          icon: Icons.volume_off_rounded,
-          color: r.alwaysMute ? Tone.warn.color(context) : bt.muted,
-          size: 40,
-        ),
-        title: 'Keep it silent',
-        subtitle: r.alwaysMute
-            ? 'The TV stays muted, whatever the remote does'
-            : 'Off. Handy for early mornings',
-        value: r.alwaysMute,
-        onChanged: (on) => _edit((r) => r.copyWith(alwaysMute: on)),
-      ),
-    );
-  }
+  Future<void> _openStyle() => _open(
+        'style',
+        'How the TV says no',
+        (c, r) {
+          final bed = nextBedtime(r.tvTime.schedule, _now());
+          return [
+            RadioList<RuleStyle>(
+              keyPrefix: 'rules-style',
+              options: const [
+                RadioOption(
+                  RuleStyle.sneaky,
+                  'Quietly',
+                  detail: 'The app closes, as if the show ended.',
+                ),
+                RadioOption(
+                  RuleStyle.explicit,
+                  'Friendly message',
+                  detail: 'Tubby says TV time is over, and when it\'s back.',
+                ),
+              ],
+              value: r.style,
+              onChanged: (s) => _edit((d) => d.copyWith(style: s)),
+            ),
+            const SizedBox(height: Gap.related),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: Gap.f34),
+              child: TvSaysNoPreview(
+                style: r.style,
+                backAt: bed == null ? null : friendlyTime(c, bed.end),
+              ),
+            ),
+          ];
+        },
+      );
 
-  Widget _styleCard(BuildContext context, AgentRules r) {
-    final text = Theme.of(context).textTheme;
-    final bed = nextBedtime(r.tvTime.schedule, _now());
-    return SettingCard(
-      key: const Key('rules-style'),
-      icon: Icons.chat_bubble_rounded,
-      tone: Tone.accent,
-      title: const Text('How the TV says no'),
-      children: [
-        SegmentChoice<RuleStyle>(
-          keyPrefix: 'rules-style',
-          options: const [
-            (RuleStyle.sneaky, 'Quietly'),
-            (RuleStyle.explicit, 'Friendly message'),
-          ],
-          value: r.style,
-          onChanged: (s) => _edit((r) => r.copyWith(style: s)),
+  Future<void> _openTonight() => _open(
+        'overrides',
+        'Tonight only',
+        lead: (_) => const Text(
+          'These go to the TV right away and end by themselves.',
         ),
-        const SizedBox(height: Gap.f13),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: Gap.f13),
-          child: TvSaysNoPreview(
-            style: r.style,
-            backAt: bed == null ? null : friendlyTime(context, bed.end),
-          ),
-        ),
-        const SizedBox(height: Gap.f13),
-        AnimatedSwitcher(
-          duration: Motion.of(context, Motion.flip),
-          child: Text(
-            r.style == RuleStyle.sneaky
-                ? 'The app just closes and the TV goes Home, as if the '
-                    'show ended. No message, nothing to argue with.'
-                : 'A friendly card from Tubby says TV time is over and when '
-                    'it comes back. The TV says no, not you.',
-            key: ValueKey(r.style),
-            textAlign: TextAlign.center,
-            style: text.bodySmall,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _tonightCard(BuildContext context, AgentRules r) {
-    final text = Theme.of(context).textTheme;
-    final bt = context.bt;
-    final now = _now();
-    final active = [
-      for (final o in r.overrides)
-        if (o.activeAt(now)) o,
-    ];
-    final tonight = DateTime(now.year, now.month, now.day, 23, 59);
-    final ytAllowed = active.any(
-      (o) => o.kind == OverrideKind.allowApp && o.pkg == kStockYouTube,
-    );
-    final quiet = active.any((o) => o.kind == OverrideKind.muteUntil);
-    return Surface(
-      key: const Key('rules-overrides'),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: _TonightTile(
+        (c, r) {
+          final bt = c.bt;
+          final now = _now();
+          final active = [
+            for (final o in r.overrides)
+              if (o.activeAt(now)) o,
+          ];
+          final tonight = DateTime(now.year, now.month, now.day, 23, 59);
+          final ytAllowed = active.any(
+            (o) => o.kind == OverrideKind.allowApp && o.pkg == kStockYouTube,
+          );
+          final quiet = active.any((o) => o.kind == OverrideKind.muteUntil);
+          return [
+            RowList(
+              edges: true,
+              children: [
+                ListRow(
                   key: const Key('rules-allow-youtube'),
                   icon: Icons.smart_display_rounded,
-                  label: 'Allow YouTube tonight',
-                  on: ytAllowed,
+                  iconColor: ytAllowed ? bt.mintInk : null,
+                  title: 'Allow YouTube tonight',
+                  subtitle: 'Until midnight',
+                  value: ytAllowed ? 'On' : null,
+                  valueColor: bt.mintInk,
+                  chevron: false,
                   onTap: _saving
                       ? null
                       : () => _override(
@@ -804,14 +966,15 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
                             ),
                           ),
                 ),
-              ),
-              const SizedBox(width: Gap.f8),
-              Expanded(
-                child: _TonightTile(
+                ListRow(
                   key: const Key('rules-mute-30'),
                   icon: Icons.volume_off_rounded,
-                  label: 'Quiet for 30 min',
-                  on: quiet,
+                  iconColor: quiet ? bt.mintInk : null,
+                  title: 'Quiet for 30 min',
+                  subtitle: 'The TV stays muted till then',
+                  value: quiet ? 'On' : null,
+                  valueColor: bt.mintInk,
+                  chevron: false,
                   onTap: _saving
                       ? null
                       : () => _override(
@@ -824,50 +987,74 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
                             ),
                           ),
                 ),
-              ),
-            ],
-          ),
-          if (active.isNotEmpty) ...[
-            const SizedBox(height: Gap.f13),
-            for (final o in active)
-              Padding(
-                padding: const EdgeInsets.only(top: Gap.f4),
-                child: Row(
-                  children: [
-                    Icon(
-                      switch (o.kind) {
+              ],
+            ),
+            if (active.isNotEmpty) ...[
+              const GroupHeading('On now'),
+              RowList(
+                children: [
+                  for (final o in active)
+                    ListRow(
+                      icon: switch (o.kind) {
                         OverrideKind.allowApp => Icons.check_circle_rounded,
                         OverrideKind.muteUntil => Icons.volume_off_rounded,
                         OverrideKind.breakUntil => Icons.pause_circle_rounded,
                       },
-                      size: 20,
-                      color: bt.mint,
-                    ),
-                    const SizedBox(width: Gap.f13),
-                    Expanded(
-                      child: Text(
-                        '${switch (o.kind) {
-                          OverrideKind.allowApp =>
-                            '${appLabel(o.pkg ?? '')} allowed',
-                          OverrideKind.muteUntil => 'Quiet',
-                          OverrideKind.breakUntil => 'Paused',
-                        }} · until '
-                        '${friendlyTime(context, o.untilTime!.toLocal())}',
-                        style: text.bodyMedium!.copyWith(color: bt.ink),
+                      iconColor: bt.mintInk,
+                      title: '${switch (o.kind) {
+                        OverrideKind.allowApp =>
+                          '${appLabel(o.pkg ?? '')} allowed',
+                        OverrideKind.muteUntil => 'Quiet',
+                        OverrideKind.breakUntil => 'Paused',
+                      }} · until '
+                          '${friendlyTime(c, o.untilTime!.toLocal())}',
+                      trailing: TextButton(
+                        onPressed: _saving ? null : () => _removeOverride(o),
+                        child: const Text('End now'),
                       ),
                     ),
-                    TextButton(
-                      onPressed: _saving ? null : () => _removeOverride(o),
-                      child: const Text('End now'),
-                    ),
-                  ],
-                ),
+                ],
               ),
-          ],
-          const SizedBox(height: Gap.f8),
-          Text(
-            'These go to the TV right away and end by themselves.',
-            style: text.bodySmall,
+            ],
+          ];
+        },
+      );
+}
+
+// ── pieces ──
+
+/// The one line under the title: saved, or not yet.
+class _StatusLine extends StatelessWidget {
+  final bool dirty;
+
+  const _StatusLine({required this.dirty});
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final bt = context.bt;
+    final c = dirty ? bt.sunInk : bt.mintInk;
+    return AnimatedSwitcher(
+      key: const Key('rules-header'),
+      duration: Motion.of(context, Motion.flip),
+      child: Row(
+        key: ValueKey(dirty),
+        children: [
+          Icon(
+            dirty ? Icons.edit_rounded : Icons.shield_rounded,
+            size: Sizes.iconSmall,
+            color: c,
+          ),
+          const SizedBox(width: Gap.f4),
+          Flexible(
+            child: Text(
+              dirty
+                  ? 'The TV runs the old rules until you save'
+                  : 'Saved to the TV · runs even when you\'re away',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: text.labelMedium!.copyWith(color: c),
+            ),
           ),
         ],
       ),
@@ -875,84 +1062,146 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
   }
 }
 
-// ── pieces ──
-
-class _StatusLine extends ConsumerWidget {
+/// The hero: today as a 24-hour ribbon, and the rules in one line.
+class _DayHero extends StatelessWidget {
   final AgentRules rules;
-  final bool dirty;
+  final DateTime now;
 
-  const _StatusLine({required this.rules, required this.dirty});
+  const _DayHero({required this.rules, required this.now});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final bt = context.bt;
-    final tv = ref.watch(activeTvProvider)?.name ?? 'the TV';
-    final when = rules.updatedAtTime;
-    final c = dirty ? bt.sunInk : bt.mintInk;
-    return Column(
-      key: const Key('rules-header'),
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        AnimatedSwitcher(
-          duration: Motion.of(context, Motion.flip),
-          child: Row(
-            key: ValueKey(dirty),
+    final schedule = rules.tvTime.schedule;
+    final bed = nextBedtime(schedule, now);
+    final sameDay = bed != null && DateUtils.isSameDay(bed.start, now);
+    final line = schedule.isEmpty
+        ? 'No quiet hours yet'
+        : bed != null && bed.now
+            ? 'Quiet until ${friendlyTime(context, bed.end)}'
+            : sameDay
+                ? 'Quiet from ${friendlyTime(context, bed.start)}'
+                : 'No quiet hours left today';
+    final limit = rules.tvTime.dailyLimitMin;
+    final v = rules.volumeLimit;
+    final summary = [
+      limit == 0 ? 'No daily limit' : 'TV time ${minutesLabel(limit)}',
+      if (v.enabled) 'Volume ≤ ${v.maxPercent}%',
+      if (rules.alwaysMute) 'Muted',
+    ].join(' · ');
+    return Surface(
+      key: const Key('rules-hero'),
+      radius: Radii.hero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
             children: [
-              Icon(
-                dirty ? Icons.edit_rounded : Icons.shield_rounded,
-                size: 16,
-                color: c,
-              ),
-              const SizedBox(width: 6),
-              Flexible(
+              Text('Today', style: text.titleMedium),
+              const SizedBox(width: Gap.inside),
+              Expanded(
                 child: Text(
-                  dirty
-                      ? 'Not saved yet · $tv still runs the old rules'
-                      : 'Saved to $tv · runs even when you\'re away',
-                  style: text.labelLarge!.copyWith(fontSize: 14, color: c),
+                  line,
+                  key: const Key('rules-hero-line'),
+                  textAlign: TextAlign.right,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: text.bodySmall!.copyWith(
+                    color: bt.sunInk,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
           ),
-        ),
-        if (rules.updatedBy.isNotEmpty) ...[
-          const SizedBox(height: 2),
+          const SizedBox(height: Gap.f8),
+          DayRibbon(
+            schedule: schedule,
+            now: now,
+            semanticLabel: 'Today. $line.',
+          ),
           Text(
-            'Last changed by ${rules.updatedBy}'
-            '${when == null ? '' : ' · ${relativeTime(when)}'}',
-            key: const Key('rules-updated'),
+            summary,
+            key: const Key('rules-summary'),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: text.bodySmall,
+            style: text.titleSmall!.copyWith(fontFeatures: Fonts.tabular),
           ),
         ],
-      ],
+      ),
     );
   }
 }
 
-class _PresetChips extends StatelessWidget {
+/// Presets as one compact chip row, scrolling sideways past the gutter;
+/// the selected chip is kept in view.
+class _PresetChips extends StatefulWidget {
   final RulePreset? active;
   final ValueChanged<RulePreset>? onPick;
 
   const _PresetChips({required this.active, required this.onPick});
 
   @override
+  State<_PresetChips> createState() => _PresetChipsState();
+}
+
+class _PresetChipsState extends State<_PresetChips> {
+  final _selected = GlobalKey();
+  bool _first = true;
+
+  void _reveal() {
+    final c = _selected.currentContext;
+    if (c == null || !c.mounted) return;
+    final ro = c.findRenderObject();
+    if (ro == null) return;
+    // Only the chip row scrolls; the page stays where it is.
+    Scrollable.of(c).position.ensureVisible(
+          ro,
+          alignment: Phi.minor,
+          duration: _first ? Duration.zero : Motion.of(c, Motion.sheet),
+          curve: Motion.enter,
+        );
+    _first = false;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _reveal());
+  }
+
+  @override
+  void didUpdateWidget(_PresetChips old) {
+    super.didUpdateWidget(old);
+    if (old.active != widget.active) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _reveal());
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: Gap.f8,
-      runSpacing: Gap.f8,
-      children: [
-        for (final p in RulePreset.values)
+    final active = widget.active;
+    final onPick = widget.onPick;
+    Widget keep(bool on, Widget child) =>
+        on ? KeyedSubtree(key: _selected, child: child) : child;
+    final chips = [
+      for (final p in RulePreset.values)
+        keep(
+          active == p,
           BtChip(
             key: Key('preset-${p.name}'),
             label: p.label,
             selected: active == p,
-            onTap: active == p || onPick == null ? null : () => onPick!(p),
+            onTap: active == p || onPick == null ? null : () => onPick(p),
           ),
+        ),
+      keep(
+        active == null,
         Tooltip(
-          message: 'Change anything below and it becomes your own routine',
+          message: 'Change any rule and it becomes your own routine',
           child: BtChip(
             key: const Key('preset-custom'),
             label: 'Custom',
@@ -960,74 +1209,48 @@ class _PresetChips extends StatelessWidget {
             selected: active == null,
           ),
         ),
-      ],
+      ),
+    ];
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: Gap.gutter),
+      child: Row(
+        children: [
+          for (var i = 0; i < chips.length; i++) ...[
+            if (i > 0) const SizedBox(width: Gap.f8),
+            chips[i],
+          ],
+        ],
+      ),
     );
   }
 }
 
-/// The empty state that teaches: three starting points.
+/// The empty state that teaches: three starting points, as rows.
 class _Templates extends StatelessWidget {
   final ValueChanged<RulePreset>? onPick;
   const _Templates({required this.onPick});
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    final bt = context.bt;
-    return Surface(
+    return Column(
       key: const Key('rules-templates'),
-      color: bt.sunTint,
-      borderColor: bt.sunTint,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              const Tubby(mood: TubbyMood.asleep, size: 52, animate: false),
-              const SizedBox(width: Gap.f13),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Pick a starting point', style: text.titleMedium),
-                    Text(
-                      'One tap fills in bedtime, TV time and volume. Tweak '
-                      'anything after.',
-                      style: text.bodySmall!.copyWith(color: bt.inkSoft),
-                    ),
-                  ],
-                ),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const GroupHeading('Pick a starting point', first: true),
+        RowList(
+          children: [
+            for (final p in RulePreset.values)
+              ListRow(
+                key: Key('template-${p.name}'),
+                title: p.label,
+                subtitle: p.blurb,
+                onTap: onPick == null ? null : () => onPick!(p),
               ),
-            ],
-          ),
-          const SizedBox(height: Gap.f13),
-          for (final p in RulePreset.values) ...[
-            if (p != RulePreset.schoolNight) const SizedBox(height: Gap.f8),
-            Surface(
-              key: Key('template-${p.name}'),
-              padding: const EdgeInsets.symmetric(
-                horizontal: Gap.f13,
-                vertical: Gap.f13,
-              ),
-              onTap: onPick == null ? null : () => onPick!(p),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(p.label, style: text.titleSmall),
-                        Text(p.blurb, style: text.bodySmall),
-                      ],
-                    ),
-                  ),
-                  Icon(Icons.chevron_right_rounded, color: bt.muted),
-                ],
-              ),
-            ),
           ],
-        ],
-      ),
+        ),
+        const GroupHeading('Or set each rule'),
+      ],
     );
   }
 }
@@ -1059,7 +1282,7 @@ class _WindowEditor extends StatelessWidget {
   Future<void> _pick(BuildContext context, bool from) async {
     final t = await showTimePicker(
       context: context,
-      helpText: from ? 'TV OFF FROM' : 'TV BACK AT',
+      helpText: from ? 'TV off from' : 'TV back at',
       initialTime: _parse(from ? row.from : row.to),
     );
     if (t == null) return;
@@ -1077,36 +1300,30 @@ class _WindowEditor extends StatelessWidget {
           excludeSemantics: true,
           child: InkWell(
             key: Key(from ? 'schedule-from' : 'schedule-to'),
-            borderRadius: Radii.control,
+            borderRadius: Radii.chip,
             onTap: () => _pick(context, from),
             child: Padding(
               padding: const EdgeInsets.symmetric(
-                horizontal: 6,
+                horizontal: Gap.f4,
                 vertical: Gap.f8,
               ),
               child: Text(
                 hhmmLabel(v, h24: h24),
                 softWrap: false,
                 style: Fonts.bricolage(
-                  20,
+                  TypeSize.headline,
                   color: bt.ink,
                   tabularFigures: true,
                 ).copyWith(
                   decoration: TextDecoration.underline,
                   decorationColor: bt.borderStrong,
-                  decorationThickness: 2,
                 ),
               ),
             ),
           ),
         );
-    return Container(
-      padding: const EdgeInsets.fromLTRB(Gap.f8, Gap.f4, Gap.f4, Gap.f13),
-      decoration: BoxDecoration(
-        color: bt.canvas,
-        borderRadius: Radii.control,
-        border: Border.all(color: bt.hairline),
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: Gap.f8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -1119,13 +1336,13 @@ class _WindowEditor extends StatelessWidget {
                     time(row.from, true),
                     Icon(
                       Icons.arrow_forward_rounded,
-                      size: 18,
+                      size: Sizes.iconSmall,
                       color: bt.muted,
                     ),
                     time(row.to, false),
                     if (row.crossesMidnight)
                       Padding(
-                        padding: const EdgeInsets.only(left: 2),
+                        padding: const EdgeInsets.only(left: Gap.f4),
                         child: Text('next day', style: text.bodySmall),
                       ),
                   ],
@@ -1135,42 +1352,34 @@ class _WindowEditor extends StatelessWidget {
                 key: const Key('schedule-remove'),
                 tooltip: 'Remove these quiet hours',
                 onPressed: onRemove,
-                icon: Icon(Icons.close_rounded, color: bt.muted),
+                icon: Icon(
+                  Icons.close_rounded,
+                  size: Sizes.icon,
+                  color: bt.muted,
+                ),
               ),
             ],
           ),
-          Padding(
-            padding: const EdgeInsets.only(left: Gap.f4, right: Gap.f8),
-            child: LayoutBuilder(
-              builder: (context, c) {
-                final dot = (c.maxWidth / 7 - 3).clamp(28.0, 36.0);
-                return Row(
-                  children: [
-                    for (final d in _dayOrder)
-                      Expanded(
-                        child: _DayDot(
-                          key: Key('day-$d'),
-                          letter: _dayLetter[d]!,
-                          word: _dayWord[d]!,
-                          size: dot,
-                          on: row.days.contains(d),
-                          onTap: () {
-                            final days = {...row.days};
-                            days.contains(d) ? days.remove(d) : days.add(d);
-                            onChanged(
-                              row.copyWith(days: days.toList()..sort()),
-                            );
-                          },
-                        ),
-                      ),
-                  ],
-                );
-              },
-            ),
+          Row(
+            children: [
+              for (final d in _dayOrder)
+                Expanded(
+                  child: _DayDot(
+                    key: Key('day-$d'),
+                    letter: _dayLetter[d]!,
+                    word: _dayWord[d]!,
+                    on: row.days.contains(d),
+                    onTap: () {
+                      final days = {...row.days};
+                      days.contains(d) ? days.remove(d) : days.add(d);
+                      onChanged(row.copyWith(days: days.toList()..sort()));
+                    },
+                  ),
+                ),
+            ],
           ),
-          const SizedBox(height: Gap.f8),
           Padding(
-            padding: const EdgeInsets.only(left: Gap.f8),
+            padding: const EdgeInsets.only(left: Gap.f4),
             child: Text(daysLabel(row.days), style: text.bodySmall),
           ),
         ],
@@ -1183,14 +1392,12 @@ class _DayDot extends StatelessWidget {
   final String letter;
   final String word;
   final bool on;
-  final double size;
   final VoidCallback onTap;
 
   const _DayDot({
     super.key,
     required this.letter,
     required this.word,
-    this.size = 36,
     required this.on,
     required this.onTap,
   });
@@ -1208,24 +1415,24 @@ class _DayDot extends StatelessWidget {
           HapticFeedback.selectionClick();
           onTap();
         },
-        radius: 24,
+        radius: Sizes.touch / 2,
         child: SizedBox(
-          height: 48,
+          height: Sizes.touch,
           child: Center(
             child: AnimatedContainer(
               duration: Motion.of(context, Motion.flip),
               curve: Motion.enter,
-              width: size,
-              height: size,
+              width: Sizes.chip,
+              height: Sizes.chip,
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: on ? bt.sun : bt.hairline,
+                color: on ? bt.sun : bt.wash,
               ),
               child: Text(
                 letter,
-                style: Theme.of(context).textTheme.labelLarge!.copyWith(
-                      fontSize: 14,
+                style: Theme.of(context).textTheme.labelMedium!.copyWith(
+                      fontWeight: FontWeight.w700,
                       color: on ? const Color(0xFF3D2700) : bt.muted,
                     ),
               ),
@@ -1237,65 +1444,7 @@ class _DayDot extends StatelessWidget {
   }
 }
 
-class _TonightTile extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool on;
-  final VoidCallback? onTap;
-
-  const _TonightTile({
-    super.key,
-    required this.icon,
-    required this.label,
-    required this.on,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final bt = context.bt;
-    final text = Theme.of(context).textTheme;
-    return Semantics(
-      button: true,
-      selected: on,
-      child: Material(
-        color: on ? bt.mintTint : bt.canvas,
-        shape: RoundedRectangleBorder(
-          borderRadius: Radii.control,
-          side: BorderSide(color: on ? bt.mint : bt.border),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap == null
-              ? null
-              : () {
-                  HapticFeedback.lightImpact();
-                  onTap!();
-                },
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 88),
-            child: Padding(
-              padding: const EdgeInsets.all(Gap.f13),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Icon(icon, color: on ? bt.mintInk : bt.skyInk, size: 24),
-                  const SizedBox(height: Gap.f8),
-                  Text(
-                    label,
-                    style: text.labelLarge!.copyWith(fontSize: 14),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
+/// The slim ink save bar: only there when something changed.
 class _SaveBar extends StatelessWidget {
   final bool visible;
   final bool saving;
@@ -1313,21 +1462,32 @@ class _SaveBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final bt = context.bt;
     final text = Theme.of(context).textTheme;
-    return AnimatedSize(
+    return AnimatedSwitcher(
       duration: Motion.of(context, Motion.sheet),
-      curve: Motion.enter,
+      reverseDuration: Motion.of(context, Motion.flip),
+      switchInCurve: Motion.enter,
+      switchOutCurve: Motion.exit,
+      transitionBuilder: (child, a) => FadeTransition(
+        opacity: a,
+        child: SizeTransition(sizeFactor: a, axisAlignment: -1, child: child),
+      ),
       child: !visible
-          ? const SizedBox(width: double.infinity)
+          ? const SizedBox(key: ValueKey('saved'), width: double.infinity)
           : Padding(
+              key: const ValueKey('dirty'),
               padding: const EdgeInsets.fromLTRB(
-                Gap.f13,
-                Gap.f4,
-                Gap.f13,
+                Gap.gutter,
+                Gap.f8,
+                Gap.gutter,
                 Gap.f13,
               ),
               child: Container(
                 key: const Key('rules-save-bar'),
-                padding: const EdgeInsets.fromLTRB(Gap.f13, 6, 6, 6),
+                constraints: const BoxConstraints(minHeight: Sizes.row),
+                padding: const EdgeInsets.only(
+                  left: Gap.related,
+                  right: (Sizes.row - Sizes.control) / 2,
+                ),
                 decoration: BoxDecoration(
                   color: bt.inkFill,
                   borderRadius: Radii.control,
@@ -1351,15 +1511,11 @@ class _SaveBar extends StatelessWidget {
                       child: const Text('Discard'),
                     ),
                     const SizedBox(width: Gap.f4),
-                    SizedBox(
-                      width: 112,
-                      child: PrimaryButton(
-                        key: const Key('rules-save'),
-                        icon: saving ? null : Icons.upload_rounded,
-                        label: saving ? 'Saving…' : 'Save',
-                        height: 48,
-                        onPressed: saving ? null : onSave,
-                      ),
+                    PrimaryButton(
+                      key: const Key('rules-save'),
+                      label: saving ? 'Saving…' : 'Save',
+                      height: Sizes.control,
+                      onPressed: saving ? null : onSave,
                     ),
                   ],
                 ),
@@ -1385,29 +1541,23 @@ class PresetSheet extends StatelessWidget {
       title: preset.label,
       lead: Text(preset.blurb),
       children: [
-        Surface(
-          child: Column(
-            children: [
-              for (final l in shapeSummary(preset.shape, h24: h24))
-                CheckLine(l, done: true, minHeight: 32),
-            ],
-          ),
-        ),
+        for (final l in shapeSummary(preset.shape, h24: h24))
+          CheckLine(l, done: true),
         const SizedBox(height: Gap.f13),
         Row(
           children: [
-            Icon(Icons.apps_rounded, size: 16, color: bt.muted),
+            Icon(Icons.apps_rounded, size: Sizes.iconSmall, color: bt.muted),
             const SizedBox(width: Gap.f8),
             Expanded(
               child: Text(
-                'Your allowed apps, Shorts and Tonight only stay as they '
+                'Allowed apps, video hopping and Tonight only stay as they '
                 'are.',
                 style: text.bodySmall,
               ),
             ),
           ],
         ),
-        const SizedBox(height: Gap.f13),
+        const SizedBox(height: Gap.related),
         PrimaryButton(
           key: const Key('preset-confirm'),
           label: 'Use ${preset.label}',
@@ -1447,7 +1597,7 @@ class ConflictSheet extends StatelessWidget {
       ),
       children: [
         if (diff.isNotEmpty) ...[
-          Text('WHAT\'S DIFFERENT', style: text.labelSmall),
+          Text('What\'s different', style: text.titleSmall),
           const SizedBox(height: Gap.f8),
           Wrap(
             spacing: Gap.f8,
@@ -1456,29 +1606,30 @@ class ConflictSheet extends StatelessWidget {
               for (final d in diff) BtBadge(d, tone: Tone.warn),
             ],
           ),
-          const SizedBox(height: Gap.f13),
+          const SizedBox(height: Gap.related),
         ],
-        ChoiceCard(
-          key: const Key('rules-reload'),
-          selected: false,
-          tone: Tone.info,
-          icon: Icons.tv_rounded,
-          title: 'Theirs',
-          body: 'Keep what\'s on the TV now. Your edits here are dropped.',
-          onTap: () => Navigator.pop(context, 'theirs'),
+        RowList(
+          edges: true,
+          children: [
+            ListRow(
+              key: const Key('rules-reload'),
+              icon: Icons.tv_rounded,
+              title: 'Keep theirs',
+              subtitle: 'What\'s on the TV now. Your edits go.',
+              onTap: () => Navigator.pop(context, 'theirs'),
+            ),
+            ListRow(
+              key: const Key('rules-overwrite'),
+              icon: Icons.phone_android_rounded,
+              title: 'Send mine',
+              subtitle: 'Your edits replace theirs.',
+              onTap: () => Navigator.pop(context, 'mine'),
+            ),
+          ],
         ),
-        const SizedBox(height: Gap.f8),
-        ChoiceCard(
-          key: const Key('rules-overwrite'),
-          selected: false,
-          icon: Icons.phone_android_rounded,
-          title: 'Mine',
-          body: 'Send my changes. They replace what $by set.',
-          onTap: () => Navigator.pop(context, 'mine'),
-        ),
-        const SizedBox(height: Gap.f13),
+        const SizedBox(height: Gap.related),
         Text(
-          'Either way, the TV keeps running a routine the whole time.',
+          'The TV keeps a routine running either way.',
           textAlign: TextAlign.center,
           style: text.bodySmall!.copyWith(color: bt.muted),
         ),
@@ -1501,30 +1652,31 @@ class AppPill extends StatelessWidget {
     final name = appLabel(pkg);
     return Container(
       key: Key('app-pill-$pkg'),
-      constraints: const BoxConstraints(minHeight: 44),
-      padding: const EdgeInsets.only(left: 6),
-      decoration: ShapeDecoration(
-        color: bt.hairline,
-        shape: const StadiumBorder(),
-      ),
+      constraints: const BoxConstraints(minHeight: Sizes.control),
+      padding: const EdgeInsets.only(left: Gap.f8),
+      decoration: BoxDecoration(color: bt.wash, borderRadius: Radii.control),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          AppAvatar(pkg: pkg, size: 28),
+          AppAvatar(pkg: pkg, size: Sizes.iconControl),
           const SizedBox(width: Gap.f8),
-          Text(name, style: text.labelLarge!.copyWith(fontSize: 14)),
+          Text(name, style: text.labelMedium!.copyWith(color: bt.ink)),
           if (onRemove != null)
             Semantics(
               button: true,
               label: 'Remove $name',
               excludeSemantics: true,
               child: InkResponse(
-                radius: 20,
+                radius: Sizes.touch / 2,
                 onTap: onRemove,
                 child: SizedBox(
-                  width: 40,
-                  height: 44,
-                  child: Icon(Icons.close_rounded, size: 16, color: bt.muted),
+                  width: Sizes.control,
+                  height: Sizes.control,
+                  child: Icon(
+                    Icons.close_rounded,
+                    size: Sizes.iconSmall,
+                    color: bt.muted,
+                  ),
                 ),
               ),
             )
@@ -1541,7 +1693,7 @@ class AppAvatar extends StatelessWidget {
   final String pkg;
   final double size;
 
-  const AppAvatar({super.key, required this.pkg, this.size = 36});
+  const AppAvatar({super.key, required this.pkg, this.size = Sizes.tile});
 
   static const _known = {
     'org.smarttube.stable': Color(0xFFFF3D2E),
@@ -1583,7 +1735,7 @@ class AppAvatar extends StatelessWidget {
         style: Fonts.bricolage(
           size * 0.46,
           color: known != null ? Colors.white : c,
-          height: 1,
+          height: TypeSize.tightLeading,
         ),
       ),
     );
@@ -1623,7 +1775,12 @@ class _AppPickerSheetState extends ConsumerState<AppPickerSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(Gap.f21, 0, Gap.f21, Gap.f13),
+              padding: const EdgeInsets.fromLTRB(
+                Gap.gutter,
+                0,
+                Gap.gutter,
+                Gap.f13,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1674,19 +1831,25 @@ class _AppPickerSheetState extends ConsumerState<AppPickerSheet> {
                     );
                   }
                   return ListView(
-                    padding: const EdgeInsets.symmetric(horizontal: Gap.f13),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: Gap.gutter,
+                    ),
                     children: [
-                      for (final p in shown)
-                        _PickRow(
-                          key: Key('pick-$p'),
-                          pkg: p,
-                          on: _picked.contains(p),
-                          onTap: () => setState(
-                            () => _picked.contains(p)
-                                ? _picked.remove(p)
-                                : _picked.add(p),
-                          ),
-                        ),
+                      RowList(
+                        children: [
+                          for (final p in shown)
+                            _PickRow(
+                              key: Key('pick-$p'),
+                              pkg: p,
+                              on: _picked.contains(p),
+                              onTap: () => setState(
+                                () => _picked.contains(p)
+                                    ? _picked.remove(p)
+                                    : _picked.add(p),
+                              ),
+                            ),
+                        ],
+                      ),
                       if (shown.isEmpty)
                         Padding(
                           padding: const EdgeInsets.all(Gap.f21),
@@ -1702,7 +1865,12 @@ class _AppPickerSheetState extends ConsumerState<AppPickerSheet> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(Gap.f21, Gap.f13, Gap.f21, 0),
+              padding: const EdgeInsets.fromLTRB(
+                Gap.gutter,
+                Gap.f13,
+                Gap.gutter,
+                0,
+              ),
               child: PrimaryButton(
                 key: const Key('pick-done'),
                 kind: ButtonKind.ink,
@@ -1735,46 +1903,26 @@ class _PickRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bt = context.bt;
-    final text = Theme.of(context).textTheme;
     return Semantics(
       checked: on,
       label: appLabel(pkg),
       excludeSemantics: true,
       button: true,
-      child: InkWell(
-        borderRadius: Radii.control,
+      child: ListRow(
+        leading: AppAvatar(pkg: pkg, size: Sizes.iconControl),
+        title: appLabel(pkg),
+        chevron: false,
         onTap: () {
           HapticFeedback.selectionClick();
           onTap();
         },
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 60),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Gap.f13),
-            child: Row(
-              children: [
-                AppAvatar(pkg: pkg, size: 40),
-                const SizedBox(width: Gap.f13),
-                Expanded(child: Text(appLabel(pkg), style: text.titleSmall)),
-                AnimatedContainer(
-                  duration: Motion.of(context, Motion.flip),
-                  width: 26,
-                  height: 26,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: on ? bt.mintInk : Colors.transparent,
-                    border: Border.all(
-                      color: on ? bt.mintInk : bt.borderStrong,
-                      width: 2,
-                    ),
-                  ),
-                  child: on
-                      ? const Icon(Icons.check_rounded,
-                          size: 16, color: Colors.white)
-                      : null,
-                ),
-              ],
-            ),
+        trailing: AnimatedSwitcher(
+          duration: Motion.of(context, Motion.flip),
+          child: Icon(
+            on ? Icons.check_circle_rounded : Icons.circle_outlined,
+            key: ValueKey(on),
+            size: Sizes.iconControl,
+            color: on ? bt.mintInk : bt.faint,
           ),
         ),
       ),

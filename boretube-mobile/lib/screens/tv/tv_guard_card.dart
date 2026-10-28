@@ -33,11 +33,13 @@ class TvGuardCard extends ConsumerWidget {
   }
 }
 
-/// Opens the install (or repair) stepper and refreshes Always On after.
+/// Opens the install (or repair, or [update]) stepper and refreshes
+/// Always On after.
 Future<void> runAgentSetup(
   BuildContext context,
   WidgetRef ref, {
   required bool repair,
+  bool update = false,
 }) async {
   final installer = await ref.read(agentInstallerProvider.future);
   if (!context.mounted) return;
@@ -47,14 +49,31 @@ Future<void> runAgentSetup(
   }
   await showAgentSetupSheet(
     context,
-    title: repair ? 'Repairing Always On' : 'Setting up Always On',
-    start: repair ? installer.repair : installer.install,
+    title: update
+        ? 'Updating Always On'
+        : repair
+            ? ref.read(agentUpdateProvider) != null
+                ? 'Repairing and updating Always On'
+                : 'Repairing Always On'
+            : 'Setting up Always On',
+    start: update
+        ? installer.update
+        : repair
+            ? installer.repair
+            : installer.install,
+    doneLine: update
+        ? 'Always On is up to date. Your routines kept running the whole '
+            'time.'
+        : null,
   );
   ref.invalidate(agentTokenProvider);
   ref.invalidate(journalEntriesProvider);
   ref.invalidate(agentJournalProvider);
   await ref.read(agentStatusProvider.notifier).refresh();
-  if (!repair && ref.read(agentStatusProvider).installed && context.mounted) {
+  if (!repair &&
+      !update &&
+      ref.read(agentStatusProvider).installed &&
+      context.mounted) {
     await enableAlertsAfterInstall(context, ref);
   }
 }
@@ -346,6 +365,7 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
     final down = state == GuardState.down;
     final mode = s?.mode;
     final busy = _busy != null;
+    final update = ref.watch(agentUpdateProvider);
     final (tileColor, tileIcon) = switch (state) {
       GuardState.down => (bt.berry, Icons.gpp_bad_rounded),
       GuardState.safe => (bt.sky, Icons.back_hand_rounded),
@@ -429,24 +449,52 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
                   context,
                   'Routines',
                   switch (s.mode) {
-                    AgentMode.normal => 'Enforcing',
+                    AgentMode.normal => 'Running',
                     AgentMode.paused => 'Paused',
                     AgentMode.safe => 'Hands off',
                   },
+                  flex: 10,
                 ),
                 _fact(
                   context,
-                  'Close apps',
+                  'Can close apps',
                   switch (s.selfAdb) {
-                    SelfAdb.ok => 'Allowed',
-                    SelfAdb.needsApproval => 'Needs OK',
-                    SelfAdb.unavailable => 'Off',
+                    SelfAdb.ok => 'Yes',
+                    SelfAdb.needsApproval => 'Needs an OK',
+                    SelfAdb.unavailable => 'No',
                     SelfAdb.unknown => '—',
                   },
+                  flex: 13,
                 ),
-                _fact(context, 'Version', s.version),
+                _fact(context, 'Version', s.version, flex: 8),
               ],
             ),
+            if (update != null && !down) ...[
+              const SizedBox(height: Gap.lg),
+              _InkNote(
+                key: const Key('tv-guard-update-note'),
+                color: bt.mint,
+                icon: Icons.new_releases_rounded,
+                text: 'A newer Always On is ready (${update.versionName}). '
+                    '${compareVersions(s.version, '1.1.0') < 0 && compareVersions(update.versionName, '1.1.0') >= 0 ? 'It can pause after the video that\'s on, and keep Shorts in check. ' : ''}'
+                    'About a minute; routines keep running.',
+                action: PrimaryButton(
+                  key: const Key('tv-guard-update'),
+                  label: 'Update Always On',
+                  icon: Icons.system_update_alt_rounded,
+                  kind: ButtonKind.mint,
+                  height: 48,
+                  onPressed: busy || !ref.watch(activeHasAdbProvider)
+                      ? null
+                      : () => runAgentSetup(
+                            context,
+                            ref,
+                            repair: true,
+                            update: true,
+                          ),
+                ),
+              ),
+            ],
           ],
           if (down) ...[
             const SizedBox(height: Gap.lg),
@@ -613,9 +661,10 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
     );
   }
 
-  Widget _fact(BuildContext context, String k, String v) {
+  Widget _fact(BuildContext context, String k, String v, {int flex = 1}) {
     final text = Theme.of(context).textTheme;
     return Expanded(
+      flex: flex,
       child: Padding(
         padding: const EdgeInsets.only(right: Gap.sm),
         child: Column(
@@ -831,6 +880,7 @@ Future<void> showAgentSetupSheet(
   BuildContext context, {
   required String title,
   required Stream<InstallProgress> Function() start,
+  String? doneLine,
 }) =>
     showModalBottomSheet<void>(
       context: context,
@@ -838,7 +888,8 @@ Future<void> showAgentSetupSheet(
       isDismissible: false,
       enableDrag: false,
       useSafeArea: true,
-      builder: (_) => AgentSetupSheet(title: title, start: start),
+      builder: (_) =>
+          AgentSetupSheet(title: title, start: start, doneLine: doneLine),
     );
 
 /// Step titles in parent words (the installer's own say "TV Guard").
@@ -862,7 +913,15 @@ class AgentSetupSheet extends StatefulWidget {
   final String title;
   final Stream<InstallProgress> Function() start;
 
-  const AgentSetupSheet({super.key, required this.title, required this.start});
+  /// What to say once it worked (defaults to the install line).
+  final String? doneLine;
+
+  const AgentSetupSheet({
+    super.key,
+    required this.title,
+    required this.start,
+    this.doneLine,
+  });
 
   @override
   State<AgentSetupSheet> createState() => _AgentSetupSheetState();
@@ -992,8 +1051,9 @@ class _AgentSetupSheetState extends State<AgentSetupSheet> {
               const SizedBox(height: Gap.lg),
               Text(
                 ok
-                    ? 'Your routines now run on the TV, even when this phone '
-                        'is away.'
+                    ? widget.doneLine ??
+                        'Your routines now run on the TV, even when this '
+                            'phone is away.'
                     : 'Nothing was left half-done. Try again, or close and '
                         'use Repair later.',
                 style: text.bodyMedium,

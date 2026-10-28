@@ -98,12 +98,53 @@ void main() {
         AgentLink(AgentLinkKind.up, status: agentStatus()),
       );
       expect(find.text('Guarding your routines · up 3 h'), findsOneWidget);
-      expect(find.text('Enforcing'), findsOneWidget);
-      expect(find.text('Allowed'), findsOneWidget);
+      expect(find.text('Running'), findsOneWidget);
+      expect(find.text('CAN CLOSE APPS'), findsOneWidget);
+      expect(find.text('Yes'), findsOneWidget);
+      expect(find.text('Enforcing'), findsNothing);
+      expect(find.text('Allowed'), findsNothing);
       for (final k in ['pause', 'safe', 'repair', 'uninstall']) {
         expect(find.byKey(Key('tv-guard-$k')), findsOneWidget, reason: k);
       }
       expect(find.byKey(const Key('tv-guard-approve-banner')), findsNothing);
+    });
+
+    testWidgets('an older agent gets a calm Update Always On', (tester) async {
+      final env = await TestEnv.create(tvs: [adbSony]);
+      await pumpScreen(
+        tester,
+        const SingleChildScrollView(child: TvGuardCard()),
+        scaffold: true,
+        size: const Size(360, 1400),
+        overrides: [
+          ...env.overrides(probeCaps: adbSony.capabilities),
+          agentStatusProvider.overrideWith(
+            (ref) => AgentStatusNotifier.fixed(
+              const AgentLink(
+                AgentLinkKind.up,
+                status: AgentStatus(agentId: 'a', version: '1.0.1'),
+              ),
+            ),
+          ),
+          agentBundleLoaderProvider.overrideWithValue(
+            () async => fakeBundle(version: '1.1.0', versionCode: 3),
+          ),
+        ],
+      );
+      await settle(tester);
+      expect(find.byKey(const Key('tv-guard-update-note')), findsOneWidget);
+      expect(find.text('Update Always On'), findsOneWidget);
+      expect(find.textContaining('A newer Always On is ready (1.1.0)'),
+          findsOneWidget);
+      expect(find.textContaining('keep Shorts in check'), findsOneWidget);
+    });
+
+    testWidgets('up to date: no update offered', (tester) async {
+      await pumpCard(
+        tester,
+        AgentLink(AgentLinkKind.up, status: agentStatus()),
+      );
+      expect(find.byKey(const Key('tv-guard-update-note')), findsNothing);
     });
 
     testWidgets('paused shows Resume; limited asks for Allow', (tester) async {

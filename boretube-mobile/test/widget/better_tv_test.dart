@@ -96,6 +96,75 @@ void main() {
       expect(find.text('All fixed'), findsOneWidget);
     });
 
+    testWidgets('fixable and not: "Fix 2 now" and "1 needs you"',
+        (tester) async {
+      final env = await TestEnv.create(tvs: [adbSony]);
+      await pumpScreen(
+        tester,
+        const BetterTvTab(),
+        scaffold: true,
+        size: const Size(360, 1600),
+        overrides: [
+          ...env.overrides(),
+          agentStatusProvider.overrideWith(
+            (ref) => AgentStatusNotifier.fixed(
+              const AgentLink(
+                AgentLinkKind.up,
+                status: AgentStatus(
+                  agentId: 'a',
+                  version: '1.1.0',
+                  health: [
+                    AgentHealth(
+                      id: 'watchdog',
+                      status: AgentHealthStatus.warn,
+                      detail: '3 changes wait for approval',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          agentBundleLoaderProvider.overrideWithValue(() async => fakeBundle()),
+          healthProvider.overrideWith((ref) async => sampleChecks(() {})),
+        ],
+      );
+      await settle(tester);
+      expect(find.text('3 things need attention'), findsOneWidget);
+      expect(find.text('Fix 2 now'), findsOneWidget);
+      expect(find.textContaining('Fix all'), findsNothing);
+      expect(find.byKey(const Key('health-needs-you')), findsOneWidget);
+      expect(
+        find.textContaining('1 needs you · Tidy-up after TV updates'),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const Key('health-needs-you')));
+      await settle(tester);
+      expect(find.byType(HealthScreen), findsOneWidget);
+      final screen = tester.widget<HealthScreen>(find.byType(HealthScreen));
+      expect(screen.focus, 'agent.watchdog');
+    });
+
+    testWidgets('one fixable thing alone is "Fix it"', (tester) async {
+      final env = await TestEnv.create(tvs: [adbSony]);
+      await pumpScreen(
+        tester,
+        const BetterTvTab(),
+        scaffold: true,
+        size: const Size(360, 1600),
+        overrides: [
+          ...env.overrides(),
+          ...noAgent(),
+          healthProvider.overrideWith(
+            (ref) async => sampleChecks(() {}).sublist(0, 2),
+          ),
+        ],
+      );
+      await settle(tester);
+      expect(find.text('1 thing needs attention'), findsOneWidget);
+      expect(find.text('Fix it'), findsOneWidget);
+      expect(find.byKey(const Key('health-needs-you')), findsNothing);
+    });
+
     testWidgets('all good: no Fix all', (tester) async {
       final env = await TestEnv.create(tvs: [adbSony]);
       await pumpScreen(

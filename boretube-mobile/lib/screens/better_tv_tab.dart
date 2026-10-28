@@ -101,7 +101,10 @@ class _BetterTvTabState extends ConsumerState<BetterTvTab> {
               children: [
                 const SizedBox(height: Gap.xs),
                 if (adb || agent)
-                  _Summary(onOpen: () => _open(const HealthScreen()))
+                  _Summary(
+                    onOpen: () => _open(const HealthScreen()),
+                    onNeedsYou: (id) => _open(HealthScreen(focus: id)),
+                  )
                 else
                   const _UnlockHero(),
                 const SizedBox(height: Gap.md),
@@ -140,10 +143,12 @@ class _BetterTvTabState extends ConsumerState<BetterTvTab> {
   }
 }
 
-/// "All good · N checks", or "N things need attention" with Fix all.
+/// "All good · N checks", or "N things need attention" with "Fix M now"
+/// for what boretube can fix, and "K needs you" for the rest.
 class _Summary extends ConsumerWidget {
   final VoidCallback onOpen;
-  const _Summary({required this.onOpen});
+  final ValueChanged<String> onNeedsYou;
+  const _Summary({required this.onOpen, required this.onNeedsYou});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -158,7 +163,8 @@ class _Summary extends ConsumerWidget {
           (c) => c.status == HealthStatus.warn || c.status == HealthStatus.fail,
         )
         .toList();
-    final fixable = checks.where((c) => c.fix != null).toList();
+    final fixable = issues.where((c) => c.fix != null).toList();
+    final needYou = issues.where((c) => c.fix == null).toList();
     final good = issues.isEmpty;
     final bad = issues.any((c) => c.status == HealthStatus.fail);
     final (bg, ink, sub) = good
@@ -227,15 +233,90 @@ class _Summary extends ConsumerWidget {
               const SizedBox(height: Gap.md),
               PrimaryButton(
                 key: const Key('health-fix-all'),
-                label: fixable.length == 1
+                label: fixable.length == 1 && issues.length == 1
                     ? 'Fix it'
-                    : 'Fix all (${fixable.length})',
+                    : 'Fix ${fixable.length} now',
                 icon: Icons.auto_fix_high_rounded,
                 height: 52,
                 onPressed: () => fixHealth(context, ref, fixable),
               ),
             ],
+            if (needYou.isNotEmpty) ...[
+              SizedBox(height: fixable.isEmpty ? Gap.md : Gap.xs),
+              _NeedsYouLine(
+                checks: needYou,
+                ink: ink,
+                onTap: () => onNeedsYou(needYou.first.id),
+              ),
+            ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// "1 needs you · TV software ›": what only the parent can sort out.
+class _NeedsYouLine extends StatelessWidget {
+  final List<HealthCheck> checks;
+  final Color ink;
+  final VoidCallback onTap;
+
+  const _NeedsYouLine({
+    required this.checks,
+    required this.ink,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final n = checks.length;
+    final what = healthLook(checks.first).title;
+    final label = '$n need${n == 1 ? 's' : ''} you · $what'
+        '${n > 1 ? ' and ${n - 1} more' : ''}';
+    return Semantics(
+      button: true,
+      label: label,
+      excludeSemantics: true,
+      child: InkWell(
+        key: const Key('health-needs-you'),
+        borderRadius: Radii.field,
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 48),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: Gap.xs),
+            child: Row(
+              children: [
+                Icon(Icons.back_hand_rounded, size: 18, color: ink),
+                const SizedBox(width: Gap.sm),
+                Expanded(
+                  child: Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: '$n need${n == 1 ? 's' : ''} you',
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                        TextSpan(
+                          text: ' · $what'
+                              '${n > 1 ? ' and ${n - 1} more' : ''}',
+                        ),
+                      ],
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: text.bodyMedium!.copyWith(
+                      fontSize: 14,
+                      color: ink,
+                    ),
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded, size: 20, color: ink),
+              ],
+            ),
+          ),
         ),
       ),
     );

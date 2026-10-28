@@ -10,6 +10,7 @@ import '../../ui/controls.dart';
 import '../../ui/tokens.dart';
 import 'common.dart';
 import 'health_copy.dart';
+import 'tv_guard_card.dart' show runAgentSetup;
 
 Tone healthTone(HealthStatus s) => switch (s) {
       HealthStatus.ok => Tone.ok,
@@ -121,7 +122,10 @@ Future<void> fixHealth(
 
 /// TV health: every check in plain words, with a Fix where one is safe.
 class HealthScreen extends ConsumerStatefulWidget {
-  const HealthScreen({super.key});
+  /// A check id to bring into view (from "needs you" on Better TV).
+  final String? focus;
+
+  const HealthScreen({super.key, this.focus});
 
   @override
   ConsumerState<HealthScreen> createState() => _HealthScreenState();
@@ -129,6 +133,25 @@ class HealthScreen extends ConsumerStatefulWidget {
 
 class _HealthScreenState extends ConsumerState<HealthScreen> {
   bool _technical = false;
+  final _focusKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.focus != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final c = _focusKey.currentContext;
+        if (c != null && c.mounted) {
+          Scrollable.ensureVisible(
+            c,
+            duration: Motion.of(context, Motion.slow),
+            curve: Motion.settle,
+            alignment: 0.3,
+          );
+        }
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -186,7 +209,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
             children: [
               for (final c in checks)
                 StatusRow(
-                  key: Key('health-${c.id}'),
+                  key: c.id == widget.focus ? _focusKey : Key('health-${c.id}'),
                   tone: healthTone(c.status),
                   icon: healthIcon(c.id),
                   title: healthLook(c).title,
@@ -197,12 +220,23 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
                           key: Key('health-fix-${c.id}'),
                           onPressed: () => fixHealth(context, ref, [c]),
                         )
-                      : Icon(
-                          c.status == HealthStatus.ok
-                              ? Icons.check_rounded
-                              : Icons.remove_rounded,
-                          color: healthTone(c.status).color(context),
-                        ),
+                      : c.id == 'agent.mediaAccess' &&
+                              c.status != HealthStatus.ok &&
+                              c.status != HealthStatus.unknown &&
+                              ref.watch(activeHasAdbProvider)
+                          ? _FixButton(
+                              key: const Key('health-repair-media'),
+                              label: 'Repair',
+                              width: 92,
+                              onPressed: () =>
+                                  runAgentSetup(context, ref, repair: true),
+                            )
+                          : Icon(
+                              c.status == HealthStatus.ok
+                                  ? Icons.check_rounded
+                                  : Icons.remove_rounded,
+                              color: healthTone(c.status).color(context),
+                            ),
                 ),
             ],
           ),
@@ -244,13 +278,20 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
 
 class _FixButton extends StatelessWidget {
   final VoidCallback onPressed;
-  const _FixButton({super.key, required this.onPressed});
+  final String label;
+  final double width;
+  const _FixButton({
+    super.key,
+    required this.onPressed,
+    this.label = 'Fix',
+    this.width = 72,
+  });
 
   @override
   Widget build(BuildContext context) => SizedBox(
-        width: 72,
+        width: width,
         child: PrimaryButton(
-          label: 'Fix',
+          label: label,
           kind: ButtonKind.ink,
           height: 48,
           onPressed: onPressed,

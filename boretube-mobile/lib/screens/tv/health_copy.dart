@@ -62,6 +62,16 @@ HealthLook healthLook(HealthCheck c) {
     case 'agent':
       return (title: 'Always On', detail: _agentDetail(c));
   }
+  if (c.id == 'agent.mediaAccess') {
+    return (
+      title: agentCheckTitle('mediaAccess'),
+      detail: ok
+          ? 'Knows the video that\'s on, so it can pause after it'
+          : unknown
+              ? 'Not checked yet'
+              : 'Sees less than it could. Repair gives it the permission',
+    );
+  }
   if (c.id.startsWith('agent.')) {
     return (
       title: agentCheckTitle(c.id.substring(6)),
@@ -110,6 +120,7 @@ String agentCheckTitle(String id) => switch (id) {
       'sound' => 'Can control the sound',
       'clock' => 'TV clock',
       'mode' => 'Always On mode',
+      'mediaAccess' => 'Can see what\'s playing',
       _ => id.isEmpty
           ? 'Always On check'
           : '${id[0].toUpperCase()}${id.substring(1)}',

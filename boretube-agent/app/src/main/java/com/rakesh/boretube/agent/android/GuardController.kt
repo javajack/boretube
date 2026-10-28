@@ -95,6 +95,7 @@ class GuardController(private val ctx: Context) : AgentApi {
     private var lastTvTimeSave = 0L
     private var watchdogDueBoot = true
     private var pkgEventAt = 0L
+    private var lastQuickCheckAt = 0L
     private var lastPlan: WatchdogPlan? = null
     private val lastClose = HashMap<String, Long>()
     private val restoring = AtomicBoolean(false)
@@ -340,10 +341,15 @@ class GuardController(private val ctx: Context) : AgentApi {
         val (p, mode, evAt) = synchronized(lock) { Triple(profile, safety.mode, pkgEventAt) }
         if (p == null || mode != Mode.normal) return
         val sixHours = now - store.lastWatchdogAt >= WATCHDOG_PERIOD_MS
-        val pkgDue = evAt != 0L && now - evAt >= 10_000
+        val pkgDue = evAt != 0L && now - evAt >= PACKAGE_SETTLE_MS
+        val ytBack = now - lastQuickCheckAt >= QUICK_CHECK_MS && run {
+            lastQuickCheckAt = now
+            stockYouTubeBack(p)
+        }
         val trigger = when {
             watchdogDueBoot -> "boot"
             pkgDue -> "package"
+            ytBack -> "quick"
             sixHours -> "periodic"
             else -> return
         }
@@ -370,6 +376,22 @@ class GuardController(private val ctx: Context) : AgentApi {
                 "selfGrant", TvShell.AGENT_PACKAGE, "$before", "$after usageEvents=$usageWorks",
                 ok && after.usageAccess && after.overlay, "agent",
             )
+        }
+    }
+
+    /**
+     * Cheap in-app check (no shell): stock YouTube installed and enabled for
+     * this user while not allowed. Backs up package events, which can be
+     * missed (e.g. `install-existing`, OTA restores).
+     */
+    private fun stockYouTubeBack(p: DeviceProfile): Boolean {
+        val yt = p.stockYouTube?.pkg ?: return false
+        val r = synchronized(lock) { rules }
+        if (stockYouTubeAllowed(r, p)) return false
+        return try {
+            ctx.packageManager.getApplicationInfo(yt, 0).enabled
+        } catch (_: PackageManager.NameNotFoundException) {
+            false
         }
     }
 
@@ -640,5 +662,7 @@ class GuardController(private val ctx: Context) : AgentApi {
     companion object {
         private const val TAG = "BoretubeGuard"
         const val WATCHDOG_PERIOD_MS = 6 * 3600_000L
+        const val QUICK_CHECK_MS = 60_000L
+        const val PACKAGE_SETTLE_MS = 3_000L
     }
 }

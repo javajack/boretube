@@ -30,6 +30,11 @@ dependencies:
 
   # Background service
   flutter_foreground_task: ^8.0.0
+  pointycastle: ^4.0.0
+  flutter_secure_storage: ^11.2.0
+  multicast_dns: ^0.3.3+1
+  local_auth: ^3.0.2
+  crypto: ^3.0.8
 
 dev_dependencies:
   flutter_test:

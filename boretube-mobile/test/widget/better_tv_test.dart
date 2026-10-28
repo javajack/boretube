@@ -70,9 +70,13 @@ void main() {
         ],
       );
       await settle(tester);
-      expect(find.text('2 things need attention'), findsOneWidget);
-      expect(find.textContaining('Clean TV · YouTube without Shorts'),
-          findsOneWidget);
+      expect(find.text('2 things to fix'), findsOneWidget);
+      expect(find.text('2 of 4 checks passed'), findsOneWidget);
+      // One checklist row per thing to fix, then a row to every check.
+      for (final id in ['cleanup', 'stockYouTube']) {
+        expect(find.byKey(Key('better-tv-check-$id')), findsOneWidget);
+      }
+      expect(find.byKey(const Key('better-tv-health')), findsOneWidget);
       // Technical names stay out of the main screens.
       expect(find.textContaining('ADB'), findsNothing);
 
@@ -96,7 +100,7 @@ void main() {
       expect(find.text('All fixed'), findsOneWidget);
     });
 
-    testWidgets('fixable and not: "Fix 2 now" and "1 needs you"',
+    testWidgets('fixable and not: "Fix 2 now" and a "Needs you" row',
         (tester) async {
       final env = await TestEnv.create(tvs: [adbSony]);
       await pumpScreen(
@@ -129,14 +133,18 @@ void main() {
         ],
       );
       await settle(tester);
-      expect(find.text('3 things need attention'), findsOneWidget);
+      expect(find.text('3 things to fix'), findsOneWidget);
       expect(find.text('Fix 2 now'), findsOneWidget);
       expect(find.textContaining('Fix all'), findsNothing);
       expect(find.byKey(const Key('health-needs-you')), findsOneWidget);
       expect(
-        find.textContaining('1 needs you · Tidy-up after TV updates'),
+        find.descendant(
+          of: find.byKey(const Key('health-needs-you')),
+          matching: find.text('Tidy-up after TV updates'),
+        ),
         findsOneWidget,
       );
+      expect(find.textContaining('Needs you · '), findsOneWidget);
       await tester.tap(find.byKey(const Key('health-needs-you')));
       await settle(tester);
       expect(find.byType(HealthScreen), findsOneWidget);
@@ -160,7 +168,7 @@ void main() {
         ],
       );
       await settle(tester);
-      expect(find.text('1 thing needs attention'), findsOneWidget);
+      expect(find.text('1 thing to fix'), findsOneWidget);
       expect(find.text('Fix it'), findsOneWidget);
       expect(find.byKey(const Key('health-needs-you')), findsNothing);
     });

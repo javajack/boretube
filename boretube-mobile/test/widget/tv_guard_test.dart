@@ -98,15 +98,23 @@ void main() {
         AgentLink(AgentLinkKind.up, status: agentStatus()),
       );
       expect(find.text('Guarding your routines · up 3 h'), findsOneWidget);
-      expect(find.text('Running'), findsOneWidget);
-      expect(find.text('CAN CLOSE APPS'), findsOneWidget);
-      expect(find.text('Yes'), findsOneWidget);
-      expect(find.text('Enforcing'), findsNothing);
-      expect(find.text('Allowed'), findsNothing);
-      for (final k in ['pause', 'safe', 'repair', 'uninstall']) {
+      // At most three equal buttons on the card; the rest behind More.
+      for (final k in ['pause', 'checks', 'more']) {
         expect(find.byKey(Key('tv-guard-$k')), findsOneWidget, reason: k);
       }
+      expect(find.byKey(const Key('tv-guard-safe')), findsNothing);
       expect(find.byKey(const Key('tv-guard-approve-banner')), findsNothing);
+      await tester.tap(find.byKey(const Key('tv-guard-more')));
+      await settle(tester);
+      expect(find.text('Running'), findsOneWidget);
+      expect(find.text('Can close apps'), findsOneWidget);
+      expect(find.text('Yes'), findsOneWidget);
+      expect(find.text('1.0.0'), findsOneWidget);
+      expect(find.text('Enforcing'), findsNothing);
+      expect(find.text('Allowed'), findsNothing);
+      for (final k in ['safe', 'repair', 'uninstall']) {
+        expect(find.byKey(Key('tv-guard-$k')), findsOneWidget, reason: k);
+      }
     });
 
     testWidgets('an older agent gets a calm Update Always On', (tester) async {
@@ -136,6 +144,9 @@ void main() {
       expect(find.text('Update Always On'), findsOneWidget);
       expect(find.textContaining('A newer Always On is ready (1.1.0)'),
           findsOneWidget);
+      // What's new sits behind the ⓘ, so the card stays one line.
+      await tester.tap(find.bySemanticsLabel('About Update Always On'));
+      await settle(tester);
       expect(find.textContaining('keep Shorts in check'), findsOneWidget);
     });
 
@@ -169,6 +180,12 @@ void main() {
         AgentLink(AgentLinkKind.up, status: agentStatus(mode: AgentMode.safe)),
       );
       expect(find.text('Turn back on'), findsOneWidget);
+      expect(
+        find.text('Hands off · watching, changing nothing'),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const Key('tv-guard-more')));
+      await settle(tester);
       expect(find.byKey(const Key('tv-guard-safe')), findsNothing);
       expect(find.text('Hands off'), findsWidgets);
     });

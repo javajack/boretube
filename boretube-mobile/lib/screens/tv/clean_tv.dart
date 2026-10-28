@@ -226,7 +226,7 @@ class _CleanTvScreenState extends ConsumerState<CleanTvScreen> {
     return DetailPage(
       title: 'Clean TV',
       titleTrailing: const InfoDot(LearnTerm.cleanTv),
-      subtitle: 'Switch off the promo and leftover apps. Nothing is deleted.',
+      subtitle: 'Promo and leftover apps, off. Nothing is deleted.',
       onRefresh: () async {
         _refresh();
         await ref.read(cleanStatusProvider.future);
@@ -235,15 +235,13 @@ class _CleanTvScreenState extends ConsumerState<CleanTvScreen> {
         ...status.when(
           loading: () => const [SkeletonCard(rows: 5)],
           error: (e, _) => [
-            Surface(
-              child: EmptyState(
-                icon: Icons.wifi_off_rounded,
-                tone: Tone.bad,
-                title: 'Couldn\'t read the TV',
-                message: 'Is it on and on this Wi-Fi? Then try again.',
-                actionLabel: 'Try again',
-                onAction: _refresh,
-              ),
+            EmptyState(
+              icon: Icons.wifi_off_rounded,
+              tone: Tone.bad,
+              title: 'Couldn\'t read the TV',
+              message: 'Is it on and on this Wi-Fi? Then try again.',
+              actionLabel: 'Try again',
+              onAction: _refresh,
             ),
           ],
           data: (s) {
@@ -264,21 +262,19 @@ class _CleanTvScreenState extends ConsumerState<CleanTvScreen> {
             ];
             if (groups.isEmpty) {
               return const [
-                Surface(
-                  child: EmptyState(
-                    icon: Icons.auto_awesome_rounded,
-                    tone: Tone.ok,
-                    title: 'Nothing to tidy',
-                    message: 'This TV doesn\'t have the promo apps boretube '
-                        'knows about.',
-                  ),
+                EmptyState(
+                  icon: Icons.auto_awesome_rounded,
+                  tone: Tone.ok,
+                  title: 'Nothing to tidy',
+                  message: 'This TV doesn\'t have the promo apps boretube '
+                      'knows about.',
                 ),
               ];
             }
             return [
               _CleanSummary(todo: todo.length, tidied: tidied.length),
-              const SizedBox(height: Gap.f13),
-              if (todo.isNotEmpty)
+              if (todo.isNotEmpty) ...[
+                const SizedBox(height: Gap.related),
                 PrimaryButton(
                   key: const Key('clean-fix'),
                   label: 'Tidy ${todo.length} app'
@@ -286,37 +282,21 @@ class _CleanTvScreenState extends ConsumerState<CleanTvScreen> {
                   icon: Icons.auto_awesome_rounded,
                   onPressed: canWrite ? () => _tidy(ops, todo.length) : null,
                 ),
-              if (tidied.isNotEmpty) ...[
-                const SizedBox(height: Gap.f8),
-                PrimaryButton(
-                  key: const Key('clean-undo'),
-                  label: 'Undo · bring them back',
-                  icon: Icons.undo_rounded,
-                  kind: ButtonKind.outline,
-                  height: 52,
-                  onPressed: canWrite ? () => _undo(ops) : null,
-                ),
               ],
               if (!canWrite) ...[
                 const SizedBox(height: Gap.f8),
                 Text(
-                  'boretube hasn\'t been tested on this TV model, so this is '
-                  'a preview. Allow changes in Settings › Advanced.',
+                  'A preview: allow changes in Settings › Advanced.',
                   style: text.bodySmall,
                 ),
               ],
               for (final e in groups.entries) ...[
                 GroupHeading(
                   '${e.key.title} · ${e.value.length}',
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    Gap.f4,
-                    0,
-                    Gap.f4,
-                    Gap.f8,
+                  trailing: InfoButton(
+                    title: e.key.title,
+                    body: e.key.blurb,
                   ),
-                  child: Text(e.key.blurb, style: text.bodySmall),
                 ),
                 RowList(
                   key: Key('clean-group-${e.key.name}'),
@@ -335,20 +315,36 @@ class _CleanTvScreenState extends ConsumerState<CleanTvScreen> {
                   ],
                 ),
               ],
-              const SizedBox(height: Gap.f13),
+              const SizedBox(height: Gap.related),
               Row(
                 children: [
-                  Icon(Icons.verified_user_rounded, size: 18, color: bt.muted),
+                  Icon(
+                    Icons.verified_user_rounded,
+                    size: Sizes.iconSmall,
+                    color: bt.muted,
+                  ),
                   const SizedBox(width: Gap.f8),
                   Expanded(
                     child: Text(
-                      'Wi-Fi setup, the Google TV home screen and the voice '
-                      'remote are never touched.',
+                      'Wi-Fi, the home screen and the remote are never '
+                      'touched.',
                       style: text.bodySmall,
                     ),
                   ),
                 ],
               ),
+              if (tidied.isNotEmpty) ...[
+                const SizedBox(height: Gap.related),
+                Center(
+                  child: TextButton.icon(
+                    key: const Key('clean-undo'),
+                    style: TextButton.styleFrom(foregroundColor: bt.inkSoft),
+                    onPressed: canWrite ? () => _undo(ops) : null,
+                    icon: const Icon(Icons.undo_rounded, size: Sizes.icon),
+                    label: const Text('Undo · bring them all back'),
+                  ),
+                ),
+              ],
             ];
           },
         ),
@@ -357,6 +353,7 @@ class _CleanTvScreenState extends ConsumerState<CleanTvScreen> {
   }
 }
 
+/// The status line at the top: "Tidy" or "3 to tidy", on the canvas.
 class _CleanSummary extends StatelessWidget {
   final int todo;
   final int tidied;
@@ -367,41 +364,33 @@ class _CleanSummary extends StatelessWidget {
     final bt = context.bt;
     final text = Theme.of(context).textTheme;
     final done = todo == 0;
-    return Surface(
+    return Row(
       key: const Key('clean-summary'),
-      color: done ? bt.mintTint : bt.lavenderTint,
-      borderColor: done ? bt.mintTint : bt.lavenderTint,
-      radius: Radii.hero,
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  done ? 'Tidy' : '$todo to tidy',
-                  style: Fonts.bricolage(
-                    28,
-                    color: done ? bt.mintInk : bt.lavenderInk,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  tidied == 0
-                      ? 'Nothing tidied yet'
-                      : '$tidied already tidied away',
-                  style: text.bodyMedium!.copyWith(color: bt.inkSoft),
-                ),
-              ],
-            ),
+      children: [
+        IconTile(
+          icon: done ? Icons.check_rounded : Icons.auto_awesome_rounded,
+          color: done ? bt.mintInk : bt.lavenderInk,
+          size: Sizes.row,
+        ),
+        const SizedBox(width: Gap.inside),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                done ? 'All tidy' : '$todo to tidy',
+                style: Fonts.bricolage(TypeSize.title, color: bt.ink),
+              ),
+              Text(
+                tidied == 0
+                    ? 'Nothing tidied yet'
+                    : '$tidied already tidied away',
+                style: text.bodyMedium!.copyWith(color: bt.muted),
+              ),
+            ],
           ),
-          Icon(
-            done ? Icons.check_circle_rounded : Icons.auto_awesome_rounded,
-            size: 40,
-            color: done ? bt.mint : bt.lavender,
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

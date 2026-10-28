@@ -78,28 +78,25 @@ Future<void> runAgentSetup(
   }
 }
 
-/// The dark surface the Always On card sits on (navy in both themes).
-Color _cardInk(BtColors bt) => bt.screen;
-
+/// White text on the navy Always On surface (the same in both themes).
 const _onInk = Color(0xFFFFFFFF);
 const _onInkSoft = Color(0xFFB9BAD6);
+const _onInkOk = Color(0xFF7FDDBE);
 const _inkButton = Color(0xFF2A2B4D);
 const _inkButtonBorder = Color(0xFF3B3C60);
 
-class _DarkCard extends StatelessWidget {
+/// The one card on Better TV: the navy Always On surface.
+class _InkSurface extends StatelessWidget {
   final Widget child;
-  const _DarkCard({required this.child});
+  const _InkSurface({required this.child});
 
   @override
   Widget build(BuildContext context) {
     final bt = context.bt;
-    return Container(
-      decoration: BoxDecoration(
-        color: _cardInk(bt),
-        borderRadius: Radii.hero,
-        border: Border.all(color: _inkButtonBorder.withValues(alpha: 0.6)),
-      ),
-      padding: const EdgeInsets.all(Gap.f13),
+    return Surface(
+      color: bt.screen,
+      borderColor: _inkButtonBorder,
+      radius: Radii.hero,
       child: Theme(
         data: Theme.of(context).copyWith(
           textTheme: Theme.of(context).textTheme.apply(
@@ -113,6 +110,56 @@ class _DarkCard extends StatelessWidget {
   }
 }
 
+/// Icon tile, "Always On" with its learn dot, and the state line.
+class _InkHeader extends StatelessWidget {
+  final Widget lead;
+  final String line;
+  final Color lineColor;
+
+  const _InkHeader({
+    required this.lead,
+    required this.line,
+    this.lineColor = _onInkSoft,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return Row(
+      children: [
+        lead,
+        const SizedBox(width: Gap.inside),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TermTitle(
+                'Always On',
+                LearnTerm.alwaysOn,
+                style: Fonts.bricolage(
+                  TypeSize.headline,
+                  weight: FontWeight.w700,
+                  height: TypeSize.tightLeading,
+                  color: _onInk,
+                ),
+                dotColor: _onInkSoft,
+              ),
+              const SizedBox(height: Gap.f4),
+              Text(
+                line,
+                key: const Key('tv-guard-line'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: text.bodySmall!.copyWith(color: lineColor),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _InstallInvite extends ConsumerWidget {
   const _InstallInvite({super.key});
 
@@ -122,87 +169,69 @@ class _InstallInvite extends ConsumerWidget {
     final bundle = ref.watch(agentBundleProvider);
     final missing = bundle.hasValue && bundle.value == null;
     final hasAdb = ref.watch(activeHasAdbProvider);
-    const points = [
-      (Icons.nights_stay_rounded, 'Bedtime runs even when you\'re out'),
-      (Icons.rule_rounded, 'Daily TV time, apps and volume, kept by the TV'),
-      (Icons.healing_rounded, 'Tidies up again after TV updates'),
-    ];
-    return _DarkCard(
+    return _InkSurface(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          const _InkHeader(
+            lead: Tubby(
+              mood: TubbyMood.guard,
+              size: Sizes.avatar,
+              animate: false,
+            ),
+            line: 'Not set up · optional',
+          ),
+          const SizedBox(height: Gap.inside),
           Row(
             children: [
-              const Tubby(
-                mood: TubbyMood.guard,
-                size: 52,
-                animate: false,
-              ),
-              const SizedBox(width: Gap.f13),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TermTitle(
-                      'Always On',
-                      LearnTerm.alwaysOn,
-                      style: text.titleMedium!.copyWith(
-                        color: _onInk,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                      ),
-                      dotColor: _onInkSoft,
-                    ),
-                    Text(
-                      'Not set up · optional',
-                      style: text.bodySmall!.copyWith(color: _onInkSoft),
-                    ),
-                  ],
+                child: Text(
+                  'Your routines run on the TV, even when you\'re out.',
+                  style: text.bodySmall!.copyWith(color: _onInk),
                 ),
+              ),
+              const InfoButton(
+                color: _onInkSoft,
+                title: 'What Always On does',
+                body: 'Always On is a small helper on the TV. Bedtime runs '
+                    'even when you\'re out, and daily TV time, apps and '
+                    'volume are kept by the TV itself. It tidies up again '
+                    'after TV updates.\n\nIt takes about a minute and one OK '
+                    'on the TV. Remove it any time; the TV keeps working '
+                    'without it.',
               ),
             ],
           ),
-          const SizedBox(height: Gap.f13),
-          for (final (icon, line) in points)
-            Padding(
-              padding: const EdgeInsets.only(bottom: Gap.f8),
-              child: Row(
-                children: [
-                  Icon(icon, size: 18, color: const Color(0xFF7FDDBE)),
-                  const SizedBox(width: Gap.f13),
-                  Expanded(
-                    child: Text(
-                      line,
-                      style: text.bodyMedium!.copyWith(
-                        color: _onInk,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ],
+          const SizedBox(height: Gap.inside),
+          if (hasAdb)
+            PrimaryButton(
+              key: const Key('tv-guard-install'),
+              label: 'Make it Always On',
+              icon: Icons.shield_rounded,
+              kind: ButtonKind.mint,
+              onPressed: missing
+                  ? null
+                  : () => runAgentSetup(context, ref, repair: false),
+            )
+          else
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                key: const Key('tv-guard-install'),
+                style: TextButton.styleFrom(foregroundColor: _onInkOk),
+                onPressed: () => context.push('/adb-guide'),
+                icon: const Icon(Icons.home_rounded, size: Sizes.icon),
+                label: const Text('Unlock Home mode first'),
               ),
             ),
-          const SizedBox(height: Gap.f8),
-          PrimaryButton(
-            key: const Key('tv-guard-install'),
-            label: hasAdb ? 'Make it Always On' : 'Unlock Home mode first',
-            icon: hasAdb ? Icons.shield_rounded : Icons.home_rounded,
-            kind: ButtonKind.mint,
-            onPressed: missing
-                ? null
-                : hasAdb
-                    ? () => runAgentSetup(context, ref, repair: false)
-                    : () => context.push('/adb-guide'),
-          ),
-          const SizedBox(height: Gap.f8),
-          Text(
-            missing
-                ? AgentBundleMissing.message
-                : 'About a minute, one OK on the TV. Remove it any time; the '
-                    'TV keeps working without it.',
-            textAlign: TextAlign.center,
-            style: text.bodySmall!.copyWith(color: _onInkSoft),
-          ),
+          if (missing) ...[
+            const SizedBox(height: Gap.f8),
+            Text(
+              AgentBundleMissing.message,
+              textAlign: TextAlign.center,
+              style: text.bodySmall!.copyWith(color: _onInkSoft),
+            ),
+          ],
         ],
       ),
     );
@@ -303,14 +332,13 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
         ),
         children: [
           if (r.lines.isNotEmpty)
-            Surface(
-              child: Column(
-                children: [
-                  for (final l in r.lines) CheckLine(l, done: r.ok),
-                ],
-              ),
+            RowList(
+              children: [
+                for (final l in r.lines)
+                  CheckLine(l, done: r.ok, minHeight: Sizes.control),
+              ],
             ),
-          const SizedBox(height: Gap.f13),
+          const SizedBox(height: Gap.related),
           PrimaryButton(
             label: 'Done',
             kind: ButtonKind.ink,
@@ -354,14 +382,100 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
     }
   }
 
+  /// Closes the More sheet, then runs [f].
+  VoidCallback _fromSheet(BuildContext sheet, VoidCallback f) => () {
+        Navigator.pop(sheet);
+        f();
+      };
+
+  Future<void> _more(String line) {
+    final s = widget.link.status;
+    final mode = s?.mode;
+    return showBtSheet<void>(
+      context,
+      builder: (sheet) => SheetScaffold(
+        key: const Key('tv-guard-more-sheet'),
+        title: 'Always On',
+        lead: Text(line),
+        children: [
+          if (s != null) ...[
+            RowList(
+              children: [
+                ListRow(
+                  icon: Icons.rule_rounded,
+                  title: 'Routines',
+                  value: switch (s.mode) {
+                    AgentMode.normal => 'Running',
+                    AgentMode.paused => 'Paused',
+                    AgentMode.safe => 'Hands off',
+                  },
+                ),
+                ListRow(
+                  icon: Icons.close_rounded,
+                  title: 'Can close apps',
+                  value: switch (s.selfAdb) {
+                    SelfAdb.ok => 'Yes',
+                    SelfAdb.needsApproval => 'Needs an OK',
+                    SelfAdb.unavailable => 'No',
+                    SelfAdb.unknown => '—',
+                  },
+                ),
+                ListRow(
+                  icon: Icons.info_outline_rounded,
+                  title: 'Version',
+                  value: s.version,
+                ),
+              ],
+            ),
+            const SizedBox(height: Gap.related),
+          ],
+          RowList(
+            edges: s != null,
+            children: [
+              if (mode != null && mode != AgentMode.safe)
+                ListRow(
+                  key: const Key('tv-guard-safe'),
+                  icon: Icons.back_hand_rounded,
+                  title: 'Hands off for now',
+                  subtitle: 'Watches and reports, changes nothing',
+                  chevron: false,
+                  onTap: _fromSheet(sheet, () => _mode(AgentMode.safe)),
+                ),
+              if (mode != null)
+                ListRow(
+                  key: const Key('tv-guard-repair'),
+                  icon: Icons.build_rounded,
+                  title: 'Repair',
+                  subtitle: 'Pairs it again and fixes permissions',
+                  chevron: false,
+                  onTap: _fromSheet(
+                    sheet,
+                    () => runAgentSetup(context, ref, repair: true),
+                  ),
+                ),
+              ListRow(
+                key: const Key('tv-guard-uninstall'),
+                icon: Icons.delete_outline_rounded,
+                iconColor: StatusColors.of(context).bad,
+                title: 'Remove Always On',
+                subtitle: 'The TV keeps working without it',
+                chevron: false,
+                onTap: _fromSheet(sheet, _uninstall),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final link = widget.link;
     final s = link.status;
-    final text = Theme.of(context).textTheme;
     final bt = context.bt;
     final state = guardStateOf(link: link, onBreak: false, classic: false);
-    final (label, tone) = guardLook(state);
+    final (label, _) = guardLook(state);
     final down = state == GuardState.down;
     final mode = s?.mode;
     final busy = _busy != null;
@@ -388,307 +502,164 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
             GuardState.limited => 'Running, but can\'t close apps yet',
             _ => label,
           };
+    final oldMedia = s != null &&
+        update != null &&
+        compareVersions(s.version, '1.1.0') < 0 &&
+        compareVersions(update.versionName, '1.1.0') >= 0;
 
-    return _DarkCard(
+    final notes = <Widget>[
+      if (down)
+        _InkLine(
+          key: const Key('tv-guard-down'),
+          color: bt.berry,
+          icon: Icons.portable_wifi_off_rounded,
+          text: link.kind == AgentLinkKind.authFailed
+              ? 'It doesn\'t recognise this phone. Repair pairs them again.'
+              : 'Routines may not be running. Repair usually fixes it.',
+        ),
+      if (s != null && s.selfAdb == SelfAdb.needsApproval)
+        _InkLine(
+          color: bt.sun,
+          icon: Icons.tv_rounded,
+          text: 'On the TV, choose "Always allow" so it can close apps.',
+        )
+      else if (s != null && s.isLimited)
+        _InkLine(
+          key: const Key('tv-guard-limited'),
+          color: bt.sun,
+          icon: Icons.gpp_maybe_rounded,
+          text: s.limitedReasons.isEmpty
+              ? 'It can\'t do everything yet. Repair may fix it.'
+              : 'Not yet: ${s.limitedReasons.join(' · ')}',
+        ),
+      if (s != null && s.activeReasons.isNotEmpty)
+        _InkLine(
+          key: const Key('tv-guard-active'),
+          color: _onInkOk,
+          icon: Icons.bolt_rounded,
+          text: 'Right now: ${s.activeReasons.join(' · ')}',
+        ),
+      if (s != null && s.clockSkewWarn)
+        _InkLine(
+          color: bt.sun,
+          icon: Icons.schedule_rounded,
+          text: 'The TV\'s clock is over 2 minutes off.',
+        ),
+      if (s != null && update != null && !down)
+        _InkLine(
+          key: const Key('tv-guard-update-note'),
+          color: bt.mint,
+          icon: Icons.new_releases_rounded,
+          text: 'A newer Always On is ready (${update.versionName})',
+          info: InfoButton(
+            color: _onInkSoft,
+            title: 'Update Always On',
+            body: '${oldMedia ? 'The new one can pause after the video '
+                    'that\'s on, and keep Shorts in check. ' : ''}'
+                'It takes about a minute, and your routines keep running.',
+          ),
+          action: PrimaryButton(
+            key: const Key('tv-guard-update'),
+            label: 'Update Always On',
+            icon: Icons.system_update_alt_rounded,
+            kind: ButtonKind.mint,
+            onPressed: busy || !ref.watch(activeHasAdbProvider)
+                ? null
+                : () => runAgentSetup(
+                      context,
+                      ref,
+                      repair: true,
+                      update: true,
+                    ),
+          ),
+        ),
+      if (s != null && s.buildChangedSinceApproval)
+        _InkLine(
+          key: const Key('tv-guard-approve-banner'),
+          color: bt.sky,
+          icon: Icons.system_update_tv_rounded,
+          text: 'Your TV updated. Tidying up'
+              '${s.watchdogPending > 0 ? ' (${s.watchdogPending} '
+                  'change${s.watchdogPending == 1 ? '' : 's'})' : ''} '
+              'waits for your OK.',
+          action: PrimaryButton(
+            key: const Key('tv-guard-approve'),
+            label: 'Approve update',
+            kind: ButtonKind.mint,
+            onPressed: busy ? null : _approve,
+          ),
+        ),
+    ];
+
+    final buttons = <Widget>[
+      if (mode == AgentMode.normal)
+        _InkButton(
+          key: const Key('tv-guard-pause'),
+          label: 'Pause',
+          busy: _busy == 'paused',
+          onPressed: busy ? null : () => _mode(AgentMode.paused),
+        )
+      else if (mode != null)
+        _InkButton(
+          key: const Key('tv-guard-resume'),
+          label: mode == AgentMode.safe ? 'Turn back on' : 'Resume',
+          highlight: true,
+          busy: _busy == 'normal',
+          onPressed: busy ? null : () => _mode(AgentMode.normal),
+        )
+      else
+        _InkButton(
+          key: const Key('tv-guard-repair'),
+          label: 'Repair',
+          highlight: down,
+          onPressed:
+              busy ? null : () => runAgentSetup(context, ref, repair: true),
+        ),
+      if (s != null)
+        _InkButton(
+          key: const Key('tv-guard-checks'),
+          label: 'Check now',
+          busy: _busy == 'checks',
+          onPressed: busy ? null : _runChecks,
+        ),
+      _InkButton(
+        key: const Key('tv-guard-more'),
+        label: 'More',
+        icon: Icons.more_horiz_rounded,
+        busy: _busy == 'uninstall' || _busy == 'safe',
+        onPressed: busy ? null : () => _more(line),
+      ),
+    ];
+
+    return _InkSurface(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: tileColor,
-                  borderRadius: Radii.control,
-                ),
-                child: Icon(
-                  tileIcon,
-                  color: const Color(0xFF0B0C1E),
-                  size: 24,
-                ),
+          _InkHeader(
+            lead: AnimatedContainer(
+              duration: Motion.of(context, Motion.flip),
+              width: Sizes.avatar,
+              height: Sizes.avatar,
+              decoration: BoxDecoration(
+                color: tileColor,
+                borderRadius: Radii.control,
               ),
-              const SizedBox(width: Gap.f13),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TermTitle(
-                      'Always On',
-                      LearnTerm.alwaysOn,
-                      style: text.titleMedium!.copyWith(
-                        color: _onInk,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                      ),
-                      dotColor: _onInkSoft,
-                    ),
-                    Text(
-                      line,
-                      key: const Key('tv-guard-line'),
-                      style: text.bodySmall!.copyWith(
-                        color: state == GuardState.on
-                            ? const Color(0xFFB7F0DC)
-                            : _onInkSoft,
-                      ),
-                    ),
-                  ],
-                ),
+              child: Icon(
+                tileIcon,
+                color: bt.screen,
+                size: Sizes.iconControl,
               ),
-              _InkBadge(
-                label: state == GuardState.on ? 'On' : label,
-                tone: tone,
-              ),
-            ],
+            ),
+            line: line,
+            lineColor: state == GuardState.on ? _onInkOk : _onInkSoft,
           ),
-          if (s != null) ...[
-            const SizedBox(height: Gap.f13),
-            Row(
-              children: [
-                _fact(
-                  context,
-                  'Routines',
-                  switch (s.mode) {
-                    AgentMode.normal => 'Running',
-                    AgentMode.paused => 'Paused',
-                    AgentMode.safe => 'Hands off',
-                  },
-                  flex: 10,
-                ),
-                _fact(
-                  context,
-                  'Can close apps',
-                  switch (s.selfAdb) {
-                    SelfAdb.ok => 'Yes',
-                    SelfAdb.needsApproval => 'Needs an OK',
-                    SelfAdb.unavailable => 'No',
-                    SelfAdb.unknown => '—',
-                  },
-                  flex: 13,
-                ),
-                _fact(context, 'Version', s.version, flex: 8),
-              ],
-            ),
-            if (update != null && !down) ...[
-              const SizedBox(height: Gap.f13),
-              _InkNote(
-                key: const Key('tv-guard-update-note'),
-                color: bt.mint,
-                icon: Icons.new_releases_rounded,
-                text: 'A newer Always On is ready (${update.versionName}). '
-                    '${compareVersions(s.version, '1.1.0') < 0 && compareVersions(update.versionName, '1.1.0') >= 0 ? 'It can pause after the video that\'s on, and keep Shorts in check. ' : ''}'
-                    'About a minute; routines keep running.',
-                action: PrimaryButton(
-                  key: const Key('tv-guard-update'),
-                  label: 'Update Always On',
-                  icon: Icons.system_update_alt_rounded,
-                  kind: ButtonKind.mint,
-                  height: 48,
-                  onPressed: busy || !ref.watch(activeHasAdbProvider)
-                      ? null
-                      : () => runAgentSetup(
-                            context,
-                            ref,
-                            repair: true,
-                            update: true,
-                          ),
-                ),
-              ),
-            ],
+          for (final n in notes) ...[
+            const SizedBox(height: Gap.inside),
+            n,
           ],
-          if (down) ...[
-            const SizedBox(height: Gap.f13),
-            _InkNote(
-              key: const Key('tv-guard-down'),
-              color: bt.berry,
-              icon: Icons.portable_wifi_off_rounded,
-              text: link.kind == AgentLinkKind.authFailed
-                  ? 'Always On doesn\'t recognise this phone any more. Repair '
-                      'pairs them again.'
-                  : 'Always On isn\'t answering, so routines may not be '
-                      'running. Repair usually fixes it.',
-            ),
-          ],
-          if (s != null && s.selfAdb == SelfAdb.needsApproval) ...[
-            const SizedBox(height: Gap.f13),
-            _InkNote(
-              color: bt.sun,
-              icon: Icons.tv_rounded,
-              text: 'Look at your TV and choose "Always allow" so Always On '
-                  'can close apps. Tap Repair if the prompt is gone.',
-            ),
-          ] else if (s != null && s.isLimited) ...[
-            const SizedBox(height: Gap.f13),
-            _InkNote(
-              key: const Key('tv-guard-limited'),
-              color: bt.sun,
-              icon: Icons.gpp_maybe_rounded,
-              text: s.limitedReasons.isEmpty
-                  ? 'Always On can\'t do everything yet. Repair may fix it.'
-                  : 'Not everything works yet: '
-                      '${s.limitedReasons.join(' · ')}'
-                      '${s.needsPhoneGrant ? '. Repair gives it the missing '
-                          'permission.' : ''}',
-            ),
-          ],
-          if (s != null && s.activeReasons.isNotEmpty) ...[
-            const SizedBox(height: Gap.f13),
-            Row(
-              key: const Key('tv-guard-active'),
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(
-                  Icons.bolt_rounded,
-                  size: 18,
-                  color: Color(0xFF7FDDBE),
-                ),
-                const SizedBox(width: Gap.f8),
-                Expanded(
-                  child: Text(
-                    'Right now: ${s.activeReasons.join(' · ')}',
-                    style: text.bodySmall!.copyWith(color: _onInkSoft),
-                  ),
-                ),
-              ],
-            ),
-          ],
-          if (s != null && s.buildChangedSinceApproval) ...[
-            const SizedBox(height: Gap.f13),
-            _InkNote(
-              key: const Key('tv-guard-approve-banner'),
-              color: bt.sky,
-              icon: Icons.system_update_tv_rounded,
-              text: 'Your TV installed an update. Tidying up'
-                  '${s.watchdogPending > 0 ? ' (${s.watchdogPending} '
-                      'change${s.watchdogPending == 1 ? '' : 's'})' : ''} '
-                  'waits until you approve.',
-              action: PrimaryButton(
-                key: const Key('tv-guard-approve'),
-                label: 'Approve update',
-                kind: ButtonKind.mint,
-                height: 48,
-                onPressed: busy ? null : _approve,
-              ),
-            ),
-          ],
-          if (s != null && s.clockSkewWarn) ...[
-            const SizedBox(height: Gap.f13),
-            _InkNote(
-              color: bt.sun,
-              icon: Icons.schedule_rounded,
-              text: 'The TV\'s clock is more than 2 minutes off, so TV time '
-                  'may start or end early.',
-            ),
-          ],
-          const SizedBox(height: Gap.f13),
-          LayoutBuilder(
-            builder: (context, c) {
-              final buttons = <Widget>[
-                if (mode == AgentMode.normal)
-                  _InkButton(
-                    key: const Key('tv-guard-pause'),
-                    icon: Icons.pause_rounded,
-                    label: 'Pause',
-                    busy: _busy == 'paused',
-                    onPressed: busy ? null : () => _mode(AgentMode.paused),
-                  )
-                else if (mode != null)
-                  _InkButton(
-                    key: const Key('tv-guard-resume'),
-                    icon: Icons.play_arrow_rounded,
-                    label: mode == AgentMode.safe ? 'Turn back on' : 'Resume',
-                    highlight: true,
-                    busy: _busy == 'normal',
-                    onPressed: busy ? null : () => _mode(AgentMode.normal),
-                  ),
-                if (s != null)
-                  _InkButton(
-                    key: const Key('tv-guard-checks'),
-                    icon: Icons.fact_check_rounded,
-                    label: 'Check now',
-                    busy: _busy == 'checks',
-                    onPressed: busy ? null : _runChecks,
-                  ),
-                if (mode != null && mode != AgentMode.safe)
-                  _InkButton(
-                    key: const Key('tv-guard-safe'),
-                    icon: Icons.back_hand_rounded,
-                    label: 'Hands off for now',
-                    busy: _busy == 'safe',
-                    onPressed: busy ? null : () => _mode(AgentMode.safe),
-                  ),
-                _InkButton(
-                  key: const Key('tv-guard-repair'),
-                  icon: Icons.build_rounded,
-                  label: 'Repair',
-                  highlight: down,
-                  onPressed: busy
-                      ? null
-                      : () => runAgentSetup(context, ref, repair: true),
-                ),
-              ];
-              final w = (c.maxWidth - Gap.f8) / 2;
-              return Wrap(
-                spacing: Gap.f8,
-                runSpacing: Gap.f8,
-                children: [
-                  for (final b in buttons) SizedBox(width: w, child: b),
-                ],
-              );
-            },
-          ),
-          const SizedBox(height: Gap.f4),
-          Align(
-            child: TextButton.icon(
-              key: const Key('tv-guard-uninstall'),
-              style: TextButton.styleFrom(foregroundColor: _onInkSoft),
-              onPressed: busy ? null : _uninstall,
-              icon: _busy == 'uninstall'
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: _onInkSoft,
-                      ),
-                    )
-                  : const Icon(Icons.delete_outline_rounded, size: 18),
-              label: const Text('Remove Always On'),
-            ),
-          ),
+          const SizedBox(height: Gap.related),
+          ChipRow(children: buttons),
         ],
-      ),
-    );
-  }
-
-  Widget _fact(BuildContext context, String k, String v, {int flex = 1}) {
-    final text = Theme.of(context).textTheme;
-    return Expanded(
-      flex: flex,
-      child: Padding(
-        padding: const EdgeInsets.only(right: Gap.f8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              k.toUpperCase(),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: text.labelSmall!.copyWith(
-                color: _onInkSoft,
-                letterSpacing: 1,
-                fontSize: 11,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              v,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: text.titleSmall!.copyWith(color: _onInk),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -700,53 +671,18 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
   }
 }
 
-class _InkBadge extends StatelessWidget {
-  final String label;
-  final Tone tone;
-  const _InkBadge({required this.label, required this.tone});
-
-  @override
-  Widget build(BuildContext context) {
-    final hue = tone == Tone.idle ? _onInkSoft : tone.hue(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: ShapeDecoration(
-        color: hue.withValues(alpha: 0.18),
-        shape: const StadiumBorder(),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 7,
-            height: 7,
-            decoration: BoxDecoration(color: hue, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelLarge!.copyWith(
-                  fontSize: 12,
-                  color: _onInk,
-                ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
+/// A 44 secondary on the navy surface; the highlighted one is mint.
 class _InkButton extends StatelessWidget {
-  final IconData icon;
   final String label;
+  final IconData? icon;
   final bool busy;
   final bool highlight;
   final VoidCallback? onPressed;
 
   const _InkButton({
     super.key,
-    required this.icon,
     required this.label,
+    this.icon,
     this.busy = false,
     this.highlight = false,
     this.onPressed,
@@ -756,62 +692,67 @@ class _InkButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final bt = context.bt;
     final fg = highlight ? const Color(0xFF06392A) : _onInk;
+    final style = Theme.of(context).textTheme.labelMedium!.copyWith(
+          color: fg,
+          fontWeight: FontWeight.w700,
+        );
     return Semantics(
       button: true,
       enabled: onPressed != null,
       label: label,
       excludeSemantics: true,
-      child: Opacity(
-        opacity: onPressed == null && !busy ? 0.5 : 1,
-        child: Material(
-          color: highlight ? bt.mint : _inkButton,
-          shape: RoundedRectangleBorder(
-            borderRadius: Radii.control,
-            side: BorderSide(
-              color: highlight ? bt.mint : _inkButtonBorder,
+      child: Pressable(
+        enabled: onPressed != null,
+        child: AnimatedOpacity(
+          opacity: onPressed == null && !busy ? 0.5 : 1,
+          duration: Motion.of(context, Motion.flip),
+          child: Material(
+            color: highlight ? bt.mint : _inkButton,
+            shape: RoundedRectangleBorder(
+              borderRadius: Radii.control,
+              side: BorderSide(
+                color: highlight ? bt.mint : _inkButtonBorder,
+              ),
             ),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onPressed == null
-                ? null
-                : () {
-                    HapticFeedback.lightImpact();
-                    onPressed!();
-                  },
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 48),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: Gap.f8,
-                  vertical: Gap.f8,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    busy
-                        ? SizedBox(
-                            width: 16,
-                            height: 16,
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: onPressed == null
+                  ? null
+                  : () {
+                      HapticFeedback.lightImpact();
+                      onPressed!();
+                    },
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: Sizes.control),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: Gap.f4),
+                  child: Center(
+                    child: busy
+                        ? SizedBox.square(
+                            dimension: Sizes.iconSmall,
                             child: CircularProgressIndicator(
-                              strokeWidth: 2,
+                              strokeWidth: Sizes.focus,
                               color: fg,
                             ),
                           )
-                        : Icon(icon, size: 18, color: fg),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: Text(
-                        label,
-                        maxLines: 2,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.labelLarge!.copyWith(
-                              fontSize: 13.5,
-                              color: fg,
-                            ),
-                      ),
-                    ),
-                  ],
+                        : Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  label,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: style,
+                                ),
+                              ),
+                              if (icon != null) ...[
+                                const SizedBox(width: Gap.f4),
+                                Icon(icon, size: Sizes.iconSmall, color: fg),
+                              ],
+                            ],
+                          ),
+                  ),
                 ),
               ),
             ),
@@ -822,54 +763,53 @@ class _InkButton extends StatelessWidget {
   }
 }
 
-class _InkNote extends StatelessWidget {
+/// One line of state on the navy surface (an icon in its hue, white
+/// text), with an optional ⓘ and at most one button under it.
+class _InkLine extends StatelessWidget {
   final Color color;
   final IconData icon;
   final String text;
+  final Widget? info;
   final Widget? action;
 
-  const _InkNote({
+  const _InkLine({
     super.key,
     required this.color,
     required this.icon,
     required this.text,
+    this.info,
     this.action,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(Gap.f13),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.16),
-        borderRadius: Radii.control,
-        border: Border.all(color: color.withValues(alpha: 0.45)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, size: 20, color: color),
-              const SizedBox(width: Gap.f13),
-              Expanded(
-                child: Text(
-                  text,
-                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                        color: _onInk,
-                        fontSize: 14,
-                      ),
-                ),
+    final t = Theme.of(context).textTheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            SizedBox(
+              width: Sizes.avatar,
+              child: Icon(icon, size: Sizes.icon, color: color),
+            ),
+            const SizedBox(width: Gap.inside),
+            Expanded(
+              child: Text(
+                text,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: t.bodySmall!.copyWith(color: _onInk),
               ),
-            ],
-          ),
-          if (action != null) ...[
-            const SizedBox(height: Gap.f13),
-            action!,
+            ),
+            if (info != null) info!,
           ],
+        ),
+        if (action != null) ...[
+          const SizedBox(height: Gap.f8),
+          action!,
         ],
-      ),
+      ],
     );
   }
 }
@@ -888,6 +828,12 @@ Future<void> showAgentSetupSheet(
       isDismissible: false,
       enableDrag: false,
       useSafeArea: true,
+      sheetAnimationStyle: AnimationStyle(
+        duration: Motion.of(context, Motion.sheet),
+        reverseDuration: Motion.of(context, Motion.flip),
+        curve: Motion.enter,
+        reverseCurve: Motion.exit,
+      ),
       builder: (_) =>
           AgentSetupSheet(title: title, start: start, doneLine: doneLine),
     );
@@ -971,7 +917,12 @@ class _AgentSetupSheetState extends State<AgentSetupSheet> {
         maxHeight: MediaQuery.sizeOf(context).height * 0.9,
       ),
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(Gap.f21, Gap.f13, Gap.f21, Gap.f21),
+        padding: const EdgeInsets.fromLTRB(
+          Gap.gutter,
+          Gap.related,
+          Gap.gutter,
+          Gap.related,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -981,11 +932,11 @@ class _AgentSetupSheetState extends State<AgentSetupSheet> {
                 if (finished) ...[
                   Tubby(
                     mood: ok ? TubbyMood.guard : TubbyMood.calm,
-                    size: 44,
+                    size: Sizes.avatar,
                     beaming: ok,
                     animate: false,
                   ),
-                  const SizedBox(width: Gap.f13),
+                  const SizedBox(width: Gap.inside),
                 ],
                 Expanded(
                   child: Text(
@@ -999,89 +950,77 @@ class _AgentSetupSheetState extends State<AgentSetupSheet> {
                   Text(
                     '$done/${steps.length}',
                     style: Fonts.bricolage(
-                      18,
+                      TypeSize.headline,
+                      weight: FontWeight.w700,
                       color: bt.muted,
                       tabularFigures: true,
                     ),
                   ),
               ],
             ),
-            const SizedBox(height: Gap.f13),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(Radii.chipR),
-              child: TweenAnimationBuilder<double>(
-                tween: Tween(
-                  end: steps.isEmpty ? 0 : done / steps.length,
+            const SizedBox(height: Gap.inside),
+            if (steps.isEmpty && !finished)
+              ClipRRect(
+                borderRadius: Radii.chip,
+                child: LinearProgressIndicator(
+                  minHeight: Sizes.bar,
+                  color: bt.mint,
+                  backgroundColor: bt.wash,
                 ),
-                duration: Motion.of(context, Motion.sheet),
-                curve: Motion.enter,
-                builder: (context, v, _) => LinearProgressIndicator(
-                  minHeight: 6,
-                  value: steps.isEmpty ? null : v,
-                  color: finished && !ok ? bt.berry : bt.mint,
-                  backgroundColor: bt.hairline,
-                ),
+              )
+            else
+              ThinProgress(
+                value: steps.isEmpty ? 0 : done / steps.length,
+                color: finished && !ok ? bt.berry : bt.mint,
               ),
-            ),
             AnimatedSize(
               duration: Motion.of(context, Motion.sheet),
               curve: Motion.enter,
               child: p != null && p.awaitingApproval
                   ? const Padding(
-                      padding: EdgeInsets.only(top: Gap.f13),
+                      padding: EdgeInsets.only(top: Gap.related),
                       child: _LookAtTv(),
                     )
                   : const SizedBox(width: double.infinity),
             ),
-            const SizedBox(height: Gap.f13),
-            Surface(
-              padding: const EdgeInsets.symmetric(vertical: Gap.f4),
-              child: Column(
-                children: [
-                  for (final s in steps) _StepRow(step: s),
-                  if (steps.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.all(Gap.f13),
-                      child: LinearProgressIndicator(),
-                    ),
-                ],
-              ),
+            const SizedBox(height: Gap.inside),
+            RowList(
+              children: [for (final s in steps) _StepRow(step: s)],
             ),
             if (finished) ...[
-              const SizedBox(height: Gap.f13),
+              const SizedBox(height: Gap.related),
               Text(
                 ok
                     ? widget.doneLine ??
                         'Your routines now run on the TV, even when this '
                             'phone is away.'
-                    : 'Nothing was left half-done. Try again, or close and '
-                        'use Repair later.',
+                    : 'Nothing was left half-done. Try again, or use Repair '
+                        'later.',
                 style: text.bodyMedium,
               ),
-              const SizedBox(height: Gap.f13),
-              Row(
-                children: [
-                  if (!ok) ...[
-                    Expanded(
-                      child: PrimaryButton(
-                        key: const Key('setup-retry'),
-                        label: 'Try again',
-                        kind: ButtonKind.outline,
-                        onPressed: _run,
-                      ),
-                    ),
-                    const SizedBox(width: Gap.f13),
-                  ],
-                  Expanded(
-                    child: PrimaryButton(
-                      key: const Key('setup-done'),
-                      label: ok ? 'Done' : 'Close',
-                      kind: ok ? ButtonKind.mint : ButtonKind.ink,
-                      onPressed: () => Navigator.pop(context),
-                    ),
+              const SizedBox(height: Gap.related),
+              if (ok)
+                PrimaryButton(
+                  key: const Key('setup-done'),
+                  label: 'Done',
+                  onPressed: () => Navigator.pop(context),
+                )
+              else ...[
+                PrimaryButton(
+                  key: const Key('setup-retry'),
+                  label: 'Try again',
+                  icon: Icons.refresh_rounded,
+                  onPressed: _run,
+                ),
+                const SizedBox(height: Gap.f8),
+                Center(
+                  child: TextButton(
+                    key: const Key('setup-done'),
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Close'),
                   ),
-                ],
-              ),
+                ),
+              ],
             ],
           ],
         ),
@@ -1090,6 +1029,7 @@ class _AgentSetupSheetState extends State<AgentSetupSheet> {
   }
 }
 
+/// The TV is asking: a sunflower tint with the TV icon breathing.
 class _LookAtTv extends StatelessWidget {
   const _LookAtTv();
 
@@ -1097,35 +1037,37 @@ class _LookAtTv extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final bt = context.bt;
-    return Container(
+    return Material(
       key: const Key('setup-look-at-tv'),
-      padding: const EdgeInsets.all(Gap.f13),
-      decoration: BoxDecoration(
-        color: bt.sunTint,
-        borderRadius: Radii.control,
-        border: Border.all(color: bt.sun.withValues(alpha: 0.6)),
-      ),
-      child: Semantics(
-        liveRegion: true,
-        child: Row(
-          children: [
-            PulsingIcon(icon: Icons.tv_rounded, size: 40, color: bt.sunInk),
-            const SizedBox(width: Gap.f13),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Look at your TV', style: text.titleLarge),
-                  const SizedBox(height: 2),
-                  Text(
-                    'It asks "Allow USB debugging?". Tick "Always allow", '
-                    'then choose Allow.',
-                    style: text.bodyMedium!.copyWith(fontSize: 14),
-                  ),
-                ],
+      color: bt.sunTint,
+      borderRadius: Radii.control,
+      child: Padding(
+        padding: const EdgeInsets.all(Gap.inside),
+        child: Semantics(
+          liveRegion: true,
+          child: Row(
+            children: [
+              PulsingIcon(
+                icon: Icons.tv_rounded,
+                size: Sizes.control,
+                color: bt.sunInk,
               ),
-            ),
-          ],
+              const SizedBox(width: Gap.inside),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Look at your TV', style: text.titleLarge),
+                    const SizedBox(height: Gap.f4),
+                    Text(
+                      'Tick "Always allow", then choose Allow.',
+                      style: text.bodySmall!.copyWith(color: bt.inkSoft),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1140,65 +1082,45 @@ class _StepRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = StatusColors.of(context);
     final bt = context.bt;
-    final text = Theme.of(context).textTheme;
     final Widget lead = switch (step.state) {
-      SetupStepState.running => SizedBox(
-          width: 18,
-          height: 18,
-          child: CircularProgressIndicator(strokeWidth: 2.4, color: bt.sky),
+      SetupStepState.running => SizedBox.square(
+          dimension: Sizes.iconSmall,
+          child: CircularProgressIndicator(
+            strokeWidth: Sizes.focus,
+            color: bt.sky,
+          ),
         ),
-      SetupStepState.pending =>
-        Icon(Icons.radio_button_unchecked_rounded, color: bt.faint, size: 20),
-      SetupStepState.waiting => Icon(Icons.visibility_rounded, color: s.warn),
-      SetupStepState.done => Icon(Icons.check_circle_rounded, color: bt.mint),
-      SetupStepState.warn => Icon(Icons.error_rounded, color: bt.sun),
-      SetupStepState.failed => Icon(Icons.cancel_rounded, color: bt.berry),
-      SetupStepState.skipped =>
-        Icon(Icons.remove_circle_outline_rounded, color: bt.faint, size: 20),
+      SetupStepState.pending => Icon(
+          Icons.radio_button_unchecked_rounded,
+          color: bt.faint,
+          size: Sizes.icon,
+        ),
+      SetupStepState.waiting =>
+        Icon(Icons.visibility_rounded, color: s.warn, size: Sizes.icon),
+      SetupStepState.done =>
+        Icon(Icons.check_circle_rounded, color: bt.mint, size: Sizes.icon),
+      SetupStepState.warn =>
+        Icon(Icons.error_rounded, color: bt.sun, size: Sizes.icon),
+      SetupStepState.failed =>
+        Icon(Icons.cancel_rounded, color: bt.berry, size: Sizes.icon),
+      SetupStepState.skipped => Icon(
+          Icons.remove_circle_outline_rounded,
+          color: bt.faint,
+          size: Sizes.icon,
+        ),
     };
     final dim = step.state == SetupStepState.pending ||
         step.state == SetupStepState.skipped;
-    return Padding(
+    return ListRow(
       key: Key('step-${step.id.name}'),
-      padding: const EdgeInsets.symmetric(
-        horizontal: Gap.f13,
-        vertical: Gap.f8 + 2,
+      leading: AnimatedSwitcher(
+        duration: Motion.of(context, Motion.flip),
+        child: KeyedSubtree(key: ValueKey(step.state), child: lead),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 24,
-            child: Center(
-              child: AnimatedSwitcher(
-                duration: Motion.of(context, Motion.flip),
-                child: KeyedSubtree(key: ValueKey(step.state), child: lead),
-              ),
-            ),
-          ),
-          const SizedBox(width: Gap.f13),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  setupStepTitle(step.id),
-                  style: text.titleSmall!.copyWith(
-                    color: dim ? bt.muted : bt.ink,
-                  ),
-                ),
-                if (step.detail.isNotEmpty)
-                  Text(
-                    step.detail,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: text.bodySmall,
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
+      title: setupStepTitle(step.id),
+      subtitle: step.detail,
+      dim: dim,
+      chevron: false,
     );
   }
 }

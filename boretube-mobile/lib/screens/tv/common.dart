@@ -25,24 +25,17 @@ class AdbRequired extends StatelessWidget {
     return ListView(
       padding: tvListPadding,
       children: [
-        Surface(
-          child: Column(
-            children: [
-              EmptyState(
-                icon: Icons.lock_outline_rounded,
-                tone: Tone.accent,
-                title: 'Unlock Home mode',
-                message: '$what needs Home mode on the TV. It\'s '
-                    'a one-time setup and takes about two minutes.',
-              ),
-              FilledButton.icon(
-                onPressed: () => context.push('/adb-guide'),
-                icon: const Icon(Icons.lock_open_rounded),
-                label: const Text('Show me how'),
-              ),
-              const SizedBox(height: Gap.f8),
-            ],
-          ),
+        EmptyState(
+          icon: Icons.lock_outline_rounded,
+          tone: Tone.accent,
+          title: 'Unlock Home mode',
+          message: '$what needs Home mode on the TV. One setup, about two '
+              'minutes.',
+        ),
+        PrimaryButton(
+          label: 'Show me how',
+          icon: Icons.lock_open_rounded,
+          onPressed: () => context.push('/adb-guide'),
         ),
       ],
     );
@@ -81,7 +74,7 @@ Future<void> runMaintenance(
         error == null && fresh.every((e) => e.ok)
             ? Icons.check_circle_rounded
             : Icons.error_outline_rounded,
-        size: 32,
+        size: Sizes.chip,
         color: error == null && fresh.every((e) => e.ok)
             ? StatusColors.of(context).ok
             : StatusColors.of(context).bad,

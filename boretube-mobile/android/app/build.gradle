@@ -11,12 +11,12 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8
+        jvmTarget = JavaVersion.VERSION_17
     }
 
     defaultConfig {
@@ -24,7 +24,8 @@ android {
         applicationId = "com.rakesh.boretube_mobile"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        // local_auth_android and flutter_secure_storage need API 24+.
+        minSdk = 24
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -41,4 +42,10 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // AppCompat launch theme: local_auth's biometric prompt needs it on
+    // Android 8 and below.
+    implementation "androidx.appcompat:appcompat:1.7.0"
 }

@@ -31,7 +31,8 @@ It was built for a Sony BRAVIA (Google TV 14) and a kid hooked on Shorts. It wor
 </p>
 <p>
   <img src="docs/screenshots/tv-launcher.png" width="410" alt="Clean launcher on the TV" />
-  <img src="docs/screenshots/tv-guard-card-on-tv.png" width="410" alt="TV Guard explicit-style card on the TV" />
+  <img src="docs/screenshots/tv-guard-card-on-tv.png" width="410" alt="TV Guard nudge card on the TV (video hopping)" />
+  <img src="docs/screenshots/tv-card-cooldown.png" width="410" alt="TV Guard cool-down card on the TV" />
 </p>
 
 The phone screenshots were taken on a Pixel 9 Pro XL running against the real TV. Images whose names start with `render-` are rendered test screens using sample data.

@@ -53,3 +53,13 @@ Goal: the family keeps watching YouTube videos, but the kid's Shorts habit is br
   - Watching the current video for 60 s clears the streak.
 - **Verified on the VU3:** 6 films hopped in ~40 s were blocked at the 5th, at 02:43:18 (force-stop + HOME + "Lots of jumping between videos." card). Watching two films properly never triggers.
 - **End after this one is verified:** armed at 02:28:16, the next title at 02:28:27 started the break in the same 0.5 s poll.
+
+## Cool-down and reboot (verified, 2026-10-29, agent 1.3.2)
+
+- **Cool-down mode works.** Five videos hopped → video apps closed for 10 min (03:43:58).
+- **Reopening during the cool-down is blocked.** SmartTube reopened twice and was closed each time, with the "Videos are still resting · Back at 3:53 am" card.
+- **A TV reboot mid-cool-down is survived.**
+  - The agent restarted by itself, re-granted its app-ops, and the media listener was still granted.
+  - `cooldownUntil` was persisted.
+  - SmartTube launched from the laptop was closed within ~1 s, and Netflix immediately.
+- **Card times** use 12-hour format with a non-breaking space ("3:53 am"), so the time never splits across lines.

@@ -17,6 +17,8 @@ import 'screens/shell_screen.dart';
 import 'screens/whitelist_screen.dart';
 import 'security/app_lock.dart';
 import 'ui/theme.dart';
+import 'watch/always_on_alerts.dart';
+import 'watch/always_on_watch.dart';
 
 /// Where the app should be, given lock state and saved TVs. Pure, so the
 /// routing rules are easy to test.
@@ -128,11 +130,32 @@ class _BoretubeAppState extends ConsumerState<BoretubeApp> {
         if (mounted) setState(() {});
       },
     );
+    _startAlerts();
     _clock = Timer.periodic(const Duration(minutes: 5), (_) {
       if (mounted && ref.read(themePrefProvider) == ThemePref.bedtime) {
         setState(() {});
       }
     });
+  }
+
+  /// Always On alerts: keep the background check scheduled, and open
+  /// Better TV › Always On when an alert is tapped (warm or cold start).
+  Future<void> _startAlerts() async {
+    final notifier = ref.read(alertNotifierProvider);
+    try {
+      await notifier.init(onOpen: _openAlert);
+      await ref.read(alertsPrefProvider.notifier).ensureScheduled();
+      final launch = await notifier.launchPayload();
+      if (launch != null && mounted) _openAlert(launch);
+    } catch (_) {
+      // Alerts are a nicety; never block the app on them.
+    }
+  }
+
+  void _openAlert(String? payload) {
+    if (!mounted) return;
+    openAlwaysOnAlert(ref, payload);
+    ref.read(routerProvider).go('/');
   }
 
   @override

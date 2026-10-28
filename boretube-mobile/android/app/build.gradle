@@ -11,6 +11,8 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        // flutter_local_notifications needs library desugaring.
+        coreLibraryDesugaringEnabled true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -63,4 +65,5 @@ dependencies {
     // AppCompat launch theme: local_auth's biometric prompt needs it on
     // Android 8 and below.
     implementation "androidx.appcompat:appcompat:1.7.0"
+    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.1.4"
 }

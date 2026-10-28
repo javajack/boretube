@@ -32,3 +32,13 @@ Goal: the family keeps watching YouTube videos, but the kid's Shorts habit is br
 3. With stock YouTube gone, **phone casting from the YouTube app stops working**. The family doesn't cast, so that was accepted.
 4. **TV Guard watchdog:** if stock YouTube comes back (Play Store loophole or firmware), it is removed again within ~7 s unless the parent allows it in the app ("Allow YouTube tonight").
 5. Open loophole: SmartTube search can still surface Shorts (#6375). Re-check after SmartTube updates. Agent-side detection of Shorts playback is a possible P3.
+
+## Media-session spike (verified, 2026-10-29, Sony VU3 + SmartTube 32.68)
+
+- SmartTube publishes an **active MediaSession** (`org.smarttube.stable`) with title and channel in `description`, plus a PlaybackState. Read it with `dumpsys media_session`.
+- The position follows Android's model: `position` at `updated` (elapsedRealtime ms) × `speed`. A live position = `position + (uptime − updated) × speed`.
+- Metadata has 7 fields. `dumpsys` doesn't print the duration. To read `METADATA_KEY_DURATION`, TV Guard needs `MediaSessionManager.getActiveSessions` with notification-listener access (grant over ADB: `cmd notification allow_listener <pkg>/<service>`). Not yet verified.
+- **A normal video** keeps one title, steadily `PLAYING`, for minutes.
+- **Shorts** cycle `NONE → BUFFERING → PLAYING` with a **new title every ~8–10 s**. Five titles in 40 s is the swipe rhythm.
+- Nothing in the session marks a Short explicitly. Detect them by rhythm, e.g. ≥3 distinct titles in ~2 min with each under ~90 s, plus a duration under 3 min if it's readable.
+- **End after this one:** pause when the title changes or playback stops, with a 45-minute cap. Show "about N min left" only if the duration is readable.

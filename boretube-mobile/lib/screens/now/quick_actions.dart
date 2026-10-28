@@ -1,7 +1,7 @@
 import '../../tv/tv.dart';
 
 /// The instant actions on the Now tab.
-enum QuickAction { mute, stop, bore, volume, pause, restore }
+enum QuickAction { mute, stop, bore, volume, takeBreak, restore }
 
 /// Sony panels report a wrong Cast volume, so Cast alone can't drive the
 /// volume slider there.
@@ -23,7 +23,7 @@ Set<QuickAction> supportedActions(Tv tv) {
     if (stop) QuickAction.stop,
     if (stop && mute) QuickAction.bore,
     if (sony || adb || (cast && !isSonyTv(tv))) QuickAction.volume,
-    if (stop && mute) QuickAction.pause,
+    if (stop && mute) QuickAction.takeBreak,
     if (mute) QuickAction.restore,
   };
 }

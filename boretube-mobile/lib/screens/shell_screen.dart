@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../providers/break_provider.dart';
 import '../providers/now_playing.dart';
 import '../providers/tv_providers.dart';
 import '../tv/tv.dart';
@@ -194,25 +195,32 @@ class TvSwitcher extends ConsumerWidget {
   }
 }
 
-/// ⚪ Not guarded / 🔵 Classic lock running. TV Guard states arrive in P2.
+/// ☕ Break / 🔵 Classic lock running / ⚪ Not guarded. TV Guard states
+/// arrive in P2.
 class GuardPill extends ConsumerWidget {
   const GuardPill({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final classic = ref.watch(classicLockActiveProvider).valueOrNull ?? false;
+    final onBreak = ref.watch(breakProvider).active;
+    final (label, tone) = onBreak
+        ? ('☕ Break', Tone.warn)
+        : classic
+            ? ('Classic lock', Tone.info)
+            : ('Not guarded', Tone.idle);
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 250),
       child: StatusPill(
-        key: ValueKey(classic),
-        label: classic ? 'Classic lock' : 'Not guarded',
-        tone: classic ? Tone.info : Tone.idle,
-        onTap: () => _explain(context, classic),
+        key: ValueKey(label),
+        label: label,
+        tone: tone,
+        onTap: () => _explain(context, classic, onBreak),
       ),
     );
   }
 
-  void _explain(BuildContext context, bool classic) {
+  void _explain(BuildContext context, bool classic, bool onBreak) {
     final text = Theme.of(context).textTheme;
     showModalBottomSheet<void>(
       context: context,
@@ -230,6 +238,15 @@ class GuardPill extends ConsumerWidget {
             children: [
               Text('Protection', style: text.titleLarge),
               const SizedBox(height: Gap.lg),
+              if (onBreak) ...[
+                const _PillLegend(
+                  tone: Tone.warn,
+                  title: 'On a break',
+                  body: 'The TV stays closed and muted until the break '
+                      'ends, while Boretube is open.',
+                ),
+                const SizedBox(height: Gap.md),
+              ],
               _PillLegend(
                 tone: classic ? Tone.info : Tone.idle,
                 title: classic ? 'Classic lock running' : 'Not guarded',

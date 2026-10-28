@@ -25,7 +25,7 @@ void main() {
         QuickAction.mute,
         QuickAction.stop,
         QuickAction.bore,
-        QuickAction.pause,
+        QuickAction.takeBreak,
         QuickAction.restore,
       });
     });
@@ -65,7 +65,7 @@ void main() {
     expect(key('action-mute'), findsOneWidget);
     expect(key('action-stop'), findsOneWidget);
     expect(key('action-bore'), findsOneWidget);
-    expect(key('action-pause'), findsOneWidget);
+    expect(key('action-break'), findsOneWidget);
     expect(key('action-restore'), findsOneWidget);
     expect(key('action-volume'), findsNothing);
     expect(key('adb-tip'), findsOneWidget);
@@ -87,7 +87,7 @@ void main() {
       'action-mute',
       'action-stop',
       'action-bore',
-      'action-pause',
+      'action-break',
       'action-restore',
       'action-volume',
     ]) {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:boretube_mobile/discovery/discovery_service.dart';
 import 'package:boretube_mobile/discovery/subnet_sweep.dart';
 import 'package:boretube_mobile/ops/tv_ops.dart';
@@ -82,6 +84,94 @@ void main() {
     expect(notifier.state.online, isFalse);
     expect(calls, 1);
     notifier.dispose();
+  });
+
+  test('the poll reads over ADB in one round trip', () async {
+    final tv = FakeTv();
+    final ops = TvOps(
+      adb: tv,
+      profile: loadProfile('sony-bravia-vu3'),
+      tvId: 't',
+    );
+    await readNowPlaying(ops: ops);
+    expect(tv.log, [TvOps.statusCommand]);
+  });
+
+  group('optimistic patches and the poll hold', () {
+    const live = NowPlaying(
+      online: true,
+      id: 'org.smarttube.stable',
+      appName: 'SmartTube',
+      volume: 20,
+      muted: false,
+    );
+
+    test('patch shows at once; revert undoes only its own fields', () {
+      final n = NowPlayingNotifier.fixed(live);
+      final mute = n.patch((s) => s.copyWith(muted: true));
+      n.patch((s) => s.atHome());
+      expect(n.state.muted, isTrue);
+      expect(n.state.isHome, isTrue);
+      n.revert(mute);
+      expect(n.state.muted, isFalse);
+      expect(n.state.isHome, isTrue, reason: 'stop stays applied');
+      expect(n.state.id, isNull);
+      n.dispose();
+    });
+
+    test('held polls are skipped; release refreshes once after a delay',
+        () async {
+      var fetches = 0;
+      final n = NowPlayingNotifier(
+        fetch: () async {
+          fetches++;
+          return live;
+        },
+        interval: const Duration(milliseconds: 20),
+        active: true,
+        settleDelay: const Duration(milliseconds: 60),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(fetches, 1);
+      n.hold();
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(fetches, 1, reason: 'no polls while an action runs');
+      n.dispose();
+
+      var after = 0;
+      final m = NowPlayingNotifier(
+        fetch: () async {
+          after++;
+          return live;
+        },
+        interval: const Duration(days: 1),
+        active: false,
+        settleDelay: const Duration(milliseconds: 60),
+      );
+      m.hold();
+      m.release();
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(after, 0, reason: 'waits for the TV to settle');
+      await Future<void>.delayed(const Duration(milliseconds: 80));
+      expect(after, 1);
+      m.dispose();
+    });
+
+    test('a reading that started before a patch is dropped', () async {
+      final gate = Completer<NowPlaying>();
+      final n = NowPlayingNotifier(
+        fetch: () => gate.future,
+        interval: const Duration(days: 1),
+        active: false,
+        initial: live,
+      );
+      final poll = n.refresh();
+      n.patch((s) => s.copyWith(muted: true));
+      gate.complete(live); // stale: says unmuted
+      await poll;
+      expect(n.state.muted, isTrue);
+      n.dispose();
+    });
   });
 
   group('Relocator', () {

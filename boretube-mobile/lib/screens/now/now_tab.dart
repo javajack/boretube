@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../actions/actions_service.dart';
 import '../../ops/journal.dart';
+import '../../providers/break_provider.dart';
 import '../../providers/now_playing.dart';
 import '../../providers/tv_providers.dart';
 import '../../tv/tv.dart';
@@ -41,6 +45,9 @@ class NowTab extends ConsumerWidget {
           Gap.xxl,
         ),
         children: [
+          // Always one slot, so the tiles below keep their state when a
+          // break starts.
+          const _BreakSlot(),
           const NowOnTvCard(),
           const SectionHeader('Quick actions'),
           QuickActionsPanel(tv: tv),
@@ -224,60 +231,100 @@ class QuickActionsPanel extends ConsumerStatefulWidget {
 }
 
 class _QuickActionsState extends ConsumerState<QuickActionsPanel> {
-  QuickAction? _busy;
+  final _inflight = <QuickAction>{};
+  QuickAction? _done;
+  Timer? _doneTimer;
   double? _dragVolume;
 
+  @override
+  void dispose() {
+    _doneTimer?.cancel();
+    super.dispose();
+  }
+
+  /// Can [a] start while the actions in flight run? Mute, volume and
+  /// stop each touch one thing; Bore and Break touch both.
+  bool _blocked(QuickAction a) =>
+      _inflight.any((b) => _touches(a).intersection(_touches(b)).isNotEmpty);
+
+  static Set<String> _touches(QuickAction a) => switch (a) {
+        QuickAction.mute || QuickAction.restore => const {'sound'},
+        QuickAction.volume => const {'sound'},
+        QuickAction.stop => const {'app'},
+        QuickAction.bore || QuickAction.takeBreak => const {'sound', 'app'},
+      };
+
+  /// Shows [optimistic] at once, runs [run], and only speaks up if it
+  /// failed (rolling the change back). Success gets a brief check.
   Future<void> _run(
     QuickAction action,
-    String done,
-    Future<ActionResult?> Function() run,
-  ) async {
-    if (_busy != null) return;
-    setState(() => _busy = action);
+    Future<ActionResult?> Function() run, {
+    NowPlaying Function(NowPlaying s)? optimistic,
+  }) async {
+    if (_blocked(action)) return;
+    unawaited(HapticFeedback.lightImpact());
+    final now = ref.read(nowPlayingProvider.notifier);
+    setState(() {
+      _inflight.add(action);
+      if (_done == action) _done = null;
+    });
+    final undo = optimistic == null ? null : now.patch(optimistic);
+    now.hold();
     ActionResult? r;
     try {
       r = await run();
     } catch (e) {
       r = ActionResult(false, ActionTransport.none, detail: '$e');
+    } finally {
+      now.release();
     }
+    final ok = r != null && r.ok;
+    if (!ok && undo != null) now.revert(undo);
     if (!mounted) return;
-    setState(() => _busy = null);
-    if (r == null) {
-      showStatusSnack(context, 'No TV selected', ok: false);
-    } else if (r.ok) {
-      showStatusSnack(context, '$done · via ${transportLabel(r.via)}');
-    } else {
-      showStatusSnack(
-        context,
-        'Didn\'t work: ${r.detail.isEmpty ? 'TV unreachable' : r.detail}',
-        ok: false,
-      );
-    }
     ref.invalidate(journalEntriesProvider);
-    await ref.read(nowPlayingProvider.notifier).refresh();
+    setState(() {
+      _inflight.remove(action);
+      if (ok) _done = action;
+    });
+    if (ok) {
+      _doneTimer?.cancel();
+      _doneTimer = Timer(const Duration(milliseconds: 900), () {
+        if (mounted) setState(() => _done = null);
+      });
+      return;
+    }
+    showStatusSnack(
+      context,
+      r == null
+          ? 'Didn\'t work: no TV selected'
+          : 'Didn\'t work: ${r.detail.isEmpty ? 'TV unreachable' : r.detail}',
+      ok: false,
+    );
   }
 
   ActionsService? get _actions => ref.read(actionsServiceProvider);
 
-  Future<void> _pause() async {
+  BreakController get _break => ref.read(breakProvider.notifier);
+
+  Future<void> _startBreak() async {
     final minutes = await showModalBottomSheet<int>(
       context: context,
-      builder: (context) => const _PauseSheet(),
+      builder: (context) => const BreakSheet(),
     );
-    if (minutes == null) return;
-    await _run(
-      QuickAction.pause,
-      'Paused for $minutes min',
-      () => ref.read(pauseProvider.notifier).pause(minutes),
-    );
+    if (minutes == null || !mounted) return;
+    await _run(QuickAction.takeBreak, () => _break.start(minutes));
   }
+
+  Future<void> _endBreak(QuickAction via) => _run(via, () => _break.end());
+
+  VoidCallback? _tap(QuickAction a, VoidCallback f) => _blocked(a) ? null : f;
 
   @override
   Widget build(BuildContext context) {
     final supported = supportedActions(widget.tv);
     final now = ref.watch(nowPlayingProvider);
-    final pause = ref.watch(pauseProvider);
-    final muted = now.muted == true;
+    final brk = ref.watch(breakProvider);
+    final muted = now.muted == true || brk.active;
     final scale = MediaQuery.textScalerOf(context).scale(1);
 
     if (supported.isEmpty) {
@@ -293,73 +340,91 @@ class _QuickActionsState extends ConsumerState<QuickActionsPanel> {
       );
     }
 
+    ActionTile tile(
+      QuickAction a, {
+      required String key,
+      required IconData icon,
+      required String label,
+      String? state,
+      bool active = false,
+      Tone tone = Tone.accent,
+      required VoidCallback onTap,
+    }) =>
+        ActionTile(
+          key: Key(key),
+          icon: icon,
+          label: label,
+          state: state,
+          active: active,
+          tone: tone,
+          busy: _inflight.contains(a),
+          done: _done == a,
+          onTap: _tap(a, onTap),
+        );
+
     final tiles = <Widget>[
       if (supported.contains(QuickAction.mute))
-        ActionTile(
-          key: const Key('action-mute'),
+        tile(
+          QuickAction.mute,
+          key: 'action-mute',
           icon: muted ? Icons.volume_off_rounded : Icons.volume_mute_rounded,
           label: muted ? 'Unmute' : 'Mute',
-          state: muted ? 'Muted' : 'Sound on',
+          state: brk.active ? 'On break' : (muted ? 'Muted' : 'Sound on'),
           active: muted,
           tone: Tone.bad,
-          busy: _busy == QuickAction.mute,
-          onTap: () => _run(
-            QuickAction.mute,
-            muted ? 'Unmuted' : 'Muted',
-            () async => muted ? _actions?.unmute() : _actions?.mute(),
-          ),
+          onTap: brk.active
+              ? () => _endBreak(QuickAction.mute)
+              : () => _run(
+                    QuickAction.mute,
+                    () async => muted ? _actions?.unmute() : _actions?.mute(),
+                    optimistic: (s) => s.copyWith(muted: !muted),
+                  ),
         ),
       if (supported.contains(QuickAction.stop))
-        ActionTile(
-          key: const Key('action-stop'),
+        tile(
+          QuickAction.stop,
+          key: 'action-stop',
           icon: Icons.stop_circle_rounded,
           label: 'Stop app',
           state: widget.tv.can(TvCapability.adb)
               ? 'Close what\'s on'
               : 'Cast apps only',
-          busy: _busy == QuickAction.stop,
           onTap: () => _run(
             QuickAction.stop,
-            'Stopped',
             () async => _actions?.stopCurrentApp(),
+            optimistic: (s) => s.atHome(),
           ),
         ),
       if (supported.contains(QuickAction.bore))
-        ActionTile(
-          key: const Key('action-bore'),
+        tile(
+          QuickAction.bore,
+          key: 'action-bore',
           icon: Icons.bedtime_rounded,
           label: 'Bore',
           state: 'Stop + mute',
-          busy: _busy == QuickAction.bore,
           onTap: () => _run(
             QuickAction.bore,
-            'TV is boring now',
             () async => _actions?.bore(),
+            optimistic: (s) => s.atHome().copyWith(muted: true),
           ),
         ),
-      if (supported.contains(QuickAction.pause))
-        ActionTile(
-          key: const Key('action-pause'),
-          icon: pause.active
-              ? Icons.timer_rounded
-              : Icons.pause_circle_rounded,
-          label: pause.active ? 'Paused' : 'Pause TV',
-          state: pause.active
-              ? 'Until ${clockTime(pause.until!)}'
+      if (supported.contains(QuickAction.takeBreak))
+        tile(
+          QuickAction.takeBreak,
+          key: 'action-break',
+          icon: brk.active ? Icons.timer_rounded : Icons.coffee_rounded,
+          label: brk.active ? 'End break' : 'Break',
+          state: brk.active
+              ? 'Until ${clockTime(brk.until!)}'
               : '15 · 30 · 60 min',
-          active: pause.active,
-          tone: Tone.info,
-          busy: _busy == QuickAction.pause,
-          onTap: pause.active
-              ? () => _run(
-                    QuickAction.pause,
-                    'Pause ended',
-                    () => ref.read(pauseProvider.notifier).restore(),
-                  )
-              : _pause,
+          active: brk.active,
+          tone: Tone.warn,
+          onTap:
+              brk.active ? () => _endBreak(QuickAction.takeBreak) : _startBreak,
         ),
     ];
 
+    final restoreBusy = _inflight.contains(QuickAction.restore);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -380,20 +445,27 @@ class _QuickActionsState extends ConsumerState<QuickActionsPanel> {
           const SizedBox(height: Gap.md),
           OutlinedButton.icon(
             key: const Key('action-restore'),
-            onPressed: _busy != null
-                ? null
-                : () => _run(
-                      QuickAction.restore,
-                      'TV restored',
-                      () => ref.read(pauseProvider.notifier).restore(),
-                    ),
-            icon: _busy == QuickAction.restore
+            onPressed: _tap(
+              QuickAction.restore,
+              brk.active
+                  ? () => _endBreak(QuickAction.restore)
+                  : () => _run(
+                        QuickAction.restore,
+                        () async => _actions?.restore(),
+                        optimistic: (s) => s.copyWith(muted: false),
+                      ),
+            ),
+            icon: restoreBusy
                 ? const SizedBox(
-                    width: 18,
-                    height: 18,
+                    width: 16,
+                    height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Icon(Icons.restart_alt_rounded),
+                : Icon(
+                    _done == QuickAction.restore
+                        ? Icons.check_rounded
+                        : Icons.restart_alt_rounded,
+                  ),
             label: const Text('Restore TV (unmute)'),
           ),
         ],
@@ -409,6 +481,7 @@ class _QuickActionsState extends ConsumerState<QuickActionsPanel> {
     final text = Theme.of(context).textTheme;
     final current = (now.volume ?? 0).toDouble().clamp(0.0, 100.0);
     final shown = _dragVolume ?? current;
+    final blocked = _blocked(QuickAction.volume);
     return InfoCard(
       key: const Key('action-volume'),
       padding: const EdgeInsets.fromLTRB(Gap.lg, Gap.md, Gap.lg, Gap.sm),
@@ -419,10 +492,10 @@ class _QuickActionsState extends ConsumerState<QuickActionsPanel> {
               const Icon(Icons.graphic_eq_rounded, size: 20),
               const SizedBox(width: Gap.sm),
               Expanded(child: Text('Volume', style: text.titleSmall)),
-              if (_busy == QuickAction.volume)
+              if (_inflight.contains(QuickAction.volume))
                 const SizedBox(
-                  width: 16,
-                  height: 16,
+                  width: 14,
+                  height: 14,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
               const SizedBox(width: Gap.sm),
@@ -434,18 +507,18 @@ class _QuickActionsState extends ConsumerState<QuickActionsPanel> {
             max: 100,
             divisions: 100,
             label: '${shown.round()}%',
-            onChanged: _busy != null
+            onChanged: blocked ? null : (v) => setState(() => _dragVolume = v),
+            onChangeEnd: blocked
                 ? null
-                : (v) => setState(() => _dragVolume = v),
-            onChangeEnd: (v) async {
-              final target = v.round();
-              await _run(
-                QuickAction.volume,
-                'Volume set to $target%',
-                () async => _actions?.setVolume(target),
-              );
-              if (mounted) setState(() => _dragVolume = null);
-            },
+                : (v) {
+                    final target = v.round();
+                    setState(() => _dragVolume = null);
+                    _run(
+                      QuickAction.volume,
+                      () async => _actions?.setVolume(target),
+                      optimistic: (s) => s.copyWith(volume: target),
+                    );
+                  },
           ),
         ],
       ),
@@ -453,8 +526,9 @@ class _QuickActionsState extends ConsumerState<QuickActionsPanel> {
   }
 }
 
-class _PauseSheet extends StatelessWidget {
-  const _PauseSheet();
+/// Picks 15, 30 or 60 minutes for a break.
+class BreakSheet extends StatelessWidget {
+  const BreakSheet({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -466,12 +540,12 @@ class _PauseSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Pause the TV', style: text.titleLarge),
+            Text('Take a break', style: text.titleLarge),
             const SizedBox(height: Gap.xs),
             Text(
-              'Stops the app and mutes. Sound comes back when the time is '
-              'up, while Boretube is open.',
-              style: text.bodySmall,
+              'Closes the app and mutes now. Sound comes back '
+              'automatically.',
+              style: text.bodyMedium,
             ),
             const SizedBox(height: Gap.lg),
             Row(
@@ -480,6 +554,7 @@ class _PauseSheet extends StatelessWidget {
                   if (m != 15) const SizedBox(width: Gap.md),
                   Expanded(
                     child: FilledButton.tonal(
+                      key: Key('break-$m'),
                       onPressed: () => Navigator.pop(context, m),
                       child: Text('$m min'),
                     ),
@@ -487,8 +562,106 @@ class _PauseSheet extends StatelessWidget {
                 ],
               ],
             ),
+            const SizedBox(height: Gap.lg),
+            Text(
+              'Keeps working while Boretube is open. TV Guard (coming '
+              'soon) will enforce it even when your phone is away.',
+              style: text.bodySmall,
+            ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _BreakSlot extends ConsumerWidget {
+  const _BreakSlot();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!ref.watch(breakProvider).active) return const SizedBox.shrink();
+    return const Padding(
+      padding: EdgeInsets.only(bottom: Gap.md),
+      child: BreakBanner(),
+    );
+  }
+}
+
+/// "Break · 12:40 left" with a live countdown and End now.
+class BreakBanner extends ConsumerStatefulWidget {
+  const BreakBanner({super.key});
+
+  @override
+  ConsumerState<BreakBanner> createState() => _BreakBannerState();
+}
+
+class _BreakBannerState extends ConsumerState<BreakBanner> {
+  Timer? _tick;
+  bool _ending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _tick = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _tick?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _end() async {
+    if (_ending) return;
+    unawaited(HapticFeedback.lightImpact());
+    setState(() => _ending = true);
+    final r = await ref.read(breakProvider.notifier).end();
+    if (!mounted) return;
+    ref.invalidate(journalEntriesProvider);
+    setState(() => _ending = false);
+    if (r == null || !r.ok) {
+      showStatusSnack(
+        context,
+        'Didn\'t work: '
+        '${r == null || r.detail.isEmpty ? 'TV unreachable' : r.detail}',
+        ok: false,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.watch(breakProvider);
+    final left = ref.read(breakProvider.notifier).remaining();
+    final text = Theme.of(context).textTheme;
+    final warn = Tone.warn.color(context);
+    final scheme = Theme.of(context).colorScheme;
+    return InfoCard(
+      key: const Key('break-banner'),
+      color: Color.alphaBlend(
+        warn.withValues(alpha: 0.16),
+        scheme.surfaceContainerLow,
+      ),
+      padding: const EdgeInsets.fromLTRB(Gap.lg, Gap.md, Gap.md, Gap.md),
+      child: Row(
+        children: [
+          Icon(Icons.coffee_rounded, color: warn),
+          const SizedBox(width: Gap.md),
+          Expanded(
+            child: Text(
+              'Break · ${countdown(left)} left',
+              style: text.titleMedium,
+            ),
+          ),
+          FilledButton.tonal(
+            key: const Key('break-end'),
+            onPressed: _ending ? null : _end,
+            child: const Text('End now'),
+          ),
+        ],
       ),
     );
   }

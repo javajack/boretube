@@ -29,22 +29,31 @@ String formatRemaining(int seconds) {
   return '${m}m ${s}s';
 }
 
+/// "12:40", "0:05" — the break countdown (minutes:seconds, rounded up).
+String countdown(Duration d) {
+  final total = (d.inMilliseconds / 1000).ceil().clamp(0, 99 * 60 + 59);
+  return '${total ~/ 60}:${_two(total % 60)}';
+}
+
 String journalTitle(JournalEntry e) {
+  if (e.op == 'break') return 'Break: ${e.target}${e.ok ? '' : ' (failed)'}';
   final target = e.target.contains('.') ? appLabel(e.target) : e.target;
   return switch (e.op) {
-    'stopApp' => 'Stopped $target',
-    'enableApp' => 'Enabled $target',
-    'disableApp' => 'Disabled $target',
-    'stockYouTubeOn' => 'Stock YouTube restored ($target)',
-    'stockYouTubeOff' => 'Stock YouTube removed ($target)',
-    'applyCleanup' => 'Cleaned up $target',
-    'undoCleanup' => 'Restored $target',
-    'speechRollback' => 'Speech services rolled back',
-    'fixLauncher' => 'Home launcher repaired',
-    'volumeUp' || 'volumeDown' => 'Volume ${e.before} → ${e.after}',
-    'toggleMute' => 'Mute toggled',
-    _ => '${e.op} $target'.trim(),
-  } +
+        'stopApp' => 'Stopped $target',
+        'enableApp' => 'Enabled $target',
+        'disableApp' => 'Disabled $target',
+        'stockYouTubeOn' => 'Stock YouTube restored ($target)',
+        'stockYouTubeOff' => 'Stock YouTube removed ($target)',
+        'applyCleanup' => 'Cleaned up $target',
+        'undoCleanup' => 'Restored $target',
+        'speechRollback' => 'Speech services rolled back',
+        'fixLauncher' => 'Home launcher repaired',
+        'volumeUp' || 'volumeDown' => 'Volume ${e.before} → ${e.after}',
+        'toggleMute' => 'Mute toggled',
+        'mute' => 'Muted',
+        'unmute' => 'Unmuted',
+        _ => '${e.op} $target'.trim(),
+      } +
       (e.ok ? '' : ' (failed)');
 }
 
@@ -58,7 +67,9 @@ IconData journalIcon(String op) => switch (op) {
       'applyCleanup' => Icons.cleaning_services_outlined,
       'undoCleanup' => Icons.undo_rounded,
       'stockYouTubeOn' || 'stockYouTubeOff' => Icons.smart_display_outlined,
-      'toggleMute' => Icons.volume_off_outlined,
+      'toggleMute' || 'mute' => Icons.volume_off_outlined,
+      'unmute' => Icons.volume_up_outlined,
+      'break' => Icons.coffee_outlined,
       _ => Icons.build_outlined,
     };
 

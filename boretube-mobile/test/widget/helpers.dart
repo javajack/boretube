@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:boretube_mobile/actions/actions_service.dart';
 import 'package:boretube_mobile/adb/adb_identity.dart';
 import 'package:boretube_mobile/adb/adb_key.dart';
 import 'package:boretube_mobile/discovery/discovery_service.dart';
 import 'package:boretube_mobile/discovery/subnet_sweep.dart';
 import 'package:boretube_mobile/models/whitelist_entry.dart';
 import 'package:boretube_mobile/ops/tv_ops.dart';
+import 'package:boretube_mobile/providers/break_provider.dart';
 import 'package:boretube_mobile/providers/now_playing.dart';
 import 'package:boretube_mobile/providers/providers.dart';
 import 'package:boretube_mobile/providers/security_providers.dart';
@@ -158,8 +160,12 @@ class TestEnv {
     DiscoveryService? discovery,
     TvOps? ops,
     bool keyPending = false,
+    ActionsService? actions,
+    DateTime Function()? clock,
   }) =>
       [
+        if (actions != null) actionsServiceProvider.overrideWithValue(actions),
+        if (clock != null) breakClockProvider.overrideWithValue(clock),
         sharedPrefsProvider.overrideWithValue(prefs),
         tvStoreProvider.overrideWith((ref) => store),
         secretStoreProvider.overrideWithValue(secrets),
@@ -248,4 +254,41 @@ Future<void> loadAppFonts() async {
     'Roboto-Light.ttf',
   ]);
   await load('MaterialIcons', ['MaterialIcons-Regular.otf']);
+}
+
+/// Actions that wait for the test to answer, so in-flight UI can be
+/// checked. Every call logs its name and waits on [gate].
+class ScriptedActions extends ActionsService {
+  final calls = <String>[];
+  Completer<ActionResult> gate = Completer<ActionResult>();
+
+  ScriptedActions([super.tv = adbSony]);
+
+  /// Answers the call in flight and arms a fresh gate.
+  void answer(ActionResult r) {
+    final g = gate;
+    gate = Completer<ActionResult>();
+    g.complete(r);
+  }
+
+  Future<ActionResult> _call(String name) {
+    calls.add(name);
+    return gate.future;
+  }
+
+  @override
+  Future<ActionResult> mute() => _call('mute');
+  @override
+  Future<ActionResult> unmute() => _call('unmute');
+  @override
+  Future<ActionResult> restore() => _call('restore');
+  @override
+  Future<ActionResult> stopCurrentApp() => _call('stop');
+  @override
+  Future<ActionResult> bore() => _call('bore');
+  @override
+  Future<ActionResult> setVolume(int target) => _call('volume $target');
+  @override
+  Future<ActionResult> startBreak(int minutes, {DateTime? now}) =>
+      _call('break $minutes');
 }

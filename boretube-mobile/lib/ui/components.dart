@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import 'tokens.dart';
 
@@ -85,9 +84,7 @@ class InfoCard extends StatelessWidget {
       color: Colors.transparent,
       child: Ink(
         decoration: BoxDecoration(
-          color: gradient == null
-              ? color ?? scheme.surfaceContainerLow
-              : null,
+          color: gradient == null ? color ?? scheme.surfaceContainerLow : null,
           gradient: gradient,
           borderRadius: Radii.card,
           border: Border.all(color: borderColor ?? scheme.outlineVariant),
@@ -136,7 +133,13 @@ class ActionTile extends StatelessWidget {
   final String label;
   final String? state;
   final bool active;
+
+  /// Shows a small progress ring in the corner; the tile already shows
+  /// the state it is moving to.
   final bool busy;
+
+  /// Flashes a small check in the corner after success.
+  final bool done;
   final VoidCallback? onTap;
   final Tone tone;
 
@@ -147,6 +150,7 @@ class ActionTile extends StatelessWidget {
     this.state,
     this.active = false,
     this.busy = false,
+    this.done = false,
     this.onTap,
     this.tone = Tone.accent,
   });
@@ -157,9 +161,8 @@ class ActionTile extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final accent = tone.color(context);
     final enabled = onTap != null && !busy;
-    final bg = active
-        ? accent.withValues(alpha: 0.18)
-        : scheme.surfaceContainer;
+    final bg =
+        active ? accent.withValues(alpha: 0.18) : scheme.surfaceContainer;
     final fg = active ? accent : scheme.onSurface;
     return Semantics(
       button: true,
@@ -172,47 +175,60 @@ class ActionTile extends StatelessWidget {
           color: bg,
           borderRadius: Radii.card,
           border: Border.all(
-            color: active
-                ? accent.withValues(alpha: 0.55)
-                : scheme.outlineVariant,
+            color:
+                active ? accent.withValues(alpha: 0.55) : scheme.outlineVariant,
           ),
         ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
             borderRadius: Radii.card,
-            onTap: enabled
-                ? () {
-                    HapticFeedback.lightImpact();
-                    onTap!();
-                  }
-                : null,
+            onTap: enabled ? onTap : null,
             child: Padding(
               padding: const EdgeInsets.all(Gap.md),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 200),
-                    child: busy
-                        ? SizedBox(
-                            key: const ValueKey('busy'),
-                            width: 26,
-                            height: 26,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.4,
-                              color: fg,
-                            ),
-                          )
-                        : Icon(
-                            icon,
-                            key: ValueKey(icon),
-                            size: 26,
-                            color: enabled || busy
-                                ? fg
-                                : scheme.onSurfaceVariant,
-                          ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 200),
+                        child: Icon(
+                          icon,
+                          key: ValueKey(icon),
+                          size: 26,
+                          color: enabled || busy ? fg : scheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const Spacer(),
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 200),
+                        child: busy
+                            ? SizedBox(
+                                key: const ValueKey('busy'),
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: fg,
+                                ),
+                              )
+                            : done
+                                ? Icon(
+                                    Icons.check_rounded,
+                                    key: const ValueKey('done'),
+                                    size: 16,
+                                    color: StatusColors.of(context).ok,
+                                  )
+                                : const SizedBox(
+                                    key: ValueKey('idle'),
+                                    width: 14,
+                                    height: 14,
+                                  ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: Gap.md),
                   Text(

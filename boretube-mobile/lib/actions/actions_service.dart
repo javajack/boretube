@@ -12,7 +12,7 @@ class ActionResult {
   final ActionTransport via;
   final String detail;
 
-  /// For [ActionsService.pauseTv]: when the pause ends.
+  /// For [ActionsService.startBreak]: when the break ends.
   final DateTime? until;
 
   const ActionResult(
@@ -46,7 +46,7 @@ class _DialSonyAudio implements SonyAudio {
   Future<bool> setHardwareMute(bool muted) => dial.setHardwareMute(muted);
 }
 
-/// The instant actions (Mute, Stop, Bore, Volume → N, Pause, Restore).
+/// The instant actions (Mute, Stop, Bore, Volume → N, Break, Restore).
 /// Each tries the transports the TV supports, best first: Sony REST, then
 /// ADB, then Cast. The first that succeeds wins.
 class ActionsService {
@@ -162,10 +162,19 @@ class ActionsService {
         ),
       ]);
 
-  /// Stop + mute.
+  /// Stop + mute. When mute goes over Sony REST (not ADB), both run at
+  /// once; otherwise one after the other.
   Future<ActionResult> bore() async {
-    final stop = await stopCurrentApp();
-    final m = await mute();
+    final ActionResult stop;
+    final ActionResult m;
+    if (_hasSony && _hasAdb) {
+      final both = await Future.wait([stopCurrentApp(), mute()]);
+      stop = both[0];
+      m = both[1];
+    } else {
+      stop = await stopCurrentApp();
+      m = await mute();
+    }
     return ActionResult(
       stop.ok && m.ok,
       stop.ok ? m.via : stop.via,
@@ -193,33 +202,22 @@ class ActionsService {
   }
 
   Future<ActionResult> _adbVolume(int target) async {
-    final ops = adb!;
-    final v = await ops.readVolume();
-    if (v == null) {
-      return const ActionResult(
-        false,
-        ActionTransport.adb,
-        detail: 'Could not read volume',
-      );
+    final e = await adb!.setVolumePercent(target);
+    if (e == null) {
+      return ActionResult(true, ActionTransport.adb, detail: 'at $target%');
     }
-    final goal = v.min + ((v.max - v.min) * target / 100).round();
-    final diff = goal - v.level;
-    if (diff == 0) {
-      return ActionResult(true, ActionTransport.adb, detail: 'at $v');
-    }
-    final e = await ops.volumeStep(up: diff > 0, n: diff.abs().clamp(1, 100));
     return ActionResult(e.ok, ActionTransport.adb, detail: e.after);
   }
 
-  /// P1: stop + mute and return when the pause ends. Nothing persists;
-  /// the caller restores (or P2's agent enforces).
-  Future<ActionResult> pauseTv(int minutes) async {
+  /// Starts a break: stop + mute now, and returns when it ends. The
+  /// caller keeps it going (re-mutes, closes apps) and restores at the end.
+  Future<ActionResult> startBreak(int minutes, {DateTime? now}) async {
     final r = await bore();
     return ActionResult(
       r.ok,
       r.via,
       detail: r.detail,
-      until: DateTime.now().add(Duration(minutes: minutes)),
+      until: (now ?? DateTime.now()).add(Duration(minutes: minutes)),
     );
   }
 

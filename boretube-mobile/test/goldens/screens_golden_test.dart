@@ -6,6 +6,7 @@ library;
 import 'package:boretube_mobile/adb/adb_session.dart';
 import 'package:boretube_mobile/ops/health.dart';
 import 'package:boretube_mobile/ops/journal.dart';
+import 'package:boretube_mobile/providers/break_provider.dart';
 import 'package:boretube_mobile/providers/now_playing.dart';
 import 'package:boretube_mobile/providers/tv_providers.dart';
 import 'package:boretube_mobile/screens/adb_guide_screen.dart';
@@ -106,6 +107,38 @@ void main() {
       ],
     );
     await shot(tester, 'now_adb');
+  });
+
+  testWidgets('Now tab during a break', (tester) async {
+    final t0 = DateTime(2026, 10, 28, 19);
+    final env = await TestEnv.create(
+      tvs: [adbSony],
+      prefs: {
+        BreakController.keyFor(adbSony.id): t0
+            .add(const Duration(minutes: 12, seconds: 40))
+            .toIso8601String(),
+      },
+    );
+    await pumpScreen(
+      tester,
+      const ShellScreen(),
+      overrides: [
+        ...env.overrides(
+          now: const NowPlaying(
+            online: true,
+            appName: 'Home screen',
+            isHome: true,
+            volume: 24,
+            muted: true,
+            source: 'adb',
+          ),
+          probeCaps: adbSony.capabilities,
+          clock: () => t0,
+        ),
+        journalEntriesProvider.overrideWith((ref) async => journal),
+      ],
+    );
+    await shot(tester, 'now_break');
   });
 
   testWidgets('Now tab (Cast-only TV), 1.3× text', (tester) async {

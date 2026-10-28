@@ -174,12 +174,12 @@ void main() {
     expect(dial.kills, 1);
   });
 
-  test('bore = stop + mute; pause returns an expiry; restore unmutes',
+  test('bore = stop + mute; break returns an expiry; restore unmutes',
       () async {
     fake.foreground = 'com.netflix.ninja';
     final s = svc({TvCapability.adb});
     final before = DateTime.now();
-    final p = await s.pauseTv(15);
+    final p = await s.startBreak(15);
     expect(p.ok, isTrue);
     expect(p.until!.difference(before).inMinutes, inInclusiveRange(14, 15));
     expect(fake.writes, [

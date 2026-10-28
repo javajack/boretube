@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../actions/actions_service.dart';
 import '../discovery/discovery_service.dart';
 import '../ops/tv_ops.dart';
 import '../services/lock_service.dart';
@@ -44,6 +43,42 @@ class NowPlaying {
   });
 
   static const initial = NowPlaying(loading: true);
+
+  static const _keep = Object();
+
+  /// Pass `null` explicitly to clear [id], [volume] or [muted].
+  NowPlaying copyWith({
+    Object? id = _keep,
+    String? appName,
+    bool? isHome,
+    Object? volume = _keep,
+    Object? muted = _keep,
+  }) =>
+      NowPlaying(
+        loading: loading,
+        online: online,
+        id: identical(id, _keep) ? this.id : id as String?,
+        appName: appName ?? this.appName,
+        isHome: isHome ?? this.isHome,
+        volume: identical(volume, _keep) ? this.volume : volume as int?,
+        muted: identical(muted, _keep) ? this.muted : muted as bool?,
+        lastSeen: lastSeen,
+        source: source,
+      );
+
+  /// Puts back the fields that differ between [before] and [applied],
+  /// keeping everything else (e.g. another action's optimistic change).
+  NowPlaying restoreFrom(NowPlaying before, NowPlaying applied) => copyWith(
+        id: before.id != applied.id ? before.id : _keep,
+        appName: before.appName != applied.appName ? before.appName : null,
+        isHome: before.isHome != applied.isHome ? before.isHome : null,
+        volume: before.volume != applied.volume ? before.volume : _keep,
+        muted: before.muted != applied.muted ? before.muted : _keep,
+      );
+
+  /// After Stop: the TV is on its home screen.
+  NowPlaying atHome() =>
+      copyWith(id: null, appName: 'Home screen', isHome: true);
 
   NowPlaying offline() => NowPlaying(lastSeen: lastSeen, appName: appName);
 }
@@ -90,22 +125,34 @@ String appLabel(String pkg) {
 
 typedef NowPlayingFetch = Future<NowPlaying?> Function();
 
+/// Undoes one optimistic change; see [NowPlayingNotifier.patch].
+typedef NowPlayingUndo = NowPlaying Function(NowPlaying current);
+
 /// Polls [fetch] every [interval] while [active]; after two failures in a
 /// row calls [onUnreachable] (relocation).
+///
+/// Actions show their effect at once with [patch], and [hold] the poll
+/// while they run so a stale reading can't flip the UI back; [release]
+/// reconciles with one refresh [settleDelay] later.
 class NowPlayingNotifier extends StateNotifier<NowPlaying> {
   final NowPlayingFetch? fetch;
   final Duration interval;
+  final Duration settleDelay;
   final void Function()? onUnreachable;
   final void Function(DateTime seen)? onSeen;
   Timer? _timer;
+  Timer? _settle;
   bool _busy = false;
   int _failures = 0;
+  int _holds = 0;
+  int _epoch = 0;
 
   NowPlayingNotifier({
     required this.fetch,
     required this.interval,
     required bool active,
     NowPlaying initial = NowPlaying.initial,
+    this.settleDelay = const Duration(milliseconds: 300),
     this.onUnreachable,
     this.onSeen,
   }) : super(initial) {
@@ -121,18 +168,56 @@ class NowPlayingNotifier extends StateNotifier<NowPlaying> {
   NowPlayingNotifier.fixed(super.state)
       : fetch = null,
         interval = const Duration(days: 1),
+        settleDelay = Duration.zero,
         onUnreachable = null,
         onSeen = null;
 
+  /// True while an action holds the poll.
+  bool get held => _holds > 0;
+
+  /// Shows [change] now. Returns how to undo just that change.
+  NowPlayingUndo patch(NowPlaying Function(NowPlaying s) change) {
+    final before = state;
+    final applied = change(before);
+    _epoch++;
+    state = applied;
+    return (current) => current.restoreFrom(before, applied);
+  }
+
+  /// Rolls back a failed optimistic change.
+  void revert(NowPlayingUndo undo) {
+    if (!mounted) return;
+    _epoch++;
+    state = undo(state);
+  }
+
+  /// Skips polls until the matching [release].
+  void hold() {
+    _holds++;
+    _settle?.cancel();
+  }
+
+  /// Ends a [hold]; the last one schedules a reconciling refresh.
+  void release() {
+    if (_holds > 0) _holds--;
+    if (_holds > 0 || !mounted || fetch == null) return;
+    _settle?.cancel();
+    _settle = Timer(settleDelay, refresh);
+  }
+
   Future<void> refresh() async {
     final f = fetch;
-    if (f == null || _busy) return;
+    if (f == null || _busy || _holds > 0) return;
     _busy = true;
+    final epoch = _epoch;
     try {
       final r = await f();
       if (!mounted) return;
       if (r != null) {
         _failures = 0;
+        // An action changed the picture mid-read: this reading predates
+        // it. The refresh after the action will reconcile.
+        if (epoch != _epoch || _holds > 0) return;
         state = r;
         onSeen?.call(r.lastSeen ?? DateTime.now());
       } else {
@@ -154,6 +239,7 @@ class NowPlayingNotifier extends StateNotifier<NowPlaying> {
   @override
   void dispose() {
     _timer?.cancel();
+    _settle?.cancel();
     super.dispose();
   }
 }
@@ -166,8 +252,9 @@ Future<NowPlaying?> readNowPlaying({
 }) async {
   if (ops != null) {
     try {
-      final pkg = await ops.foregroundPackage();
-      final v = await ops.readVolume();
+      final st = await ops.status();
+      final pkg = st.foreground;
+      final v = st.volume;
       final home = pkg == null ||
           _homePackages.contains(pkg) ||
           pkg == ops.profile.launcher?.pkg;
@@ -294,56 +381,6 @@ final relocatorProvider = Provider<Relocator>((ref) {
     discovery: ref.watch(discoveryServiceProvider),
     notify: messages.add,
   );
-});
-
-// ── Pause TV ──
-
-/// An active "Pause TV" (stop + mute) and when it ends. P1 keeps it in
-/// memory and restores when the timer fires while the app is alive.
-class PauseState {
-  final DateTime? until;
-  const PauseState([this.until]);
-  bool get active => until != null && until!.isAfter(DateTime.now());
-}
-
-class PauseController extends StateNotifier<PauseState> {
-  final ActionsService? Function() _actions;
-  Timer? _timer;
-
-  PauseController(this._actions) : super(const PauseState());
-
-  Future<ActionResult?> pause(int minutes) async {
-    final a = _actions();
-    if (a == null) return null;
-    final r = await a.pauseTv(minutes);
-    final until = r.until;
-    if (r.ok && until != null && mounted) {
-      state = PauseState(until);
-      _timer?.cancel();
-      _timer = Timer(until.difference(DateTime.now()), () {
-        unawaited(restore());
-      });
-    }
-    return r;
-  }
-
-  Future<ActionResult?> restore() async {
-    _timer?.cancel();
-    if (mounted) state = const PauseState();
-    return _actions()?.restore();
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-}
-
-final pauseProvider =
-    StateNotifierProvider<PauseController, PauseState>((ref) {
-  ref.watch(activeTvIdProvider);
-  return PauseController(() => ref.read(actionsServiceProvider));
 });
 
 // ── Classic lock state ──

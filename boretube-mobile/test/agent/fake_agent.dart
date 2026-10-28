@@ -9,15 +9,20 @@ import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
-const kToken = 'f00dfeedf00dfeedf00dfeedf00dfeedf00dfeedf00dfeedf00dfeedf00dfeed';
+const kToken =
+    'f00dfeedf00dfeedf00dfeedf00dfeedf00dfeedf00dfeedf00dfeedf00dfeed';
 
 /// A test APK of [size] bytes and a matching manifest.
-AgentBundle fakeBundle({int size = 100 * 1024, String version = '1.0.0'}) {
+AgentBundle fakeBundle({
+  int size = 100 * 1024,
+  String version = '1.0.0',
+  int versionCode = 1,
+}) {
   final apk = Uint8List.fromList(List.generate(size, (i) => (i * 31) & 0xff));
   return AgentBundle(
     AgentManifest(
       versionName: version,
-      versionCode: 1,
+      versionCode: versionCode,
       sha256: sha256.convert(apk).toString(),
     ),
     apk,
@@ -43,6 +48,16 @@ class FakeAgentTv implements AdbShell {
 
   /// Corrupts pushed data (to test the post-copy checksum).
   bool corrupt = false;
+
+  /// The media listener grant ran and worked.
+  bool listenerAllowed = false;
+
+  /// The TV refuses the media listener grant.
+  bool refuseListener = false;
+
+  /// What `pm install` leaves on the TV (an update sets these).
+  String? installsVersionName;
+  int? installsVersionCode;
 
   List<String> get writes => [
         for (final c in log)
@@ -73,8 +88,8 @@ class FakeAgentTv implements AdbShell {
       files.remove(c.substring(6));
       return const AdbShellResult('', 0);
     }
-    final push = RegExp(r"^printf %s '([^']*)' \| base64 -d >> (\S+)$")
-        .firstMatch(c);
+    final push =
+        RegExp(r"^printf %s '([^']*)' \| base64 -d >> (\S+)$").firstMatch(c);
     if (push != null) {
       final bytes = base64Decode(push.group(1)!);
       if (corrupt) bytes[0] ^= 1;
@@ -93,9 +108,23 @@ class FakeAgentTv implements AdbShell {
     if (c.startsWith('pm install -r -g ')) {
       installed = true;
       disabled = false;
+      versionName = installsVersionName ?? versionName;
+      versionCode = installsVersionCode ?? versionCode;
+      // pm install -r restarts the app: the service has to be started.
+      running = false;
       return const AdbShellResult('Success\n', 0);
     }
     if (c.startsWith('appops set ') || c.startsWith('pm grant ')) {
+      return const AdbShellResult('', 0);
+    }
+    if (c.startsWith('cmd notification allow_listener ')) {
+      if (refuseListener) {
+        return const AdbShellResult(
+          'Exception: java.lang.SecurityException: not allowed\n',
+          255,
+        );
+      }
+      listenerAllowed = true;
       return const AdbShellResult('', 0);
     }
     if (c.startsWith('am start-foreground-service')) {
@@ -136,6 +165,9 @@ class FakeAgentHttp {
   List<String> selfAdb = ['ok'];
   final requests = <http.Request>[];
   String version = '1.0.0';
+
+  /// `health` in `/v1/status`.
+  List<Map<String, String>> health = const [];
   int _i = 0;
 
   FakeAgentHttp(this.tv);
@@ -158,6 +190,7 @@ class FakeAgentHttp {
                 'version': version,
                 'selfAdb': s,
                 'mode': 'normal',
+                'health': health,
               }),
               200,
             );

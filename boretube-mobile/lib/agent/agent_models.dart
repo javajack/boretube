@@ -134,6 +134,167 @@ class AgentHealth {
       {'id': id, 'status': status.name, 'detail': detail};
 }
 
+enum MediaState { none, stopped, paused, playing, buffering, error, other }
+
+enum MediaSource { listener, dumpsys, unknown }
+
+/// `status.media` (1.1.0+): the foreground app's media session. Absent
+/// when there is none, or the agent can't read sessions.
+class AgentMedia {
+  final String pkg;
+  final String? title;
+
+  /// The channel, artist or show line under the title.
+  final String? artist;
+  final MediaState state;
+  final int positionMs;
+
+  /// Only from the listener path; never guessed.
+  final int? durationMs;
+  final int? remainingMs;
+  final MediaSource source;
+
+  const AgentMedia({
+    required this.pkg,
+    this.title,
+    this.artist,
+    this.state = MediaState.other,
+    this.positionMs = 0,
+    this.durationMs,
+    this.remainingMs,
+    this.source = MediaSource.unknown,
+  });
+
+  /// Something is on (playing, paused or loading), not over.
+  bool get live =>
+      state == MediaState.playing ||
+      state == MediaState.paused ||
+      state == MediaState.buffering;
+
+  /// The duration is known (so "about N min" is honest).
+  bool get timed => durationMs != null && durationMs! > 0;
+
+  /// What is left, from [remainingMs] or the duration and position.
+  Duration? get left {
+    final r = remainingMs ??
+        (timed ? (durationMs! - positionMs).clamp(0, durationMs!) : null);
+    return r == null ? null : Duration(milliseconds: r);
+  }
+
+  /// 0..1 through the video, when the duration is known.
+  double? get progress =>
+      timed ? (positionMs / durationMs!).clamp(0.0, 1.0) : null;
+
+  static String? _opt(Object? v) {
+    final s = _str(v).trim();
+    return s.isEmpty ? null : s;
+  }
+
+  static int? _optInt(Object? v) => v == null ? null : _int(v);
+
+  factory AgentMedia.fromJson(Map<String, dynamic> j) => AgentMedia(
+        pkg: _str(j['pkg']),
+        title: _opt(j['title']),
+        artist: _opt(j['artist']),
+        state: _enum(MediaState.values, j['state'], MediaState.other),
+        positionMs: _int(j['positionMs']),
+        durationMs: _optInt(j['durationMs']),
+        remainingMs: _optInt(j['remainingMs']),
+        source: _enum(MediaSource.values, j['source'], MediaSource.unknown),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'pkg': pkg,
+        if (title != null) 'title': title,
+        if (artist != null) 'artist': artist,
+        'state': state.name,
+        'positionMs': positionMs,
+        if (durationMs != null) 'durationMs': durationMs,
+        if (remainingMs != null) 'remainingMs': remainingMs,
+        'source': source.name,
+      };
+}
+
+/// `status.endAfter` (1.1.0+): "pause after this one" is armed.
+class AgentEndAfter {
+  final bool armed;
+  final DateTime? startedAt;
+
+  /// The latest the break starts, even if the video never ends.
+  final DateTime? capAt;
+  final String? title;
+  final String? pkg;
+  final int? breakMin;
+
+  const AgentEndAfter({
+    this.armed = false,
+    this.startedAt,
+    this.capAt,
+    this.title,
+    this.pkg,
+    this.breakMin,
+  });
+
+  factory AgentEndAfter.fromJson(Map<String, dynamic> j) => AgentEndAfter(
+        armed: _bool(j['armed']),
+        startedAt: parseAgentTime(j['startedAt']),
+        capAt: parseAgentTime(j['capAt']),
+        title: AgentMedia._opt(j['title']),
+        pkg: AgentMedia._opt(j['pkg']),
+        breakMin: AgentMedia._optInt(j['breakMin']),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'armed': armed,
+        if (startedAt != null) 'startedAt': startedAt!.millisecondsSinceEpoch,
+        if (capAt != null) 'capAt': capAt!.millisecondsSinceEpoch,
+        if (title != null) 'title': title,
+        if (pkg != null) 'pkg': pkg,
+        if (breakMin != null) 'breakMin': breakMin,
+      };
+}
+
+/// What the TV does about Shorts (`rules.shorts.mode`).
+enum ShortsMode { off, block, budget, report }
+
+/// `status.shorts` (1.1.0+): today's Shorts count and the rule in force.
+class AgentShorts {
+  final ShortsMode mode;
+  final int todayCount;
+  final DateTime? lastDetectedAt;
+
+  /// A Shorts session is going on right now.
+  final bool active;
+
+  /// The daily budget (budget mode only).
+  final int? perDay;
+
+  const AgentShorts({
+    this.mode = ShortsMode.off,
+    this.todayCount = 0,
+    this.lastDetectedAt,
+    this.active = false,
+    this.perDay,
+  });
+
+  factory AgentShorts.fromJson(Map<String, dynamic> j) => AgentShorts(
+        mode: _enum(ShortsMode.values, j['mode'], ShortsMode.off),
+        todayCount: _int(j['todayCount']),
+        lastDetectedAt: parseAgentTime(j['lastDetectedAt']),
+        active: _bool(j['active']),
+        perDay: AgentMedia._optInt(j['perDay']),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'mode': mode.name,
+        'todayCount': todayCount,
+        if (lastDetectedAt != null)
+          'lastDetectedAt': lastDetectedAt!.millisecondsSinceEpoch,
+        'active': active,
+        if (perDay != null) 'perDay': perDay,
+      };
+}
+
 /// `GET /v1/status`.
 class AgentStatus {
   final String agentId;
@@ -170,6 +331,15 @@ class AgentStatus {
   /// What is being enforced right now, in plain words.
   final List<String> activeReasons;
 
+  /// The foreground media session (1.1.0+), or null.
+  final AgentMedia? media;
+
+  /// "Pause after this one" (1.1.0+).
+  final AgentEndAfter endAfter;
+
+  /// Today's Shorts (1.1.0+), or null from an older agent.
+  final AgentShorts? shorts;
+
   const AgentStatus({
     required this.agentId,
     required this.version,
@@ -192,7 +362,25 @@ class AgentStatus {
     this.soundPath = '',
     this.watchdogPending = 0,
     this.activeReasons = const [],
+    this.media,
+    this.endAfter = const AgentEndAfter(),
+    this.shorts,
   });
+
+  /// The health entry [id], if the agent reports it.
+  AgentHealth? healthOf(String id) {
+    for (final h in health) {
+      if (h.id == id) return h;
+    }
+    return null;
+  }
+
+  /// The agent can't read media sessions properly (listener access is
+  /// missing). False when an older agent doesn't report it.
+  bool get mediaAccessMissing {
+    final h = healthOf('mediaAccess');
+    return h != null && h.status != AgentHealthStatus.ok;
+  }
 
   /// Self-ADB isn't approved, or the agent says it is limited.
   bool get isLimited => limited || selfAdb != SelfAdb.ok;
@@ -224,6 +412,10 @@ class AgentStatus {
             ? (j['watchdogPending'] as List).length
             : _int(j['watchdogPending']),
         activeReasons: [for (final r in _list(j['activeReasons'])) _str(r)],
+        media: j['media'] is Map ? AgentMedia.fromJson(_map(j['media'])) : null,
+        endAfter: AgentEndAfter.fromJson(_map(j['endAfter'])),
+        shorts:
+            j['shorts'] is Map ? AgentShorts.fromJson(_map(j['shorts'])) : null,
       );
 
   Map<String, dynamic> toJson() => {
@@ -248,6 +440,9 @@ class AgentStatus {
         'soundPath': soundPath,
         'watchdogPending': watchdogPending,
         'activeReasons': activeReasons,
+        if (media != null) 'media': media!.toJson(),
+        if (endAfter.armed) 'endAfter': endAfter.toJson(),
+        if (shorts != null) 'shorts': shorts!.toJson(),
       };
 }
 
@@ -410,6 +605,49 @@ class TvTime {
       );
 }
 
+/// `rules.shorts` (1.1.0+). Absent means off; [extra] keeps fields this
+/// app doesn't know.
+class ShortsRule {
+  final ShortsMode mode;
+
+  /// Shorts a day before the TV says no ([ShortsMode.budget] only).
+  final int perDay;
+  final Map<String, dynamic> extra;
+
+  static const defaultPerDay = 5;
+  static const minPerDay = 1;
+  static const maxPerDay = 20;
+
+  const ShortsRule({
+    this.mode = ShortsMode.off,
+    this.perDay = defaultPerDay,
+    this.extra = const {},
+  });
+
+  factory ShortsRule.fromJson(Map<String, dynamic> j) => ShortsRule(
+        mode: _enum(ShortsMode.values, j['mode'], ShortsMode.off),
+        perDay: j['perDay'] == null
+            ? defaultPerDay
+            : _int(j['perDay'], defaultPerDay).clamp(0, 1000),
+        extra: {
+          for (final e in j.entries)
+            if (e.key != 'mode' && e.key != 'perDay') e.key: e.value,
+        },
+      );
+
+  Map<String, dynamic> toJson() => {
+        ...extra,
+        'mode': mode.name,
+        'perDay': perDay,
+      };
+
+  ShortsRule copyWith({ShortsMode? mode, int? perDay}) => ShortsRule(
+        mode: mode ?? this.mode,
+        perDay: perDay ?? this.perDay,
+        extra: extra,
+      );
+}
+
 enum OverrideKind { allowApp, muteUntil, breakUntil }
 
 class RuleOverride {
@@ -456,6 +694,9 @@ class AgentRules {
   final List<RuleOverride> overrides;
   final bool stockYouTubeAllowed;
 
+  /// The Shorts rule; null when the TV has none (written back absent).
+  final ShortsRule? shorts;
+
   /// Top-level fields this app doesn't know; written back on PUT.
   final Map<String, dynamic> extra;
 
@@ -470,8 +711,12 @@ class AgentRules {
     this.tvTime = const TvTime(),
     this.overrides = const [],
     this.stockYouTubeAllowed = false,
+    this.shorts,
     this.extra = const {},
   });
+
+  /// The Shorts rule in force (off when absent).
+  ShortsRule get shortsRule => shorts ?? const ShortsRule();
 
   DateTime? get updatedAtTime => parseAgentTime(updatedAt);
 
@@ -486,6 +731,7 @@ class AgentRules {
     'tvTime',
     'overrides',
     'stockYouTubeAllowed',
+    'shorts',
   };
 
   /// Whether [j] looks like a rules document (vs. an error body).
@@ -505,6 +751,8 @@ class AgentRules {
             if (o is Map) RuleOverride.fromJson(o.cast<String, dynamic>()),
         ],
         stockYouTubeAllowed: _bool(j['stockYouTubeAllowed']),
+        shorts:
+            j['shorts'] is Map ? ShortsRule.fromJson(_map(j['shorts'])) : null,
         extra: {
           for (final e in j.entries)
             if (!_known.contains(e.key)) e.key: e.value,
@@ -523,6 +771,7 @@ class AgentRules {
         'tvTime': tvTime.toJson(),
         'overrides': [for (final o in overrides) o.toJson()],
         'stockYouTubeAllowed': stockYouTubeAllowed,
+        if (shorts != null) 'shorts': shorts!.toJson(),
       };
 
   AgentRules copyWith({
@@ -536,6 +785,10 @@ class AgentRules {
     TvTime? tvTime,
     List<RuleOverride>? overrides,
     bool? stockYouTubeAllowed,
+    ShortsRule? shorts,
+
+    /// Drops [shorts] (back to "absent", which means off).
+    bool clearShorts = false,
   }) =>
       AgentRules(
         version: version ?? this.version,
@@ -548,6 +801,7 @@ class AgentRules {
         tvTime: tvTime ?? this.tvTime,
         overrides: overrides ?? this.overrides,
         stockYouTubeAllowed: stockYouTubeAllowed ?? this.stockYouTubeAllowed,
+        shorts: clearShorts ? null : shorts ?? this.shorts,
         extra: extra,
       );
 }
@@ -563,7 +817,11 @@ enum AgentActionKind {
   restore,
   startBreak,
   endBreak,
-  muteFor;
+  muteFor,
+
+  /// Start a break when the foreground video ends (1.1.0+).
+  endAfter,
+  cancelEndAfter;
 
   /// The wire name (`break` is a Dart keyword).
   String get wire => this == startBreak ? 'break' : name;
@@ -579,25 +837,51 @@ class AgentAction {
   /// Duration for `break` and `muteFor`.
   final int? minutes;
 
-  const AgentAction(this.kind, {this.value, this.minutes});
+  /// `endAfter`: the latest the break starts, in minutes from now.
+  final int? capMin;
+
+  /// `endAfter`: how long the break that follows lasts.
+  final int? breakMin;
+
+  const AgentAction(
+    this.kind, {
+    this.value,
+    this.minutes,
+    this.capMin,
+    this.breakMin,
+  });
+
+  /// "Pause after this one". The agent's defaults are 45 and 60.
+  const AgentAction.endAfter({this.capMin = 45, this.breakMin = 60})
+      : kind = AgentActionKind.endAfter,
+        value = null,
+        minutes = null;
 
   const AgentAction.volume(int percent)
       : kind = AgentActionKind.volume,
         value = percent,
-        minutes = null;
+        minutes = null,
+        capMin = null,
+        breakMin = null;
 
   const AgentAction.startBreak(int this.minutes)
       : kind = AgentActionKind.startBreak,
-        value = null;
+        value = null,
+        capMin = null,
+        breakMin = null;
 
   const AgentAction.muteFor(int this.minutes)
       : kind = AgentActionKind.muteFor,
-        value = null;
+        value = null,
+        capMin = null,
+        breakMin = null;
 
   Map<String, dynamic> toJson() => {
         'action': kind.wire,
         if (value != null) 'value': value,
         if (minutes != null) 'minutes': minutes,
+        if (capMin != null) 'capMin': capMin,
+        if (breakMin != null) 'breakMin': breakMin,
       };
 
   factory AgentAction.fromJson(Map<String, dynamic> j) {
@@ -609,6 +893,8 @@ class AgentAction {
       kind,
       value: j['value'] == null ? null : _int(j['value']),
       minutes: j['minutes'] == null ? null : _int(j['minutes']),
+      capMin: j['capMin'] == null ? null : _int(j['capMin']),
+      breakMin: j['breakMin'] == null ? null : _int(j['breakMin']),
     );
   }
 }

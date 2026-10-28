@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
@@ -111,6 +112,10 @@ class AgentStatusNotifier extends StateNotifier<AgentLink> {
       : client = null,
         interval = const Duration(days: 1),
         clock = DateTime.now;
+
+  /// Replaces the picture (tests drive a fixed notifier through states).
+  @visibleForTesting
+  void debugSet(AgentLink link) => state = link;
 
   Future<void> refresh() async {
     final c = client;
@@ -228,6 +233,17 @@ final agentBundleProvider = FutureProvider<AgentManifest?>((ref) async {
   } on AgentBundleMissing {
     return null;
   }
+});
+
+/// The bundled TV Guard when it is newer than the one running on the TV
+/// (an update to offer), else null.
+final agentUpdateProvider = Provider<AgentManifest?>((ref) {
+  final running = ref.watch(
+    agentStatusProvider.select((l) => l.up ? l.status!.version : null),
+  );
+  final bundled = ref.watch(agentBundleProvider).valueOrNull;
+  if (running == null || bundled == null) return null;
+  return agentUpdateAvailable(running, bundled) ? bundled : null;
 });
 
 final agentInstallerProvider = FutureProvider<AgentInstaller?>((ref) async {

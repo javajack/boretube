@@ -224,6 +224,10 @@ enum AgentProblem {
 
   /// The agent reports `needsPhoneGrant`: re-run the grant commands.
   missingGrant,
+
+  /// Health `mediaAccess` isn't ok: the notification-listener grant (what
+  /// lets it see what's playing) is missing. Re-granted by the grant step.
+  noMediaAccess,
 }
 
 class AgentDiagnosis {
@@ -250,15 +254,40 @@ class AgentDiagnosis {
           AgentProblem.notInstalled => 'not installed',
           AgentProblem.disabled => 'turned off on the TV',
           AgentProblem.notRunning => 'not running',
-          AgentProblem.outdated => 'older than this app\'s version',
+          AgentProblem.outdated => 'a newer version is ready',
           AgentProblem.unreachable => 'not answering on the network',
           AgentProblem.tokenMismatch => 'paired with a different key',
           AgentProblem.selfAdbNeedsApproval => 'waiting for "Allow" on the TV',
           AgentProblem.missingGrant => 'missing a permission',
+          AgentProblem.noMediaAccess => 'can\'t see what\'s playing yet',
         },
     ].join(' · ');
   }
 }
+
+// ── versions ──
+
+/// Compares dotted versions ("1.0.1" < "1.1.0"); non-numeric parts count
+/// as 0.
+int compareVersions(String a, String b) {
+  List<int> parts(String v) => [
+        for (final p in v.split(RegExp(r'[.\-+]')))
+          int.tryParse(p.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0,
+      ];
+  final x = parts(a);
+  final y = parts(b);
+  for (var i = 0; i < x.length || i < y.length; i++) {
+    final d = (i < x.length ? x[i] : 0) - (i < y.length ? y[i] : 0);
+    if (d != 0) return d.sign;
+  }
+  return 0;
+}
+
+/// Whether [bundled] is newer than the agent reporting [running].
+bool agentUpdateAvailable(String running, AgentManifest bundled) =>
+    running.isNotEmpty &&
+    bundled.versionName != '?' &&
+    compareVersions(running, bundled.versionName) < 0;
 
 // ── installer ──
 
@@ -321,11 +350,25 @@ class AgentInstaller {
 
   // ── commands (exposed for tests) ──
 
+  /// The agent's notification listener (1.1.0+): media sessions need it.
+  static const mediaListener =
+      '$kAgentPackage/$kAgentPackage.android.MediaListenerService';
+
+  /// Lets the agent read media sessions. Optional: without it the agent
+  /// falls back to a coarser view, so a refusal is only a warning.
+  static String listenerCommand(String component) =>
+      'cmd notification allow_listener $component';
+
   static List<String> grantCommands(String pkg) => [
         'appops set $pkg GET_USAGE_STATS allow',
         'appops set $pkg SYSTEM_ALERT_WINDOW allow',
         'pm grant $pkg android.permission.WRITE_SECURE_SETTINGS',
         'pm grant $pkg android.permission.POST_NOTIFICATIONS',
+        listenerCommand(
+          pkg == kAgentPackage
+              ? mediaListener
+              : '$pkg/$pkg.android.MediaListenerService',
+        ),
       ];
 
   static const diagnoseCommand = 'pm list packages $kAgentPackage; '
@@ -350,6 +393,11 @@ class AgentInstaller {
   /// Diagnoses, then runs only the steps that fix what is wrong (a missing
   /// or outdated agent is reinstalled).
   Stream<InstallProgress> repair() => _runFlow(InstallStepId.diagnose);
+
+  /// Installs the bundled version over the one on the TV (`pm install -r`
+  /// keeps its data and pairing). The same steps as [install], with the
+  /// same checksum checks; the TV's build approval is left as it was.
+  Stream<InstallProgress> update() => _runFlow(null, update: true);
 
   /// Reads the agent's state over ADB (and its API with the saved token).
   Future<AgentDiagnosis> diagnose({AgentManifest? bundled}) async {
@@ -389,6 +437,9 @@ class AgentInstaller {
             problems.add(AgentProblem.selfAdbNeedsApproval);
           }
           if (status.needsPhoneGrant) problems.add(AgentProblem.missingGrant);
+          if (status.mediaAccessMissing) {
+            problems.add(AgentProblem.noMediaAccess);
+          }
         } on AgentAuthException {
           problems.add(AgentProblem.tokenMismatch);
         } on AgentException {
@@ -420,7 +471,13 @@ class AgentInstaller {
 
   // ── flow engine ──
 
-  Stream<InstallProgress> _runFlow(InstallStepId? first) {
+  Stream<InstallProgress> _runFlow(InstallStepId? first,
+      {bool update = false}) {
+    final op = update
+        ? 'agentUpdate'
+        : first == null
+            ? 'agentInstall'
+            : 'agentRepair';
     final out = StreamController<InstallProgress>();
     var steps = <InstallStep>[
       if (first != null)
@@ -459,7 +516,7 @@ class AgentInstaller {
         bundle = null;
       }
       var plan = installSteps;
-      var fresh = first == null;
+      var fresh = first == null && !update;
       if (first == InstallStepId.diagnose) {
         set(InstallStepId.diagnose, SetupStepState.running);
         final d = await diagnose(bundled: bundle?.manifest);
@@ -497,7 +554,7 @@ class AgentInstaller {
             }
           }
           await _journal(
-            first == null ? 'agentInstall' : 'agentRepair',
+            op,
             before: id.name,
             after: e.detail,
             ok: false,
@@ -507,7 +564,7 @@ class AgentInstaller {
         }
       }
       await _journal(
-        first == null ? 'agentInstall' : 'agentRepair',
+        op,
         before: '',
         after: status == null ? 'done' : 'v${status!.version}',
         ok: true,
@@ -660,27 +717,49 @@ class AgentInstaller {
     throw _StepFailed(out.isEmpty ? 'pm install failed' : out);
   }
 
+  /// Plain names for what each grant command gives.
+  static String _grantName(String c) {
+    if (c.startsWith('cmd notification allow_listener')) {
+      return 'seeing what\'s playing';
+    }
+    final p = c.split(' ');
+    return switch (p.length > 3 ? p[3].split('.').last : c) {
+      'GET_USAGE_STATS' => 'usage access',
+      'SYSTEM_ALERT_WINDOW' => 'overlay',
+      'WRITE_SECURE_SETTINGS' => 'settings',
+      'POST_NOTIFICATIONS' => 'notifications',
+      final other => other,
+    };
+  }
+
   Future<_StepResult> _grant() async {
     final cmds = grantCommands(kAgentPackage);
     final failed = <String>[];
     for (final c in cmds) {
       final r = await adb.shell(c);
-      final bad =
-          !r.ok || r.stdout.contains('Exception') || r.stdout.contains('Error');
-      if (bad) failed.add(c.split(' ')[3].split('.').last);
+      final out = r.stdout;
+      final bad = !r.ok ||
+          out.contains('Exception') ||
+          out.contains('Error') ||
+          out.contains('Unknown command') ||
+          out.contains('not allowed');
+      if (bad) failed.add(_grantName(c));
     }
     // Without usage access the agent can't see the foreground app.
-    if (failed.contains('GET_USAGE_STATS')) {
+    if (failed.contains('usage access')) {
       throw const _StepFailed('the TV refused usage access');
     }
     if (failed.isNotEmpty) {
       return _StepResult(
-          SetupStepState.warn, 'Not granted: ${failed.join(', ')}');
+        SetupStepState.warn,
+        'Not granted: ${failed.join(', ')}. Everything else works.',
+      );
     }
     return const _StepResult(
-        SetupStepState.done,
-        'Usage access, overlay, '
-        'settings, notifications');
+      SetupStepState.done,
+      'Usage access, overlay, settings, notifications, seeing what\'s '
+      'playing',
+    );
   }
 
   Future<_StepResult> _start(AgentManifest m) async {

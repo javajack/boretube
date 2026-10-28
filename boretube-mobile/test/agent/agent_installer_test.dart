@@ -51,6 +51,8 @@ void main() {
           'android.permission.WRITE_SECURE_SETTINGS',
       'pm grant com.rakesh.boretube.agent '
           'android.permission.POST_NOTIFICATIONS',
+      'cmd notification allow_listener com.rakesh.boretube.agent/'
+          'com.rakesh.boretube.agent.android.MediaListenerService',
       'am start-foreground-service -n '
           'com.rakesh.boretube.agent/.GuardService',
     ]);
@@ -327,6 +329,120 @@ void main() {
     expect(ok, isTrue);
     expect(tv.writes, ['pm uninstall com.rakesh.boretube.agent']);
     expect(await AgentTokenStore(secrets).read('tv1'), isNull);
+  });
+
+  group('1.1.0: media listener and updates', () {
+    const listener = 'cmd notification allow_listener '
+        'com.rakesh.boretube.agent/'
+        'com.rakesh.boretube.agent.android.MediaListenerService';
+
+    test('install grants the media listener', () async {
+      final p = await last(installerFor(tv, agent, secrets: secrets).install());
+      expect(p.ok, isTrue, reason: '${p.error}');
+      expect(tv.log, contains(listener));
+      expect(tv.listenerAllowed, isTrue);
+      expect(stateOf(p, InstallStepId.grant), SetupStepState.done);
+    });
+
+    test('a refused listener grant is a warning, not a failure', () async {
+      tv.refuseListener = true;
+      final p = await last(installerFor(tv, agent, secrets: secrets).install());
+      expect(p.ok, isTrue, reason: '${p.error}');
+      expect(stateOf(p, InstallStepId.grant), SetupStepState.warn);
+      expect(
+        p.step(InstallStepId.grant)!.detail,
+        contains('seeing what\'s playing'),
+      );
+      expect(p.step(InstallStepId.grant)!.detail, isNot(contains('cmd')));
+      expect(stateOf(p, InstallStepId.check), SetupStepState.done);
+    });
+
+    test('repair re-grants it when mediaAccess is not ok', () async {
+      tv
+        ..installed = true
+        ..running = true;
+      await AgentTokenStore(secrets).write('tv1', kToken);
+      agent.health = const [
+        {'id': 'mediaAccess', 'status': 'warn', 'detail': 'dumpsys'},
+      ];
+      final installer = installerFor(tv, agent, secrets: secrets);
+      final d = await installer.diagnose(bundled: fakeBundle().manifest);
+      expect(d.problems, contains(AgentProblem.noMediaAccess));
+      expect(d.describe(), contains('can\'t see what\'s playing'));
+      expect(AgentInstaller.repairPlan(d), contains(InstallStepId.grant));
+      final p = await last(installer.repair());
+      expect(p.ok, isTrue, reason: '${p.error}');
+      expect(tv.log.where((c) => c == listener), hasLength(1));
+      // Healthy otherwise: nothing reinstalled.
+      expect(tv.log.any((c) => c.startsWith('pm install')), isFalse);
+    });
+
+    test('update 2 → 3: same steps, checksums, keeps the build approval',
+        () async {
+      tv
+        ..installed = true
+        ..running = true
+        ..versionName = '1.0.1'
+        ..versionCode = 2
+        ..installsVersionName = '1.1.0'
+        ..installsVersionCode = 3;
+      agent.version = '1.1.0';
+      await AgentTokenStore(secrets).write('tv1', kToken);
+      final b = fakeBundle(version: '1.1.0', versionCode: 3);
+      final installer = installerFor(tv, agent, bundle: b, secrets: secrets);
+      final d = await installer.diagnose(bundled: b.manifest);
+      expect(d.problems, contains(AgentProblem.outdated));
+      expect(d.installedVersionCode, 2);
+
+      final p = await last(installer.update());
+      expect(p.ok, isTrue, reason: '${p.error}');
+      expect(
+        [for (final s in p.steps) s.id],
+        AgentInstaller.installSteps,
+      );
+      expect(stateOf(p, InstallStepId.verify), SetupStepState.done);
+      expect(p.step(InstallStepId.verify)!.detail, contains('checksum OK'));
+      expect(tv.log, contains('sha256sum ${AgentInstaller.tmpApk}'));
+      expect(tv.log, contains('pm install -r -g ${AgentInstaller.tmpApk}'));
+      expect(tv.log, contains(listener));
+      expect(tv.versionCode, 3);
+      // An update is not a first install: the TV's approval stays.
+      expect(agent.paths, isNot(contains('/v1/approveBuild')));
+      expect(p.step(InstallStepId.check)!.detail, contains('v1.1.0'));
+    });
+
+    test('update refuses a damaged package', () async {
+      tv
+        ..installed = true
+        ..running = true;
+      await AgentTokenStore(secrets).write('tv1', kToken);
+      final good = fakeBundle(version: '1.1.0', versionCode: 3);
+      final bad = AgentBundle(
+        good.manifest,
+        Uint8List.fromList([...good.apk]..[0] ^= 1),
+      );
+      final p = await last(
+        installerFor(tv, agent, bundle: bad, secrets: secrets).update(),
+      );
+      expect(p.ok, isFalse);
+      expect(stateOf(p, InstallStepId.verify), SetupStepState.failed);
+      expect(tv.log.any((c) => c.startsWith('pm install')), isFalse);
+    });
+
+    test('repair of an outdated agent reinstalls it', () async {
+      tv
+        ..installed = true
+        ..running = true
+        ..versionName = '1.0.1'
+        ..versionCode = 2;
+      await AgentTokenStore(secrets).write('tv1', kToken);
+      final b = fakeBundle(version: '1.1.0', versionCode: 3);
+      final p = await last(
+        installerFor(tv, agent, bundle: b, secrets: secrets).repair(),
+      );
+      expect(p.ok, isTrue, reason: '${p.error}');
+      expect(tv.log.any((c) => c.startsWith('pm install -r')), isTrue);
+    });
   });
 }
 

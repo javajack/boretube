@@ -72,10 +72,14 @@ void main() {
       await settle(tester);
       expect(find.text('2 things to fix'), findsOneWidget);
       expect(find.text('2 of 4 checks passed'), findsOneWidget);
-      // One checklist row per thing to fix, then a row to every check.
+      // Clean TV and YouTube have their own destination rows, so they are
+      // reported there (with their state) and never twice in the checklist.
       for (final id in ['cleanup', 'stockYouTube']) {
-        expect(find.byKey(Key('better-tv-check-$id')), findsOneWidget);
+        expect(find.byKey(Key('better-tv-check-$id')), findsNothing);
       }
+      expect(find.byKey(const Key('better-tv-cleanTv')), findsOneWidget);
+      expect(find.byKey(const Key('better-tv-noShorts')), findsOneWidget);
+      expect(find.text('Checking the TV…'), findsNothing);
       expect(find.byKey(const Key('better-tv-health')), findsOneWidget);
       // Technical names stay out of the main screens.
       expect(find.textContaining('ADB'), findsNothing);

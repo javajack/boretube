@@ -149,6 +149,15 @@ class _BetterTvTabState extends ConsumerState<BetterTvTab> {
 bool _isIssue(HealthCheck c) =>
     c.status == HealthStatus.warn || c.status == HealthStatus.fail;
 
+/// Checks that have their own destination row below the checklist. They are
+/// reported there (with their state), never twice.
+const _destinationChecks = {'cleanup', 'stockYouTube'};
+
+/// The health check behind a destination row, when the row's own read is
+/// still loading.
+HealthCheck? _check(WidgetRef ref, String id) =>
+    mergedHealth(ref)?.where((c) => c.id == id).firstOrNull;
+
 /// The hero (Tubby, headline, one line, one Fix) and the checklist of
 /// what needs a look, ending in a row to every check.
 class _StatusReport extends ConsumerWidget {
@@ -247,18 +256,19 @@ class _StatusReport extends ConsumerWidget {
           key: const Key('better-tv-checklist'),
           children: [
             for (final c in issues)
-              StatusRow(
-                key: c.id == manualId
-                    ? const Key('health-needs-you')
-                    : Key('better-tv-check-${c.id}'),
-                tone: healthTone(c.status),
-                icon: healthIcon(c.id),
-                title: healthLook(c).title,
-                detail: c.fix == null
-                    ? 'Needs you · ${healthLook(c).detail}'
-                    : healthLook(c).detail,
-                onTap: () => onCheck(c.id),
-              ),
+              if (!_destinationChecks.contains(c.id))
+                StatusRow(
+                  key: c.id == manualId
+                      ? const Key('health-needs-you')
+                      : Key('better-tv-check-${c.id}'),
+                  tone: healthTone(c.status),
+                  icon: healthIcon(c.id),
+                  title: healthLook(c).title,
+                  detail: c.fix == null
+                      ? 'Needs you · ${healthLook(c).detail}'
+                      : healthLook(c).detail,
+                  onTap: () => onCheck(c.id),
+                ),
             ListRow(
               key: const Key('better-tv-health'),
               icon: Icons.monitor_heart_rounded,
@@ -353,8 +363,11 @@ class _YouTubeRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final s = locked ? null : ref.watch(stockYouTubeStateProvider).valueOrNull;
-    final on = s == AppState.notInstalled || s == AppState.absent;
-    final known = s != null;
+    final fromHealth = locked || s != null ? null : _check(ref, 'stockYouTube');
+    final known = s != null || fromHealth != null;
+    final on = s != null
+        ? s == AppState.notInstalled || s == AppState.absent
+        : fromHealth?.status == HealthStatus.ok;
     return NavRow(
       key: const Key('better-tv-noShorts'),
       icon: Icons.smart_display_rounded,
@@ -390,7 +403,13 @@ class _CleanRow extends ConsumerWidget {
     if (locked) {
       detail = 'Tidy away promo and ad apps';
     } else if (s == null) {
-      detail = ops == null ? 'Checking the TV…' : 'Reading the apps…';
+      final h = _check(ref, 'cleanup');
+      if (h == null) {
+        detail = ops == null ? 'Checking the TV…' : 'Reading the apps…';
+      } else {
+        detail = healthLook(h).detail;
+        tone = _isIssue(h) ? Tone.warn : Tone.ok;
+      }
     } else if (counts == null) {
       detail = 'Nothing to tidy on this TV';
     } else if (counts.tidied == counts.present) {

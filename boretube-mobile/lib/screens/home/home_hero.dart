@@ -327,8 +327,12 @@ class HomeHero extends StatelessWidget {
       key: const ValueKey('sentence'),
       constraints: const BoxConstraints(minHeight: Sizes.chip),
       child: Row(
+        // The dot belongs to the sentence's first line, not the middle of
+        // the block when the badge drops below.
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AnimatedContainer(
+            margin: const EdgeInsets.only(top: Gap.f8),
             duration: Motion.of(context, Motion.flip),
             width: Sizes.dot,
             height: Sizes.dot,
@@ -338,32 +342,42 @@ class HomeHero extends StatelessWidget {
             ),
           ),
           const SizedBox(width: Gap.f8),
+          // The sentence takes the line it needs; the badge sits beside it
+          // when both fit and drops to its own line otherwise, so the
+          // sentence never breaks mid-thought next to the badge.
           Expanded(
-            child: Text(
-              sentence,
-              key: const Key('home-sentence'),
-              style: text.labelMedium!.copyWith(
-                color: context.bt.ink,
-                fontWeight: FontWeight.w600,
-                height: TypeSize.displayLeading,
-              ),
+            child: Wrap(
+              spacing: Gap.f8,
+              runSpacing: Gap.f8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              alignment: WrapAlignment.spaceBetween,
+              children: [
+                Text(
+                  sentence,
+                  key: const Key('home-sentence'),
+                  style: text.labelMedium!.copyWith(
+                    color: context.bt.ink,
+                    fontWeight: FontWeight.w600,
+                    height: TypeSize.displayLeading,
+                  ),
+                ),
+                if (off && onRetry != null)
+                  TextButton(
+                    key: const Key('home-retry'),
+                    onPressed: onRetry,
+                    child: const Text('Try again'),
+                  )
+                else
+                  BtBadge(
+                    protection.label,
+                    key: const Key('mode-badge'),
+                    tone: protection.tone,
+                    icon: protection.icon,
+                    onTap: onBadge,
+                  ),
+              ],
             ),
           ),
-          const SizedBox(width: Gap.f8),
-          if (off && onRetry != null)
-            TextButton(
-              key: const Key('home-retry'),
-              onPressed: onRetry,
-              child: const Text('Try again'),
-            )
-          else
-            BtBadge(
-              protection.label,
-              key: const Key('mode-badge'),
-              tone: protection.tone,
-              icon: protection.icon,
-              onTap: onBadge,
-            ),
         ],
       ),
     );

@@ -42,3 +42,14 @@ Goal: the family keeps watching YouTube videos, but the kid's Shorts habit is br
 - **Shorts** cycle `NONE → BUFFERING → PLAYING` with a **new title every ~8–10 s**. Five titles in 40 s is the swipe rhythm.
 - Nothing in the session marks a Short explicitly. Detect them by rhythm, e.g. ≥3 distinct titles in ~2 min with each under ~90 s, plus a duration under 3 min if it's readable.
 - **End after this one:** pause when the title changes or playback stops, with a 45-minute cap. Show "about N min left" only if the duration is readable.
+
+## Shorts vs video hopping (verified, 2026-10-29, agent 1.1.0 → 1.2.0)
+
+- **Notification-listener path works.** `cmd notification allow_listener …MediaListenerService` gives title, artist, **durationMs** and position. For example, a Short reported `durationMs=10000` and a film `7606000`.
+- **SmartTube drops its MediaSession for ~4–5 s between Shorts.** A detector that resets on "no session" never counts past 1. Fixed in 1.1.1 by following the last app through gaps of up to 60 s.
+- **What to watch for is behaviour, not format.** Hopping through six 1–2 h films about 10 s each is the same binge as scrolling Shorts. Agent 1.2.0 rule:
+  - Hopping: ≥5 different videos started within 3 min of watching, any length.
+  - Shorts: ≥3 short (≤3 min) videos within 2 min.
+  - Watching the current video for 60 s clears the streak.
+- **Verified on the VU3:** 6 films hopped in ~40 s were blocked at the 5th, at 02:43:18 (force-stop + HOME + "Lots of jumping between videos." card). Watching two films properly never triggers.
+- **End after this one is verified:** armed at 02:28:16, the next title at 02:28:27 started the break in the same 0.5 s poll.

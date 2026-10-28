@@ -204,6 +204,28 @@ class HttpTest {
         assertEquals(listOf("break"), api.actions.map { it.action })
     }
 
+    @Test fun endAfterActions() {
+        assertEquals(200, req("POST", "/v1/action", """{"action":"endAfter"}""").first)
+        assertEquals(200, req("POST", "/v1/action", """{"action":"endAfter","capMin":30,"breakMin":20}""").first)
+        assertEquals(400, req("POST", "/v1/action", """{"action":"endAfter","capMin":0}""").first)
+        assertEquals(400, req("POST", "/v1/action", """{"action":"endAfter","breakMin":5000}""").first)
+        assertEquals(200, req("POST", "/v1/action", """{"action":"cancelEndAfter"}""").first)
+        assertEquals(listOf("endAfter", "endAfter", "cancelEndAfter"), api.actions.map { it.action })
+        assertNull(api.actions[0].capMin)
+        assertEquals(30, api.actions[1].capMin)
+        assertEquals(20, api.actions[1].breakMin)
+    }
+
+    @Test fun statusHasTheMediaFields() {
+        val o = Json.parseToJsonElement(req("GET", "/v1/status").second).jsonObject
+        assertFalse("no media session: media is omitted", o.containsKey("media"))
+        val ea = o["endAfter"]!!.jsonObject
+        assertEquals("false", ea["armed"]!!.jsonPrimitive.content)
+        val sh = o["shorts"]!!.jsonObject
+        assertEquals("off", sh["mode"]!!.jsonPrimitive.content)
+        assertEquals(0, sh["todayCount"]!!.jsonPrimitive.int)
+    }
+
     @Test fun journalSinceModeRestoreProfileWatchdog() {
         val (s, body) = req("GET", "/v1/journal?since=5")
         assertEquals(200, s)

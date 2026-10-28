@@ -9,6 +9,8 @@ data class PermissionState(
     val usageAccess: Boolean,
     val overlay: Boolean,
     val notifications: Boolean,
+    /** Notification-listener access (media sessions with duration). Optional: dumpsys is the fallback. */
+    val mediaAccess: Boolean = true,
 )
 
 @Serializable
@@ -30,9 +32,11 @@ object PermissionHeal {
     val USAGE_CMD = "appops set $PKG GET_USAGE_STATS allow"
     val OVERLAY_CMD = "appops set $PKG SYSTEM_ALERT_WINDOW allow"
     val NOTIF_CMD = "pm grant $PKG android.permission.POST_NOTIFICATIONS"
+    const val MEDIA_LISTENER = "$PKG/com.rakesh.boretube.agent.android.MediaListenerService"
+    val MEDIA_CMD = "cmd notification allow_listener $MEDIA_LISTENER"
 
     /** All grant commands (also what the phone runs at install). */
-    val ALL_COMMANDS = listOf(USAGE_CMD, OVERLAY_CMD, NOTIF_CMD)
+    val ALL_COMMANDS = listOf(USAGE_CMD, OVERLAY_CMD, NOTIF_CMD, MEDIA_CMD)
 
     /**
      * Returns the commands to run now, or empty. [periodic] = service start or the
@@ -46,6 +50,7 @@ object PermissionHeal {
         if (!p.usageAccess) missing += USAGE_CMD
         if (!p.overlay) missing += OVERLAY_CMD
         if (!p.notifications) missing += NOTIF_CMD
+        if (!p.mediaAccess) missing += MEDIA_CMD
         if (missing.isEmpty()) return emptyList()
         if (lastHealAt != null && now - lastHealAt < RETRY_GAP_MS) return emptyList()
         return missing
@@ -62,6 +67,13 @@ object PermissionHeal {
         if (!p.usageAccess) r += "usageAccess missing"
         if (!p.overlay) r += "overlay missing"
         return r
+    }
+
+    /** `mediaAccess` health: listener (full, with duration), dumpsys fallback, or nothing. */
+    fun mediaHealth(p: PermissionState, selfAdb: SelfAdb): HealthItem = when {
+        p.mediaAccess -> HealthItem("mediaAccess", "ok", "notification listener: title, position, duration")
+        selfAdb == SelfAdb.ok -> HealthItem("mediaAccess", "warn", "listener not allowed; dumpsys fallback (no duration); agent re-grants itself")
+        else -> HealthItem("mediaAccess", "warn", "no media access: run `$MEDIA_CMD` over ADB")
     }
 
     fun health(p: PermissionState, selfAdb: SelfAdb): List<HealthItem> {

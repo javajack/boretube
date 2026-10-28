@@ -14,8 +14,8 @@ data class Observed(
 )
 
 /** The explicit-style full-screen card. */
-data class Card(val message: String, val backAt: String?) {
-    val text: String get() = if (backAt != null) "$message · back at $backAt" else message
+data class Card(val message: String, val backAt: String?, val sub: String? = null) {
+    val text: String get() = if (backAt != null) "$message · back at $backAt" else if (sub != null) "$message $sub" else message
 }
 
 sealed class Decision {

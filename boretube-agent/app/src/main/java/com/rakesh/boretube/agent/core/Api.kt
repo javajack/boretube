@@ -50,12 +50,29 @@ data class StatusDoc(
     val watchdogPending: Int = 0,
     val lastWatchdogAt: Long? = null,
     val profileId: String? = null,
+    /** Agent 1.1.0+: the followed media session (absent when none or no media access). */
+    val media: MediaDoc? = null,
+    val endAfter: EndAfterDoc = EndAfterDoc(false),
+    val shorts: ShortsDoc = ShortsDoc("off", 0),
 )
 
 @Serializable
-data class ActionRequest(val action: String, val value: Int? = null, val minutes: Int? = null) {
+data class ActionRequest(
+    val action: String,
+    val value: Int? = null,
+    val minutes: Int? = null,
+    /** endAfter: cap in minutes (default 45). */
+    val capMin: Int? = null,
+    /** endAfter: break length once the video is over (default 60). */
+    val breakMin: Int? = null,
+) {
     fun validate(): String? = when (action) {
-        "mute", "unmute", "stop", "bore", "restore", "endBreak" -> null
+        "mute", "unmute", "stop", "bore", "restore", "endBreak", "cancelEndAfter" -> null
+        "endAfter" -> when {
+            capMin != null && capMin !in 1..1440 -> "endAfter capMin must be 1..1440"
+            breakMin != null && breakMin !in 1..1440 -> "endAfter breakMin must be 1..1440"
+            else -> null
+        }
         "volume" -> if (value == null || value !in 0..100) "volume needs value 0..100" else null
         "break", "muteFor" -> if (minutes == null || minutes !in 1..1440) "$action needs minutes 1..1440" else null
         else -> "unknown action \"$action\""

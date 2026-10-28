@@ -55,6 +55,8 @@ data class Rules(
     val tvTime: TvTimeRules = TvTimeRules(),
     val overrides: List<Override> = emptyList(),
     val stockYouTubeAllowed: Boolean = false,
+    /** Optional (agent 1.1.0+): Shorts detection and enforcement. Absent = off. */
+    val shorts: ShortsRules? = null,
 ) {
     fun toJson(): String = AgentJson.encodeToString(serializer(), this)
 
@@ -76,6 +78,10 @@ data class Rules(
                 require(o.pkg != null && TvShell.isValidPackage(o.pkg)) { "allowApp override needs a valid pkg" }
             }
             requireNotNull(parseIsoInstant(o.until, ZoneId.systemDefault())) { "bad override until \"${o.until}\"" }
+        }
+        shorts?.let {
+            require(it.mode in ShortsRules.MODES) { "shorts.mode must be off|block|budget|report" }
+            require(it.perDay in 0..1000) { "shorts.perDay must be 0..1000" }
         }
     }
 

@@ -14,9 +14,9 @@ import '../security/app_lock.dart';
 import '../tv/tv.dart';
 import '../ui/celebrate.dart';
 import '../ui/components.dart';
+import '../ui/controls.dart';
 import '../ui/tokens.dart';
 import '../ui/tubby.dart';
-import 'lock_screen.dart';
 import 'pin_entry.dart';
 import 'tv_address_dialog.dart';
 
@@ -115,16 +115,8 @@ class _OnboardingState extends ConsumerState<OnboardingScreen> {
           child: AnimatedSwitcher(
             duration: Motion.of(context, Motion.sheet),
             switchInCurve: Motion.enter,
-            transitionBuilder: (child, a) => FadeTransition(
-              opacity: a,
-              child: SlideTransition(
-                position: Tween(
-                  begin: const Offset(0.04, 0),
-                  end: Offset.zero,
-                ).animate(a),
-                child: child,
-              ),
-            ),
+            switchOutCurve: Motion.exit,
+            transitionBuilder: stepTransition,
             child: KeyedSubtree(key: ValueKey(_step), child: _body()),
           ),
         ),
@@ -153,28 +145,138 @@ class _OnboardingState extends ConsumerState<OnboardingScreen> {
   }
 }
 
-/// Title + lead at the top of an onboarding step.
-class _StepTitle extends StatelessWidget {
-  final String title;
-  final String lead;
-  final bool center;
+/// Step change: a fade with a short 21 px slide (320 ms, easeOutCubic).
+Widget stepTransition(Widget child, Animation<double> a) => FadeTransition(
+      opacity: a,
+      child: AnimatedBuilder(
+        animation: a,
+        builder: (context, child) => Transform.translate(
+          offset:
+              Offset(Motion.reduced(context) ? 0 : Gap.f21 * (1 - a.value), 0),
+          child: child,
+        ),
+        child: child,
+      ),
+    );
 
-  const _StepTitle(this.title, this.lead, {this.center = false});
+/// One onboarding step: a hero, a display title, one line of lead, the
+/// step's content, and the actions pinned at the bottom (one coral
+/// primary, one quiet text secondary).
+class _StepPage extends StatelessWidget {
+  final Widget? hero;
+  final String title;
+  final String? lead;
+
+  final List<Widget> content;
+  final Widget? primary;
+  final Widget? secondary;
+
+  /// Content above the hero (the welcome wordmark).
+  final Widget? top;
+
+  /// Grow the hero area to fill spare height (welcome).
+  final bool fill;
+
+  /// Space under the hero; a haloed hero carries some of its own.
+  final double heroGap;
+
+  const _StepPage({
+    required this.title,
+    this.hero,
+    this.lead,
+    this.content = const [],
+    this.primary,
+    this.secondary,
+    this.top,
+    this.fill = false,
+    this.heroGap = Gap.hero,
+  });
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final align = center ? TextAlign.center : TextAlign.start;
-    return Column(
-      crossAxisAlignment:
-          center ? CrossAxisAlignment.center : CrossAxisAlignment.start,
+    final head = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (hero != null) ...[
+          Center(child: hero),
+          SizedBox(height: heroGap),
+        ],
         Semantics(
           header: true,
-          child: Text(title, style: text.headlineLarge, textAlign: align),
+          child: Text(
+            title,
+            textAlign: TextAlign.center,
+            style: text.headlineLarge,
+          ),
         ),
-        const SizedBox(height: Gap.f8),
-        Text(lead, style: text.bodyLarge, textAlign: align),
+        if (lead != null) ...[
+          const SizedBox(height: Gap.inside),
+          Text(lead!, textAlign: TextAlign.center, style: text.bodyLarge),
+        ],
+      ],
+    );
+    final body = fill
+        ? Padding(
+            padding: const EdgeInsets.fromLTRB(
+              Gap.gutter,
+              Gap.related,
+              Gap.gutter,
+              0,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (top != null) top!,
+                Expanded(
+                  child: Center(child: SingleChildScrollView(child: head)),
+                ),
+              ],
+            ),
+          )
+        : SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(
+              Gap.gutter,
+              Gap.related,
+              Gap.gutter,
+              Gap.related,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (top != null) top!,
+                if (top != null || hero == null)
+                  const SizedBox(height: Gap.section),
+                head,
+                if (content.isNotEmpty) ...[
+                  const SizedBox(height: Gap.section),
+                  ...content,
+                ],
+              ],
+            ),
+          );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(child: body),
+        if (primary != null || secondary != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              Gap.gutter,
+              Gap.inside,
+              Gap.gutter,
+              Gap.related,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (primary != null) primary!,
+                if (primary != null && secondary != null)
+                  const SizedBox(height: Gap.f8),
+                if (secondary != null) Center(child: secondary),
+              ],
+            ),
+          ),
       ],
     );
   }
@@ -190,100 +292,73 @@ class _Welcome extends StatelessWidget {
     final bt = context.bt;
     return Scaffold(
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, c) => SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(
-              Gap.f21,
-              Gap.f21,
-              Gap.f21,
-              Gap.f21,
-            ),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: c.maxHeight - 48),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const Wordmark(),
-                      const SizedBox(height: Gap.f21),
-                      SizedBox(
-                        height: 250,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            Container(
-                              width: 230,
-                              height: 230,
-                              decoration: BoxDecoration(
-                                color: bt.coralTint,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            Positioned(
-                              left: 12,
-                              top: 22,
-                              child: _Dot(56, bt.skyTint),
-                            ),
-                            Positioned(
-                              right: 16,
-                              bottom: 28,
-                              child: _Dot(40, bt.mintTint),
-                            ),
-                            const Tubby(size: 176, cheeks: true),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: Gap.f13),
-                      Text(
-                        'Calmer TV,\nin a few minutes.',
-                        textAlign: TextAlign.center,
-                        style: text.displaySmall,
-                      ),
-                      const SizedBox(height: Gap.f13),
-                      Text(
-                        'Pause it from your phone, set bedtimes that stick, and '
-                        'get YouTube without Shorts.',
-                        textAlign: TextAlign.center,
-                        style: text.bodyLarge!.copyWith(fontSize: 17),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const SizedBox(height: Gap.f34),
-                      PrimaryButton(
-                        key: const Key('onboarding-start'),
-                        label: 'Let\'s find your TV',
-                        icon: Icons.search_rounded,
-                        height: 60,
-                        onPressed: onStart,
-                      ),
-                      const SizedBox(height: Gap.f13 + 2),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.restore_rounded,
-                              size: 16, color: bt.mintInk),
-                          const SizedBox(width: Gap.f8),
-                          Flexible(
-                            child: Text(
-                              'Nothing changes without your OK. Undo anytime.',
-                              style: text.bodySmall,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
+        child: _StepPage(
+          fill: true,
+          top: Text(
+            'boretube',
+            style: Fonts.bricolage(TypeSize.headline, color: bt.ink),
+          ),
+          hero: const _WelcomeHero(),
+          title: 'Calmer TV,\nin a few minutes.',
+          lead: 'Pause it, set bedtimes, skip Shorts.',
+          primary: PrimaryButton(
+            key: const Key('onboarding-start'),
+            label: 'Let\'s find your TV',
+            icon: Icons.search_rounded,
+            onPressed: onStart,
+          ),
+          secondary: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.restore_rounded,
+                size: Sizes.iconSmall,
+                color: bt.mintInk,
               ),
-            ),
+              const SizedBox(width: Gap.f8),
+              Flexible(
+                child: Text(
+                  'Nothing changes without your OK.',
+                  style: text.bodySmall,
+                ),
+              ),
+            ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Tubby on a coral disc with two small sky and mint dots: 144 · 233 ·
+/// 55 · 34, all Fibonacci.
+class _WelcomeHero extends StatelessWidget {
+  const _WelcomeHero();
+
+  static const disc = Sizes.tubbyLarge * 2 + Sizes.tubby;
+
+  @override
+  Widget build(BuildContext context) {
+    final bt = context.bt;
+    return SizedBox(
+      width: disc + Sizes.tubby,
+      height: disc,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          _Dot(disc, bt.coralTint),
+          Positioned(
+            left: 0,
+            top: Gap.f13,
+            child: _Dot(Sizes.tubby, bt.skyTint),
+          ),
+          Positioned(
+            right: Gap.f4,
+            bottom: Gap.f21,
+            child: _Dot(Sizes.tubbySmall, bt.mintTint),
+          ),
+          const Tubby(size: Sizes.tubbyLarge + Sizes.tubby, cheeks: true),
+        ],
       ),
     );
   }
@@ -300,6 +375,30 @@ class _Dot extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(color: color, shape: BoxShape.circle),
       );
+}
+
+/// Tubby inside a fixed hero box, with a soft sky halo while [busy].
+class _StepHero extends StatelessWidget {
+  final TubbyMood mood;
+  final bool busy;
+  const _StepHero({this.mood = TubbyMood.calm, this.busy = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final tubby = Tubby(mood: mood, size: Sizes.tubbyLarge);
+    return SizedBox.square(
+      dimension: Sizes.tubbyLarge * Phi.ratio,
+      child: Center(
+        child: busy
+            ? PulsingIcon(
+                size: Sizes.tubbyLarge,
+                color: context.bt.sky,
+                child: tubby,
+              )
+            : tubby,
+      ),
+    );
+  }
 }
 
 /// Live discovery results with sweep progress and manual entry.
@@ -364,129 +463,84 @@ class _FindTvsStepState extends ConsumerState<FindTvsStep> {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final bt = context.bt;
     final saved = {for (final t in ref.watch(savedTvsProvider)) t.id};
     final p = _progress;
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(Gap.f21, Gap.f8, Gap.f21, Gap.f21),
-      children: [
-        const _StepTitle(
-          'Find your TV',
-          'Make sure it\'s on. TVs on this Wi-Fi show up here.',
-        ),
-        const SizedBox(height: Gap.f13),
+    final none = _found.isEmpty && !_searching;
+    return _StepPage(
+      heroGap: Gap.section,
+      hero: _StepHero(
+        mood: none ? TubbyMood.asleep : TubbyMood.calm,
+        busy: _searching,
+      ),
+      title: none ? 'No TVs found' : 'Find your TV',
+      lead: none
+          ? 'Is it on, and on this Wi-Fi?'
+          : 'Make sure it\'s on. It shows up here.',
+      content: [
+        if (_found.isEmpty && _searching)
+          const SkeletonCard(rows: 2)
+        else if (_found.isNotEmpty)
+          RowList(
+            edges: true,
+            children: [
+              for (final (i, tv) in _found.indexed)
+                StaggerIn(
+                  index: i,
+                  child: ListRow(
+                    icon: Icons.tv_rounded,
+                    title: tv.name,
+                    subtitle: [
+                      if (tv.manufacturer.isNotEmpty || tv.model.isNotEmpty)
+                        '${tv.manufacturer} ${tv.model}'.trim(),
+                      tv.ip,
+                    ].join(' · '),
+                    value: saved.contains(tv.id) ? 'Saved' : null,
+                    onTap: () => widget.onPicked(tv),
+                  ),
+                ),
+            ],
+          ),
+        const SizedBox(height: Gap.related),
         AnimatedSwitcher(
           duration: Motion.of(context, Motion.flip),
           child: _searching
               ? Column(
                   key: const ValueKey('searching'),
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(3),
-                      child: LinearProgressIndicator(
-                        minHeight: 6,
-                        value: p == null || p.total == 0
-                            ? null
-                            : p.scanned / p.total,
-                      ),
+                    LinearProgressIndicator(
+                      minHeight: Sizes.bar,
+                      borderRadius: Radii.chip,
+                      color: bt.sky,
+                      backgroundColor: bt.wash,
+                      value: p == null || p.total == 0
+                          ? null
+                          : p.scanned / p.total,
                     ),
                     const SizedBox(height: Gap.f8),
                     Text(
                       'Looking on your Wi-Fi…',
+                      textAlign: TextAlign.center,
                       style: text.bodySmall,
                     ),
                   ],
                 )
-              : Align(
+              : Center(
                   key: const ValueKey('done'),
-                  alignment: Alignment.centerLeft,
                   child: TextButton.icon(
                     onPressed: _scan,
-                    icon: const Icon(Icons.refresh_rounded),
+                    icon: const Icon(Icons.refresh_rounded, size: Sizes.icon),
                     label: const Text('Look again'),
                   ),
                 ),
         ),
-        const SizedBox(height: Gap.f13),
-        if (_found.isEmpty && !_searching)
-          const Surface(
-            child: EmptyState(
-              icon: Icons.tv_off_rounded,
-              tubby: TubbyMood.asleep,
-              title: 'No TVs found',
-              message: 'Make sure the TV is on and this phone is on the same '
-                  'Wi-Fi. Or type its address below.',
-            ),
-          )
-        else if (_found.isEmpty)
-          const SkeletonCard(rows: 2)
-        else
-          for (final tv in _found) ...[
-            _FoundTvCard(
-              tv: tv,
-              saved: saved.contains(tv.id),
-              onTap: () => widget.onPicked(tv),
-            ),
-            const SizedBox(height: Gap.f13),
-          ],
-        const SizedBox(height: Gap.f8),
-        OutlinedButton.icon(
-          key: const Key('enter-ip'),
-          onPressed: _manual,
-          icon: const Icon(Icons.keyboard_rounded),
-          label: const Text('Type the TV\'s address'),
-        ),
       ],
-    );
-  }
-}
-
-class _FoundTvCard extends StatelessWidget {
-  final Tv tv;
-  final bool saved;
-  final VoidCallback onTap;
-
-  const _FoundTvCard({
-    required this.tv,
-    required this.saved,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    final bt = context.bt;
-    final sub = [
-      if (tv.manufacturer.isNotEmpty || tv.model.isNotEmpty)
-        '${tv.manufacturer} ${tv.model}'.trim(),
-      tv.ip,
-    ].join(' · ');
-    return Surface(
-      onTap: onTap,
-      padding: const EdgeInsets.symmetric(
-        horizontal: Gap.f13,
-        vertical: Gap.f13 + 2,
-      ),
-      child: Row(
-        children: [
-          IconTile(icon: Icons.tv_rounded, color: bt.sky, size: 48),
-          const SizedBox(width: Gap.f13 + 2),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(tv.name, style: text.titleMedium!.copyWith(fontSize: 17)),
-                const SizedBox(height: 2),
-                Text(sub, style: text.bodySmall!.copyWith(fontSize: 14)),
-                if (saved) ...[
-                  const SizedBox(height: Gap.f8),
-                  const BtBadge('Already saved', tone: Tone.ok),
-                ],
-              ],
-            ),
-          ),
-          Icon(Icons.chevron_right_rounded, color: bt.faint),
-        ],
+      secondary: TextButton.icon(
+        key: const Key('enter-ip'),
+        onPressed: _manual,
+        icon: const Icon(Icons.keyboard_rounded, size: Sizes.icon),
+        label: const Text('Type the TV\'s address'),
       ),
     );
   }
@@ -588,164 +642,138 @@ class _FirstWinStepState extends ConsumerState<FirstWinStep> {
     final bt = context.bt;
     final won = _state == _Win.won || _state == _Win.unmuted;
     final probing = _state == _Win.probing;
+    final shy = _state == _Win.unreachable;
     final sub = [
       if (widget.tv.manufacturer.isNotEmpty) widget.tv.manufacturer,
       probing
           ? 'saying hello…'
-          : _state == _Win.unreachable
+          : shy
               ? 'not answering yet'
               : 'found on your Wi-Fi',
     ].join(' · ');
-    return LayoutBuilder(
-      builder: (context, c) => SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(Gap.f21, Gap.f8, Gap.f21, Gap.f21),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: c.maxHeight - Gap.f21 - 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Surface(
-                key: const Key('first-win-tv'),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: Gap.f13,
-                  vertical: Gap.f13 + 2,
-                ),
-                child: Row(
-                  children: [
-                    IconTile(icon: Icons.tv_rounded, color: bt.sky, size: 48),
-                    const SizedBox(width: Gap.f13 + 2),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.tv.name,
-                            style: text.titleMedium!.copyWith(fontSize: 17),
-                          ),
-                          Text(
-                            sub,
-                            style: text.bodySmall!.copyWith(fontSize: 14),
-                          ),
-                        ],
-                      ),
-                    ),
-                    AnimatedSwitcher(
-                      duration: Motion.of(context, Motion.flip),
-                      child: probing
-                          ? const SizedBox(
-                              key: ValueKey('p'),
-                              width: 22,
-                              height: 22,
-                              child:
-                                  CircularProgressIndicator(strokeWidth: 2.5),
-                            )
-                          : _state == _Win.unreachable
-                              ? Icon(
-                                  Icons.wifi_off_rounded,
-                                  key: const ValueKey('x'),
-                                  color: bt.muted,
-                                  semanticLabel: 'Not answering',
-                                )
-                              : Icon(
-                                  Icons.check_rounded,
-                                  key: const ValueKey('ok'),
-                                  color: bt.mint,
-                                  size: 26,
-                                  semanticLabel: 'Connected',
-                                ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: Gap.f34),
-              _StepTitle(
-                _state == _Win.unreachable
-                    ? 'Your TV is shy'
-                    : 'Say hi to your TV',
-                _state == _Win.unreachable
-                    ? 'We found it, but it isn\'t answering. Check it\'s on '
-                        'and awake, then try again.'
-                    : 'Tap the big button and watch the TV go quiet. No '
-                        'setup needed for this part.',
-                center: true,
-              ),
-              const SizedBox(height: Gap.f21),
-              Center(
-                child: _MuteButton(
-                  key: _button,
-                  state: _state,
-                  onTap: _state == _Win.ready ? _mute : null,
-                ),
-              ),
-              if (_error != null) ...[
-                const SizedBox(height: Gap.f13),
-                Text(
-                  _error!,
-                  textAlign: TextAlign.center,
-                  style: text.bodyMedium!.copyWith(color: bt.berryFill),
-                ),
-              ],
-              const SizedBox(height: Gap.f21),
-              AnimatedSwitcher(
-                duration: Motion.of(context, Motion.sheet),
-                switchInCurve: Motion.enter,
-                transitionBuilder: (child, a) => FadeTransition(
-                  opacity: a,
-                  child: ScaleTransition(
-                    scale: Tween(begin: 0.92, end: 1.0).animate(a),
-                    child: child,
-                  ),
-                ),
-                child: won
-                    ? NoticeBanner(
-                        key: const Key('first-win-done'),
-                        kind: BannerKind.success,
-                        leading: Tubby(
-                          mood: TubbyMood.cleaning,
-                          body: bt.mint,
-                          size: 46,
-                          antennas: false,
-                          legs: false,
-                        ),
-                        title: 'Your TV listened!',
-                        message: _state == _Win.unmuted
-                            ? 'Sound is back. That\'s boretube: you, in '
-                                'charge, from the sofa.'
-                            : 'That was the phone, talking to the TV. Bring '
-                                'the sound back when you\'re ready.',
-                        actionLabel: _state == _Win.won ? 'Unmute' : null,
-                        onAction: _unmute,
+    return _StepPage(
+      top: Surface(
+        key: const Key('first-win-tv'),
+        padding: const EdgeInsets.symmetric(horizontal: Gap.inside),
+        child: ListRow(
+          icon: Icons.tv_rounded,
+          iconColor: bt.skyInk,
+          title: widget.tv.name,
+          subtitle: sub,
+          trailing: AnimatedSwitcher(
+            duration: Motion.of(context, Motion.flip),
+            child: probing
+                ? const SizedBox.square(
+                    key: ValueKey('p'),
+                    dimension: Sizes.icon,
+                    child: CircularProgressIndicator(strokeWidth: Sizes.focus),
+                  )
+                : shy
+                    ? Icon(
+                        Icons.wifi_off_rounded,
+                        key: const ValueKey('x'),
+                        size: Sizes.iconControl,
+                        color: bt.muted,
+                        semanticLabel: 'Not answering',
                       )
-                    : _state == _Win.unreachable
-                        ? OutlinedButton.icon(
-                            key: const Key('first-win-retry'),
-                            onPressed: _probe,
-                            icon: const Icon(Icons.refresh_rounded),
-                            label: const Text('Try again'),
-                          )
-                        : const SizedBox(height: 0),
-              ),
-              const SizedBox(height: Gap.f13),
-              PrimaryButton(
-                key: const Key('first-win-continue'),
-                label: won ? 'Continue' : 'Skip this',
-                kind: won ? ButtonKind.ink : ButtonKind.outline,
-                onPressed: probing ? null : widget.onContinue,
-              ),
-            ],
+                    : Icon(
+                        Icons.check_rounded,
+                        key: const ValueKey('ok'),
+                        size: Sizes.iconControl,
+                        color: bt.mint,
+                        semanticLabel: 'Connected',
+                      ),
           ),
         ),
       ),
+      title: shy ? 'Your TV is shy' : 'Say hi to your TV',
+      lead: shy
+          ? 'It isn\'t answering. Is it on and awake?'
+          : 'Tap it and watch the TV go quiet.',
+      content: [
+        Center(
+          child: _MuteButton(
+            key: _button,
+            state: _state,
+            onTap: _state == _Win.ready ? _mute : null,
+          ),
+        ),
+        if (_error != null) ...[
+          const SizedBox(height: Gap.inside),
+          Text(
+            _error!,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: text.bodyMedium!.copyWith(color: bt.berryFill),
+          ),
+        ],
+        const SizedBox(height: Gap.related),
+        AnimatedSwitcher(
+          duration: Motion.of(context, Motion.sheet),
+          switchInCurve: Motion.enter,
+          switchOutCurve: Motion.exit,
+          transitionBuilder: (child, a) =>
+              FadeTransition(opacity: a, child: child),
+          child: won
+              ? NoticeBanner(
+                  key: const Key('first-win-done'),
+                  kind: BannerKind.success,
+                  leading: Tubby(
+                    mood: TubbyMood.cleaning,
+                    body: bt.mint,
+                    size: Sizes.tubbySmall,
+                    antennas: false,
+                    legs: false,
+                  ),
+                  title: 'Your TV listened!',
+                  message: _state == _Win.unmuted
+                      ? 'Sound is back. You\'re in charge now.'
+                      : 'Unmute when you\'re ready.',
+                  actionLabel: _state == _Win.won ? 'Unmute' : null,
+                  onAction: _unmute,
+                )
+              : shy
+                  ? Center(
+                      child: PrimaryButton(
+                        key: const Key('first-win-retry'),
+                        label: 'Try again',
+                        icon: Icons.refresh_rounded,
+                        kind: ButtonKind.outline,
+                        onPressed: _probe,
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+        ),
+      ],
+      // Before the win the mute disc is the coral action; after it,
+      // Continue takes over.
+      primary: won
+          ? PrimaryButton(
+              key: const Key('first-win-continue'),
+              label: 'Continue',
+              onPressed: widget.onContinue,
+            )
+          : null,
+      secondary: won
+          ? null
+          : TextButton(
+              key: const Key('first-win-continue'),
+              onPressed: probing ? null : widget.onContinue,
+              child: const Text('Skip this'),
+            ),
     );
   }
 }
 
-/// 176 dp coral circle with two soft rings.
+/// The hero: a 178 coral disc with two soft rings (13 and 21).
 class _MuteButton extends StatelessWidget {
   final _Win state;
   final VoidCallback? onTap;
 
   const _MuteButton({super.key, required this.state, this.onTap});
+
+  static const disc = Sizes.tubbyLarge * 2;
 
   @override
   Widget build(BuildContext context) {
@@ -755,6 +783,7 @@ class _MuteButton extends StatelessWidget {
     final busy = state == _Win.muting;
     final enabled = onTap != null;
     final fill = won ? bt.mint : bt.coralFill;
+    final fg = won ? const Color(0xFF06392A) : Colors.white;
     return Semantics(
       button: true,
       enabled: enabled,
@@ -762,24 +791,25 @@ class _MuteButton extends StatelessWidget {
       excludeSemantics: true,
       child: AnimatedOpacity(
         duration: Motion.of(context, Motion.flip),
-        opacity: state == _Win.probing || state == _Win.unreachable ? 0.4 : 1,
+        opacity:
+            state == _Win.probing || state == _Win.unreachable ? Phi.minor : 1,
         child: AnimatedContainer(
           duration: Motion.of(context, Motion.sheet),
           curve: Motion.enter,
-          width: 176,
-          height: 176,
-          margin: const EdgeInsets.all(30),
+          width: disc,
+          height: disc,
+          margin: const EdgeInsets.all(Gap.f21),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: fill,
             boxShadow: [
               BoxShadow(
                 color: won ? bt.mintTint : bt.coralTint,
-                spreadRadius: 14,
+                spreadRadius: Gap.f13,
               ),
               BoxShadow(
                 color: won ? bt.mintTint.withValues(alpha: 0.5) : bt.coralWash,
-                spreadRadius: 30,
+                spreadRadius: Gap.f21,
               ),
             ],
           ),
@@ -793,27 +823,28 @@ class _MuteButton extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  busy
-                      ? const SizedBox(
-                          width: 44,
-                          height: 44,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 3,
-                            color: Colors.white,
+                  SizedBox.square(
+                    dimension: Sizes.tubby,
+                    child: busy
+                        ? const Padding(
+                            padding: EdgeInsets.all(Gap.f8),
+                            child: CircularProgressIndicator(
+                              strokeWidth: Sizes.bar,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Icon(
+                            won
+                                ? Icons.check_rounded
+                                : Icons.volume_off_rounded,
+                            size: Sizes.tubby,
+                            color: fg,
                           ),
-                        )
-                      : Icon(
-                          won ? Icons.check_rounded : Icons.volume_off_rounded,
-                          size: 54,
-                          color: won ? const Color(0xFF06392A) : Colors.white,
-                        ),
-                  const SizedBox(height: 6),
+                  ),
+                  const SizedBox(height: Gap.f4),
                   Text(
                     won ? 'Muted' : 'Mute TV',
-                    style: text.labelLarge!.copyWith(
-                      fontSize: 19,
-                      color: won ? const Color(0xFF06392A) : Colors.white,
-                    ),
+                    style: text.titleLarge!.copyWith(color: fg),
                   ),
                 ],
               ),
@@ -840,11 +871,10 @@ class _PinStepState extends ConsumerState<_PinStep> {
   Widget build(BuildContext context) {
     final bio = ref.watch(biometricAvailableProvider).valueOrNull ?? false;
     final lock = ref.watch(appLockProvider);
-    final text = Theme.of(context).textTheme;
     if (!_set) {
       return Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(Gap.f21),
+          padding: const EdgeInsets.all(Gap.gutter),
           child: PinSetup(
             onDone: (pin) async {
               await ref.read(appLockProvider.notifier).setPin(pin);
@@ -859,40 +889,28 @@ class _PinStepState extends ConsumerState<_PinStep> {
         ),
       );
     }
-    return Padding(
-      padding: const EdgeInsets.all(Gap.f21),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const _StepTitle(
-            'PIN saved',
-            'Want to open boretube with your fingerprint too? Kids '
-                'can\'t use yours.',
-          ),
-          const SizedBox(height: Gap.f21),
-          Surface(
-            padding: EdgeInsets.zero,
-            child: SwitchListTile(
+    return _StepPage(
+      heroGap: Gap.section,
+      hero: const _StepHero(mood: TubbyMood.guard),
+      title: 'PIN saved',
+      lead: 'Use your fingerprint too? Kids can\'t.',
+      content: [
+        RowList(
+          edges: true,
+          children: [
+            SwitchLine(
               key: const Key('onboarding-fingerprint'),
+              leading: const Icon(Icons.fingerprint_rounded, size: Sizes.icon),
+              title: 'Unlock with fingerprint',
+              subtitle: 'The PIN still works',
               value: lock.biometricEnabled,
               onChanged: (v) =>
                   ref.read(appLockProvider.notifier).setBiometricEnabled(v),
-              secondary: const Icon(Icons.fingerprint_rounded, size: 28),
-              title: const Text('Unlock with fingerprint'),
-              subtitle: Text(
-                'The PIN still works',
-                style: text.bodySmall,
-              ),
             ),
-          ),
-          const Spacer(),
-          PrimaryButton(
-            label: 'Continue',
-            kind: ButtonKind.ink,
-            onPressed: widget.onDone,
-          ),
-        ],
-      ),
+          ],
+        ),
+      ],
+      primary: PrimaryButton(label: 'Continue', onPressed: widget.onDone),
     );
   }
 }
@@ -902,7 +920,6 @@ typedef _GoalLook = ({
   String title,
   String sub,
   IconData icon,
-  Tone tone,
 });
 
 const _goalLooks = <_GoalLook>[
@@ -911,35 +928,30 @@ const _goalLooks = <_GoalLook>[
     title: 'Shorts and endless YouTube',
     sub: 'They scroll and can\'t stop',
     icon: Icons.smart_display_rounded,
-    tone: Tone.accent,
   ),
   (
     goal: Goal.bedtime,
     title: 'Bedtime battles',
     sub: '"Just one more episode…"',
     icon: Icons.bedtime_rounded,
-    tone: Tone.warn,
   ),
   (
     goal: Goal.loud,
     title: 'Way too loud',
     sub: 'The whole house can hear it',
     icon: Icons.volume_up_rounded,
-    tone: Tone.info,
   ),
   (
     goal: Goal.ads,
     title: 'Ads and clutter on the TV',
     sub: 'Promos, junk apps, slow menus',
     icon: Icons.cleaning_services_rounded,
-    tone: Tone.idle,
   ),
   (
     goal: Goal.apps,
     title: 'Apps they shouldn\'t open',
     sub: 'Games, other streaming apps',
     icon: Icons.block_rounded,
-    tone: Tone.ok,
   ),
 ];
 
@@ -967,131 +979,62 @@ class _GoalsStepState extends ConsumerState<GoalsStep> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Expanded(
-          child: ListView(
-            padding:
-                const EdgeInsets.fromLTRB(Gap.f21, Gap.f8, Gap.f21, Gap.f13),
-            children: [
-              const _StepTitle(
-                'What\'s bugging you about TV time?',
-                'Pick any. We\'ll build your plan around them. Nothing '
-                    'switches on yet.',
+    return _StepPage(
+      hero: const Tubby(size: Sizes.tubbyLarge),
+      title: 'What\'s bugging you about TV time?',
+      lead: 'Pick any. Nothing switches on yet.',
+      content: [
+        RowList(
+          edges: true,
+          children: [
+            for (final g in _goalLooks)
+              _GoalRow(
+                look: g,
+                on: _picked.contains(g.goal),
+                onTap: () => _toggle(g.goal),
               ),
-              const SizedBox(height: Gap.f13),
-              for (final g in _goalLooks) ...[
-                _GoalCard(
-                  look: g,
-                  on: _picked.contains(g.goal),
-                  onTap: () => _toggle(g.goal),
-                ),
-                const SizedBox(height: Gap.f8 + 2),
-              ],
-            ],
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(Gap.f21, 0, Gap.f21, Gap.f13),
-          child: PrimaryButton(
-            key: const Key('goals-done'),
-            label: _picked.isEmpty ? 'Show my plan' : 'Show my calm-TV plan',
-            height: 58,
-            onPressed: _save,
-          ),
+          ],
         ),
       ],
+      primary: PrimaryButton(
+        key: const Key('goals-done'),
+        label: _picked.isEmpty ? 'Show my plan' : 'Show my calm-TV plan',
+        onPressed: _save,
+      ),
     );
   }
 }
 
-class _GoalCard extends StatelessWidget {
+/// One goal: a plain one-line row, a check on the right when picked.
+class _GoalRow extends StatelessWidget {
   final _GoalLook look;
   final bool on;
   final VoidCallback onTap;
 
-  const _GoalCard({required this.look, required this.on, required this.onTap});
+  const _GoalRow({required this.look, required this.on, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final bt = context.bt;
-    final text = Theme.of(context).textTheme;
-    final hue = look.tone == Tone.idle ? bt.lavender : look.tone.hue(context);
-    final ink =
-        look.tone == Tone.idle ? bt.lavenderInk : look.tone.color(context);
-    final tint =
-        look.tone == Tone.idle ? bt.lavenderTint : look.tone.tint(context);
     return Semantics(
       button: true,
       toggled: on,
       label: '${look.title}. ${look.sub}',
       excludeSemantics: true,
-      child: AnimatedContainer(
+      child: ListRow(
         key: Key('goal-${look.goal.name}'),
-        duration: Motion.of(context, Motion.flip),
-        curve: Motion.enter,
-        decoration: BoxDecoration(
-          color: bt.surface,
-          borderRadius: Radii.control,
-          border: Border.all(color: on ? hue : bt.border, width: 2),
-        ),
-        child: Material(
-          type: MaterialType.transparency,
-          child: InkWell(
-            borderRadius: Radii.control,
-            onTap: onTap,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 72),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: Gap.f13 + 2,
-                  vertical: Gap.f13,
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: tint,
-                        borderRadius: Radii.chip,
-                      ),
-                      child: Icon(look.icon, color: ink, size: 22),
-                    ),
-                    const SizedBox(width: Gap.f13 + 2),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(look.title, style: text.titleMedium),
-                          Text(
-                            look.sub,
-                            style: text.bodySmall!.copyWith(fontSize: 14),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: Gap.f8),
-                    AnimatedContainer(
-                      duration: Motion.of(context, Motion.flip),
-                      curve: Motion.enter,
-                      width: 26,
-                      height: 26,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: on ? hue : bt.border,
-                      ),
-                      child: Icon(
-                        Icons.check_rounded,
-                        size: 16,
-                        color: on ? Colors.white : Colors.transparent,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+        icon: look.icon,
+        iconColor: on ? bt.ink : bt.muted,
+        title: look.title,
+        chevron: false,
+        onTap: onTap,
+        trailing: AnimatedSwitcher(
+          duration: Motion.of(context, Motion.flip),
+          child: Icon(
+            on ? Icons.check_circle_rounded : Icons.circle_outlined,
+            key: ValueKey(on),
+            size: Sizes.iconControl,
+            color: on ? bt.coralInk : bt.faint,
           ),
         ),
       ),

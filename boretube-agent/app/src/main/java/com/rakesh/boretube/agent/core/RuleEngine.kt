@@ -94,7 +94,7 @@ object RuleEngine {
         // ── app / TV-time ──
         val fg = observed.foreground
         val explicit = rules.style == "explicit"
-        fun backAt(ms: Long) = HHMM.format(Instant.ofEpochMilli(ms).atZone(zone)).lowercase()
+        fun backAt(ms: Long) = HHMM.format(Instant.ofEpochMilli(ms).atZone(zone)).lowercase().replace(" ", "\u00A0")
         val scheduleEnd = Schedule.activeWindowEnd(rules.tvTime.schedule, now)
         val limitMs = rules.tvTime.dailyLimitMin * 60_000L
         val limitHit = rules.tvTime.dailyLimitMin > 0 && observed.tvTimeUsedMs >= limitMs
@@ -105,10 +105,10 @@ object RuleEngine {
             val close: Pair<String, Card>? = when {
                 breakEnd != null -> "break" to Card("Break time", backAt(breakEnd), mood = CardMood.asleep)
                 fg in allowNow -> null
-                scheduleEnd != null -> "tvTimeSchedule" to Card("TV time is over", HHMM.format(scheduleEnd).lowercase(), mood = CardMood.asleep)
+                scheduleEnd != null -> "tvTimeSchedule" to Card("TV time is over", HHMM.format(scheduleEnd).lowercase().replace(" ", "\u00A0"), mood = CardMood.asleep)
                 limitHit -> "dailyLimit" to Card(
                     "Today's TV time is used up",
-                    HHMM.format(now.toLocalDate().plusDays(1).atStartOfDay(zone)).lowercase(),
+                    HHMM.format(now.toLocalDate().plusDays(1).atStartOfDay(zone)).lowercase().replace(" ", "\u00A0"),
                     mood = CardMood.asleep,
                 )
                 appRuleBlocks(rules.allowedApps, fg, guard) -> "appNotAllowed" to Card("This app isn't allowed.", null, mood = CardMood.guard)

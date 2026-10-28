@@ -55,7 +55,7 @@ class CooldownTest {
         assertEquals(MediaGuard.COOLDOWN_TITLE, card.message)
         assertEquals(CardMood.asleep, card.mood)
         assertEquals(MediaGuard.COOLDOWN_SHORTS_SUB, card.sub)
-        assertEquals(java.time.format.DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US).format(Instant.ofEpochMilli(until).atZone(zone)).lowercase(), card.backAt)
+        assertEquals(java.time.format.DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.US).format(Instant.ofEpochMilli(until).atZone(zone)).lowercase().replace(" ", "\u00A0"), card.backAt)
         assertTrue(card.subLine!!.endsWith("Back at ${card.backAt}."))
         val notes = out.flatMap { it.notes }
         assertEquals(listOf("shorts", "cooldown"), notes.map { it.op }.distinct())

@@ -219,7 +219,7 @@ class MediaGuard(
         return was
     }
 
-    private fun hhmm(epochMs: Long): String = HHMM.format(Instant.ofEpochMilli(epochMs).atZone(zone)).lowercase()
+    private fun hhmm(epochMs: Long): String = HHMM.format(Instant.ofEpochMilli(epochMs).atZone(zone)).lowercase().replace(" ", "\u00A0")
 
     fun cancelEndAfter(): Boolean {
         val was = endAfter.armed

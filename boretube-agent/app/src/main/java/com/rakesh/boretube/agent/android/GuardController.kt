@@ -25,6 +25,8 @@ import com.rakesh.boretube.agent.core.Decision
 import com.rakesh.boretube.agent.core.DeviceProfile
 import com.rakesh.boretube.agent.core.HealthItem
 import com.rakesh.boretube.agent.core.JournalEntry
+import com.rakesh.boretube.agent.core.MediaGuard
+import com.rakesh.boretube.agent.core.MediaOutcome
 import com.rakesh.boretube.agent.core.Mode
 import com.rakesh.boretube.agent.core.NowDoc
 import com.rakesh.boretube.agent.core.Observed
@@ -54,6 +56,7 @@ import com.rakesh.boretube.agent.core.WatchdogReport
 import com.rakesh.boretube.agent.core.WatchdogRequest
 import java.io.File
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZonedDateTime
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
@@ -75,6 +78,7 @@ class GuardController(private val ctx: Context) : AgentApi {
     private val sound = SoundController(ctx, shell, store)
     private val fgw = ForegroundWatcher(ctx, shell)
     private val overlay = Overlay(ctx)
+    private val media = MediaWatcher(ctx, shell)
     private val journal = store.loadJournal()
     private val power = ctx.getSystemService(Context.POWER_SERVICE) as PowerManager
 
@@ -84,6 +88,8 @@ class GuardController(private val ctx: Context) : AgentApi {
     private var breakState: BreakState = store.breakState
     private var safety = store.safety
     private val tvTime = TvTimeCounter(store.tvTime)
+    /** Shorts + end-after-this-one; touched on the guard thread only (status reads volatile fields). */
+    private val mediaGuard = MediaGuard(store.shortsCount, store.endAfter)
     private val fingerprint: String = Build.FINGERPRINT
     private var skewMs: Long? = null
     private val startedElapsed = SystemClock.elapsedRealtime()
@@ -131,10 +137,12 @@ class GuardController(private val ctx: Context) : AgentApi {
         http = HttpServer(router).also { it.start() }
         nsd = NsdAnnouncer(ctx, store.agentId, BuildConfig.VERSION_NAME).also { it.start(HttpServer.PORT) }
         registerListeners()
+        media.start()
     }
 
     fun stop() {
         unregisterListeners()
+        media.stop()
         http?.stop()
         nsd?.stop()
         guardExec.shutdownNow()
@@ -218,6 +226,7 @@ class GuardController(private val ctx: Context) : AgentApi {
         overlay = overlay.allowed(),
         notifications = Build.VERSION.SDK_INT < 33 ||
             ctx.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED,
+        mediaAccess = media.listenerGranted(),
     )
 
     private fun tick(soundOnly: Boolean = false) {
@@ -234,16 +243,44 @@ class GuardController(private val ctx: Context) : AgentApi {
         }
         val obs = Observed(fg, vol, screenOn, tvTime.usedMs(zdt.toLocalDate()))
         observed = obs
+        // The media step may start a break (end after this one): re-read the break state after it.
+        val b0 = if (!soundOnly) { mediaStep(fg, now, zdt.toLocalDate(), r, SafetyGuard.canEnforce(s), guard, p); synchronized(lock) { breakState } } else b
         if (!SafetyGuard.canEnforce(s)) { activeReasons = emptyList(); return }
-        val res = RuleEngine.decide(r, b, zdt, obs, guard)
+        val res = RuleEngine.decide(r, b0, zdt, obs, guard)
         activeReasons = res.active
         synchronized(lock) {
-            if (breakState == b && res.breakState != b) { breakState = res.breakState; store.breakState = breakState }
+            if (breakState == b0 && res.breakState != b0) { breakState = res.breakState; store.breakState = breakState }
         }
         for (d in res.decisions) {
             if (soundOnly && d is Decision.CloseApp) continue
             apply(d, now, guard, p)
         }
+    }
+
+    /** Shorts detection/enforcement and end-after-this-one, once per 1 s tick. */
+    private fun mediaStep(fg: String?, now: Long, today: LocalDate, r: Rules, canEnforce: Boolean, guard: PackageGuard, p: DeviceProfile?) {
+        val beforeCount = mediaGuard.shortsCount
+        val beforeEnd = mediaGuard.endAfter
+        val out: MediaOutcome = mediaGuard.step(
+            media.snapshot, fg, SystemClock.elapsedRealtime(), now, today.toString(), r, canEnforce,
+        )
+        if (mediaGuard.shortsCount != beforeCount) store.shortsCount = mediaGuard.shortsCount
+        if (mediaGuard.endAfter != beforeEnd) store.endAfter = mediaGuard.endAfter
+        for (n in out.notes) record(n.op, n.target, n.before, n.after, n.ok, "rule")
+        out.close?.let { d ->
+            if (!guard.isHome(d.pkg)) apply(d.copy(forceStop = !guard.isStopProtected(d.pkg)), now, guard, p)
+        }
+        out.endAfterFired?.let { startBreak(now, out.endAfterBreakMin, "endAfter ${it}") }
+    }
+
+    /** Starts a break (the `break` action and end-after-this-one). Enforced right away in normal mode. */
+    private fun startBreak(now: Long, minutes: Int, why: String): ActionResult {
+        val mode = synchronized(lock) { safety.mode }
+        val paused = if (mode == Mode.paused) " (agent paused: not enforced)" else ""
+        val b = setBreak { it.startBreak(now, minutes).copy(mutedByAgent = mode == Mode.normal || it.mutedByAgent) }
+        record("break", "$minutes min", why, "until ${Instant.ofEpochMilli(b.breakEndsAt!!)}", true, "agent")
+        if (mode == Mode.normal) { stopForeground(); sound.setMuted(true) }
+        return ActionResult(true, "break until ${Instant.ofEpochMilli(b.breakEndsAt)}$paused")
     }
 
     private data class Quad<A, B, C, D>(val a: A, val b: B, val c: C, val d: D)
@@ -479,15 +516,23 @@ class GuardController(private val ctx: Context) : AgentApi {
             }
             "restore" -> {
                 setBreak { it.restore() }
+                if (mediaGuard.cancelEndAfter()) store.endAfter = mediaGuard.endAfter
                 val ok = sound.setMuted(false)
                 record("restore", "sound", "breaks and timed mutes ended", "${sound.read()}", ok, "agent")
                 ActionResult(ok, "breaks ended, sound on")
             }
-            "break" -> {
-                val b = setBreak { it.startBreak(now, req.minutes!!).copy(mutedByAgent = mode == Mode.normal || it.mutedByAgent) }
-                record("break", "${req.minutes} min", "", "until ${Instant.ofEpochMilli(b.breakEndsAt!!)}", true, "agent")
-                if (mode == Mode.normal) { stopForeground(); sound.setMuted(true) }
-                ActionResult(true, "break until ${Instant.ofEpochMilli(b.breakEndsAt)}$paused")
+            "break" -> startBreak(now, req.minutes!!, "")
+            "endAfter" -> {
+                val res = mediaGuard.arm(media.snapshot, fgw.foreground, now, req.capMin, req.breakMin)
+                if (res.ok) store.endAfter = mediaGuard.endAfter
+                record("endAfter", mediaGuard.endAfter.pkg ?: "media", "armed", res.detail, res.ok, "agent")
+                ActionResult(res.ok, res.detail + if (res.ok) paused else "")
+            }
+            "cancelEndAfter" -> {
+                val was = mediaGuard.cancelEndAfter()
+                store.endAfter = mediaGuard.endAfter
+                record("cancelEndAfter", "media", if (was) "armed" else "not armed", "cancelled", true, "agent")
+                ActionResult(true, if (was) "end-after cancelled" else "end-after was not armed")
             }
             "endBreak" -> {
                 setBreak { it.endBreak() }
@@ -526,6 +571,7 @@ class GuardController(private val ctx: Context) : AgentApi {
             if (store.lastWatchdogAt == 0L) "not run yet" else "last run ${Instant.ofEpochMilli(store.lastWatchdogAt)}; ${plan?.pending?.size ?: 0} pending",
         )
         health += HealthItem("sound", "ok", sound.path.name)
+        health += PermissionHeal.mediaHealth(perms, selfAdb)
         if (ClockSkew.warn(skew)) health += HealthItem("clock", "warn", "TV clock is ${skew!! / 1000} s off the phone")
         if (s.mode != Mode.normal) health += HealthItem("mode", "warn", "${s.mode}: ${s.modeReason}")
         val breakEnd = b.breakEndsAt?.takeIf { it > now }
@@ -555,6 +601,9 @@ class GuardController(private val ctx: Context) : AgentApi {
             watchdogPending = plan?.pending?.size ?: 0,
             lastWatchdogAt = store.lastWatchdogAt.takeIf { it > 0 },
             profileId = p?.id,
+            media = mediaGuard.mediaDoc(SystemClock.elapsedRealtime()),
+            endAfter = mediaGuard.endAfterDoc(),
+            shorts = mediaGuard.shortsDoc(r, LocalDate.now().toString()),
         )
     }
 

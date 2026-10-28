@@ -34,7 +34,7 @@ class Overlay(private val ctx: Context) {
             try {
                 if (view == null) create()
                 title?.text = card.message
-                sub?.text = card.backAt?.let { "back at $it" } ?: ""
+                sub?.text = card.backAt?.let { "back at $it" } ?: card.sub ?: ""
                 main.removeCallbacks(hide)
                 main.postDelayed(hide, SHOW_MS)
             } catch (_: Exception) {

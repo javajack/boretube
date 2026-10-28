@@ -6,9 +6,11 @@ import android.content.SharedPreferences
 import com.rakesh.boretube.agent.core.AgentJson
 import com.rakesh.boretube.agent.core.BreakState
 import com.rakesh.boretube.agent.core.DeviceProfile
+import com.rakesh.boretube.agent.core.EndAfterState
 import com.rakesh.boretube.agent.core.Journal
 import com.rakesh.boretube.agent.core.Rules
 import com.rakesh.boretube.agent.core.SafetyState
+import com.rakesh.boretube.agent.core.ShortsCount
 import com.rakesh.boretube.agent.core.SoundPath
 import com.rakesh.boretube.agent.core.TvTimeState
 import kotlinx.serialization.builtins.ListSerializer
@@ -103,6 +105,17 @@ class AgentStore(private val ctx: Context) {
             }.apply()
         }
 
+    /** "End after this one": survives agent restarts. */
+    var endAfter: EndAfterState
+        get() = EndAfterState.parse(prefs.getString(K_END_AFTER, null))
+        set(v) { prefs.edit().putString(K_END_AFTER, v.toJson()).commit() }
+
+    var shortsCount: ShortsCount
+        get() = prefs.getString(K_SHORTS, null)?.let {
+            runCatching { AgentJson.decodeFromString(ShortsCount.serializer(), it) }.getOrNull()
+        } ?: ShortsCount()
+        set(v) { prefs.edit().putString(K_SHORTS, AgentJson.encodeToString(ShortsCount.serializer(), v)).apply() }
+
     var lastWatchdogAt: Long
         get() = prefs.getLong(K_LAST_WD, 0)
         set(v) { prefs.edit().putLong(K_LAST_WD, v).apply() }
@@ -134,6 +147,8 @@ class AgentStore(private val ctx: Context) {
         private const val K_SOUND = "soundPath"
         private const val K_KEEP = "keepDisabled"
         private const val K_LAST_WD = "lastWatchdogAt"
+        private const val K_END_AFTER = "endAfter"
+        private const val K_SHORTS = "shortsCount"
 
         fun randomHex(bytes: Int): String {
             val b = ByteArray(bytes)

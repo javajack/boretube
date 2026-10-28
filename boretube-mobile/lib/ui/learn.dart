@@ -6,7 +6,7 @@ import 'tokens.dart';
 
 /// The few words a parent may not know. Each has one sentence (the ⓘ
 /// sheet) and a longer "Learn more".
-enum LearnTerm { alwaysOn, homeMode, cleanTv, noShorts, makeItBoring }
+enum LearnTerm { alwaysOn, homeMode, cleanTv, noShorts, shorts, makeItBoring }
 
 typedef LearnCopy = ({
   String title,
@@ -75,6 +75,22 @@ extension LearnTermCopy on LearnTerm {
                   'guide shows where to get it safely.',
               'Removing the TV\'s own YouTube is undone with one tap, or by '
                   '"Put the TV back the way it was".',
+            ],
+          ),
+        LearnTerm.shorts => (
+            title: 'Shorts',
+            icon: Icons.swipe_vertical_rounded,
+            tone: Tone.accent,
+            sentence: 'The TV spots Shorts by their rhythm: three or more '
+                'quick videos in a row. Then it can stop them, allow a few a '
+                'day, or just tell you.',
+            more: [
+              'It works in SmartTube and the YouTube apps. One short video '
+                  'on its own isn\'t Shorts, and a long video never counts.',
+              'Stopping means the app closes and the TV goes Home. With '
+                  '"Friendly message" on, Tubby says why.',
+              'Nothing is stopped while Always On is paused or hands off. '
+                  'Presets never change this setting.',
             ],
           ),
         LearnTerm.makeItBoring => (

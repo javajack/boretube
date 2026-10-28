@@ -106,6 +106,11 @@ class AlwaysOnPreview extends ConsumerWidget {
       ),
       (Icons.apps_rounded, 'Allowed apps', 'Only the apps you pick open.'),
       (
+        Icons.swipe_vertical_rounded,
+        'Shorts',
+        'Stop them, allow a few a day, or just count them.',
+      ),
+      (
         Icons.volume_down_rounded,
         'Volume limit',
         'A cap the remote can\'t '

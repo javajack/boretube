@@ -208,6 +208,12 @@ List<String> rulesDiff(AgentRules a, AgentRules b) {
   if (a.stockYouTubeAllowed != b.stockYouTubeAllowed) {
     out.add('Stock YouTube');
   }
+  final sa = a.shortsRule;
+  final sb = b.shortsRule;
+  if (sa.mode != sb.mode ||
+      (sa.mode == ShortsMode.budget && sa.perDay != sb.perDay)) {
+    out.add('Shorts');
+  }
   String ov(AgentRules r) => ([
         for (final o in r.overrides) '${o.kind.name}${o.pkg}${o.until}'
       ]..sort())

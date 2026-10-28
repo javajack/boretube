@@ -9,9 +9,11 @@ import '../../agent/agent_client.dart';
 import '../../providers/agent_providers.dart';
 import '../../providers/now_playing.dart';
 import '../../providers/tv_providers.dart';
+import '../../providers/ui_providers.dart';
 import '../../ui/components.dart';
 import '../../ui/controls.dart';
 import '../../ui/format.dart';
+import '../../ui/learn.dart';
 import '../../ui/tokens.dart';
 import '../../ui/tubby.dart';
 import '../home/home_logic.dart';
@@ -55,8 +57,59 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
   late AgentRules _base = widget.initial;
   late AgentRules _draft = widget.initial;
   bool _saving = false;
+  final _shortsKey = GlobalKey();
+  final _scroll = ScrollController();
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
 
   DateTime _now() => ref.read(rulesClockProvider)();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final f = ref.read(routinesFocusProvider);
+      if (f != null) _focus(f);
+    });
+  }
+
+  /// Brings a card into view once (a nudge asked for it).
+  void _focus(String id) {
+    ref.read(routinesFocusProvider.notifier).state = null;
+    final key = switch (id) {
+      'shorts' => _shortsKey,
+      _ => null,
+    };
+    if (key == null) return;
+    // The list builds lazily: step down until the card exists, then
+    // bring it into view.
+    Future<void> reveal(int tries) async {
+      if (!mounted) return;
+      final c = key.currentContext;
+      if (c != null && c.mounted) {
+        await Scrollable.ensureVisible(
+          c,
+          duration: Motion.of(context, Motion.slow),
+          curve: Motion.settle,
+          alignment: 0.1,
+        );
+        return;
+      }
+      if (tries == 0 || !_scroll.hasClients) return;
+      final p = _scroll.position;
+      if (p.pixels >= p.maxScrollExtent) return;
+      _scroll.jumpTo(
+        (p.pixels + p.viewportDimension * 0.8).clamp(0, p.maxScrollExtent),
+      );
+      WidgetsBinding.instance.addPostFrameCallback((_) => reveal(tries - 1));
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) => reveal(12));
+  }
 
   bool get _dirty => jsonEncode(_draft.toJson()) != jsonEncode(_base.toJson());
 
@@ -181,6 +234,9 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<String?>(routinesFocusProvider, (_, next) {
+      if (next != null) _focus(next);
+    });
     final r = _draft;
     final active = detectPreset(r);
     return Column(
@@ -188,6 +244,7 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
         Expanded(
           child: ListView(
             key: const Key('rules-list'),
+            controller: _scroll,
             padding: const EdgeInsets.fromLTRB(
               Gap.page,
               0,
@@ -211,6 +268,8 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
               _dailyCard(context, r),
               const SizedBox(height: Gap.md),
               _appsCard(context, r),
+              const SizedBox(height: Gap.md),
+              _shortsCard(context, r),
               const SizedBox(height: Gap.md),
               _volumeCard(context, r),
               const SizedBox(height: Gap.md),
@@ -411,6 +470,167 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
         ),
       ],
     );
+  }
+
+  Widget _shortsCard(BuildContext context, AgentRules r) {
+    final text = Theme.of(context).textTheme;
+    final bt = context.bt;
+    final rule = r.shortsRule;
+    final mode = rule.mode;
+    final perDay =
+        rule.perDay.clamp(ShortsRule.minPerDay, ShortsRule.maxPerDay);
+    final today = ref.watch(
+      agentStatusProvider.select((l) => l.up ? l.status!.shorts : null),
+    );
+    // Back to Off on a TV that never had a Shorts rule: leave it absent,
+    // so the draft matches what's saved.
+    void set(ShortsRule s) => _edit(
+          (r) => s.mode == ShortsMode.off &&
+                  _base.shorts == null &&
+                  s.extra.isEmpty
+              ? r.copyWith(clearShorts: true)
+              : r.copyWith(shorts: s),
+        );
+    final friendly = r.style == RuleStyle.explicit;
+    final stops = mode == ShortsMode.block || mode == ShortsMode.budget;
+    return KeyedSubtree(
+      key: _shortsKey,
+      child: SettingCard(
+        key: const Key('rules-shorts'),
+        icon: Icons.swipe_vertical_rounded,
+        tone: Tone.accent,
+        title: const TermTitle('Shorts', LearnTerm.shorts),
+        value: mode == ShortsMode.budget ? '$perDay a day' : null,
+        dim: mode == ShortsMode.off,
+        children: [
+          SegmentChoice<ShortsMode>(
+            keyPrefix: 'rules-shorts',
+            columns: 2,
+            options: const [
+              (ShortsMode.off, 'Off'),
+              (ShortsMode.block, 'Block'),
+              (ShortsMode.budget, 'Allow a few'),
+              (ShortsMode.report, 'Just tell me'),
+            ],
+            value: mode,
+            onChanged: (m) => set(
+              rule.copyWith(
+                mode: m,
+                perDay: m == ShortsMode.budget ? perDay : null,
+              ),
+            ),
+          ),
+          AnimatedSize(
+            duration: Motion.of(context, Motion.medium),
+            curve: Motion.settle,
+            alignment: Alignment.topCenter,
+            child: mode != ShortsMode.budget
+                ? const SizedBox(width: double.infinity)
+                : Padding(
+                    padding: const EdgeInsets.only(top: Gap.md),
+                    child: CountStepper(
+                      key: const Key('rules-shorts-per-day'),
+                      keyPrefix: 'rules-shorts-per-day',
+                      value: perDay,
+                      min: ShortsRule.minPerDay,
+                      max: ShortsRule.maxPerDay,
+                      unit: perDay == 1 ? 'Short per day' : 'Shorts per day',
+                      onChanged: (n) => set(rule.copyWith(perDay: n)),
+                    ),
+                  ),
+          ),
+          const SizedBox(height: Gap.md),
+          AnimatedSwitcher(
+            duration: Motion.of(context, Motion.fast),
+            child: Text(
+              switch (mode) {
+                ShortsMode.off => 'Shorts play as usual. The TV still counts '
+                    'them, so you can see how many.',
+                ShortsMode.block => 'After three quick Shorts in a row, the '
+                    'app closes and the TV goes Home. Full videos keep '
+                    'playing.',
+                ShortsMode.budget => 'The first $perDay '
+                    'Short${perDay == 1 ? '' : 's'} each day play. After '
+                    'that, the TV says no until midnight.',
+                ShortsMode.report => 'Nothing is stopped. You\'ll see how '
+                    'many Shorts were watched, on Home and in History.',
+              },
+              key: ValueKey('shorts-help-$mode-$perDay'),
+              style: text.bodySmall,
+            ),
+          ),
+          AnimatedSize(
+            duration: Motion.of(context, Motion.medium),
+            curve: Motion.settle,
+            alignment: Alignment.topCenter,
+            child: !stops
+                ? const SizedBox(width: double.infinity)
+                : Padding(
+                    padding: const EdgeInsets.only(top: Gap.lg),
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding:
+                              const EdgeInsets.symmetric(horizontal: Gap.lg),
+                          child: TvSaysNoPreview(
+                            key: const Key('rules-shorts-preview'),
+                            style: r.style,
+                            headline: mode == ShortsMode.block
+                                ? 'Shorts aren\'t on in this house.'
+                                : 'That\'s all the Shorts for today.',
+                            message: 'Pick a full video instead.',
+                          ),
+                        ),
+                        const SizedBox(height: Gap.sm),
+                        Text(
+                          friendly
+                              ? 'What the TV shows when it stops them.'
+                              : 'The app just closes. Pick "Friendly '
+                                  'message" below and Tubby says why.',
+                          textAlign: TextAlign.center,
+                          style: text.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+          ),
+          if (today != null &&
+              (today.todayCount > 0 || today.lastDetectedAt != null)) ...[
+            const SizedBox(height: Gap.md),
+            Row(
+              key: const Key('rules-shorts-today'),
+              children: [
+                Icon(Icons.today_rounded, size: 16, color: bt.muted),
+                const SizedBox(width: Gap.sm),
+                Expanded(
+                  child: Text(
+                    _shortsToday(context, today),
+                    style: text.labelMedium!.copyWith(
+                      color: bt.inkSoft,
+                      fontFeatures: Fonts.tabular,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// "Today: 7 Shorts · last at 6:42 pm".
+  String _shortsToday(BuildContext context, AgentShorts s) {
+    final n = s.todayCount;
+    final last = s.lastDetectedAt;
+    final sameDay = last != null && DateUtils.isSameDay(last.toLocal(), _now());
+    return [
+      'Today: ${n == 0 ? 'no Shorts' : n == 1 ? '1 Short' : '$n Shorts'}',
+      if (s.active)
+        'on now'
+      else if (n > 0 && sameDay)
+        'last at ${friendlyTime(context, last.toLocal())}',
+    ].join(' · ');
   }
 
   Widget _volumeCard(BuildContext context, AgentRules r) {
@@ -1179,7 +1399,8 @@ class PresetSheet extends StatelessWidget {
             const SizedBox(width: Gap.sm),
             Expanded(
               child: Text(
-                'Your allowed apps and Tonight only stay as they are.',
+                'Your allowed apps, Shorts and Tonight only stay as they '
+                'are.',
                 style: text.bodySmall,
               ),
             ),

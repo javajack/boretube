@@ -12,12 +12,17 @@ class SegmentChoice<T> extends StatelessWidget {
   final ValueChanged<T>? onChanged;
   final String? keyPrefix;
 
+  /// Segments per row; more options wrap onto a second row (four longer
+  /// labels as a 2×2 at phone width). Null keeps them all on one row.
+  final int? columns;
+
   const SegmentChoice({
     super.key,
     required this.options,
     required this.value,
     this.onChanged,
     this.keyPrefix,
+    this.columns,
   });
 
   @override
@@ -26,6 +31,59 @@ class SegmentChoice<T> extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final i = options.indexWhere((o) => o.$1 == value).clamp(0, 99);
     final n = options.length;
+    final cols = (columns ?? n).clamp(1, n);
+    final rows = (n / cols).ceil();
+    final col = i % cols;
+    final row = i ~/ cols;
+
+    Widget segment((T, String) o) {
+      final (v, label) = o;
+      return Expanded(
+        child: Semantics(
+          button: true,
+          selected: v == value,
+          child: InkWell(
+            key: keyPrefix == null
+                ? null
+                : Key('$keyPrefix-${v is Enum ? v.name : v}'),
+            borderRadius: BorderRadius.circular(Radii.button - 3),
+            onTap: onChanged == null || v == value
+                ? null
+                : () {
+                    HapticFeedback.selectionClick();
+                    onChanged!(v);
+                  },
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 42),
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: Gap.xs,
+                    vertical: Gap.sm,
+                  ),
+                  child: AnimatedDefaultTextStyle(
+                    duration: Motion.of(context, Motion.fast),
+                    style: text.labelLarge!.copyWith(
+                      fontSize: 14,
+                      color: v == value ? bt.ink : bt.muted,
+                      fontWeight:
+                          v == value ? FontWeight.w700 : FontWeight.w600,
+                    ),
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Container(
       constraints: const BoxConstraints(minHeight: 48),
       padding: const EdgeInsets.all(3),
@@ -40,10 +98,13 @@ class SegmentChoice<T> extends StatelessWidget {
             child: AnimatedAlign(
               duration: Motion.of(context, Motion.medium),
               curve: Motion.spring,
-              alignment: Alignment(n == 1 ? 0 : -1 + 2 * i / (n - 1), 0),
+              alignment: Alignment(
+                cols == 1 ? 0 : -1 + 2 * col / (cols - 1),
+                rows == 1 ? 0 : -1 + 2 * row / (rows - 1),
+              ),
               child: FractionallySizedBox(
-                widthFactor: 1 / n,
-                heightFactor: 1,
+                widthFactor: 1 / cols,
+                heightFactor: 1 / rows,
                 child: Container(
                   decoration: BoxDecoration(
                     color: bt.surface,
@@ -54,56 +115,119 @@ class SegmentChoice<T> extends StatelessWidget {
               ),
             ),
           ),
-          Row(
-            children: [
-              for (final (v, label) in options)
-                Expanded(
-                  child: Semantics(
-                    button: true,
-                    selected: v == value,
-                    child: InkWell(
-                      key: keyPrefix == null
-                          ? null
-                          : Key('$keyPrefix-${v is Enum ? v.name : v}'),
-                      borderRadius: BorderRadius.circular(Radii.button - 3),
-                      onTap: onChanged == null || v == value
-                          ? null
-                          : () {
-                              HapticFeedback.selectionClick();
-                              onChanged!(v);
-                            },
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(minHeight: 42),
-                        child: Center(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: Gap.xs,
-                              vertical: Gap.sm,
-                            ),
-                            child: AnimatedDefaultTextStyle(
-                              duration: Motion.of(context, Motion.fast),
-                              style: text.labelLarge!.copyWith(
-                                fontSize: 14,
-                                color: v == value ? bt.ink : bt.muted,
-                                fontWeight: v == value
-                                    ? FontWeight.w700
-                                    : FontWeight.w600,
-                              ),
-                              child: Text(
-                                label,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+          if (rows == 1)
+            Row(children: [for (final o in options) segment(o)])
+          else
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (var r = 0; r < rows; r++)
+                  Row(
+                    children: [
+                      for (var c = 0; c < cols; c++)
+                        if (r * cols + c < n)
+                          segment(options[r * cols + c])
+                        else
+                          const Spacer(),
+                    ],
+                  ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// − N + : a small whole-number stepper with a unit ("5 per day").
+class CountStepper extends StatelessWidget {
+  final int value;
+  final int min;
+  final int max;
+  final String unit;
+  final ValueChanged<int>? onChanged;
+  final String? keyPrefix;
+
+  const CountStepper({
+    super.key,
+    required this.value,
+    required this.min,
+    required this.max,
+    required this.unit,
+    this.onChanged,
+    this.keyPrefix,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bt = context.bt;
+    final text = Theme.of(context).textTheme;
+    Widget button(IconData icon, String label, int to, String id) {
+      final on = onChanged != null && to >= min && to <= max && to != value;
+      return Semantics(
+        button: true,
+        enabled: on,
+        label: label,
+        excludeSemantics: true,
+        child: Material(
+          color: on ? bt.surface : bt.hairline,
+          shape: CircleBorder(
+            side: BorderSide(color: on ? bt.borderStrong : bt.border, width: 2),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            key: keyPrefix == null ? null : Key('$keyPrefix-$id'),
+            onTap: on
+                ? () {
+                    HapticFeedback.selectionClick();
+                    onChanged!(to);
+                  }
+                : null,
+            child: SizedBox(
+              width: 48,
+              height: 48,
+              child: Icon(icon, size: 22, color: on ? bt.ink : bt.faint),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Semantics(
+      container: true,
+      value: '$value $unit',
+      child: Row(
+        children: [
+          button(Icons.remove_rounded, 'Fewer', value - 1, 'minus'),
+          Expanded(
+            child: Column(
+              children: [
+                AnimatedSwitcher(
+                  duration: Motion.of(context, Motion.fast),
+                  transitionBuilder: (c, a) => FadeTransition(
+                    opacity: a,
+                    child: ScaleTransition(
+                      scale: Tween(begin: 0.85, end: 1.0).animate(a),
+                      child: c,
+                    ),
+                  ),
+                  child: Text(
+                    '$value',
+                    key: ValueKey(value),
+                    style: Fonts.bricolage(
+                      28,
+                      color: bt.ink,
+                      height: 1,
+                      tabularFigures: true,
                     ),
                   ),
                 ),
-            ],
+                const SizedBox(height: 2),
+                Text(unit, style: text.bodySmall),
+              ],
+            ),
           ),
+          button(Icons.add_rounded, 'More', value + 1, 'plus'),
         ],
       ),
     );

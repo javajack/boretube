@@ -12,7 +12,17 @@ class TvSaysNoPreview extends StatelessWidget {
   /// "7:00 am": when TV time comes back, for the friendly card.
   final String? backAt;
 
-  const TvSaysNoPreview({super.key, required this.style, this.backAt});
+  /// Other words for the friendly card (e.g. the Shorts card).
+  final String? headline;
+  final String? message;
+
+  const TvSaysNoPreview({
+    super.key,
+    required this.style,
+    this.backAt,
+    this.headline,
+    this.message,
+  });
 
   static const _night = Color(0xFF15162E);
   static const _glow = Color(0xFF2D2F66);
@@ -25,7 +35,7 @@ class TvSaysNoPreview extends StatelessWidget {
     final friendly = style == RuleStyle.explicit;
     return Semantics(
       label: friendly
-          ? 'On the TV: Tubby says that\'s all for tonight'
+          ? 'On the TV: Tubby says ${headline ?? 'that\'s all for tonight'}'
           : 'On the TV: the app closes and the home screen shows',
       excludeSemantics: true,
       child: Column(
@@ -47,6 +57,8 @@ class TvSaysNoPreview extends StatelessWidget {
                       ? _Friendly(
                           key: const ValueKey('friendly'),
                           backAt: backAt,
+                          headline: headline,
+                          message: message,
                         )
                       : const _Quiet(key: ValueKey('quiet')),
                 ),
@@ -72,7 +84,9 @@ class TvSaysNoPreview extends StatelessWidget {
 
 class _Friendly extends StatelessWidget {
   final String? backAt;
-  const _Friendly({super.key, this.backAt});
+  final String? headline;
+  final String? message;
+  const _Friendly({super.key, this.backAt, this.headline, this.message});
 
   @override
   Widget build(BuildContext context) {
@@ -140,7 +154,7 @@ class _Friendly extends StatelessWidget {
                             ),
                             SizedBox(height: 3 * k),
                             Text(
-                              'That\'s all for tonight.',
+                              headline ?? 'That\'s all for tonight.',
                               style: Fonts.bricolage(
                                 19 * k,
                                 height: 1.05,
@@ -150,10 +164,11 @@ class _Friendly extends StatelessWidget {
                             ),
                             SizedBox(height: 4 * k),
                             Text(
-                              backAt == null
-                                  ? 'The TV is resting. See you later.'
-                                  : 'The TV is resting. See you at '
-                                      '$backAt.',
+                              message ??
+                                  (backAt == null
+                                      ? 'The TV is resting. See you later.'
+                                      : 'The TV is resting. See you at '
+                                          '$backAt.'),
                               maxLines: 2,
                               style: text.bodySmall!.copyWith(
                                 color: const Color(0xFFD8D9F2),

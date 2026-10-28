@@ -1,0 +1,36 @@
+# Sony BRAVIA VU3 (BRAVIA_VU3 / _2K / _4K), Google TV 14, build UKR1.240726.001, Realtek rtd2885m.
+# Verified on a BRAVIA_VU3_2K, 2026-10-28. One package per line; '#' starts a comment.
+# Lines tagged [extra] are optional user choices (apps the family did not use).
+# Based on the cleanyourtv VU3 list (github.com/Gathin23/cleanyourtv, examples/sony-bravia-vu3),
+# minus dreamx (kept: Google Photos screensaver), setupwraith (owns Wi-Fi on this unit) and
+# launcherx (remote app buttons + voice results).
+
+# Sony promos, demo and help
+com.sony.dtv.promos
+com.sony.dtv.sonyselect
+com.sony.dtv.sonytab
+com.sony.dtv.multiscreendemo
+com.sony.dtv.smarthelp
+com.sony.dtv.helpguidecontents
+com.sonypicturescore
+
+# Android ad / personalization services
+com.android.adservices.api
+com.android.federatedcompute.services
+com.android.ondevicepersonalization.services
+
+# Google leftovers
+com.google.android.feedback
+com.google.android.play.games
+com.google.android.partnersetup
+com.google.android.onetimeinitializer
+com.google.android.syncadapters.calendar
+com.android.printspooler
+android.autoinstalls.config.google.gtvpai
+com.android.gallery3d
+
+# [extra] apps the family did not use
+com.sonyliv                                  # [extra]
+com.amazon.amazonvideo.livingroom            # [extra]
+com.apple.atve.androidtv.appletv             # [extra]
+com.google.android.youtube.tvmusic           # [extra] needs stock YouTube anyway

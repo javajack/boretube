@@ -1,0 +1,21 @@
+# Packages the scripts refuse to change on any TV (see docs/knowledge/sony-bravia-vu3.md).
+android
+com.android.systemui
+com.android.settings
+com.android.tv.settings
+com.android.vending
+com.google.android.gms
+com.google.android.tts
+com.google.android.katniss
+com.google.android.tungsten.setupwraith
+com.google.android.apps.tv.launcherx
+com.google.android.apps.tv.dreamx
+com.android.tv
+com.sony.dtv.smartui
+com.realtek.dtv
+com.realtek.tv.atv
+com.realtek.tv.passthrough
+com.realtek.advancesetting
+com.rakesh.boretube.agent
+com.gathin.tvhome
+org.smarttube.stable

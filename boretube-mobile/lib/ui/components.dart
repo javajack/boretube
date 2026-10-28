@@ -664,7 +664,14 @@ class ListRow extends StatelessWidget {
           child: Row(
             children: [
               if (lead != null) ...[
-                SizedBox(width: Sizes.iconControl, child: Center(child: lead)),
+                // Icons sit in a 24 column so titles align down a list;
+                // a larger leading (an icon tile) keeps its own width.
+                ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    minWidth: Sizes.iconControl,
+                  ),
+                  child: Center(widthFactor: 1, child: lead),
+                ),
                 const SizedBox(width: Gap.f13),
               ],
               Expanded(

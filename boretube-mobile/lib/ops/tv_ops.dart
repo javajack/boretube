@@ -268,7 +268,51 @@ class TvOps {
     }
   }
 
-  Future<AdbShellResult> _sh(String cmd) => adb.shell(cmd);
+  Future<AdbShellResult> _sh(String cmd, {bool urgent = false}) {
+    final a = adb;
+    return urgent && a is PriorityAdbShell ? a.shellUrgent(cmd) : a.shell(cmd);
+  }
+
+  // ── last known state (from polls and actions) ──
+
+  /// How long a polled foreground / volume counts as current enough to
+  /// plan an action from. Every action re-reads in the same round trip and
+  /// corrects itself when the cache was stale.
+  static const cacheTtl = Duration(seconds: 20);
+
+  VolumeState? _volume;
+  String? _foreground;
+  DateTime? _volumeAt;
+  DateTime? _foregroundAt;
+
+  bool _fresh(DateTime? at) =>
+      at != null && _now().difference(at).abs() < cacheTtl;
+
+  /// Last volume read, if recent.
+  VolumeState? get cachedVolume => _fresh(_volumeAt) ? _volume : null;
+
+  /// Last foreground package read, if recent.
+  String? get cachedForeground => _fresh(_foregroundAt) ? _foreground : null;
+
+  VolumeState? _seeVolume(VolumeState? v) {
+    if (v != null) {
+      _volume = v;
+      _volumeAt = _now();
+    }
+    return v;
+  }
+
+  String? _seeForeground(String? pkg) {
+    _foreground = pkg;
+    _foregroundAt = pkg == null ? null : _now();
+    return pkg;
+  }
+
+  static List<String> _sections(String out) =>
+      out.split(RegExp(r'^---\s*$', multiLine: true));
+
+  static String _at(List<String> parts, int i) =>
+      i < parts.length ? parts[i] : '';
 
   Future<JournalEntry> _record({
     required String op,
@@ -333,14 +377,28 @@ class TvOps {
 
   static const volumeCommand = "dumpsys audio | grep -A8 -- '- STREAM_MUSIC:'";
 
-  Future<VolumeState?> readVolume() async =>
-      parseVolume((await _sh(volumeCommand)).stdout);
+  Future<VolumeState?> readVolume({bool urgent = false}) async => _seeVolume(
+        parseVolume((await _sh(volumeCommand, urgent: urgent)).stdout),
+      );
 
   static const foregroundCommand =
       'dumpsys activity activities | grep -m1 topResumedActivity';
 
-  Future<String?> foregroundPackage() async =>
-      parseTopResumed((await _sh(foregroundCommand)).stdout);
+  Future<String?> foregroundPackage({bool urgent = false}) async =>
+      _seeForeground(
+        parseTopResumed((await _sh(foregroundCommand, urgent: urgent)).stdout),
+      );
+
+  /// Foreground app and volume in one round trip (the now-playing poll).
+  static const statusCommand = '$foregroundCommand; echo ---; $volumeCommand';
+
+  Future<({String? foreground, VolumeState? volume})> status() async {
+    final parts = _sections((await _sh(statusCommand)).stdout);
+    return (
+      foreground: _seeForeground(parseTopResumed(_at(parts, 0))),
+      volume: _seeVolume(parseVolume(_at(parts, 1))),
+    );
+  }
 
   static const launcherCommand = 'cmd package resolve-activity --brief '
       '-a android.intent.action.MAIN -c android.intent.category.HOME; '
@@ -392,50 +450,92 @@ class TvOps {
 
   // ── writes ──
 
+  /// Lets key events land before the verify read in the same shell.
+  static const settle = 'sleep 0.15';
+
+  /// One round trip: [foregroundCommand] (with [home]) --- pid before ---
+  /// force-stop (+ Home) markers --- pid after.
+  static String stopCommand(String pkg, {bool home = false}) =>
+      '${home ? foregroundCommand : 'true'}; echo ---; pidof $pkg; '
+      'echo ---; am force-stop $pkg && echo stopped; '
+      '${home ? 'input keyevent KEYCODE_HOME && echo home; ' : ''}'
+      'echo ---; pidof $pkg';
+
   /// `am force-stop`. Verified by the process being gone or restarted.
-  Future<JournalEntry> stopApp(String pkg) async {
+  Future<JournalEntry> stopApp(String pkg) async =>
+      (await _stop(pkg, home: false)).entry;
+
+  Future<({JournalEntry entry, String? foreground, bool home})> _stop(
+    String pkg, {
+    required bool home,
+  }) async {
     checkPackage(pkg);
     if (isStopProtected(pkg)) throw NeverTouchException(pkg);
-    final before = (await _sh('pidof $pkg')).stdout.trim();
-    final r = await _sh('am force-stop $pkg');
-    final after = (await _sh('pidof $pkg')).stdout.trim();
-    return _record(
+    final r = await _sh(stopCommand(pkg, home: home), urgent: true);
+    final parts = _sections(r.stdout);
+    final before = _at(parts, 1).trim();
+    final marks = _at(parts, 2);
+    final after = _at(parts, 3).trim();
+    final entry = await _record(
       op: 'stopApp',
       target: pkg,
       before: before.isEmpty ? 'not running' : 'pid $before',
       after: after.isEmpty ? 'not running' : 'pid $after',
-      ok: r.ok && (after.isEmpty || after != before),
+      ok: marks.contains('stopped') && (after.isEmpty || after != before),
+    );
+    if (home) _seeForeground(null);
+    return (
+      entry: entry,
+      foreground: home ? parseTopResumed(_at(parts, 0)) : null,
+      home: marks.contains('home'),
     );
   }
 
-  /// Stops whatever is on screen, then goes Home. A stop-protected
+  bool _isHome(String pkg) =>
+      pkg == profile.launcher?.pkg ||
+      pkg == 'com.google.android.apps.tv.launcherx';
+
+  /// Stops whatever is on screen, then goes Home, in one round trip when
+  /// the poll already knows the foreground app. A stop-protected
   /// foreground app (Home, system UI...) is not force-stopped; it only gets
   /// the Home key.
   Future<StopOutcome> stopForegroundApp() async {
-    final fg = await foregroundPackage();
+    var fg = cachedForeground;
+    if (fg == null || _isHome(fg)) fg = await foregroundPackage(urgent: true);
     if (fg == null) {
       return const StopOutcome(detail: 'No foreground app found');
     }
-    final launcherPkg = profile.launcher?.pkg;
-    final isHome =
-        fg == launcherPkg || fg == 'com.google.android.apps.tv.launcherx';
-    if (isHome) {
+    if (_isHome(fg)) {
       return StopOutcome(pkg: fg, detail: 'Already on the home screen');
     }
-    JournalEntry? entry;
-    var detail = '';
     if (isStopProtected(fg) || !_pkgPattern.hasMatch(fg)) {
-      detail = '$fg is protected; sent Home instead of force-stop';
-    } else {
-      entry = await stopApp(fg);
+      final home = await _sh('input keyevent KEYCODE_HOME', urgent: true);
+      _seeForeground(null);
+      return StopOutcome(
+        pkg: fg,
+        sentHome: home.ok,
+        detail: '$fg is protected; sent Home instead of force-stop',
+      );
     }
-    final home = await _sh('input keyevent KEYCODE_HOME');
+    final s = await _stop(fg, home: true);
+    var entry = s.entry;
+    var pkg = fg;
+    // The cached foreground was stale: the app really on screen was
+    // something else. Stop that one too (Home was already sent).
+    final real = s.foreground;
+    if (real != null &&
+        real != fg &&
+        !_isHome(real) &&
+        !isStopProtected(real) &&
+        _pkgPattern.hasMatch(real)) {
+      entry = await stopApp(real);
+      pkg = real;
+    }
     return StopOutcome(
-      pkg: fg,
-      forceStopped: entry?.ok ?? false,
-      sentHome: home.ok,
+      pkg: pkg,
+      forceStopped: entry.ok,
+      sentHome: s.home,
       entry: entry,
-      detail: detail,
     );
   }
 
@@ -632,53 +732,125 @@ class TvOps {
       'home=${h.homeComponent} helper=${h.helperEnabled} '
       'a11y=${h.a11yEnabled}';
 
-  /// Presses volume up/down [n] times (capped at 100). Absolute volume set
-  /// is ignored on the VU3 (quirk absoluteVolumeIgnored), so steps it is.
+  /// One round trip: volume --- key presses (+ settle) --- volume.
+  static String keysThenVolumeCommand(List<String> keys) =>
+      '$volumeCommand; echo ---; '
+      'input keyevent ${keys.join(' ')} && $settle && echo sent; '
+      'echo ---; $volumeCommand';
+
+  /// One round trip that presses mute only if the TV is in the other
+  /// state: volume --- `sent` marker --- volume. Never toggles blind: an
+  /// unreadable state sends nothing.
+  static String setMutedCommand(bool muted) =>
+      'v=\$($volumeCommand); echo "\$v"; echo ---; '
+      'echo "\$v" | grep -q \'Muted: ${!muted}\' && '
+      'input keyevent KEYCODE_VOLUME_MUTE && $settle && echo sent; '
+      'echo ---; $volumeCommand';
+
+  /// Slow-path re-read when a key press hadn't reached dumpsys yet.
+  static const lateVolumeCommand = 'sleep 0.3; $volumeCommand';
+
+  Future<({VolumeState? before, bool sent, VolumeState? after})> _keys(
+    String cmd,
+    bool Function(VolumeState? before, VolumeState after) done,
+  ) async {
+    final parts = _sections((await _sh(cmd, urgent: true)).stdout);
+    final before = parseVolume(_at(parts, 0));
+    final sent = _at(parts, 1).contains('sent');
+    var after = parseVolume(_at(parts, 2));
+    if (sent && after != null && !done(before, after)) {
+      after = parseVolume(
+            (await _sh(lateVolumeCommand, urgent: true)).stdout,
+          ) ??
+          after;
+    }
+    _seeVolume(after ?? before);
+    return (before: before, sent: sent, after: after);
+  }
+
+  static bool _moved(bool up, VolumeState? before, VolumeState after) =>
+      before == null ||
+      (up
+          ? after.level > before.level || after.level >= after.max
+          : after.level < before.level || after.level <= after.min);
+
+  /// Presses volume up/down [n] times (capped at 100) and reads the result,
+  /// in one round trip. Absolute volume set is ignored on the VU3 (quirk
+  /// absoluteVolumeIgnored), so steps it is.
   Future<JournalEntry> volumeStep({required bool up, int n = 1}) async {
     final count = n.clamp(1, 100);
     final key = up ? 'KEYCODE_VOLUME_UP' : 'KEYCODE_VOLUME_DOWN';
     final undoKey = up ? 'KEYCODE_VOLUME_DOWN' : 'KEYCODE_VOLUME_UP';
-    final before = await readVolume();
-    final r = await _sh(
-      'input keyevent ${List.filled(count, key).join(' ')}',
+    final r = await _keys(
+      keysThenVolumeCommand(List.filled(count, key)),
+      (b, a) => _moved(up, b, a),
     );
-    final after = await readVolume();
-    final moved = before == null ||
-        after == null ||
-        (up
-            ? after.level > before.level || after.level >= after.max
-            : after.level < before.level || after.level <= after.min);
+    final after = r.after;
     return _record(
       op: up ? 'volumeUp' : 'volumeDown',
       target: 'x$count',
-      before: '$before',
+      before: '${r.before}',
       after: '$after',
       undo: 'input keyevent ${List.filled(count, undoKey).join(' ')}',
-      ok: r.ok && moved,
+      ok: r.sent && (after == null || _moved(up, r.before, after)),
     );
   }
 
-  /// Toggles mute with KEYCODE_VOLUME_MUTE.
+  /// Steps to [percent] (0–100). Plans from the polled volume when recent
+  /// (one round trip), else reads first. If the plan was stale, one more
+  /// step fixes it. Returns null when already there.
+  Future<JournalEntry?> setVolumePercent(int percent) async {
+    final start = cachedVolume ?? await readVolume(urgent: true);
+    if (start == null) throw StateError('Could not read volume');
+    int goalOf(VolumeState v) =>
+        v.min + ((v.max - v.min) * percent.clamp(0, 100) / 100).round();
+    var diff = goalOf(start) - start.level;
+    if (diff == 0) return null;
+    JournalEntry? e;
+    for (var i = 0; i < 2 && diff != 0; i++) {
+      e = await volumeStep(up: diff > 0, n: diff.abs());
+      final now = _volume;
+      if (now == null) break;
+      diff = goalOf(now) - now.level;
+    }
+    return e;
+  }
+
+  /// Toggles mute with KEYCODE_VOLUME_MUTE, verified in the same round
+  /// trip.
   Future<JournalEntry> toggleMute() async {
-    final before = await readVolume();
-    final r = await _sh('input keyevent KEYCODE_VOLUME_MUTE');
-    final after = await readVolume();
+    final r = await _keys(
+      keysThenVolumeCommand(const ['KEYCODE_VOLUME_MUTE']),
+      (b, a) => b == null || a.muted != b.muted,
+    );
+    final before = r.before;
+    final after = r.after;
     return _record(
       op: 'toggleMute',
       target: 'mute',
       before: '$before',
       after: '$after',
       undo: 'input keyevent KEYCODE_VOLUME_MUTE',
-      ok: r.ok &&
+      ok: r.sent &&
           (before == null || after == null || after.muted != before.muted),
     );
   }
 
-  /// Mutes or unmutes; returns null when already in that state.
+  /// Mutes or unmutes in one round trip: the TV only gets the mute key if
+  /// it is in the other state. Returns null when already in that state.
   Future<JournalEntry?> setMuted(bool muted) async {
-    final v = await readVolume();
-    if (v != null && v.muted == muted) return null;
-    return toggleMute();
+    final r = await _keys(setMutedCommand(muted), (_, a) => a.muted == muted);
+    final before = r.before;
+    if (before == null) throw StateError('Could not read mute state');
+    if (!r.sent && before.muted == muted) return null;
+    return _record(
+      op: muted ? 'mute' : 'unmute',
+      target: 'sound',
+      before: '${r.before}',
+      after: '${r.after}',
+      undo: 'input keyevent KEYCODE_VOLUME_MUTE',
+      ok: r.after?.muted == muted,
+    );
   }
 
   // ── parsers (pure; exposed for tests) ──

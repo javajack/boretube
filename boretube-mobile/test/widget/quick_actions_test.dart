@@ -30,7 +30,7 @@ Finder inTile(String tileKey, String text) => find.descendant(
     );
 
 void main() {
-  testWidgets('Mute flips at once, shows a small ring, no success snack',
+  testWidgets('Mute flips at once; ring only if slow; no success feedback',
       (tester) async {
     final env = await TestEnv.create(tvs: [adbSony]);
     final actions = ScriptedActions();
@@ -46,14 +46,14 @@ void main() {
     await tester.tap(find.byKey(const Key('action-mute')));
     await tester.pump();
 
-    // Before the TV answers: already muted everywhere, ring on the tile.
+    // Before the TV answers: already muted everywhere.
     expect(actions.calls, ['mute']);
     expect(inTile('action-mute', 'Unmute'), findsOneWidget);
     expect(inTile('action-mute', 'Muted'), findsOneWidget);
     expect(find.byIcon(Icons.volume_off_rounded), findsWidgets);
-    // The ring only appears once the action has run for 400 ms.
+    // The ring only appears once the action has run for 1.5 s.
     expect(ring('action-mute'), findsNothing);
-    await tester.pump(const Duration(milliseconds: 450));
+    await tester.pump(const Duration(milliseconds: 1600));
     expect(ring('action-mute'), findsOneWidget);
     // Unrelated tiles stay usable; conflicting ones wait.
     await tester.tap(find.byKey(const Key('action-stop')));
@@ -72,11 +72,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 250));
     expect(ring('action-mute'), findsNothing);
     expect(inTile('action-mute', 'Unmute'), findsOneWidget);
-    expect(find.byIcon(Icons.check_rounded), findsWidgets);
-    expect(find.byType(SnackBar), findsNothing);
-    await tester.pump(const Duration(seconds: 1));
-    await tester.pump(const Duration(milliseconds: 300));
     expect(find.byIcon(Icons.check_rounded), findsNothing);
+    expect(find.byType(SnackBar), findsNothing);
   });
 
   testWidgets('a failed action rolls back and says why', (tester) async {

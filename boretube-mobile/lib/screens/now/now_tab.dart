@@ -233,15 +233,8 @@ class QuickActionsPanel extends ConsumerStatefulWidget {
 
 class _QuickActionsState extends ConsumerState<QuickActionsPanel> {
   final _inflight = <QuickAction>{};
-  QuickAction? _done;
-  Timer? _doneTimer;
   double? _dragVolume;
 
-  @override
-  void dispose() {
-    _doneTimer?.cancel();
-    super.dispose();
-  }
 
   /// Can [a] start while the actions in flight run? Mute, volume and
   /// stop each touch one thing; Bore and Break touch both.
@@ -265,10 +258,7 @@ class _QuickActionsState extends ConsumerState<QuickActionsPanel> {
     if (_blocked(action)) return;
     unawaited(HapticFeedback.lightImpact());
     final now = ref.read(nowPlayingProvider.notifier);
-    setState(() {
-      _inflight.add(action);
-      if (_done == action) _done = null;
-    });
+    setState(() => _inflight.add(action));
     final undo = optimistic == null ? null : now.patch(optimistic);
     now.hold();
     ActionResult? r;
@@ -288,17 +278,9 @@ class _QuickActionsState extends ConsumerState<QuickActionsPanel> {
     if (!ok && undo != null) now.revert(undo);
     if (!mounted) return;
     ref.invalidate(journalEntriesProvider);
-    setState(() {
-      _inflight.remove(action);
-      if (ok) _done = action;
-    });
-    if (ok) {
-      _doneTimer?.cancel();
-      _doneTimer = Timer(const Duration(milliseconds: 900), () {
-        if (mounted) setState(() => _done = null);
-      });
-      return;
-    }
+    // Success needs no feedback: the tile already flipped on tap.
+    setState(() => _inflight.remove(action));
+    if (ok) return;
     showStatusSnack(
       context,
       r == null
@@ -364,7 +346,6 @@ class _QuickActionsState extends ConsumerState<QuickActionsPanel> {
           active: active,
           tone: tone,
           busy: _inflight.contains(a),
-          done: _done == a,
           onTap: _tap(a, onTap),
         );
 
@@ -430,7 +411,6 @@ class _QuickActionsState extends ConsumerState<QuickActionsPanel> {
         ),
     ];
 
-    final restoreBusy = _inflight.contains(QuickAction.restore);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -461,17 +441,7 @@ class _QuickActionsState extends ConsumerState<QuickActionsPanel> {
                         optimistic: (s) => s.copyWith(muted: false),
                       ),
             ),
-            icon: restoreBusy
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Icon(
-                    _done == QuickAction.restore
-                        ? Icons.check_rounded
-                        : Icons.restart_alt_rounded,
-                  ),
+            icon: const Icon(Icons.restart_alt_rounded),
             label: const Text('Restore TV (unmute)'),
           ),
         ],

@@ -821,9 +821,9 @@ void showStatusSnack(
 }
 
 /// A small progress ring that only appears once an action has taken longer
-/// than [delay], so quick actions just flip without a flash of spinner.
+/// than [delay] (a sign of trouble), so normal actions just flip.
 class _DelayedSpinner extends StatefulWidget {
-  static const delay = Duration(milliseconds: 400);
+  static const delay = Duration(milliseconds: 1500);
 
   final Color color;
 

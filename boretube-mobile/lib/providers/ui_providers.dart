@@ -170,3 +170,7 @@ final helperProgressProvider = Provider<HelperProgress>(
 
 /// The selected main tab: 0 Home, 1 Routines, 2 Better TV.
 final shellTabProvider = StateProvider<int>((ref) => 0);
+
+/// A Better TV section to scroll to once (e.g. 'alwaysOn' from an Always
+/// On alert). Better TV clears it after scrolling.
+final betterTvFocusProvider = StateProvider<String?>((ref) => null);

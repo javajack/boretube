@@ -147,7 +147,72 @@ class _TvAddressDialogState extends State<_TvAddressDialog> {
           child: const Text('Cancel'),
         ),
         FilledButton(
-          style: FilledButton.styleFrom(minimumSize: const Size(64, 44)),
+          style: FilledButton.styleFrom(
+            minimumSize: const Size(Sizes.band, Sizes.control),
+          ),
+          onPressed: _save,
+          child: const Text('Save'),
+        ),
+      ],
+    );
+  }
+}
+
+/// Rename a TV. Returns the new name, or null when cancelled or unchanged.
+Future<String?> showTvNameDialog(BuildContext context, {required Tv tv}) {
+  return showDialog<String>(
+    context: context,
+    builder: (context) => _TvNameDialog(tv: tv),
+  );
+}
+
+class _TvNameDialog extends StatefulWidget {
+  final Tv tv;
+  const _TvNameDialog({required this.tv});
+
+  @override
+  State<_TvNameDialog> createState() => _TvNameDialogState();
+}
+
+class _TvNameDialogState extends State<_TvNameDialog> {
+  late final _name = TextEditingController(text: widget.tv.name);
+
+  @override
+  void dispose() {
+    _name.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    final name = _name.text.trim();
+    Navigator.pop(
+        context, name.isEmpty || name == widget.tv.name ? null : name);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Rename TV'),
+      content: TextField(
+        key: const Key('tv-name'),
+        controller: _name,
+        autofocus: true,
+        textCapitalization: TextCapitalization.words,
+        decoration: const InputDecoration(
+          labelText: 'Name',
+          hintText: 'Living Room TV',
+        ),
+        onSubmitted: (_) => _save(),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            minimumSize: const Size(Sizes.band, Sizes.control),
+          ),
           onPressed: _save,
           child: const Text('Save'),
         ),

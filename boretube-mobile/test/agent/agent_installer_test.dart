@@ -1,10 +1,12 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:boretube_mobile/adb/adb_identity.dart';
 import 'package:boretube_mobile/agent/agent_installer.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../ops/fake_tv.dart';
 import 'fake_agent.dart';
 
 void main() {
@@ -26,14 +28,15 @@ void main() {
     return all.last;
   }
 
-  StepState stateOf(InstallProgress p, InstallStepId id) => p.step(id)!.state;
+  SetupStepState stateOf(InstallProgress p, InstallStepId id) =>
+      p.step(id)!.state;
 
   test('install: exact command sequence and token saved', () async {
     final b = fakeBundle(size: 100 * 1024);
-    final p = await last(installerFor(tv, agent, bundle: b, secrets: secrets)
-        .install());
+    final p = await last(
+        installerFor(tv, agent, bundle: b, secrets: secrets).install());
     expect(p.ok, isTrue, reason: '${p.error}');
-    expect(p.steps.every((s) => s.state == StepState.done), isTrue,
+    expect(p.steps.every((s) => s.state == SetupStepState.done), isTrue,
         reason: p.steps.map((s) => '${s.id.name}:${s.state.name}').join(' '));
     // ~100 KB in 36 KiB chunks.
     final chunks = tv.log.where((c) => c.startsWith('printf')).length;
@@ -52,9 +55,15 @@ void main() {
           'com.rakesh.boretube.agent/.GuardService',
     ]);
     expect(await AgentTokenStore(secrets).read('tv1'), kToken);
-    expect(agent.paths, ['/v1/status', '/v1/profile', '/v1/status']);
+    expect(agent.paths, [
+      '/v1/status',
+      '/v1/profile',
+      '/v1/approveBuild',
+      '/v1/status',
+    ]);
     final profile = agent.requests[1];
     expect(jsonDecode(profile.body)['id'], 'sony-bravia-vu3');
+    expect(jsonDecode(profile.body)['keepDisabled'], isEmpty);
   });
 
   test('install: a 2 MB APK is pushed in chunks under 48 KiB', () async {
@@ -98,12 +107,11 @@ void main() {
     tv.token = null;
     final p = await last(installerFor(tv, agent).install());
     expect(p.ok, isFalse);
-    expect(stateOf(p, InstallStepId.token), StepState.failed);
-    expect(stateOf(p, InstallStepId.approve), StepState.skipped);
+    expect(stateOf(p, InstallStepId.token), SetupStepState.failed);
+    expect(stateOf(p, InstallStepId.approve), SetupStepState.skipped);
   });
 
-  test('install: self-ADB approval step waits for "Always allow"',
-      () async {
+  test('install: self-ADB approval step waits for "Always allow"', () async {
     agent.selfAdb = ['needsApproval', 'needsApproval', 'needsApproval', 'ok'];
     final all = await installerFor(tv, agent).install().toList();
     final waiting = all.where((p) => p.awaitingApproval).toList();
@@ -113,14 +121,14 @@ void main() {
       contains('Always allow'),
     );
     expect(all.last.ok, isTrue);
-    expect(stateOf(all.last, InstallStepId.approve), StepState.done);
+    expect(stateOf(all.last, InstallStepId.approve), SetupStepState.done);
   });
 
   test('install: approval never given → limited, still installed', () async {
     agent.selfAdb = ['needsApproval'];
     final p = await last(installerFor(tv, agent).install());
     expect(p.ok, isTrue);
-    expect(stateOf(p, InstallStepId.approve), StepState.warn);
+    expect(stateOf(p, InstallStepId.approve), SetupStepState.warn);
     expect(p.step(InstallStepId.approve)!.detail, contains('limited'));
   });
 
@@ -132,7 +140,7 @@ void main() {
     );
     final p = await last(installerFor(tv, agent, bundle: bad).install());
     expect(p.ok, isFalse);
-    expect(stateOf(p, InstallStepId.verify), StepState.failed);
+    expect(stateOf(p, InstallStepId.verify), SetupStepState.failed);
     expect(tv.log, isEmpty);
   });
 
@@ -140,7 +148,7 @@ void main() {
     tv.corrupt = true;
     final p = await last(installerFor(tv, agent).install());
     expect(p.ok, isFalse);
-    expect(stateOf(p, InstallStepId.push), StepState.failed);
+    expect(stateOf(p, InstallStepId.push), SetupStepState.failed);
     expect(tv.installed, isFalse);
     expect(tv.log.last, 'rm -f /data/local/tmp/bt-agent.apk');
   });
@@ -151,6 +159,21 @@ void main() {
     expect(p.step(InstallStepId.verify)!.detail,
         'TV Guard package missing from this build');
     expect(tv.log, isEmpty);
+  });
+
+  test('the bundled APK (when present) matches its manifest', () {
+    final m = File('assets/agent/manifest.json');
+    if (!m.existsSync()) return;
+    final manifest = AgentManifest.fromJson(
+      jsonDecode(m.readAsStringSync()) as Map<String, dynamic>,
+    );
+    final apk = File('assets/agent/${manifest.apk}').readAsBytesSync();
+    final b = AgentBundle(manifest, apk);
+    expect(b.actualSha256, manifest.sha256);
+    expect(manifest.pkg, 'com.rakesh.boretube.agent');
+    expect(manifest.service, '.GuardService');
+    expect(manifest.signingCertSha256, isNotEmpty);
+    expect(apk.length, greaterThan(100 * 1024));
   });
 
   test('bundle loader reports missing assets', () async {
@@ -165,14 +188,14 @@ void main() {
         'android.permission.POST_NOTIFICATIONS');
     final p = await last(installerFor(tv, agent).install());
     expect(p.ok, isTrue);
-    expect(stateOf(p, InstallStepId.grant), StepState.warn);
+    expect(stateOf(p, InstallStepId.grant), SetupStepState.warn);
   });
 
   test('install: usage access refused is fatal', () async {
     tv.failing.add('appops set com.rakesh.boretube.agent GET_USAGE_STATS');
     final p = await last(installerFor(tv, agent).install());
     expect(p.ok, isFalse);
-    expect(stateOf(p, InstallStepId.grant), StepState.failed);
+    expect(stateOf(p, InstallStepId.grant), SetupStepState.failed);
   });
 
   group('repair', () {
@@ -262,6 +285,37 @@ void main() {
       expect(await AgentTokenStore(secrets).read('tv1'), kToken);
       expect(tv.writes.any((c) => c.startsWith('am start')), isFalse);
     });
+  });
+
+  test('keepDisabled lists the profile packages disabled now', () async {
+    final vu3 = loadProfile('sony-bravia-vu3');
+    final real = FakeTv();
+    real.disabled.remove('com.sonyliv');
+    final i = AgentInstaller(
+      adb: real,
+      tvId: 'tv1',
+      tokens: AgentTokenStore(MemorySecretStore()),
+      clientFor: (_) => throw UnimplementedError(),
+      loadBundle: () async => fakeBundle(),
+      profile: vu3.raw,
+    );
+    final keep = await i.keepDisabled();
+    expect(keep, [
+      for (final c in vu3.cleanup) c.pkg,
+      'com.amazon.amazonvideo.livingroom',
+      'com.apple.atve.androidtv.appletv',
+    ]);
+    expect(real.writes, isEmpty);
+  });
+
+  test('repair of an installed agent does not re-approve the build', () async {
+    tv
+      ..installed = true
+      ..running = true;
+    await AgentTokenStore(secrets).write('tv1', kToken);
+    final p = await last(installerFor(tv, agent, secrets: secrets).repair());
+    expect(p.ok, isTrue, reason: '${p.error}');
+    expect(agent.paths, isNot(contains('/v1/approveBuild')));
   });
 
   test('uninstall removes the package and the token', () async {

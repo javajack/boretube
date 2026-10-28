@@ -151,6 +151,25 @@ class AgentStatus {
   final bool buildChangedSinceApproval;
   final bool clockSkewWarn;
 
+  /// Seconds the TV clock differs from the phone's (`X-Phone-Time`).
+  final int clockSkewSec;
+
+  /// The agent can't do everything (e.g. no self-ADB, a missing grant).
+  final bool limited;
+  final List<String> limitedReasons;
+
+  /// A permission is missing: the phone re-runs its grant commands.
+  final bool needsPhoneGrant;
+
+  /// How it drives sound, e.g. `audioManager` or `adbKeys`.
+  final String soundPath;
+
+  /// Watchdog ops held until the parent approves the build.
+  final int watchdogPending;
+
+  /// What is being enforced right now, in plain words.
+  final List<String> activeReasons;
+
   const AgentStatus({
     required this.agentId,
     required this.version,
@@ -166,7 +185,17 @@ class AgentStatus {
     this.buildFingerprint = '',
     this.buildChangedSinceApproval = false,
     this.clockSkewWarn = false,
+    this.clockSkewSec = 0,
+    this.limited = false,
+    this.limitedReasons = const [],
+    this.needsPhoneGrant = false,
+    this.soundPath = '',
+    this.watchdogPending = 0,
+    this.activeReasons = const [],
   });
+
+  /// Self-ADB isn't approved, or the agent says it is limited.
+  bool get isLimited => limited || selfAdb != SelfAdb.ok;
 
   factory AgentStatus.fromJson(Map<String, dynamic> j) => AgentStatus(
         agentId: _str(j['agentId']),
@@ -186,6 +215,15 @@ class AgentStatus {
         buildFingerprint: _str(j['buildFingerprint']),
         buildChangedSinceApproval: _bool(j['buildChangedSinceApproval']),
         clockSkewWarn: _bool(j['clockSkewWarn']),
+        clockSkewSec: _int(j['clockSkewSec']),
+        limited: _bool(j['limited']),
+        limitedReasons: [for (final r in _list(j['limitedReasons'])) _str(r)],
+        needsPhoneGrant: _bool(j['needsPhoneGrant']),
+        soundPath: _str(j['soundPath']),
+        watchdogPending: j['watchdogPending'] is List
+            ? (j['watchdogPending'] as List).length
+            : _int(j['watchdogPending']),
+        activeReasons: [for (final r in _list(j['activeReasons'])) _str(r)],
       );
 
   Map<String, dynamic> toJson() => {
@@ -203,7 +241,69 @@ class AgentStatus {
         'buildFingerprint': buildFingerprint,
         'buildChangedSinceApproval': buildChangedSinceApproval,
         'clockSkewWarn': clockSkewWarn,
+        'clockSkewSec': clockSkewSec,
+        'limited': limited,
+        'limitedReasons': limitedReasons,
+        'needsPhoneGrant': needsPhoneGrant,
+        'soundPath': soundPath,
+        'watchdogPending': watchdogPending,
+        'activeReasons': activeReasons,
       };
+}
+
+/// `GET/POST /v1/watchdog`: what the watchdog would do (or did).
+class WatchdogReport {
+  final bool ok;
+  final String detail;
+  final List<String> lines;
+  final Map<String, dynamic> raw;
+
+  const WatchdogReport({
+    this.ok = true,
+    this.detail = '',
+    this.lines = const [],
+    this.raw = const {},
+  });
+
+  static String _line(Object? o) {
+    if (o is! Map) return _str(o);
+    final m = o.cast<String, dynamic>();
+    final head = [
+      for (final k in const ['op', 'action', 'kind', 'id'])
+        if (m[k] != null) _str(m[k]),
+    ].take(1).join();
+    final target = _str(m['target'] ?? m['pkg'] ?? m['package']);
+    final status = _str(m['status'] ?? m['result'] ?? m['state']);
+    final why = _str(m['detail'] ?? m['reason'] ?? m['why']);
+    return [
+      [head, target].where((s) => s.isNotEmpty).join(' '),
+      if (status.isNotEmpty) status,
+      if (why.isNotEmpty) why,
+    ].where((s) => s.isNotEmpty).join(' · ');
+  }
+
+  factory WatchdogReport.fromJson(Object? j) {
+    if (j is List) {
+      return WatchdogReport(lines: [for (final o in j) _line(o)]);
+    }
+    final m = _map(j);
+    List<Object?> list = const [];
+    for (final k in const ['ops', 'planned', 'steps', 'actions', 'report']) {
+      if (m[k] is List) {
+        list = m[k] as List;
+        break;
+      }
+    }
+    return WatchdogReport(
+      ok: m['ok'] == null || _bool(m['ok']),
+      detail: _str(m['detail'] ?? m['summary']),
+      lines: [
+        for (final o in list)
+          if (_line(o).isNotEmpty) _line(o),
+      ],
+      raw: m,
+    );
+  }
 }
 
 // ── rules ──
@@ -225,8 +325,7 @@ class AllowedApps {
 
   Map<String, dynamic> toJson() => {'mode': mode.name, 'packages': packages};
 
-  AllowedApps copyWith({AppsMode? mode, List<String>? packages}) =>
-      AllowedApps(
+  AllowedApps copyWith({AppsMode? mode, List<String>? packages}) => AllowedApps(
         mode: mode ?? this.mode,
         packages: packages ?? this.packages,
       );
@@ -305,8 +404,7 @@ class TvTime {
         'dailyLimitMin': dailyLimitMin,
       };
 
-  TvTime copyWith({List<ScheduleRow>? schedule, int? dailyLimitMin}) =>
-      TvTime(
+  TvTime copyWith({List<ScheduleRow>? schedule, int? dailyLimitMin}) => TvTime(
         schedule: schedule ?? this.schedule,
         dailyLimitMin: dailyLimitMin ?? this.dailyLimitMin,
       );
@@ -556,8 +654,8 @@ class AgentJournalEntry {
 
   factory AgentJournalEntry.fromJson(Map<String, dynamic> j) =>
       AgentJournalEntry(
-        time: parseAgentTime(j['time']) ??
-            DateTime.fromMillisecondsSinceEpoch(0),
+        time:
+            parseAgentTime(j['time']) ?? DateTime.fromMillisecondsSinceEpoch(0),
         op: _str(j['op']),
         target: _str(j['target']),
         before: _str(j['before']),

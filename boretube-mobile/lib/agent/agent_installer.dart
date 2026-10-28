@@ -6,7 +6,9 @@ import 'package:flutter/services.dart';
 
 import '../adb/adb_connection.dart';
 import '../adb/adb_identity.dart';
+import '../ops/device_profile.dart';
 import '../ops/journal.dart';
+import '../ops/tv_ops.dart';
 import 'agent_client.dart';
 
 // ── bundle ──
@@ -55,7 +57,7 @@ class AgentManifest {
       versionName: s('versionName', s('version', '?')),
       versionCode: (j['versionCode'] as num?)?.toInt() ?? 0,
       sha256: s('sha256').toLowerCase(),
-      signingCertSha256: s('signingCertSha256'),
+      signingCertSha256: s('signingCertSha256', s('certSha256')),
       service: s('service', defaultService),
       apk: s('apk', 'boretube-agent.apk'),
     );
@@ -142,14 +144,15 @@ enum InstallStepId {
   check,
 }
 
-enum StepState { pending, running, waiting, done, warn, failed, skipped }
+enum SetupStepState { pending, running, waiting, done, warn, failed, skipped }
 
 class InstallStep {
   final InstallStepId id;
-  final StepState state;
+  final SetupStepState state;
   final String detail;
 
-  const InstallStep(this.id, [this.state = StepState.pending, this.detail = '']);
+  const InstallStep(this.id,
+      [this.state = SetupStepState.pending, this.detail = '']);
 
   String get title => switch (id) {
         InstallStepId.diagnose => 'Check TV Guard',
@@ -166,12 +169,12 @@ class InstallStep {
       };
 
   bool get finished =>
-      state == StepState.done ||
-      state == StepState.warn ||
-      state == StepState.failed ||
-      state == StepState.skipped;
+      state == SetupStepState.done ||
+      state == SetupStepState.warn ||
+      state == SetupStepState.failed ||
+      state == SetupStepState.skipped;
 
-  InstallStep copyWith(StepState state, [String detail = '']) =>
+  InstallStep copyWith(SetupStepState state, [String detail = '']) =>
       InstallStep(id, state, detail);
 }
 
@@ -200,7 +203,7 @@ class InstallProgress {
 
   /// The TV shows "Allow USB debugging?" for the agent's own key.
   bool get awaitingApproval =>
-      step(InstallStepId.approve)?.state == StepState.waiting;
+      step(InstallStepId.approve)?.state == SetupStepState.waiting;
 }
 
 class _StepFailed implements Exception {
@@ -218,6 +221,9 @@ enum AgentProblem {
   unreachable,
   tokenMismatch,
   selfAdbNeedsApproval,
+
+  /// The agent reports `needsPhoneGrant`: re-run the grant commands.
+  missingGrant,
 }
 
 class AgentDiagnosis {
@@ -247,8 +253,8 @@ class AgentDiagnosis {
           AgentProblem.outdated => 'older than this app\'s version',
           AgentProblem.unreachable => 'not answering on the network',
           AgentProblem.tokenMismatch => 'paired with a different key',
-          AgentProblem.selfAdbNeedsApproval =>
-            'waiting for "Allow" on the TV',
+          AgentProblem.selfAdbNeedsApproval => 'waiting for "Allow" on the TV',
+          AgentProblem.missingGrant => 'missing a permission',
         },
     ].join(' · ');
   }
@@ -262,8 +268,7 @@ typedef AgentClientFactory = AgentClient Function(String token);
 /// only the agent package; nothing here needs the agent to be healthy.
 class AgentInstaller {
   static const tmpApk = '/data/local/tmp/bt-agent.apk';
-  static const tokenPath =
-      '/sdcard/Android/data/$kAgentPackage/files/token';
+  static const tokenPath = '/sdcard/Android/data/$kAgentPackage/files/token';
 
   /// Raw bytes per push chunk: a multiple of 3 so each chunk encodes to
   /// base64 without padding; 48 KiB of base64 per shell command keeps
@@ -383,6 +388,7 @@ class AgentInstaller {
           if (status.selfAdb == SelfAdb.needsApproval) {
             problems.add(AgentProblem.selfAdbNeedsApproval);
           }
+          if (status.needsPhoneGrant) problems.add(AgentProblem.missingGrant);
         } on AgentAuthException {
           problems.add(AgentProblem.tokenMismatch);
         } on AgentException {
@@ -437,7 +443,7 @@ class AgentInstaller {
       );
     }
 
-    void set(InstallStepId id, StepState s, [String detail = '']) {
+    void set(InstallStepId id, SetupStepState s, [String detail = '']) {
       steps = [
         for (final x in steps) x.id == id ? x.copyWith(s, detail) : x,
       ];
@@ -453,15 +459,17 @@ class AgentInstaller {
         bundle = null;
       }
       var plan = installSteps;
+      var fresh = first == null;
       if (first == InstallStepId.diagnose) {
-        set(InstallStepId.diagnose, StepState.running);
+        set(InstallStepId.diagnose, SetupStepState.running);
         final d = await diagnose(bundled: bundle?.manifest);
         set(
           InstallStepId.diagnose,
-          d.healthy ? StepState.done : StepState.warn,
+          d.healthy ? SetupStepState.done : SetupStepState.warn,
           d.describe(),
         );
         plan = repairPlan(d);
+        fresh = d.problems.contains(AgentProblem.notInstalled);
         steps = [
           ...steps,
           for (final s in plan) InstallStep(s),
@@ -469,21 +477,24 @@ class AgentInstaller {
         emit();
       }
       for (final id in plan) {
-        set(id, StepState.running);
+        set(id, SetupStepState.running);
         try {
           final r = await _step(
             id,
             bundle,
             token,
-            onWaiting: (detail) => set(id, StepState.waiting, detail),
+            freshInstall: fresh,
+            onWaiting: (detail) => set(id, SetupStepState.waiting, detail),
             onStatus: (s) => status = s,
           );
           if (r.token != null) token = r.token;
           set(id, r.state, r.detail);
         } on _StepFailed catch (e) {
-          set(id, StepState.failed, e.detail);
+          set(id, SetupStepState.failed, e.detail);
           for (final s in steps) {
-            if (s.state == StepState.pending) set(s.id, StepState.skipped);
+            if (s.state == SetupStepState.pending) {
+              set(s.id, SetupStepState.skipped);
+            }
           }
           await _journal(
             first == null ? 'agentInstall' : 'agentRepair',
@@ -540,6 +551,7 @@ class AgentInstaller {
     InstallStepId id,
     AgentBundle? bundle,
     String? token, {
+    required bool freshInstall,
     required void Function(String detail) onWaiting,
     required void Function(AgentStatus s) onStatus,
   }) async {
@@ -550,7 +562,7 @@ class AgentInstaller {
 
     switch (id) {
       case InstallStepId.diagnose:
-        return const _StepResult(StepState.done);
+        return const _StepResult(SetupStepState.done);
       case InstallStepId.verify:
         return _verify(need());
       case InstallStepId.push:
@@ -560,7 +572,7 @@ class AgentInstaller {
       case InstallStepId.enable:
         final r = await adb.shell('pm enable $kAgentPackage');
         if (!r.ok) throw _StepFailed(r.stdout.trim());
-        return const _StepResult(StepState.done, 'Turned on');
+        return const _StepResult(SetupStepState.done, 'Turned on');
       case InstallStepId.grant:
         return _grant();
       case InstallStepId.start:
@@ -570,14 +582,13 @@ class AgentInstaller {
       case InstallStepId.approve:
         return _approve(token, onWaiting, onStatus);
       case InstallStepId.profile:
-        return _profile(token);
+        return _profile(token, approveBuild: freshInstall);
       case InstallStepId.check:
         return _check(token, bundle?.manifest, onStatus);
     }
   }
 
-  static const _fallbackManifest =
-      AgentManifest(versionName: '?', sha256: '');
+  static const _fallbackManifest = AgentManifest(versionName: '?', sha256: '');
 
   _StepResult _verify(AgentBundle b) {
     final m = b.manifest;
@@ -596,7 +607,7 @@ class AgentInstaller {
       );
     }
     return _StepResult(
-      StepState.done,
+      SetupStepState.done,
       'v${m.versionName} · ${_size(b.apk.length)} · checksum OK',
     );
   }
@@ -630,7 +641,7 @@ class AgentInstaller {
       await adb.shell('rm -f $tmpApk');
       throw const _StepFailed('the copy on the TV is damaged; try again');
     }
-    return _StepResult(StepState.done, '${_size(b.apk.length)} copied');
+    return _StepResult(SetupStepState.done, '${_size(b.apk.length)} copied');
   }
 
   Future<_StepResult> _install() async {
@@ -638,10 +649,9 @@ class AgentInstaller {
     await adb.shell('rm -f $tmpApk');
     final out = r.stdout.trim();
     if (out.contains('Success')) {
-      return const _StepResult(StepState.done, 'Installed');
+      return const _StepResult(SetupStepState.done, 'Installed');
     }
-    if (out.contains('UPDATE_INCOMPATIBLE') ||
-        out.contains('SIGNATURES')) {
+    if (out.contains('UPDATE_INCOMPATIBLE') || out.contains('SIGNATURES')) {
       throw const _StepFailed(
         'a TV Guard signed with a different key is installed; '
         'uninstall it first',
@@ -655,9 +665,8 @@ class AgentInstaller {
     final failed = <String>[];
     for (final c in cmds) {
       final r = await adb.shell(c);
-      final bad = !r.ok ||
-          r.stdout.contains('Exception') ||
-          r.stdout.contains('Error');
+      final bad =
+          !r.ok || r.stdout.contains('Exception') || r.stdout.contains('Error');
       if (bad) failed.add(c.split(' ')[3].split('.').last);
     }
     // Without usage access the agent can't see the foreground app.
@@ -665,9 +674,12 @@ class AgentInstaller {
       throw const _StepFailed('the TV refused usage access');
     }
     if (failed.isNotEmpty) {
-      return _StepResult(StepState.warn, 'Not granted: ${failed.join(', ')}');
+      return _StepResult(
+          SetupStepState.warn, 'Not granted: ${failed.join(', ')}');
     }
-    return const _StepResult(StepState.done, 'Usage access, overlay, '
+    return const _StepResult(
+        SetupStepState.done,
+        'Usage access, overlay, '
         'settings, notifications');
   }
 
@@ -682,7 +694,7 @@ class AgentInstaller {
     while (true) {
       final p = await adb.shell('pidof $kAgentPackage');
       if (p.stdout.trim().isNotEmpty) {
-        return const _StepResult(StepState.done, 'Running');
+        return const _StepResult(SetupStepState.done, 'Running');
       }
       if (!_clock().isBefore(until)) {
         throw const _StepFailed('service did not stay running');
@@ -698,7 +710,7 @@ class AgentInstaller {
       final t = r.stdout.trim();
       if (r.ok && _tokenPattern.hasMatch(t)) {
         await tokens.write(tvId, t);
-        return _StepResult.withToken(StepState.done, 'Paired', t);
+        return _StepResult.withToken(SetupStepState.done, 'Paired', t);
       }
       if (!_clock().isBefore(until)) {
         throw const _StepFailed('TV Guard did not create its key');
@@ -737,11 +749,11 @@ class AgentInstaller {
     }
     onStatus(s);
     if (s.selfAdb == SelfAdb.ok) {
-      return const _StepResult(StepState.done, 'Allowed');
+      return const _StepResult(SetupStepState.done, 'Allowed');
     }
     if (s.selfAdb == SelfAdb.unavailable) {
       return const _StepResult(
-        StepState.warn,
+        SetupStepState.warn,
         'ADB on the TV is off, so TV Guard runs in limited mode',
       );
     }
@@ -753,30 +765,70 @@ class AgentInstaller {
         s = await client.status();
         onStatus(s);
         if (s.selfAdb == SelfAdb.ok) {
-          return const _StepResult(StepState.done, 'Allowed');
+          return const _StepResult(SetupStepState.done, 'Allowed');
         }
       } on AgentException {
         // Keep waiting.
       }
     }
     return const _StepResult(
-      StepState.warn,
+      SetupStepState.warn,
       'Not allowed yet: TV Guard runs in limited mode. Use Repair to '
       'try again.',
     );
   }
 
-  Future<_StepResult> _profile(String? stepToken) async {
-    if (profile.isEmpty) {
-      return const _StepResult(StepState.skipped, 'No TV profile');
-    }
+  /// Cleanup/extras packages disabled right now, so the watchdog keeps
+  /// them that way (and doesn't touch the ones the parent left on).
+  Future<List<String>> keepDisabled() async {
+    final DeviceProfile p;
     try {
-      await clientFor(await _token(stepToken)).pushProfile(profile);
-      final name = profile['name'] ?? profile['id'] ?? 'profile';
-      return _StepResult(StepState.done, '$name');
-    } on AgentException catch (e) {
-      return _StepResult(StepState.warn, 'Not sent: ${e.message}');
+      p = DeviceProfile.fromJson(profile);
+    } catch (_) {
+      return const [];
     }
+    final snap = PackageSnapshot.parse(
+      (await adb.shell(PackageSnapshot.command)).stdout,
+    );
+    return [
+      for (final c in [...p.cleanup, ...p.extras])
+        if (snap.state(c.pkg) == AppState.disabled) c.pkg,
+    ];
+  }
+
+  /// Pushes the profile; on a first install also approves the TV's
+  /// current build, so clean-up isn't held "pending approval".
+  Future<_StepResult> _profile(
+    String? stepToken, {
+    required bool approveBuild,
+  }) async {
+    final client = clientFor(await _token(stepToken));
+    final notes = <String>[];
+    var state = SetupStepState.done;
+    if (profile.isEmpty) {
+      notes.add('No TV profile');
+      state = SetupStepState.skipped;
+    } else {
+      try {
+        final keep = await keepDisabled();
+        await client.pushProfile(profile, keepDisabled: keep);
+        notes.add('${profile['name'] ?? profile['id'] ?? 'profile'}');
+      } on AgentException catch (e) {
+        notes.add('Not sent: ${e.message}');
+        state = SetupStepState.warn;
+      }
+    }
+    if (approveBuild) {
+      try {
+        await client.approveBuild();
+        notes.add('TV software approved');
+        if (state == SetupStepState.skipped) state = SetupStepState.done;
+      } on AgentException catch (e) {
+        notes.add('Approve later: ${e.message}');
+        state = SetupStepState.warn;
+      }
+    }
+    return _StepResult(state, notes.join(' · '));
   }
 
   Future<_StepResult> _check(
@@ -793,7 +845,7 @@ class AgentInstaller {
     onStatus(s);
     final mismatch = m != null && s.version != m.versionName;
     return _StepResult(
-      mismatch ? StepState.warn : StepState.done,
+      mismatch ? SetupStepState.warn : SetupStepState.done,
       'TV Guard v${s.version} · ${s.mode.name}'
       '${mismatch ? ' (expected v${m.versionName})' : ''}',
     );
@@ -820,7 +872,7 @@ class AgentInstaller {
 }
 
 class _StepResult {
-  final StepState state;
+  final SetupStepState state;
   final String detail;
   final String? token;
   const _StepResult(this.state, [this.detail = '']) : token = null;

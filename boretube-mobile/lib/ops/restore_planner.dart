@@ -68,7 +68,7 @@ class RestorePlanner {
     required PackageSnapshot packages,
     required LauncherHealth launcher,
     List<JournalEntry> journal = const [],
-    Baseline? baseline,
+    TvBaseline? baseline,
     bool removeLauncherHelper = false,
   }) {
     final neverTouch = {...kBaselineNeverTouch, ...profile.neverTouch}
@@ -85,6 +85,14 @@ class RestorePlanner {
       return !neverTouch.contains(pkg) && pkg != kAgentPackage;
     }
 
+    final notes = {
+      for (final c in [...profile.cleanup, ...profile.extras])
+        if (c.comment.isNotEmpty) c.pkg: c.comment,
+    };
+    String name(String pkg) => notes[pkg] ?? _label(pkg);
+    String whyFor(String pkg, String why) =>
+        name(pkg) == pkg ? why : '$pkg · $why';
+
     void enable(String pkg, String why) {
       if (!allowed(pkg) || !planned.add(pkg)) return;
       switch (packages.state(pkg)) {
@@ -92,8 +100,8 @@ class RestorePlanner {
           steps.add(
             RestoreStep(
               kind: RestoreStepKind.enable,
-              title: 'Turn on ${_label(pkg)}',
-              why: why,
+              title: 'Turn on ${name(pkg)}',
+              why: whyFor(pkg, why),
               command: 'pm enable $pkg',
               pkg: pkg,
             ),
@@ -102,8 +110,8 @@ class RestorePlanner {
           steps.add(
             RestoreStep(
               kind: RestoreStepKind.installExisting,
-              title: 'Put back ${_label(pkg)}',
-              why: why,
+              title: 'Put back ${name(pkg)}',
+              why: whyFor(pkg, why),
               command: 'cmd package install-existing $pkg',
               pkg: pkg,
             ),
@@ -300,7 +308,7 @@ class RestoreRunner {
   /// Reads the TV and plans [target].
   Future<RestorePlan> plan(
     RestoreTarget target, {
-    Baseline? baseline,
+    TvBaseline? baseline,
     bool removeLauncherHelper = false,
   }) async {
     final packages = await ops.packages();
@@ -348,11 +356,11 @@ class RestoreRunner {
   }
 
   static bool _verified(RestoreStep s, String after) => switch (s.kind) {
-        RestoreStepKind.uninstallAgent => after == AppState.absent.name ||
-            after == AppState.notInstalled.name,
+        RestoreStepKind.uninstallAgent =>
+          after == AppState.absent.name || after == AppState.notInstalled.name,
         RestoreStepKind.enable => after == AppState.enabled.name,
-        RestoreStepKind.installExisting => after == AppState.enabled.name ||
-            after == AppState.disabled.name,
+        RestoreStepKind.installExisting =>
+          after == AppState.enabled.name || after == AppState.disabled.name,
         RestoreStepKind.removeLauncherHelper => after == 'helper off',
         RestoreStepKind.setHome => after == kStockHome ||
             TvOps.normalizeComponent(after) ==

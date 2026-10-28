@@ -24,8 +24,7 @@ class AgentAuthException extends AgentException {
 /// 409 on `PUT /v1/rules`: the TV holds a newer document.
 class AgentConflict extends AgentException {
   final AgentRules current;
-  const AgentConflict(this.current)
-      : super('rules changed on the TV (409)');
+  const AgentConflict(this.current) : super('rules changed on the TV (409)');
 }
 
 /// No answer (TV off, agent not running, timeout).
@@ -180,16 +179,54 @@ class AgentClient {
   /// `POST /v1/approveBuild`.
   Future<void> approveBuild() => _send('POST', '/v1/approveBuild');
 
-  /// `POST /v1/profile` with the device-profile JSON.
-  Future<void> pushProfile(Map<String, dynamic> profile) =>
-      _send('POST', '/v1/profile', body: profile);
+  /// `POST /v1/profile` with the device-profile JSON, plus the cleanup
+  /// packages that are disabled now ([keepDisabled]) so the watchdog
+  /// keeps them that way.
+  Future<void> pushProfile(
+    Map<String, dynamic> profile, {
+    List<String>? keepDisabled,
+  }) =>
+      _send(
+        'POST',
+        '/v1/profile',
+        body: {
+          ...profile,
+          if (keepDisabled != null) 'keepDisabled': keepDisabled,
+        },
+      );
+
+  /// `GET /v1/watchdog`: a dry-run report.
+  Future<WatchdogReport> watchdogReport() async =>
+      WatchdogReport.fromJson(await _send('GET', '/v1/watchdog'));
+
+  /// `POST /v1/watchdog`: run the watchdog now.
+  Future<WatchdogReport> runWatchdog() async => WatchdogReport.fromJson(
+        await _send(
+          'POST',
+          '/v1/watchdog',
+          timeout: const Duration(seconds: 30),
+        ),
+      );
 
   /// `POST /v1/restore`. The agent journals each step and then pauses.
-  Future<AgentActionResult> restore(RestoreTarget target) async {
+  /// It never uninstalls itself: its plan ends with a `removeAgent` step
+  /// the phone runs over ADB. The phone's own RestoreRunner is the main
+  /// path; this is a convenience (and [dryRun] a preview).
+  Future<AgentActionResult> restore(
+    RestoreTarget target, {
+    bool dryRun = false,
+    bool alsoRemoveLauncherHelper = false,
+    bool journalSteps = true,
+  }) async {
     final j = await _send(
       'POST',
       '/v1/restore',
-      body: {'target': target.name},
+      body: {
+        'target': target.name,
+        if (dryRun) 'dryRun': true,
+        if (alsoRemoveLauncherHelper) 'alsoRemoveLauncherHelper': true,
+        if (!journalSteps) 'journalSteps': false,
+      },
       timeout: const Duration(seconds: 60),
     );
     return j is Map

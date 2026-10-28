@@ -47,7 +47,7 @@ void main() {
   Future<RestorePlan> plan(
     RestoreTarget target, {
     List<JournalEntry> history = const [],
-    Baseline? baseline,
+    TvBaseline? baseline,
     bool helper = false,
   }) async =>
       RestorePlanner.plan(
@@ -172,9 +172,8 @@ void main() {
       expect(p.commands, isEmpty);
     });
 
-    test('baseline catches changes made while the journal was away',
-        () async {
-      final baseline = Baseline(
+    test('baseline catches changes made while the journal was away', () async {
+      final baseline = TvBaseline(
         tvId: 'tv1',
         capturedAt: t0,
         buildFingerprint: 'fp',

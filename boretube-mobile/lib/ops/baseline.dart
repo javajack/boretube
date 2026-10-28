@@ -8,7 +8,7 @@ import 'tv_ops.dart';
 /// How a TV looked the first time this phone connected over ADB, before
 /// boretube changed anything. Restore uses it to tell boretube's changes
 /// apart from ones that were already there.
-class Baseline {
+class TvBaseline {
   static const schema = 1;
 
   final String tvId;
@@ -32,7 +32,7 @@ class Baseline {
   final String? home;
   final bool agentInstalled;
 
-  const Baseline({
+  const TvBaseline({
     required this.tvId,
     required this.capturedAt,
     required this.buildFingerprint,
@@ -68,10 +68,10 @@ class Baseline {
         'agentInstalled': agentInstalled,
       };
 
-  factory Baseline.fromJson(Map<String, dynamic> j) {
+  factory TvBaseline.fromJson(Map<String, dynamic> j) {
     List<String> strings(Object? v) =>
         [for (final s in (v as List?) ?? const []) '$s'];
-    return Baseline(
+    return TvBaseline(
       tvId: j['tvId'] as String,
       capturedAt: DateTime.parse(j['capturedAt'] as String).toLocal(),
       buildFingerprint: j['buildFingerprint'] as String? ?? '',
@@ -94,7 +94,7 @@ class Baseline {
   static const fingerprintCommand = 'getprop ro.build.fingerprint';
 
   /// Reads everything over ADB (read-only).
-  static Future<Baseline> capture(
+  static Future<TvBaseline> capture(
     TvOps ops, {
     DateTime Function() clock = DateTime.now,
   }) async {
@@ -103,7 +103,7 @@ class Baseline {
     final tts = await ops.packageVersion(kTtsPackage);
     final launcher = await ops.launcherHealth();
     final yt = ops.profile.stockYouTube;
-    return Baseline(
+    return TvBaseline(
       tvId: ops.tvId,
       capturedAt: clock(),
       buildFingerprint: fp,
@@ -129,28 +129,28 @@ class BaselineStore {
 
   static String keyFor(String tvId) => 'baseline.$tvId';
 
-  Baseline? read(String tvId) {
+  TvBaseline? read(String tvId) {
     final raw = prefs.getString(keyFor(tvId));
     if (raw == null) return null;
     try {
-      return Baseline.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+      return TvBaseline.fromJson(jsonDecode(raw) as Map<String, dynamic>);
     } catch (_) {
       return null;
     }
   }
 
-  Future<void> write(Baseline b) =>
+  Future<void> write(TvBaseline b) =>
       prefs.setString(keyFor(b.tvId), jsonEncode(b.toJson()));
 
   /// Captures and stores a baseline unless one exists. Returns the stored
   /// one either way.
-  Future<Baseline> captureIfMissing(
+  Future<TvBaseline> captureIfMissing(
     TvOps ops, {
     DateTime Function() clock = DateTime.now,
   }) async {
     final have = read(ops.tvId);
     if (have != null) return have;
-    final b = await Baseline.capture(ops, clock: clock);
+    final b = await TvBaseline.capture(ops, clock: clock);
     await write(b);
     return b;
   }

@@ -63,6 +63,13 @@ final contractStatus = <String, dynamic>{
   'buildFingerprint': 'Sony/BRAVIA_VU3/UKR1.240726.001:14/user/release-keys',
   'buildChangedSinceApproval': true,
   'clockSkewWarn': false,
+  'clockSkewSec': 3,
+  'limited': true,
+  'limitedReasons': ['selfAdb needs approval'],
+  'needsPhoneGrant': false,
+  'soundPath': 'audioManager',
+  'watchdogPending': 2,
+  'activeReasons': ['break until 19:45'],
 };
 
 void main() {
@@ -80,7 +87,10 @@ void main() {
     });
 
     test('unknown rule fields survive a PUT', () {
-      final j = {...contractRules, 'futureThing': {'x': 1}};
+      final j = {
+        ...contractRules,
+        'futureThing': {'x': 1}
+      };
       expect(AgentRules.fromJson(j).toJson()['futureThing'], {'x': 1});
     });
 
@@ -93,7 +103,27 @@ void main() {
       expect(s.breakState.endsAt, DateTime.utc(2026, 10, 28, 19, 45));
       expect(s.health[1].status, AgentHealthStatus.warn);
       expect(s.buildChangedSinceApproval, isTrue);
+      expect(s.isLimited, isTrue);
+      expect(s.watchdogPending, 2);
       expect(jsonDecode(jsonEncode(s.toJson())), contractStatus);
+    });
+
+    test('watchdog report reads list shapes', () {
+      final r = WatchdogReport.fromJson({
+        'ok': true,
+        'summary': '2 planned',
+        'ops': [
+          {
+            'op': 'disable',
+            'target': 'com.sony.dtv.promos',
+            'status': 'pending'
+          },
+          'speech ok',
+        ],
+      });
+      expect(r.detail, '2 planned');
+      expect(r.lines, ['disable com.sony.dtv.promos · pending', 'speech ok']);
+      expect(WatchdogReport.fromJson(['a']).lines, ['a']);
     });
 
     test('lenient: unknown enums and epoch times', () {
@@ -193,8 +223,7 @@ void main() {
       await expectLater(f, throwsA(isA<AgentUnreachable>()));
     }, timeout: const Timeout(Duration(seconds: 5)));
 
-    test('PUT rules sends the whole document; 409 carries current',
-        () async {
+    test('PUT rules sends the whole document; 409 carries current', () async {
       final mine = AgentRules.fromJson(contractRules);
       final theirs = {
         ...contractRules,
@@ -217,18 +246,15 @@ void main() {
 
     test('PUT rules returns the saved document', () async {
       reply = (_) async => json({...contractRules, 'version': 4});
-      final saved =
-          await client().putRules(AgentRules.fromJson(contractRules));
+      final saved = await client().putRules(AgentRules.fromJson(contractRules));
       expect(saved.version, 4);
     });
 
-    test('PUT rules falls back to GET when the reply is not rules',
-        () async {
+    test('PUT rules falls back to GET when the reply is not rules', () async {
       reply = (r) async => r.method == 'PUT'
           ? json({'ok': true})
           : json({...contractRules, 'version': 4});
-      final saved =
-          await client().putRules(AgentRules.fromJson(contractRules));
+      final saved = await client().putRules(AgentRules.fromJson(contractRules));
       expect(saved.version, 4);
       expect(sent.map((r) => r.method), ['PUT', 'GET']);
     });
@@ -246,18 +272,24 @@ void main() {
       await c.setMode(AgentMode.paused);
       await c.approveBuild();
       await c.pushProfile({'id': 'sony-bravia-vu3'});
-      await c.restore(RestoreTarget.stock);
+      await c.restore(RestoreTarget.stock, dryRun: true);
+      await c.pushProfile({'id': 'x'}, keepDisabled: ['a.b']);
       expect(sent.map((r) => '${r.method} ${r.url.path}'), [
         'POST /v1/action',
         'POST /v1/mode',
         'POST /v1/approveBuild',
         'POST /v1/profile',
         'POST /v1/restore',
+        'POST /v1/profile',
       ]);
+      expect(jsonDecode(sent[5].body), {
+        'id': 'x',
+        'keepDisabled': ['a.b'],
+      });
       expect(jsonDecode(sent[0].body), {'action': 'break', 'minutes': 30});
       expect(jsonDecode(sent[1].body), {'mode': 'paused'});
       expect(jsonDecode(sent[3].body), {'id': 'sony-bravia-vu3'});
-      expect(jsonDecode(sent[4].body), {'target': 'stock'});
+      expect(jsonDecode(sent[4].body), {'target': 'stock', 'dryRun': true});
     });
 
     test('journal passes since as epoch ms', () async {

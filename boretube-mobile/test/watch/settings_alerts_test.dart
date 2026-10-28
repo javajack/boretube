@@ -70,7 +70,7 @@ void main() {
       await pumpSettings(tester, prefs: {kAlertsKey: true});
       expect(find.byKey(const Key('settings-alerts-blocked')), findsOneWidget);
       expect(find.textContaining('Notifications.'), findsOneWidget);
-      await tester.tap(find.byKey(const Key('settings-alerts-ask')));
+      await tester.tap(find.text('Ask again'));
       await settle(tester);
       expect(notifier.asks, 1);
     });
@@ -90,42 +90,92 @@ void main() {
     testWidgets('keeps every section and the Advanced extras', (tester) async {
       await pumpSettings(tester);
       for (final t in [
-        'YOUR TVS',
-        'LOOK',
-        'PARENT PIN',
-        'NOTIFICATIONS',
-        'YOUR TV',
-        'ABOUT AND HELP',
+        'Your TVs',
+        'Look',
+        'Parent PIN',
+        'Notifications',
+        'Help',
       ]) {
         expect(find.text(t), findsOneWidget, reason: t);
+      }
+      for (final k in [
+        'settings-restore',
+        'settings-history',
+        'settings-change-pin',
+        'settings-lock-now',
+        'settings-help-always-on',
+        'settings-help-home-mode',
+        'settings-help-guide',
+        'settings-about',
+      ]) {
+        expect(find.byKey(Key(k)), findsOneWidget, reason: k);
       }
       expect(find.text('Living Room TV'), findsOneWidget);
       expect(find.text('Bedroom TV'), findsOneWidget);
       expect(find.text('In use'), findsOneWidget);
-      // Jargon stays behind Advanced.
-      expect(find.text('ADB KEY'), findsNothing);
+      // Jargon stays on the Advanced page.
+      expect(find.text('ADB key'), findsNothing);
       await tester.tap(find.byKey(const Key('settings-advanced')));
-      await settle(tester);
-      expect(find.text('ADB KEY'), findsOneWidget);
-      expect(find.text('BASELINE SNAPSHOT'), findsOneWidget);
+      await settle(tester, 8);
+      expect(find.text('Advanced'), findsOneWidget);
+      expect(find.text('What this TV can do'), findsOneWidget);
+      expect(find.byKey(const Key('settings-recheck')), findsOneWidget);
+      expect(find.byKey(const Key('settings-poll')), findsOneWidget);
+      expect(find.byKey(const Key('settings-address')), findsOneWidget);
+      expect(find.text('ADB key'), findsOneWidget);
+      expect(find.text('Baseline snapshot'), findsOneWidget);
       expect(find.byKey(const Key('settings-debug')), findsOneWidget);
       expect(find.textContaining(adbSony.id), findsOneWidget);
     });
 
-    testWidgets('theme tiles switch the theme', (tester) async {
+    testWidgets('the refresh interval is picked in a sheet', (tester) async {
+      await pumpSettings(tester);
+      await tester.tap(find.byKey(const Key('settings-advanced')));
+      await settle(tester, 8);
+      await tester.tap(find.byKey(const Key('settings-poll')));
+      await settle(tester, 8);
+      await tester.tap(find.byKey(const Key('poll-15')));
+      await settle(tester, 8);
+      expect(find.byKey(const Key('poll-15')), findsNothing);
+      expect(find.text('15 s'), findsOneWidget);
+    });
+
+    testWidgets('the theme list: Light first, Follow phone last',
+        (tester) async {
       final env = await pumpSettings(tester);
+      final ids = ['light', 'bedtime', 'dark', 'system'];
+      final ys = [
+        for (final id in ids)
+          tester.getTopLeft(find.byKey(Key('theme-$id'))).dy,
+      ];
+      expect(ys, [...ys]..sort());
       await tester.tap(find.byKey(const Key('theme-dark')));
       await settle(tester);
       expect(env.prefs.getString('ui.theme'), 'dark');
-      await tester.tap(find.byKey(const Key('settings-bedtime-dark')));
+      await tester.tap(find.byKey(const Key('theme-bedtime')));
       await settle(tester);
       expect(env.prefs.getString('ui.theme'), 'bedtime');
+      await tester.tap(find.byKey(const Key('theme-system')));
+      await settle(tester);
+      expect(env.prefs.getString('ui.theme'), 'system');
+    });
+
+    testWidgets('a TV row opens a sheet to switch to it', (tester) async {
+      final env = await pumpSettings(tester);
+      await tester.tap(find.byKey(Key('settings-tv-${castOnlySony.id}')));
+      await settle(tester, 8);
+      expect(find.byKey(const Key('tv-sheet-rename')), findsOneWidget);
+      expect(find.byKey(const Key('tv-sheet-forget')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('tv-sheet-use')));
+      await settle(tester, 8);
+      expect(env.store.activeId, castOnlySony.id);
     });
 
     testWidgets('fits 360 dp at 1.3× text', (tester) async {
       await pumpSettings(tester, textScale: 1.3);
+      expect(tester.takeException(), isNull);
       await tester.tap(find.byKey(const Key('settings-advanced')));
-      await settle(tester);
+      await settle(tester, 8);
       expect(tester.takeException(), isNull);
     });
   });

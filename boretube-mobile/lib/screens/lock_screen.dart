@@ -11,7 +11,7 @@ import 'pin_entry.dart';
 /// The logo: Tubby with rosy cheeks.
 class BrandMark extends StatelessWidget {
   final double size;
-  const BrandMark({super.key, this.size = 56});
+  const BrandMark({super.key, this.size = Sizes.tubby});
 
   @override
   Widget build(BuildContext context) => Tubby(
@@ -25,7 +25,7 @@ class BrandMark extends StatelessWidget {
 /// Logo and wordmark: "boretube · TV parental controls".
 class Wordmark extends StatelessWidget {
   final double size;
-  const Wordmark({super.key, this.size = 24});
+  const Wordmark({super.key, this.size = TypeSize.headline});
 
   @override
   Widget build(BuildContext context) {
@@ -37,15 +37,15 @@ class Wordmark extends StatelessWidget {
       children: [
         Text(
           'boretube',
-          style: Fonts.bricolage(size, letterSpacing: -0.5, color: bt.ink),
+          style: Fonts.bricolage(size, color: bt.ink),
         ),
         const SizedBox(width: Gap.f8),
         Flexible(
           child: Text(
-            'TV PARENTAL CONTROLS',
+            'TV parental controls',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.labelSmall,
+            style: Theme.of(context).textTheme.bodySmall,
           ),
         ),
       ],
@@ -95,7 +95,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
     return _GateScaffold(
       child: PinEntry(
         title: 'Enter parent PIN',
-        subtitle: 'boretube is locked, so the remote stays with grown-ups.',
+        subtitle: 'So the remote stays with grown-ups.',
         onSubmit: (pin) async {
           if (ctrl.coolingDown) return 'Too many tries. Wait 30 seconds.';
           final ok = await ctrl.unlock(pin);
@@ -106,7 +106,10 @@ class _LockScreenState extends ConsumerState<LockScreen> {
         footer: lock.biometricEnabled
             ? TextButton.icon(
                 onPressed: _biometric,
-                icon: const Icon(Icons.fingerprint_rounded, size: 28),
+                icon: const Icon(
+                  Icons.fingerprint_rounded,
+                  size: Sizes.iconControl,
+                ),
                 label: const Text('Use fingerprint'),
               )
             : null,
@@ -141,13 +144,13 @@ class _GateScaffold extends StatelessWidget {
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(
               horizontal: Gap.gutter,
-              vertical: Gap.f21,
+              vertical: Gap.related,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const BrandMark(size: 88),
-                const SizedBox(height: Gap.f13),
+                const BrandMark(size: Sizes.tubbyLarge),
+                const SizedBox(height: Gap.related),
                 child,
               ],
             ),
@@ -165,7 +168,7 @@ class SplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      body: Center(child: BrandMark(size: 96)),
+      body: Center(child: BrandMark(size: Sizes.tubbyLarge)),
     );
   }
 }
@@ -173,9 +176,8 @@ class SplashScreen extends StatelessWidget {
 /// Bottom sheet: current PIN, then a new one.
 Future<void> showChangePinSheet(BuildContext context, WidgetRef ref) async {
   String? current;
-  final changed = await showModalBottomSheet<bool>(
-    context: context,
-    isScrollControlled: true,
+  final changed = await showBtSheet<bool>(
+    context,
     builder: (context) => StatefulBuilder(
       builder: (context, setState) => SafeArea(
         child: SingleChildScrollView(
@@ -186,7 +188,7 @@ Future<void> showChangePinSheet(BuildContext context, WidgetRef ref) async {
             Gap.f21,
           ),
           child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 250),
+            duration: Motion.of(context, Motion.flip),
             child: current == null
                 ? PinEntry(
                     key: const ValueKey('current'),

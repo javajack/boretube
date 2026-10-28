@@ -47,3 +47,13 @@ flutter:
   assets:
     - assets/profiles/
     - assets/agent/
+
+  # OFL fonts from github.com/google/fonts (licences in assets/fonts/).
+  # Both are variable: FontWeight drives the wght axis.
+  fonts:
+    - family: BricolageGrotesque
+      fonts:
+        - asset: assets/fonts/BricolageGrotesque-Variable.ttf
+    - family: Figtree
+      fonts:
+        - asset: assets/fonts/Figtree-Variable.ttf

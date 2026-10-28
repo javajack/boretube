@@ -53,10 +53,17 @@ String journalTitle(JournalEntry e) {
         'mute' => 'Muted',
         'unmute' => 'Unmuted',
         'restore' => 'Restore: $target',
-        'agentInstall' => 'TV Guard installed',
-        'agentRepair' => 'TV Guard repaired',
-        'agentUninstall' => 'TV Guard removed',
-        'blockedApp' || 'closedApp' => 'Closed $target',
+        'agentInstall' => 'Always On set up',
+        'agentRepair' => 'Always On repaired',
+        'agentUninstall' => 'Always On removed',
+        'blockedApp' || 'closedApp' || 'closeApp' => 'Closed $target',
+        'endBreak' => 'Break ended',
+        'muteFor' => 'Quiet for $target',
+        'volume' => 'Volume set to $target',
+        'approveBuild' => 'TV update approved',
+        'mode' => 'Always On: ${e.after}',
+        'safeMode' => 'Always On went hands-off',
+        'rules' => 'Routines saved ($target)',
         'clampVolume' => 'Volume capped',
         _ => '${e.op} $target'.trim(),
       } +
@@ -64,7 +71,11 @@ String journalTitle(JournalEntry e) {
 }
 
 IconData journalIcon(String op) => switch (op) {
-      'stopApp' => Icons.stop_circle_outlined,
+      'stopApp' ||
+      'closeApp' ||
+      'blockedApp' ||
+      'closedApp' =>
+        Icons.cancel_outlined,
       'enableApp' => Icons.toggle_on_outlined,
       'disableApp' => Icons.toggle_off_outlined,
       'speechRollback' => Icons.record_voice_over_outlined,
@@ -75,7 +86,8 @@ IconData journalIcon(String op) => switch (op) {
       'stockYouTubeOn' || 'stockYouTubeOff' => Icons.smart_display_outlined,
       'toggleMute' || 'mute' => Icons.volume_off_outlined,
       'unmute' => Icons.volume_up_outlined,
-      'break' => Icons.coffee_outlined,
+      'break' || 'endBreak' => Icons.pause_circle_outline_rounded,
+      'muteFor' => Icons.volume_off_outlined,
       'restore' => Icons.settings_backup_restore_rounded,
       'agentInstall' ||
       'agentRepair' ||

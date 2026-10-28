@@ -162,6 +162,7 @@ class TestEnv {
     bool keyPending = false,
     ActionsService? actions,
     DateTime Function()? clock,
+    CapabilityProber? prober,
   }) =>
       [
         if (actions != null) actionsServiceProvider.overrideWithValue(actions),
@@ -182,7 +183,7 @@ class TestEnv {
           (ref) => NowPlayingNotifier.fixed(now ?? const NowPlaying()),
         ),
         capabilityProberProvider.overrideWithValue(
-          fakeProber(probeCaps ?? const {}),
+          prober ?? fakeProber(probeCaps ?? const {}),
         ),
         discoveryServiceProvider.overrideWithValue(
           discovery ?? FakeDiscovery(const []),
@@ -198,6 +199,8 @@ Future<void> pumpScreen(
   bool scaffold = false,
   double textScale = 1,
   Size size = const Size(360, 800),
+  bool dark = false,
+  bool reduceMotion = false,
 }) async {
   tester.view.physicalSize = size * 2;
   tester.view.devicePixelRatio = 2;
@@ -209,10 +212,11 @@ Future<void> pumpScreen(
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light(),
         darkTheme: AppTheme.dark(),
-        themeMode: ThemeMode.dark,
+        themeMode: dark ? ThemeMode.dark : ThemeMode.light,
         builder: (context, c) => MediaQuery(
           data: MediaQuery.of(context).copyWith(
             textScaler: TextScaler.linear(textScale),
+            disableAnimations: reduceMotion,
           ),
           child: c!,
         ),
@@ -229,8 +233,19 @@ Future<void> settle(WidgetTester tester, [int frames = 6]) async {
   }
 }
 
-/// Real Roboto + Material Icons so golden screenshots are readable.
+/// The bundled app fonts (Figtree, Bricolage Grotesque), Material Icons
+/// and Roboto so golden screenshots look like the app.
 Future<void> loadAppFonts() async {
+  for (final (family, file) in const [
+    ('Figtree', 'assets/fonts/Figtree-Variable.ttf'),
+    ('BricolageGrotesque', 'assets/fonts/BricolageGrotesque-Variable.ttf'),
+  ]) {
+    final loader = FontLoader(family)
+      ..addFont(
+        Future.value(ByteData.sublistView(File(file).readAsBytesSync())),
+      );
+    await loader.load();
+  }
   const dir = '/opt/flutter/bin/cache/artifacts/material_fonts';
   Future<void> load(String family, List<String> files) async {
     final loader = FontLoader(family);
@@ -293,4 +308,7 @@ class ScriptedActions extends ActionsService {
   @override
   Future<ActionResult> startBreak(int minutes, {DateTime? now}) =>
       _call('break $minutes');
+  @override
+  Future<ActionResult> muteFor(int minutes, {DateTime? now}) =>
+      _call('quiet $minutes');
 }

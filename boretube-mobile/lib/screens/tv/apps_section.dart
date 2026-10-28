@@ -126,68 +126,48 @@ class YouTubeScreen extends ConsumerWidget {
         await ref.read(appsProvider.future);
       },
       children: [
-        Surface(
+        Row(
           key: const Key('youtube-card'),
-          radius: Radii.hero,
-          color: on ? bt.mintTint : bt.sunTint,
-          borderColor: on ? bt.mintTint : bt.sunTint,
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      state == null ? 'Checking…' : (on ? 'On' : 'Not yet'),
-                      style: Fonts.bricolage(
-                        28,
-                        color: on ? bt.mintInk : bt.sunInk,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      on
-                          ? 'The TV\'s own YouTube is hidden. SmartTube plays '
-                              'YouTube without Shorts.'
-                          : 'The TV\'s own YouTube still shows Shorts.',
-                      style: text.bodyMedium!.copyWith(color: bt.inkSoft),
-                    ),
-                  ],
-                ),
+          children: [
+            IconTile(
+              icon: on ? Icons.check_rounded : Icons.smart_display_rounded,
+              color: on ? bt.mintInk : bt.sunInk,
+              size: Sizes.row,
+            ),
+            const SizedBox(width: Gap.inside),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    state == null ? 'Checking…' : (on ? 'On' : 'Not yet'),
+                    style: Fonts.bricolage(TypeSize.title, color: bt.ink),
+                  ),
+                  Text(
+                    on
+                        ? 'No Shorts on this TV'
+                        : 'The TV\'s own YouTube still shows Shorts',
+                    style: text.bodyMedium!.copyWith(color: bt.muted),
+                  ),
+                ],
               ),
-              const SizedBox(width: Gap.f13),
-              Icon(
-                on ? Icons.check_circle_rounded : Icons.smart_display_rounded,
-                size: 40,
-                color: on ? bt.mint : bt.sun,
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
         const GroupHeading('Two steps'),
-        Surface(
-          key: const Key('youtube-step-smarttube'),
-          child: Row(
-            children: [
-              _StepNumber(1, done: smart == true),
-              const SizedBox(width: Gap.f13),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Put SmartTube on the TV', style: text.titleMedium),
-                    Text(
-                      smart == true
-                          ? 'It\'s on the TV. Nice.'
-                          : smart == null
-                              ? 'A free YouTube app with Shorts turned off.'
-                              : 'Not on the TV yet. About 5 minutes.',
-                      style: text.bodySmall,
-                    ),
-                  ],
-                ),
-              ),
-              TextButton(
+        RowList(
+          children: [
+            ListRow(
+              key: const Key('youtube-step-smarttube'),
+              leading: _StepNumber(1, done: smart == true),
+              title: 'Put SmartTube on the TV',
+              subtitle: smart == true
+                  ? 'It\'s on the TV. Nice.'
+                  : smart == null
+                      ? 'A free YouTube app without Shorts'
+                      : 'Not on the TV yet. About 5 minutes',
+              chevron: false,
+              trailing: TextButton(
                 key: const Key('youtube-guide'),
                 onPressed: () => showBtSheet<void>(
                   context,
@@ -195,55 +175,51 @@ class YouTubeScreen extends ConsumerWidget {
                 ),
                 child: Text(smart == true ? 'Guide' : 'Show me'),
               ),
-            ],
-          ),
-        ),
-        const SizedBox(height: Gap.f8),
-        Surface(
-          padding: const EdgeInsets.fromLTRB(Gap.f13, Gap.f8, Gap.f13, Gap.f8),
-          child: SwitchLine(
-            key: const Key('youtube-stock-toggle'),
-            leading: _StepNumber(2, done: on),
-            title: 'Hide the TV\'s own YouTube',
-            subtitle: state == null
-                ? 'Checking the TV…'
-                : on
-                    ? 'Hidden. YouTube Music is off too'
-                    : smart == false
-                        ? 'Do step 1 first, so there\'s still YouTube'
-                        : 'Also switches off YouTube Music',
-            value: on,
-            onChanged: state == null || !canWrite
-                ? null
-                : (v) => setStockYouTube(context, ref, installed: !v),
-          ),
+            ),
+            SwitchLine(
+              key: const Key('youtube-stock-toggle'),
+              leading: _StepNumber(2, done: on),
+              title: 'Hide the TV\'s own YouTube',
+              subtitle: state == null
+                  ? 'Checking the TV…'
+                  : on
+                      ? 'Hidden. YouTube Music is off too'
+                      : smart == false
+                          ? 'Do step 1 first'
+                          : 'Also switches off YouTube Music',
+              value: on,
+              onChanged: state == null || !canWrite
+                  ? null
+                  : (v) => setStockYouTube(context, ref, installed: !v),
+            ),
+          ],
         ),
         if (alwaysOn && rules != null) ...[
           const GroupHeading('With Always On'),
-          Surface(
-            padding:
-                const EdgeInsets.fromLTRB(Gap.f13, Gap.f8, Gap.f13, Gap.f8),
-            child: SwitchLine(
-              key: const Key('rules-stock-youtube'),
-              leading: IconTile(
-                icon: Icons.shield_rounded,
-                color: Tone.ok.color(context),
-                size: 40,
+          RowList(
+            children: [
+              SwitchLine(
+                key: const Key('rules-stock-youtube'),
+                leading: Icon(
+                  Icons.shield_rounded,
+                  size: Sizes.icon,
+                  color: Tone.ok.color(context),
+                ),
+                title: 'Let stock YouTube stay',
+                subtitle: rules.stockYouTubeAllowed
+                    ? 'Always On leaves it alone'
+                    : 'Hidden again if a TV update brings it back',
+                value: rules.stockYouTubeAllowed,
+                onChanged: (v) => _letStay(context, ref, v),
               ),
-              title: 'Let stock YouTube stay',
-              subtitle: rules.stockYouTubeAllowed
-                  ? 'Always On leaves the TV\'s YouTube alone'
-                  : 'Always On hides it again if a TV update brings it back',
-              value: rules.stockYouTubeAllowed,
-              onChanged: (v) => _letStay(context, ref, v),
-            ),
+            ],
           ),
         ],
         if (!canWrite && ops != null) ...[
-          const SizedBox(height: Gap.f13),
+          const SizedBox(height: Gap.related),
           Text(
-            'boretube hasn\'t been tested on this TV model, so changes are '
-            'off. Allow them in Settings › Advanced.',
+            'Changes are off on this TV model. Allow them in Settings › '
+            'Advanced.',
             style: text.bodySmall,
           ),
         ],
@@ -252,6 +228,8 @@ class YouTubeScreen extends ConsumerWidget {
   }
 }
 
+/// A step number in a 24 px chip (a check once done), in the row's
+/// icon column.
 class _StepNumber extends StatelessWidget {
   final int n;
   final bool done;
@@ -262,16 +240,27 @@ class _StepNumber extends StatelessWidget {
     final bt = context.bt;
     return AnimatedContainer(
       duration: Motion.of(context, Motion.flip),
-      width: 40,
-      height: 40,
+      width: Sizes.iconControl,
+      height: Sizes.iconControl,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: done ? bt.mint : bt.hairline,
+        color: done ? bt.mint : bt.wash,
         borderRadius: Radii.chip,
       ),
       child: done
-          ? const Icon(Icons.check_rounded, color: Color(0xFF06392A))
-          : Text('$n', style: Fonts.bricolage(18, color: bt.ink)),
+          ? const Icon(
+              Icons.check_rounded,
+              size: Sizes.iconSmall,
+              color: Color(0xFF06392A),
+            )
+          : Text(
+              '$n',
+              style: Fonts.bricolage(
+                TypeSize.caption,
+                height: TypeSize.tightLeading,
+                color: bt.ink,
+              ),
+            ),
     );
   }
 }
@@ -283,24 +272,21 @@ class SmartTubeGuide extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bt = context.bt;
-    final text = Theme.of(context).textTheme;
     const steps = [
       (
-        'On the TV, open the Play Store and install "Downloader" by '
-            'AFTVnews.',
-        'It\'s free. It lets the TV download an app from a web address.',
+        'On the TV, install "Downloader" by AFTVnews',
+        'It\'s free, in the Play Store.',
       ),
       (
-        'In Downloader, type: smarttubeapp.github.io',
-        'Use exactly this address. Choose the "Stable" version.',
+        'In Downloader, type smarttubeapp.github.io',
+        'Exactly this address. Choose "Stable".',
       ),
       (
-        'Tap Install when the TV asks. Allow Downloader to install apps if '
-            'it asks first.',
-        'Then open SmartTube once and sign in if you like.',
+        'Tap Install when the TV asks',
+        'Allow Downloader to install apps if it asks first.',
       ),
       (
-        'Come back here and hide the TV\'s own YouTube.',
+        'Come back and hide the TV\'s own YouTube',
         'Shorts gone. You can undo it any time.',
       ),
     ];
@@ -309,67 +295,44 @@ class SmartTubeGuide extends StatelessWidget {
       title: 'Put SmartTube on the TV',
       lead: const Text('About 5 minutes, with the TV remote.'),
       children: [
-        Container(
-          key: const Key('smarttube-warning'),
-          padding: const EdgeInsets.all(Gap.f13),
-          decoration: BoxDecoration(
-            color: bt.berryTint,
-            borderRadius: Radii.control,
-            border: Border.all(color: bt.berryBorder),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(Icons.gpp_maybe_rounded, color: bt.berryInk),
-              const SizedBox(width: Gap.f13),
-              Expanded(
-                child: Text(
-                  'Only get SmartTube from its official site, '
-                  'smarttubeapp.github.io. Copies from other sites or app '
-                  'stores can hide ads or malware. boretube never installs '
-                  'it for you.',
-                  style: text.bodyMedium!.copyWith(
-                    color: bt.berryInk,
-                    fontSize: 14,
+        const NoticeBanner(
+          key: Key('smarttube-warning'),
+          kind: BannerKind.problem,
+          icon: Icons.gpp_maybe_rounded,
+          title: 'Only from smarttubeapp.github.io',
+          message: 'Copies elsewhere can hide ads or malware. boretube never '
+              'installs it for you.',
+        ),
+        const SizedBox(height: Gap.inside),
+        RowList(
+          children: [
+            for (var i = 0; i < steps.length; i++)
+              ListRow(
+                leading: Container(
+                  width: Sizes.iconControl,
+                  height: Sizes.iconControl,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: bt.coralTint,
+                    borderRadius: Radii.chip,
+                  ),
+                  child: Text(
+                    '${i + 1}',
+                    style: Fonts.bricolage(
+                      TypeSize.caption,
+                      height: TypeSize.tightLeading,
+                      color: bt.coralInk,
+                    ),
                   ),
                 ),
+                title: steps[i].$1,
+                subtitle: steps[i].$2,
+                subtitleLines: 2,
+                chevron: false,
               ),
-            ],
-          ),
+          ],
         ),
-        const SizedBox(height: Gap.f13),
-        for (var i = 0; i < steps.length; i++) ...[
-          if (i > 0) const SizedBox(height: Gap.f13),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: bt.coralTint,
-                  borderRadius: Radii.chip,
-                ),
-                child: Text(
-                  '${i + 1}',
-                  style: Fonts.bricolage(16, color: bt.coralInk),
-                ),
-              ),
-              const SizedBox(width: Gap.f13),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(steps[i].$1, style: text.titleSmall),
-                    Text(steps[i].$2, style: text.bodySmall),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-        const SizedBox(height: Gap.f21),
+        const SizedBox(height: Gap.related),
         PrimaryButton(
           label: 'Got it',
           kind: ButtonKind.ink,
@@ -392,8 +355,7 @@ class AppsScreen extends ConsumerWidget {
     final text = Theme.of(context).textTheme;
     return DetailPage(
       title: 'Apps on your TV',
-      subtitle: 'Switch an app off and it disappears from the TV. Switch it '
-          'back on any time.',
+      subtitle: 'Switch one off and it leaves the TV, until you say.',
       onRefresh: () async {
         ref.invalidate(appsProvider);
         await ref.read(appsProvider.future);
@@ -402,15 +364,13 @@ class AppsScreen extends ConsumerWidget {
         ...apps.when(
           loading: () => const [SkeletonCard(rows: 6)],
           error: (e, _) => [
-            Surface(
-              child: EmptyState(
-                icon: Icons.apps_outage_rounded,
-                tone: Tone.bad,
-                title: 'Couldn\'t read the app list',
-                message: 'Is the TV on and on this Wi-Fi? Then try again.',
-                actionLabel: 'Try again',
-                onAction: () => ref.invalidate(appsProvider),
-              ),
+            EmptyState(
+              icon: Icons.apps_outage_rounded,
+              tone: Tone.bad,
+              title: 'Couldn\'t read the app list',
+              message: 'Is the TV on and on this Wi-Fi? Then try again.',
+              actionLabel: 'Try again',
+              onAction: () => ref.invalidate(appsProvider),
             ),
           ],
           data: (list) {
@@ -429,25 +389,20 @@ class AppsScreen extends ConsumerWidget {
               ..sort((a, b) => appLabel(a.pkg).compareTo(appLabel(b.pkg)));
             return [
               if (!canWrite)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: Gap.f13),
-                  child: Text(
-                    'boretube hasn\'t been tested on this TV model, so this '
-                    'is a list only. Allow changes in Settings › Advanced.',
-                    style: text.bodySmall,
-                  ),
+                Text(
+                  'A list only: allow changes in Settings › Advanced.',
+                  style: text.bodySmall,
                 ),
               if (shown.isEmpty && hidden.isEmpty)
-                const Surface(
-                  child: EmptyState(
-                    icon: Icons.apps_rounded,
-                    title: 'No apps found',
-                    message: 'Pull down to read the list again.',
-                  ),
+                const EmptyState(
+                  icon: Icons.apps_rounded,
+                  title: 'No apps found',
+                  message: 'Pull down to read the list again.',
                 )
               else ...[
                 GroupHeading(
                   'On the home screen · ${shown.length}',
+                  first: true,
                 ),
                 RowList(
                   children: [
@@ -512,7 +467,7 @@ class _AppRow extends ConsumerWidget {
     if (app.protected) {
       trailing = Tooltip(
         message: 'The TV needs this one, so boretube never changes it',
-        child: Icon(Icons.lock_rounded, color: bt.faint),
+        child: Icon(Icons.lock_rounded, size: Sizes.icon, color: bt.faint),
       );
     } else if (app.state == AppState.notInstalled) {
       trailing = const TagChip('Removed');
@@ -522,16 +477,16 @@ class _AppRow extends ConsumerWidget {
         onChanged: canWrite ? (v) => _toggle(context, ref, v) : null,
       );
     }
-    return Padding(
+    return ConstrainedBox(
       key: Key('app-${app.pkg}'),
-      padding: const EdgeInsets.symmetric(horizontal: Gap.f13, vertical: 10),
+      constraints: const BoxConstraints(minHeight: Sizes.row),
       child: Row(
         children: [
           Opacity(
             opacity: app.state == AppState.enabled ? 1 : 0.5,
-            child: AppAvatar(pkg: app.pkg, size: 40),
+            child: AppAvatar(pkg: app.pkg, size: Sizes.tile),
           ),
-          const SizedBox(width: Gap.f13),
+          const SizedBox(width: Gap.inside),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

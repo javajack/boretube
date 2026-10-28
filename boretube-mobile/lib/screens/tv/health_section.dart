@@ -155,7 +155,6 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
     final bt = context.bt;
     final checks = mergedHealth(ref);
     final error = ref.watch(healthProvider).error;
@@ -163,9 +162,10 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
     final readOnly =
         ops != null && ops.profile.readOnly && !ops.maintenanceUnlocked;
     final fixable = checks?.where((c) => c.fix != null).toList() ?? const [];
+    final hasAdb = ref.watch(activeHasAdbProvider);
     return DetailPage(
       title: 'TV health',
-      subtitle: 'What boretube checks on the TV, in plain words.',
+      subtitle: 'What boretube checks, in plain words.',
       onRefresh: () async {
         ref.invalidate(healthProvider);
         await ref.read(agentStatusProvider.notifier).refresh();
@@ -174,26 +174,22 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
         if (checks == null)
           const SkeletonCard(rows: 4)
         else if (error != null && checks.isEmpty)
-          Surface(
-            child: EmptyState(
-              icon: Icons.wifi_off_rounded,
-              tone: Tone.bad,
-              title: 'Couldn\'t check the TV',
-              message: 'Is it on and on this Wi-Fi? Then try again.',
-              actionLabel: 'Try again',
-              onAction: () {
-                ref.invalidate(profileMatchProvider);
-                ref.invalidate(healthProvider);
-              },
-            ),
+          EmptyState(
+            icon: Icons.wifi_off_rounded,
+            tone: Tone.bad,
+            title: 'Couldn\'t check the TV',
+            message: 'Is it on and on this Wi-Fi? Then try again.',
+            actionLabel: 'Try again',
+            onAction: () {
+              ref.invalidate(profileMatchProvider);
+              ref.invalidate(healthProvider);
+            },
           )
         else if (checks.isEmpty)
-          const Surface(
-            child: EmptyState(
-              icon: Icons.monitor_heart_outlined,
-              title: 'Nothing checked yet',
-              message: 'Pull down to check the TV.',
-            ),
+          const EmptyState(
+            icon: Icons.monitor_heart_outlined,
+            title: 'Nothing checked yet',
+            message: 'Pull down to check the TV.',
           )
         else ...[
           if (fixable.length > 1) ...[
@@ -203,7 +199,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
               icon: Icons.auto_fix_high_rounded,
               onPressed: () => fixHealth(context, ref, fixable),
             ),
-            const SizedBox(height: Gap.f13),
+            const SizedBox(height: Gap.related),
           ],
           RowList(
             children: [
@@ -214,7 +210,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
                   icon: healthIcon(c.id),
                   title: healthLook(c).title,
                   detail: _technical ? c.detail : healthLook(c).detail,
-                  detailLines: 3,
+                  detailLines: 2,
                   trailing: c.fix != null
                       ? _FixButton(
                           key: Key('health-fix-${c.id}'),
@@ -223,20 +219,14 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
                       : c.id == 'agent.mediaAccess' &&
                               c.status != HealthStatus.ok &&
                               c.status != HealthStatus.unknown &&
-                              ref.watch(activeHasAdbProvider)
+                              hasAdb
                           ? _FixButton(
                               key: const Key('health-repair-media'),
                               label: 'Repair',
-                              width: 92,
                               onPressed: () =>
                                   runAgentSetup(context, ref, repair: true),
                             )
-                          : Icon(
-                              c.status == HealthStatus.ok
-                                  ? Icons.check_rounded
-                                  : Icons.remove_rounded,
-                              color: healthTone(c.status).color(context),
-                            ),
+                          : null,
                 ),
             ],
           ),
@@ -253,22 +243,12 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
           ),
         ],
         if (readOnly) ...[
-          const SizedBox(height: Gap.f8),
-          Surface(
-            padding: const EdgeInsets.all(Gap.f13),
-            child: Row(
-              children: [
-                Icon(Icons.info_outline_rounded, size: 20, color: bt.skyInk),
-                const SizedBox(width: Gap.f13),
-                Expanded(
-                  child: Text(
-                    'boretube hasn\'t been tested on this TV model, so fixes '
-                    'are off. You can allow them in Settings › Advanced.',
-                    style: text.bodySmall,
-                  ),
-                ),
-              ],
-            ),
+          const SizedBox(height: Gap.related),
+          const NoticeBanner(
+            kind: BannerKind.info,
+            icon: Icons.info_outline_rounded,
+            title: 'Fixes are off on this TV model',
+            message: 'Allow them in Settings › Advanced.',
           ),
         ],
       ],
@@ -276,25 +256,23 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
   }
 }
 
+/// A quiet Fix on a row (the one coral primary is "Fix all").
 class _FixButton extends StatelessWidget {
   final VoidCallback onPressed;
   final String label;
-  final double width;
   const _FixButton({
     super.key,
     required this.onPressed,
     this.label = 'Fix',
-    this.width = 72,
   });
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-        width: width,
-        child: PrimaryButton(
-          label: label,
-          kind: ButtonKind.ink,
-          height: 48,
-          onPressed: onPressed,
+  Widget build(BuildContext context) => TextButton(
+        style: TextButton.styleFrom(
+          foregroundColor: context.bt.coralInk,
+          minimumSize: const Size(Sizes.touch, Sizes.touch),
         ),
+        onPressed: onPressed,
+        child: Text(label),
       );
 }

@@ -9,82 +9,82 @@ import '../../ui/format.dart';
 import '../../ui/tokens.dart';
 import '../../ui/tubby.dart';
 import '../../ops/journal.dart';
-import 'common.dart';
 
-/// Phone and Always On journals together, newest first. What TV Guard did
-/// since the app was last opened is grouped as "While you were away".
+/// Phone and Always On journals together, newest first. What Always On
+/// did since the app was last opened is grouped as "While you were away".
+/// Plain rows on the canvas; the page around it scrolls.
 class ActivitySection extends ConsumerWidget {
   const ActivitySection({super.key});
+
+  /// Reloads both journals (for the page's pull to refresh).
+  static Future<void> refresh(WidgetRef ref) async {
+    ref.invalidate(journalEntriesProvider);
+    ref.invalidate(agentJournalProvider);
+    await ref.read(activityProvider.future);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final items = ref.watch(activityProvider);
     final since = ref.watch(previousVisitProvider);
-    return RefreshIndicator(
-      onRefresh: () async {
-        ref.invalidate(journalEntriesProvider);
-        ref.invalidate(agentJournalProvider);
-        await ref.read(activityProvider.future);
-      },
-      child: ListView(
-        padding: tvListPadding,
-        children: [
-          ...items.when(
-            loading: () => const [SkeletonCard(rows: 5)],
-            error: (e, _) => [
-              Surface(
-                child: EmptyState(
-                  icon: Icons.history_toggle_off_rounded,
-                  tone: Tone.bad,
-                  title: 'Couldn\'t load activity',
-                  message: '$e',
-                  actionLabel: 'Retry',
-                  onAction: () => ref.invalidate(journalEntriesProvider),
-                ),
-              ),
-            ],
-            data: (list) {
-              if (list.isEmpty) {
-                return const [HistoryExplainer()];
-              }
-              final away = [
-                for (final i in list)
-                  if (since != null &&
-                      i.source != JournalSource.phone &&
-                      i.entry.time.isAfter(since))
-                    i,
-              ];
-              final rest = [
-                for (final i in list)
-                  if (!away.contains(i)) i,
-              ];
-              return [
-                if (away.isNotEmpty) ...[
-                  GroupHeading(
-                    'While you were away · ${away.length}',
-                  ),
-                  RowList(
-                    key: const Key('activity-away'),
-                    children: [
-                      for (final i in away) ActivityRow(item: i),
-                    ],
-                  ),
-                ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ...items.when(
+          loading: () => const [SkeletonCard(rows: 5)],
+          error: (e, _) => [
+            EmptyState(
+              icon: Icons.history_toggle_off_rounded,
+              tone: Tone.bad,
+              title: 'Couldn\'t load activity',
+              message: '$e',
+              actionLabel: 'Retry',
+              onAction: () => ref.invalidate(journalEntriesProvider),
+            ),
+          ],
+          data: (list) {
+            if (list.isEmpty) {
+              return const [HistoryExplainer()];
+            }
+            final away = [
+              for (final i in list)
+                if (since != null &&
+                    i.source != JournalSource.phone &&
+                    i.entry.time.isAfter(since))
+                  i,
+            ];
+            final rest = [
+              for (final i in list)
+                if (!away.contains(i)) i,
+            ];
+            return [
+              if (away.isNotEmpty) ...[
                 GroupHeading(
-                  away.isEmpty
-                      ? '${rest.length} changes'
-                      : 'Earlier · ${rest.length}',
+                  'While you were away · ${away.length}',
+                  first: true,
                 ),
                 RowList(
+                  key: const Key('activity-away'),
                   children: [
-                    for (final i in rest) ActivityRow(item: i),
+                    for (final i in away) ActivityRow(item: i),
                   ],
                 ),
-              ];
-            },
-          ),
-        ],
-      ),
+              ],
+              GroupHeading(
+                away.isEmpty
+                    ? '${rest.length} changes'
+                    : 'Earlier · ${rest.length}',
+                first: away.isEmpty,
+              ),
+              RowList(
+                children: [
+                  for (final i in rest) ActivityRow(item: i),
+                ],
+              ),
+            ];
+          },
+        ),
+      ],
     );
   }
 }
@@ -177,32 +177,17 @@ class HistoryExplainer extends StatelessWidget {
       key: const Key('history-explainer'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Surface(
-          padding: const EdgeInsets.all(Gap.f21),
-          child: Column(
-            children: [
-              const Tubby(mood: TubbyMood.calm, size: 88),
-              const SizedBox(height: Gap.f13),
-              Text(
-                'Nothing has happened yet',
-                style: text.titleLarge,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: Gap.f4),
-              Text(
-                'Every change boretube or Always On makes to the TV lands '
-                'here, with what it was before. So you can always see it, '
-                'and undo it.',
-                style: text.bodyMedium,
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
+        const EmptyState(
+          icon: Icons.history_rounded,
+          tubby: TubbyMood.calm,
+          title: 'Nothing has happened yet',
+          message: 'Every change to the TV lands here, with what it was '
+              'before.',
         ),
-        const GroupHeading('What you\'ll see here'),
+        const GroupHeading('What you\'ll see here', first: true),
         ExcludeSemantics(
           child: Opacity(
-            opacity: 0.72,
+            opacity: Phi.major,
             child: RowList(
               children: [
                 for (final (icon, title, who, tone) in _examples)
@@ -217,15 +202,14 @@ class HistoryExplainer extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: Gap.f13),
+        const SizedBox(height: Gap.related),
         Row(
           children: [
-            Icon(Icons.undo_rounded, size: 18, color: bt.muted),
+            Icon(Icons.undo_rounded, size: Sizes.iconSmall, color: bt.muted),
             const SizedBox(width: Gap.f8),
             Expanded(
               child: Text(
-                'Changed your mind? "Put the TV back the way it was" '
-                'undoes it all, from Better TV.',
+                'Undo it all from Better TV › Put the TV back.',
                 style: text.bodySmall,
               ),
             ),

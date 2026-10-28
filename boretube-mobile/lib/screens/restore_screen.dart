@@ -104,9 +104,22 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
                   : 'Put the TV back',
               subtitle: running
                   ? null
-                  : 'Runs from this phone directly, so it works even if '
-                      'Always On is broken. Every step is checked and kept '
-                      'in History.',
+                  : 'Works from this phone, even if Always On is broken.',
+              titleTrailing: running
+                  ? null
+                  : const InfoButton(
+                      title: 'Putting the TV back',
+                      body: 'This runs from this phone directly over Home '
+                          'mode, so it works even if Always On is broken. '
+                          'Every step is checked on the TV and kept in '
+                          'History.\n\nUndo boretube puts back only what '
+                          'boretube changed: apps it switched off come '
+                          'back, YouTube returns if boretube hid it, and '
+                          'Always On is removed.\n\nLike a new TV turns '
+                          'every clean-up app back on, brings back YouTube '
+                          'and YouTube Music, and removes Always On. Things '
+                          'the TV needs are never touched.',
+                    ),
               children: running ? _progress(context) : _chooser(context),
             ),
     );
@@ -120,37 +133,39 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
     final matches = _confirm.text.trim().toUpperCase() == _confirmWord;
     final canRun = ready != null && !ready.isEmpty && matches;
     return [
-      const GroupHeading(
-        'How far back',
-      ),
-      ChoiceCard(
-        key: const Key('restore-undo'),
-        selected: _target == RestoreTarget.undoBoretube,
-        icon: Icons.undo_rounded,
-        title: 'Undo boretube',
-        body: 'Only what boretube changed: apps it switched off come back, '
-            'YouTube returns if boretube hid it, and Always On is removed.',
-        onTap: () => setState(() => _target = RestoreTarget.undoBoretube),
-      ),
-      const SizedBox(height: Gap.f8),
-      ChoiceCard(
-        key: const Key('restore-stock'),
-        selected: _target == RestoreTarget.stock,
-        icon: Icons.tv_rounded,
-        title: 'Like a new TV',
-        body: 'Every clean-up app back on, YouTube and YouTube Music back, '
-            'Always On removed. Things the TV needs are never touched.',
-        onTap: () => setState(() => _target = RestoreTarget.stock),
-        footer: _target == RestoreTarget.stock
-            ? SwitchLine(
-                key: const Key('restore-helper'),
-                title: 'Also undo the calm home screen',
-                subtitle: 'The Home button goes back to Google TV\'s own '
-                    'home. The launcher app stays installed.',
-                value: _helper,
-                onChanged: (v) => setState(() => _helper = v),
-              )
-            : null,
+      const GroupHeading('How far back', first: true),
+      RowList(
+        children: [
+          ChoiceCard(
+            key: const Key('restore-undo'),
+            selected: _target == RestoreTarget.undoBoretube,
+            icon: Icons.undo_rounded,
+            title: 'Undo boretube',
+            body: 'Only what boretube changed',
+            onTap: () => setState(() => _target = RestoreTarget.undoBoretube),
+          ),
+          ChoiceCard(
+            key: const Key('restore-stock'),
+            selected: _target == RestoreTarget.stock,
+            icon: Icons.tv_rounded,
+            title: 'Like a new TV',
+            body: 'Every app and YouTube back on',
+            onTap: () => setState(() => _target = RestoreTarget.stock),
+          ),
+          if (_target == RestoreTarget.stock)
+            SwitchLine(
+              key: const Key('restore-helper'),
+              leading: Icon(
+                Icons.home_outlined,
+                size: Sizes.icon,
+                color: bt.inkSoft,
+              ),
+              title: 'Also undo the calm home screen',
+              subtitle: 'Home opens Google TV again',
+              value: _helper,
+              onChanged: (v) => setState(() => _helper = v),
+            ),
+        ],
       ),
       GroupHeading(
         'What will happen',
@@ -163,22 +178,20 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
       ),
       plan.when(
         loading: () => const SkeletonCard(rows: 4),
-        error: (e, _) => Surface(
-          child: EmptyState(
-            icon: Icons.wifi_off_rounded,
-            tone: Tone.bad,
-            title: 'Couldn\'t read the TV',
-            message: 'Is it on and on this Wi-Fi? Then try again.',
-            actionLabel: 'Try again',
-            onAction: () => ref.invalidate(restorePlanProvider(_req)),
-          ),
+        error: (e, _) => EmptyState(
+          icon: Icons.wifi_off_rounded,
+          tone: Tone.bad,
+          title: 'Couldn\'t read the TV',
+          message: 'Is it on and on this Wi-Fi? Then try again.',
+          actionLabel: 'Try again',
+          onAction: () => ref.invalidate(restorePlanProvider(_req)),
         ),
         data: (p) => p == null
             ? const SizedBox.shrink()
             : _PlanPreview(plan: p, commands: _commands),
       ),
       if (ready != null && !ready.isEmpty) ...[
-        const SizedBox(height: Gap.f21),
+        const SizedBox(height: Gap.section),
         Surface(
           key: const Key('restore-confirm-card'),
           color: bt.berryTint,
@@ -193,10 +206,7 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
                     TextSpan(text: 'To be sure, type '),
                     TextSpan(
                       text: _confirmWord,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.2,
-                      ),
+                      style: TextStyle(fontWeight: FontWeight.w800),
                     ),
                   ],
                 ),
@@ -208,7 +218,7 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
                 textCapitalization: TextCapitalization.characters,
                 autocorrect: false,
                 enableSuggestions: false,
-                style: text.titleMedium!.copyWith(letterSpacing: 2),
+                style: text.titleMedium,
                 decoration: InputDecoration(
                   hintText: _confirmWord,
                   suffixIcon: AnimatedSwitcher(
@@ -217,16 +227,19 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
                         ? Icon(
                             Icons.check_circle_rounded,
                             key: const ValueKey('ok'),
+                            size: Sizes.icon,
                             color: bt.mintInk,
                           )
-                        : const SizedBox(key: ValueKey('no'), width: 24),
+                        : const SizedBox(
+                            key: ValueKey('no'),
+                            width: Sizes.iconControl,
+                          ),
                   ),
                 ),
               ),
-              const SizedBox(height: Gap.f13),
+              const SizedBox(height: Gap.inside),
               PrimaryButton(
                 key: const Key('restore-run'),
-                kind: ButtonKind.berry,
                 icon: Icons.settings_backup_restore_rounded,
                 label: 'Put it back · ${ready.actions.length} '
                     'step${ready.actions.length == 1 ? '' : 's'}',
@@ -235,10 +248,9 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
             ],
           ),
         ),
-        const SizedBox(height: Gap.f13),
+        const SizedBox(height: Gap.inside),
         Text(
-          'Keep this app open while it runs, and wait a minute before '
-          'restarting the TV so the changes stick.',
+          'Keep this app open while it runs.',
           textAlign: TextAlign.center,
           style: text.bodySmall,
         ),
@@ -260,85 +272,67 @@ class _RestoreScreenState extends ConsumerState<RestoreScreen> {
           radius: Radii.hero,
           color: failed.isEmpty ? bt.mintTint : bt.sunTint,
           borderColor: failed.isEmpty ? bt.mintTint : bt.sunTint,
-          padding: const EdgeInsets.all(Gap.f21),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Tubby(
-                mood: failed.isEmpty ? TubbyMood.cleaning : TubbyMood.calm,
-                size: 64,
-                beaming: failed.isEmpty,
-                animate: false,
-              ),
-              const SizedBox(height: Gap.f13),
-              Text(
-                failed.isEmpty
-                    ? 'The TV is back the way it was'
-                    : '${finished.length - failed.length} of '
-                        '${finished.length} steps worked',
-                style: text.headlineMedium,
-              ),
-              const SizedBox(height: Gap.f8),
-              Text(
-                failed.isEmpty
-                    ? 'Every step was checked on the TV. Wait a minute '
-                        'before restarting the TV so the changes stick.'
-                    : 'The rest still ran. Run it again to retry what '
-                        'didn\'t work. Wait a minute before restarting the '
-                        'TV.',
-                style: text.bodyMedium,
-              ),
-              const SizedBox(height: Gap.f13),
-              PrimaryButton(
-                label: 'Done',
-                kind: ButtonKind.ink,
-                onPressed: () => Navigator.of(context).maybePop(),
-              ),
-            ],
-          ),
-        )
-      else
-        Surface(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
                 children: [
+                  Tubby(
+                    mood: failed.isEmpty ? TubbyMood.cleaning : TubbyMood.calm,
+                    size: Sizes.tubby,
+                    beaming: failed.isEmpty,
+                    animate: false,
+                  ),
+                  const SizedBox(width: Gap.inside),
                   Expanded(
                     child: Text(
-                      '${finished.length} of ${actions.length}',
-                      style: Fonts.bricolage(
-                        28,
-                        color: bt.ink,
-                        tabularFigures: true,
-                      ),
+                      failed.isEmpty
+                          ? 'The TV is back the way it was'
+                          : '${finished.length - failed.length} of '
+                              '${finished.length} steps worked',
+                      style: text.headlineMedium,
                     ),
                   ),
-                  const DelayedSpinner(color: Color(0xFF3A8DFF), size: 18),
                 ],
               ),
-              const SizedBox(height: Gap.f13),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(Radii.chipR),
-                child: TweenAnimationBuilder<double>(
-                  tween: Tween(
-                    end: actions.isEmpty ? 0 : finished.length / actions.length,
-                  ),
-                  duration: Motion.of(context, Motion.sheet),
-                  curve: Motion.enter,
-                  builder: (context, v, _) => LinearProgressIndicator(
-                    minHeight: 8,
-                    value: v,
-                    color: bt.mint,
-                    backgroundColor: bt.hairline,
-                  ),
-                ),
+              const SizedBox(height: Gap.inside),
+              Text(
+                failed.isEmpty
+                    ? 'Wait a minute before restarting the TV.'
+                    : 'Run it again to retry the rest.',
+                style: text.bodyMedium,
               ),
-              const SizedBox(height: Gap.f8),
-              Text('Keep this app open', style: text.bodySmall),
+              const SizedBox(height: Gap.related),
+              PrimaryButton(
+                label: 'Done',
+                onPressed: () => Navigator.of(context).maybePop(),
+              ),
             ],
           ),
+        )
+      else ...[
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                '${finished.length} of ${actions.length}',
+                style: Fonts.bricolage(
+                  TypeSize.title,
+                  color: bt.ink,
+                  tabularFigures: true,
+                ),
+              ),
+            ),
+            DelayedSpinner(color: bt.sky, size: Sizes.iconSmall),
+          ],
         ),
+        const SizedBox(height: Gap.inside),
+        ThinProgress(
+          value: actions.isEmpty ? 0 : finished.length / actions.length,
+        ),
+        const SizedBox(height: Gap.f8),
+        Text('Keep this app open', style: text.bodySmall),
+      ],
       GroupHeading('Steps · ${actions.length}'),
       RowList(
         children: [
@@ -376,68 +370,67 @@ class _PlanPreview extends StatelessWidget {
             detail: 'The TV already looks like this.',
           ),
         for (final s in plan.steps)
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: Gap.f13,
-              vertical: Gap.f13,
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 28,
-                  height: 28,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: s.runs ? bt.skyTint : Colors.transparent,
-                    borderRadius: BorderRadius.circular(8),
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: Sizes.row),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: Gap.f13),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: Sizes.iconControl,
+                    child: s.runs
+                        ? Text(
+                            '${++n}',
+                            textAlign: TextAlign.center,
+                            style: text.titleSmall!.copyWith(
+                              color: bt.skyInk,
+                              fontWeight: FontWeight.w700,
+                              fontFeatures: Fonts.tabular,
+                            ),
+                          )
+                        : Icon(
+                            Icons.info_outline_rounded,
+                            size: Sizes.icon,
+                            color: bt.muted,
+                          ),
                   ),
-                  child: s.runs
-                      ? Text(
-                          '${++n}',
-                          style: text.labelLarge!.copyWith(
-                            fontSize: 13,
-                            color: bt.skyInk,
-                            fontFeatures: Fonts.tabular,
-                          ),
-                        )
-                      : Icon(
-                          Icons.info_outline_rounded,
-                          size: 18,
-                          color: bt.muted,
-                        ),
-                ),
-                const SizedBox(width: Gap.f13),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(s.title, style: text.titleSmall),
-                      if (s.why.isNotEmpty && (commands || !s.runs))
-                        Text(s.why, style: text.bodySmall),
-                      if (commands && s.command != null) ...[
-                        const SizedBox(height: Gap.f4),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(Gap.f8),
-                          decoration: BoxDecoration(
-                            color: bt.hairline,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: SelectableText(
-                            s.command!,
-                            style: const TextStyle(
-                              fontFamily: 'monospace',
-                              fontFamilyFallback: ['Roboto'],
-                              fontSize: 12,
+                  const SizedBox(width: Gap.inside),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(s.title, style: text.titleSmall),
+                        if (s.why.isNotEmpty && (commands || !s.runs))
+                          Text(s.why, style: text.bodySmall),
+                        if (commands && s.command != null) ...[
+                          const SizedBox(height: Gap.f4),
+                          DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: bt.wash,
+                              borderRadius: Radii.chip,
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(Gap.f8),
+                              child: SizedBox(
+                                width: double.infinity,
+                                child: SelectableText(
+                                  s.command!,
+                                  style: const TextStyle(
+                                    fontFamily: 'monospace',
+                                    fontFamilyFallback: ['Roboto'],
+                                    fontSize: TypeSize.caption,
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
       ],
@@ -463,17 +456,17 @@ class _ResultRow extends StatelessWidget {
     final bt = context.bt;
     final Widget trailing = r == null
         ? running
-            ? SizedBox(
-                width: 20,
-                height: 20,
+            ? SizedBox.square(
+                dimension: Sizes.iconSmall,
                 child: CircularProgressIndicator(
-                  strokeWidth: 2.4,
+                  strokeWidth: Sizes.focus,
                   color: bt.sky,
                 ),
               )
-            : Icon(Icons.more_horiz_rounded, color: bt.faint)
+            : Icon(Icons.more_horiz_rounded, size: Sizes.icon, color: bt.faint)
         : Icon(
             r.ok ? Icons.check_circle_rounded : Icons.cancel_rounded,
+            size: Sizes.icon,
             color: r.ok ? bt.mint : bt.berry,
             key: Key(r.ok ? 'restore-ok' : 'restore-failed'),
           );
@@ -513,9 +506,10 @@ class BaselineCard extends ConsumerWidget {
             child: SelectableText(
               b.export(),
               style: const TextStyle(
-                  fontFamily: 'monospace',
-                  fontFamilyFallback: ['Roboto'],
-                  fontSize: 11),
+                fontFamily: 'monospace',
+                fontFamilyFallback: ['Roboto'],
+                fontSize: TypeSize.caption,
+              ),
             ),
           ),
         ),
@@ -544,82 +538,54 @@ class BaselineCard extends ConsumerWidget {
     final baseline = ref.watch(baselineProvider);
     return baseline.when(
       loading: () => const SkeletonCard(rows: 1),
-      error: (e, _) => Surface(
-        child: Text('Couldn\'t read the baseline: $e', style: text.bodySmall),
-      ),
+      error: (e, _) =>
+          Text('Couldn\'t read the baseline: $e', style: text.bodySmall),
       data: (b) => b == null
-          ? Surface(
-              child: Text(
-                'Captured automatically the first time this phone connects '
-                'to the TV directly.',
-                style: text.bodySmall,
-              ),
+          ? Text(
+              'Captured the first time this phone connects to the TV '
+              'directly.',
+              style: text.bodySmall,
             )
-          : Surface(
+          : Column(
               key: const Key('restore-baseline'),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      IconTile(
-                        icon: Icons.photo_camera_back_rounded,
-                        color: Tone.info.color(context),
-                      ),
-                      const SizedBox(width: Gap.f13),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Captured ${_date(b.capturedAt)}',
-                              style: text.titleSmall,
-                            ),
-                            Text(
-                              '${b.disabled.length} apps off · '
-                              '${b.uninstalled.length} removed · YouTube '
-                              '${b.stockYouTube ?? '—'}',
-                              style: text.bodySmall,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ListRow(
+                  icon: Icons.photo_camera_back_rounded,
+                  title: 'Captured ${_date(b.capturedAt)}',
+                  subtitle: '${b.disabled.length} apps off · '
+                      '${b.uninstalled.length} removed · YouTube '
+                      '${b.stockYouTube ?? '—'}',
+                ),
+                Text(
+                  b.buildFingerprint,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: text.bodySmall?.copyWith(
+                    fontFamily: 'monospace',
+                    fontFamilyFallback: const ['Roboto'],
                   ),
-                  const SizedBox(height: Gap.f8),
-                  Text(
-                    b.buildFingerprint,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: text.bodySmall?.copyWith(
-                      fontFamily: 'monospace',
-                      fontFamilyFallback: const ['Roboto'],
+                ),
+                const SizedBox(height: Gap.inside),
+                ChipRow(
+                  children: [
+                    PrimaryButton(
+                      key: const Key('baseline-view'),
+                      kind: ButtonKind.outline,
+                      icon: Icons.data_object_rounded,
+                      label: 'View JSON',
+                      onPressed: () => _view(context, b),
                     ),
-                  ),
-                  const SizedBox(height: Gap.f13),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          key: const Key('baseline-view'),
-                          onPressed: () => _view(context, b),
-                          icon: const Icon(Icons.data_object_rounded),
-                          label: const Text('View JSON'),
-                        ),
-                      ),
-                      const SizedBox(width: Gap.f13),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          key: const Key('baseline-copy'),
-                          onPressed: () => _copy(context, b),
-                          icon: const Icon(Icons.copy_rounded),
-                          label: const Text('Copy'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                    PrimaryButton(
+                      key: const Key('baseline-copy'),
+                      kind: ButtonKind.outline,
+                      icon: Icons.copy_rounded,
+                      label: 'Copy',
+                      onPressed: () => _copy(context, b),
+                    ),
+                  ],
+                ),
+              ],
             ),
     );
   }

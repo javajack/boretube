@@ -19,8 +19,9 @@ import 'tv/health_copy.dart';
 import 'tv/health_section.dart';
 import 'tv/tv_guard_card.dart';
 
-/// Better TV: a summary, then YouTube without Shorts, Clean TV, Apps, TV
-/// health, Always On, and the way back.
+/// Better TV is a status report: Tubby and a headline ("All good" or
+/// "2 things to fix") with one Fix, the checks that need a look, three
+/// destinations, the Always On card, and the way back.
 class BetterTvTab extends ConsumerStatefulWidget {
   const BetterTvTab({super.key});
 
@@ -63,7 +64,7 @@ class _BetterTvTabState extends ConsumerState<BetterTvTab> {
               c,
               duration: Motion.of(context, Motion.sheet),
               curve: Motion.enter,
-              alignment: 0.1,
+              alignment: Phi.minor / 2,
             );
           }
         });
@@ -77,6 +78,7 @@ class _BetterTvTabState extends ConsumerState<BetterTvTab> {
     });
     final adb = ref.watch(activeHasAdbProvider);
     final agent = ref.watch(hasAgentProvider);
+    final bt = context.bt;
     return RefreshIndicator(
       onRefresh: () async {
         ref
@@ -88,51 +90,52 @@ class _BetterTvTabState extends ConsumerState<BetterTvTab> {
       },
       child: ListView(
         key: const Key('better-tv-list'),
-        padding: const EdgeInsets.only(bottom: Gap.f34),
+        padding: const EdgeInsets.only(bottom: Gap.section),
         children: [
-          const TabHeader(
-            title: 'Better TV',
-            subtitle: 'A calmer, cleaner TV. Undo anything.',
-          ),
+          const TabHeader(title: 'Better TV'),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: Gap.gutter),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: Gap.f4),
                 if (adb || agent)
-                  _Summary(
-                    onOpen: () => _open(const HealthScreen()),
-                    onNeedsYou: (id) => _open(HealthScreen(focus: id)),
+                  _StatusReport(
+                    onCheck: (id) => _open(HealthScreen(focus: id)),
+                    onHealth: () => _open(const HealthScreen()),
                   )
                 else
                   const _UnlockHero(),
-                const SizedBox(height: Gap.f13),
-                _YouTubeRow(
-                  locked: !adb,
-                  onTap: () => _open(const YouTubeScreen()),
+                const SizedBox(height: Gap.section),
+                RowList(
+                  children: [
+                    _YouTubeRow(
+                      locked: !adb,
+                      onTap: () => _open(const YouTubeScreen()),
+                    ),
+                    _CleanRow(
+                      locked: !adb,
+                      onTap: () => _open(const CleanTvScreen()),
+                    ),
+                    _AppsRow(
+                      locked: !adb,
+                      onTap: () => _open(const AppsScreen()),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: Gap.f8),
-                _CleanRow(
-                  locked: !adb,
-                  onTap: () => _open(const CleanTvScreen()),
-                ),
-                const SizedBox(height: Gap.f8),
-                _AppsRow(locked: !adb, onTap: () => _open(const AppsScreen())),
-                if (adb || agent) ...[
-                  const SizedBox(height: Gap.f8),
-                  _HealthRow(onTap: () => _open(const HealthScreen())),
-                ],
-                GroupHeading('Always On', key: _alwaysOnKey),
-                const TvGuardCard(),
-                const SizedBox(height: Gap.f21),
-                PrimaryButton(
-                  key: const Key('better-tv-restore'),
-                  label: 'Put the TV back the way it was',
-                  icon: Icons.settings_backup_restore_rounded,
-                  kind: ButtonKind.outline,
-                  height: 52,
-                  onPressed: () => context.push('/restore'),
+                const SizedBox(height: Gap.section),
+                TvGuardCard(key: _alwaysOnKey),
+                const SizedBox(height: Gap.related),
+                Center(
+                  child: TextButton.icon(
+                    key: const Key('better-tv-restore'),
+                    style: TextButton.styleFrom(foregroundColor: bt.inkSoft),
+                    onPressed: () => context.push('/restore'),
+                    icon: const Icon(
+                      Icons.settings_backup_restore_rounded,
+                      size: Sizes.icon,
+                    ),
+                    label: const Text('Put the TV back the way it was'),
+                  ),
                 ),
               ],
             ),
@@ -143,12 +146,16 @@ class _BetterTvTabState extends ConsumerState<BetterTvTab> {
   }
 }
 
-/// "All good · N checks", or "N things need attention" with "Fix M now"
-/// for what boretube can fix, and "K needs you" for the rest.
-class _Summary extends ConsumerWidget {
-  final VoidCallback onOpen;
-  final ValueChanged<String> onNeedsYou;
-  const _Summary({required this.onOpen, required this.onNeedsYou});
+bool _isIssue(HealthCheck c) =>
+    c.status == HealthStatus.warn || c.status == HealthStatus.fail;
+
+/// The hero (Tubby, headline, one line, one Fix) and the checklist of
+/// what needs a look, ending in a row to every check.
+class _StatusReport extends ConsumerWidget {
+  final ValueChanged<String> onCheck;
+  final VoidCallback onHealth;
+
+  const _StatusReport({required this.onCheck, required this.onHealth});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -156,169 +163,115 @@ class _Summary extends ConsumerWidget {
     final text = Theme.of(context).textTheme;
     final checks = mergedHealth(ref);
     if (checks == null) {
-      return const SkeletonCard(rows: 1);
+      return const Padding(
+        padding: EdgeInsets.only(top: Gap.related),
+        child: SkeletonCard(rows: 2),
+      );
     }
-    final issues = checks
-        .where(
-          (c) => c.status == HealthStatus.warn || c.status == HealthStatus.fail,
-        )
-        .toList();
+    final issues = checks.where(_isIssue).toList();
     final fixable = issues.where((c) => c.fix != null).toList();
-    final needYou = issues.where((c) => c.fix == null).toList();
     final good = issues.isEmpty;
-    final bad = issues.any((c) => c.status == HealthStatus.fail);
-    final (bg, ink, sub) = good
-        ? (bt.mintTint, bt.mintInk, bt.inkSoft)
-        : bad
-            ? (bt.berryTint, bt.berryInk, bt.inkSoft)
-            : (bt.sunTint, bt.sunInk, bt.inkSoft);
-    return Semantics(
-      container: true,
-      liveRegion: !good,
-      child: Surface(
-        key: const Key('health-summary'),
-        radius: Radii.hero,
-        color: bg,
-        borderColor: bg,
-        onTap: onOpen,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
+    final passed = checks.length - issues.length;
+    final headline = good
+        ? 'All good'
+        : fixable.isEmpty
+            ? issues.length == 1
+                ? '1 thing needs you'
+                : '${issues.length} things need you'
+            : issues.length == 1
+                ? '1 thing to fix'
+                : '${issues.length} things to fix';
+    final line = good
+        ? '${checks.length} check${checks.length == 1 ? '' : 's'} passed'
+        : '$passed of ${checks.length} checks passed';
+    final manualId = issues.where((c) => c.fix == null).firstOrNull?.id;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Semantics(
+          key: const Key('health-summary'),
+          container: true,
+          liveRegion: !good,
+          child: Padding(
+            padding: const EdgeInsets.only(top: Gap.related),
+            child: Row(
               children: [
-                Tubby(
-                  mood: good ? TubbyMood.cleaning : TubbyMood.calm,
-                  size: 58,
-                  body: good ? bt.mint : (bad ? bt.berry : bt.sun),
-                  antennas: false,
-                  legs: false,
-                  beaming: good,
-                  animate: false,
+                AnimatedSwitcher(
+                  duration: Motion.of(context, Motion.sheet),
+                  switchInCurve: Motion.enter,
+                  switchOutCurve: Motion.exit,
+                  child: Tubby(
+                    key: ValueKey(good),
+                    mood: good ? TubbyMood.calm : TubbyMood.cleaning,
+                    size: Sizes.tubbyLarge,
+                    beaming: good,
+                    animate: false,
+                  ),
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: Gap.related),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        good
-                            ? 'All good'
-                            : issues.length == 1
-                                ? '1 thing needs attention'
-                                : '${issues.length} things need attention',
-                        style: Fonts.bricolage(20, color: ink),
+                        headline,
+                        style: Fonts.bricolage(TypeSize.title, color: bt.ink),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: Gap.f4),
                       Text(
-                        good
-                            ? '${checks.length} check${checks.length == 1 ? '' : 's'} passed'
-                            : issues.take(2).map((c) {
-                                  return healthLook(c).title;
-                                }).join(' · ') +
-                                (issues.length > 2 ? ' · …' : ''),
-                        maxLines: 2,
+                        line,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: text.bodyMedium!.copyWith(
-                          color: sub,
-                          fontSize: 14,
-                        ),
+                        style: text.bodyMedium!.copyWith(color: bt.muted),
                       ),
                     ],
                   ),
                 ),
-                Icon(Icons.chevron_right_rounded, color: ink),
-              ],
-            ),
-            if (fixable.isNotEmpty) ...[
-              const SizedBox(height: Gap.f13),
-              PrimaryButton(
-                key: const Key('health-fix-all'),
-                label: fixable.length == 1 && issues.length == 1
-                    ? 'Fix it'
-                    : 'Fix ${fixable.length} now',
-                icon: Icons.auto_fix_high_rounded,
-                height: 52,
-                onPressed: () => fixHealth(context, ref, fixable),
-              ),
-            ],
-            if (needYou.isNotEmpty) ...[
-              SizedBox(height: fixable.isEmpty ? Gap.f13 : Gap.f4),
-              _NeedsYouLine(
-                checks: needYou,
-                ink: ink,
-                onTap: () => onNeedsYou(needYou.first.id),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// "1 needs you · TV software ›": what only the parent can sort out.
-class _NeedsYouLine extends StatelessWidget {
-  final List<HealthCheck> checks;
-  final Color ink;
-  final VoidCallback onTap;
-
-  const _NeedsYouLine({
-    required this.checks,
-    required this.ink,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    final n = checks.length;
-    final what = healthLook(checks.first).title;
-    final label = '$n need${n == 1 ? 's' : ''} you · $what'
-        '${n > 1 ? ' and ${n - 1} more' : ''}';
-    return Semantics(
-      button: true,
-      label: label,
-      excludeSemantics: true,
-      child: InkWell(
-        key: const Key('health-needs-you'),
-        borderRadius: Radii.control,
-        onTap: onTap,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 48),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Gap.f4),
-            child: Row(
-              children: [
-                Icon(Icons.back_hand_rounded, size: 18, color: ink),
-                const SizedBox(width: Gap.f8),
-                Expanded(
-                  child: Text.rich(
-                    TextSpan(
-                      children: [
-                        TextSpan(
-                          text: '$n need${n == 1 ? 's' : ''} you',
-                          style: const TextStyle(fontWeight: FontWeight.w800),
-                        ),
-                        TextSpan(
-                          text: ' · $what'
-                              '${n > 1 ? ' and ${n - 1} more' : ''}',
-                        ),
-                      ],
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: text.bodyMedium!.copyWith(
-                      fontSize: 14,
-                      color: ink,
-                    ),
-                  ),
-                ),
-                Icon(Icons.chevron_right_rounded, size: 20, color: ink),
               ],
             ),
           ),
         ),
-      ),
+        if (fixable.isNotEmpty) ...[
+          const SizedBox(height: Gap.related),
+          PrimaryButton(
+            key: const Key('health-fix-all'),
+            label: fixable.length == 1 && issues.length == 1
+                ? 'Fix it'
+                : 'Fix ${fixable.length} now',
+            icon: Icons.auto_fix_high_rounded,
+            onPressed: () => fixHealth(context, ref, fixable),
+          ),
+        ],
+        const SizedBox(height: Gap.related),
+        RowList(
+          key: const Key('better-tv-checklist'),
+          children: [
+            for (final c in issues)
+              StatusRow(
+                key: c.id == manualId
+                    ? const Key('health-needs-you')
+                    : Key('better-tv-check-${c.id}'),
+                tone: healthTone(c.status),
+                icon: healthIcon(c.id),
+                title: healthLook(c).title,
+                detail: c.fix == null
+                    ? 'Needs you · ${healthLook(c).detail}'
+                    : healthLook(c).detail,
+                onTap: () => onCheck(c.id),
+              ),
+            ListRow(
+              key: const Key('better-tv-health'),
+              icon: Icons.monitor_heart_rounded,
+              iconColor: bt.muted,
+              title: 'TV health',
+              subtitle: good
+                  ? 'Every check, in plain words'
+                  : '$passed other check${passed == 1 ? '' : 's'} fine',
+              onTap: onHealth,
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -331,53 +284,54 @@ class _UnlockHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final bt = context.bt;
     final text = Theme.of(context).textTheme;
-    return Surface(
+    return Column(
       key: const Key('better-tv-preview'),
-      radius: Radii.hero,
-      color: bt.lavenderTint,
-      borderColor: bt.lavenderTint,
-      padding: const EdgeInsets.all(Gap.f21),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: Gap.related),
+          child: Row(
             children: [
-              const Tubby(mood: TubbyMood.cleaning, size: 60, animate: false),
-              const Spacer(),
-              const Flexible(
-                child: BtBadge(
-                  'About 3 minutes',
-                  tone: Tone.info,
-                  icon: Icons.schedule_rounded,
+              const Tubby(
+                mood: TubbyMood.cleaning,
+                size: Sizes.tubbyLarge,
+                animate: false,
+              ),
+              const SizedBox(width: Gap.related),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Make this TV calmer',
+                      style: Fonts.bricolage(TypeSize.title, color: bt.ink),
+                    ),
+                    const SizedBox(height: Gap.f4),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            'One setup with the remote, about 3 min',
+                            style: text.bodyMedium!.copyWith(color: bt.muted),
+                          ),
+                        ),
+                        const InfoDot(LearnTerm.homeMode),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: Gap.f13),
-          Text('Make this TV calmer', style: text.headlineMedium),
-          const SizedBox(height: Gap.f4),
-          Row(
-            children: [
-              Flexible(
-                child: Text(
-                  'Unlock Home mode once, with the remote. Then hide '
-                  'Shorts, tidy away promo apps and keep an eye on the TV.',
-                  style: text.bodyMedium,
-                ),
-              ),
-              const InfoDot(LearnTerm.homeMode),
-            ],
-          ),
-          const SizedBox(height: Gap.f13),
-          PrimaryButton(
-            key: const Key('better-tv-unlock'),
-            label: 'Unlock Home mode',
-            icon: Icons.lock_open_rounded,
-            kind: ButtonKind.ink,
-            onPressed: () => context.push('/adb-guide'),
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(height: Gap.related),
+        PrimaryButton(
+          key: const Key('better-tv-unlock'),
+          label: 'Unlock Home mode',
+          icon: Icons.lock_open_rounded,
+          onPressed: () => context.push('/adb-guide'),
+        ),
+      ],
     );
   }
 }
@@ -407,7 +361,7 @@ class _YouTubeRow extends ConsumerWidget {
       tone: Tone.accent,
       title: 'YouTube without Shorts',
       detail: locked
-          ? 'Keep YouTube, lose the endless Shorts'
+          ? 'Keep YouTube, lose the Shorts'
           : !known
               ? 'Checking the TV…'
               : on
@@ -434,7 +388,7 @@ class _CleanRow extends ConsumerWidget {
     final String detail;
     Tone? tone;
     if (locked) {
-      detail = 'Tidy away promo, ad and leftover apps';
+      detail = 'Tidy away promo and ad apps';
     } else if (s == null) {
       detail = ops == null ? 'Checking the TV…' : 'Reading the apps…';
     } else if (counts == null) {
@@ -475,38 +429,12 @@ class _AppsRow extends ConsumerWidget {
       tone: Tone.info,
       title: 'Apps on your TV',
       detail: locked
-          ? 'See every app and switch any of them off'
+          ? 'Switch any app off'
           : n == null || n == 0
               ? 'Turn apps on or off'
               : '$n apps · turn any of them off',
       onTap: locked ? () => context.push('/adb-guide') : onTap,
       trailing: locked ? const _UnlockTag() : null,
-    );
-  }
-}
-
-class _HealthRow extends ConsumerWidget {
-  final VoidCallback onTap;
-  const _HealthRow({required this.onTap});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final checks = mergedHealth(ref);
-    final issues = checks
-        ?.where((c) =>
-            c.status == HealthStatus.warn || c.status == HealthStatus.fail)
-        .length;
-    return NavRow(
-      key: const Key('better-tv-health'),
-      icon: Icons.monitor_heart_rounded,
-      tone: issues == null || issues == 0 ? Tone.ok : Tone.warn,
-      title: 'TV health',
-      detail: checks == null
-          ? 'Checking the TV…'
-          : issues == 0
-              ? 'All ${checks.length} checks fine'
-              : '$issues of ${checks.length} need a look',
-      onTap: onTap,
     );
   }
 }

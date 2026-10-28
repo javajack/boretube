@@ -47,6 +47,10 @@ String journalTitle(JournalEntry e) {
         'applyCleanup' => 'Cleaned up $target',
         'undoCleanup' => 'Restored $target',
         'speechRollback' => 'Speech services rolled back',
+        'restartTv' => 'TV restarted',
+        'cleanWizard' => e.target == '1'
+            ? 'Clean-up finished: 1 app tidied away'
+            : 'Clean-up finished: ${e.target} apps tidied away',
         'fixLauncher' => 'Home launcher repaired',
         'volumeUp' || 'volumeDown' => 'Volume ${e.before} → ${e.after}',
         'toggleMute' => 'Mute toggled',
@@ -89,7 +93,8 @@ IconData journalIcon(String op) => switch (op) {
       'speechRollback' => Icons.record_voice_over_outlined,
       'fixLauncher' => Icons.home_outlined,
       'volumeUp' || 'volumeDown' => Icons.volume_up_outlined,
-      'applyCleanup' => Icons.cleaning_services_outlined,
+      'applyCleanup' || 'cleanWizard' => Icons.cleaning_services_outlined,
+      'restartTv' => Icons.restart_alt_rounded,
       'undoCleanup' => Icons.undo_rounded,
       'stockYouTubeOn' || 'stockYouTubeOff' => Icons.smart_display_outlined,
       'toggleMute' || 'mute' => Icons.volume_off_outlined,

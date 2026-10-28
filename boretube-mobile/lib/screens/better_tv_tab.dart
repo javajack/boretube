@@ -15,6 +15,7 @@ import '../ui/tubby.dart';
 import 'tab_header.dart';
 import 'tv/apps_section.dart';
 import 'tv/clean_tv.dart';
+import 'tv/clean_wizard.dart';
 import 'tv/health_copy.dart';
 import 'tv/health_section.dart';
 import 'tv/tv_guard_card.dart';
@@ -54,6 +55,8 @@ class _BetterTvTabState extends ConsumerState<BetterTvTab> {
         _open(const YouTubeScreen());
       case 'cleanTv' when adb:
         _open(const CleanTvScreen());
+      case 'cleanWizard' when adb:
+        _open(const CleanWizardScreen());
       case 'health':
         _open(const HealthScreen());
       default:

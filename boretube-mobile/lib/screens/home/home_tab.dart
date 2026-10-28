@@ -429,7 +429,7 @@ class _HomeTabState extends ConsumerState<HomeTab> {
       case PlanStep.noShorts || PlanStep.cleanTv:
         tab.state = 2;
         ref.read(betterTvFocusProvider.notifier).state =
-            s == PlanStep.noShorts ? 'noShorts' : 'cleanTv';
+            s == PlanStep.noShorts ? 'noShorts' : 'cleanWizard';
       case PlanStep.bedtime:
         tab.state = 1;
       case PlanStep.alwaysOn:

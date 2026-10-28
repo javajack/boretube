@@ -10,6 +10,7 @@ import '../../ui/components.dart';
 import '../../ui/controls.dart';
 import '../../ui/learn.dart';
 import '../../ui/tokens.dart';
+import 'clean_wizard.dart';
 import 'common.dart';
 
 // ── grouping (pure) ──
@@ -283,6 +284,20 @@ class _CleanTvScreenState extends ConsumerState<CleanTvScreen> {
                   onPressed: canWrite ? () => _tidy(ops, todo.length) : null,
                 ),
               ],
+              SizedBox(height: todo.isEmpty ? Gap.related : Gap.f8),
+              PrimaryButton(
+                key: const Key('clean-wizard'),
+                kind: ButtonKind.outline,
+                label: 'Clean up step by step',
+                icon: Icons.checklist_rounded,
+                onPressed: canWrite
+                    ? () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const CleanWizardScreen(),
+                          ),
+                        )
+                    : null,
+              ),
               if (!canWrite) ...[
                 const SizedBox(height: Gap.f8),
                 Text(

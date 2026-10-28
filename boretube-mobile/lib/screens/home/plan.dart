@@ -141,7 +141,8 @@ final planProvider = Provider<List<PlanItem>>((ref) {
     appSettingsProvider.select((s) => s.allowStockYouTube.contains(tv.id)),
   );
   final journal = ref.watch(journalEntriesProvider).valueOrNull ?? const [];
-  final cleaned = journal.any((e) => e.op == 'applyCleanup' && e.ok);
+  final cleaned = journal
+      .any((e) => (e.op == 'applyCleanup' || e.op == 'cleanWizard') && e.ok);
   final rules = link.installed ? ref.watch(rulesProvider).valueOrNull : null;
   final progress = planProgress(
     tv: tv,

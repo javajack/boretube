@@ -287,13 +287,22 @@ JournalEntry agentEntryToJournal(String tvId, AgentJournalEntry e) =>
     );
 
 /// Phone and agent journals merged, newest first.
+/// A watchdog run that found nothing to do ("0/0 ops ok, 0 pending") is
+/// noise in Activity; real fixes and failures still show.
+bool isNoOpWatchdogRun(AgentJournalEntry e) =>
+    e.op == 'watchdog' &&
+    e.ok &&
+    RegExp(r'^\s*0/0 ops ok, 0 pending').hasMatch(e.after);
+
 final activityProvider = FutureProvider<List<ActivityItem>>((ref) async {
   final id = ref.watch(activeTvIdProvider) ?? '';
   final phone = await ref.watch(journalEntriesProvider.future);
   final agent = await ref.watch(agentJournalProvider.future);
   final all = [
     for (final e in phone) ActivityItem(e, JournalSource.phone),
-    for (final e in agent) ActivityItem(agentEntryToJournal(id, e), e.source),
+    for (final e in agent)
+      if (!isNoOpWatchdogRun(e))
+        ActivityItem(agentEntryToJournal(id, e), e.source),
   ]..sort((a, b) => b.entry.time.compareTo(a.entry.time));
   return all;
 });

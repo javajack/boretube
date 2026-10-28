@@ -140,8 +140,9 @@ void main() {
         castProbe: _no,
         adbProbe: (tv, key, t) async => const ProbeOutcome(false, 'closed'),
       ).probe(const Tv(id: 'x', name: 'TV', ip: '10.0.0.5'));
-      expect(r.capabilities, isEmpty);
-      expect(r.detail(TvCapability.agent), contains('needs token'));
+      // A 401 from TV Guard means it is running and token-protected.
+      expect(r.capabilities, {TvCapability.agent});
+      expect(r.detail(TvCapability.agent), contains('token protected'));
       expect(r.detail(TvCapability.sonyRest), startsWith('error'));
       expect(r.detail(TvCapability.dial), 'unreachable');
     });

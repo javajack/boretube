@@ -186,8 +186,10 @@ class CapabilityProber {
       timeout: timeout,
     );
     if (r == null) return const ProbeOutcome(false, 'not running');
+    // TV Guard answers 401 without its token: it is there and guarding
+    // itself. The agent client sends the stored token on every call.
     if (r.statusCode == 401 || r.statusCode == 403) {
-      return ProbeOutcome(false, 'needs token (HTTP ${r.statusCode})');
+      return const ProbeOutcome(true, 'running (token protected)');
     }
     if (r.statusCode != 200) {
       return ProbeOutcome(false, 'HTTP ${r.statusCode}');

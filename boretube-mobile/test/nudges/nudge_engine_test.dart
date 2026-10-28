@@ -501,4 +501,53 @@ void main() {
       expect(store.noteBuild('tv', 'B'), isFalse);
     });
   });
+
+  group('Shorts keep sneaking in', () {
+    NudgeInputs inputs({
+      int count = 3,
+      ShortsMode mode = ShortsMode.off,
+      AgentRules? rules,
+      bool alwaysOn = true,
+    }) =>
+        NudgeInputs(
+          now: now,
+          alwaysOn: alwaysOn,
+          rules: rules,
+          status: AgentStatus(
+            agentId: 'a',
+            version: '1.1.0',
+            shorts: AgentShorts(mode: mode, todayCount: count),
+          ),
+        );
+
+    test('3+ Shorts today with the rule off', () {
+      final n = shortsNudge(inputs())!;
+      expect(n.title, 'Shorts keep sneaking in…');
+      expect(n.message, contains('3 Shorts today'));
+      expect(n.target, NudgeTarget.routines);
+      expect(n.focus, 'shorts');
+      expect(
+          nudgeCandidates(inputs()).map((n) => n.id), contains(NudgeId.shorts));
+    });
+
+    test('not for 2, not when a rule is set, not without Always On', () {
+      expect(shortsNudge(inputs(count: 2)), isNull);
+      expect(shortsNudge(inputs(mode: ShortsMode.report)), isNull);
+      expect(
+        shortsNudge(
+          inputs(
+            rules: const AgentRules(
+              shorts: ShortsRule(mode: ShortsMode.block),
+            ),
+          ),
+        ),
+        isNull,
+      );
+      expect(shortsNudge(inputs(alwaysOn: false)), isNull);
+      expect(
+        shortsNudge(NudgeInputs(now: now, alwaysOn: true)),
+        isNull,
+      );
+    });
+  });
 }

@@ -174,3 +174,7 @@ final shellTabProvider = StateProvider<int>((ref) => 0);
 /// A Better TV section to scroll to once (e.g. 'alwaysOn' from an Always
 /// On alert). Better TV clears it after scrolling.
 final betterTvFocusProvider = StateProvider<String?>((ref) => null);
+
+/// A Routines card to scroll to once (e.g. 'shorts' from a nudge). The
+/// rules editor clears it after scrolling.
+final routinesFocusProvider = StateProvider<String?>((ref) => null);

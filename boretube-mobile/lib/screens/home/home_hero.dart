@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../agent/agent_models.dart';
 import '../../providers/now_playing.dart';
 import '../../ui/components.dart';
 import '../../ui/format.dart';
@@ -102,6 +103,10 @@ class TvIllustration extends StatelessWidget {
   }
 }
 
+/// "Pause after this one" is armed: what it follows and the latest the
+/// break starts.
+typedef EndAfterArmed = ({String? title, DateTime? capAt});
+
 /// The calm (or offline) hero: what's on, volume, a status sentence and
 /// the protection badge.
 class HomeHero extends StatelessWidget {
@@ -113,6 +118,14 @@ class HomeHero extends StatelessWidget {
   final VoidCallback onBadge;
   final VoidCallback? onRetry;
 
+  /// What Always On sees playing (title, channel, progress), if anything.
+  final AgentMedia? media;
+
+  /// Set while the TV waits for this video to end before pausing.
+  final EndAfterArmed? armed;
+  final VoidCallback? onCancelArmed;
+  final bool cancelling;
+
   const HomeHero({
     super.key,
     required this.tvName,
@@ -122,6 +135,10 @@ class HomeHero extends StatelessWidget {
     required this.protection,
     required this.onBadge,
     this.onRetry,
+    this.media,
+    this.armed,
+    this.onCancelArmed,
+    this.cancelling = false,
   });
 
   @override
@@ -131,10 +148,22 @@ class HomeHero extends StatelessWidget {
     final dark = Theme.of(context).brightness == Brightness.dark;
     final off = !now.online && !now.loading;
     final muted = now.muted == true;
+    final m = off || now.loading ? null : media;
+    final app = now.appName.isEmpty ? null : now.appName;
     final String eyebrow;
     final String title;
     final String detail;
-    if (now.loading) {
+    if (m != null) {
+      eyebrow = m.state == MediaState.paused
+          ? (app == null ? 'Paused' : 'Paused on $app')
+          : (app == null ? 'Watching now' : 'Watching on $app');
+      title = m.title ?? app ?? 'Something on';
+      detail = muted
+          ? 'Muted'
+          : now.volume == null
+              ? 'Volume unknown'
+              : 'Volume ${now.volume}';
+    } else if (now.loading) {
       eyebrow = 'Checking the TV…';
       title = tvName;
       detail = 'One moment';
@@ -204,9 +233,29 @@ class HomeHero extends StatelessWidget {
                           key: ValueKey(title),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: text.headlineMedium!.copyWith(height: 1.1),
+                          style: m == null
+                              ? text.headlineMedium!.copyWith(height: 1.1)
+                              : Fonts.bricolage(
+                                  19,
+                                  height: 1.15,
+                                  letterSpacing: -0.2,
+                                  color: bt.ink,
+                                ),
                         ),
                       ),
+                      if (m?.artist != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          m!.artist!,
+                          key: const Key('hero-artist'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: text.bodySmall!.copyWith(
+                            fontSize: 13,
+                            color: bt.muted,
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: Gap.xs),
                       Row(
                         children: [
@@ -236,45 +285,66 @@ class HomeHero extends StatelessWidget {
               ),
             ],
           ),
+          if (m != null && m.timed) ...[
+            const SizedBox(height: Gap.md),
+            _MediaProgress(media: m),
+          ],
           const SizedBox(height: Gap.md),
           Divider(color: dark ? bt.hairline : const Color(0xFFDCE6F7)),
           const SizedBox(height: Gap.sm),
-          Row(
-            children: [
-              Container(
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(
-                  color: sentenceTone.hue(context),
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: Gap.sm),
-              Expanded(
-                child: Text(
-                  sentence,
-                  key: const Key('home-sentence'),
-                  style: text.titleSmall!.copyWith(fontSize: 14),
-                ),
-              ),
-              if (off && onRetry != null)
-                TextButton(
-                  key: const Key('home-retry'),
-                  onPressed: onRetry,
-                  child: const Text('Try again'),
-                )
-              else
-                BtBadge(
-                  protection.label,
-                  key: const Key('mode-badge'),
-                  tone: protection.tone,
-                  icon: protection.icon,
-                  onTap: onBadge,
-                ),
-            ],
+          AnimatedSwitcher(
+            duration: Motion.of(context, Motion.medium),
+            switchInCurve: Motion.settle,
+            child: armed != null && !off
+                ? _ArmedBand(
+                    key: const Key('end-after-armed'),
+                    armed: armed!,
+                    cancelling: cancelling,
+                    onCancel: onCancelArmed,
+                  )
+                : _sentenceRow(context, off),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _sentenceRow(BuildContext context, bool off) {
+    final text = Theme.of(context).textTheme;
+    return Row(
+      key: const ValueKey('sentence'),
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(
+            color: sentenceTone.hue(context),
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: Gap.sm),
+        Expanded(
+          child: Text(
+            sentence,
+            key: const Key('home-sentence'),
+            style: text.titleSmall!.copyWith(fontSize: 14),
+          ),
+        ),
+        if (off && onRetry != null)
+          TextButton(
+            key: const Key('home-retry'),
+            onPressed: onRetry,
+            child: const Text('Try again'),
+          )
+        else
+          BtBadge(
+            protection.label,
+            key: const Key('mode-badge'),
+            tone: protection.tone,
+            icon: protection.icon,
+            onTap: onBadge,
+          ),
+      ],
     );
   }
 
@@ -286,6 +356,142 @@ class HomeHero extends StatelessWidget {
     return sameDay
         ? friendlyTime(context, t)
         : '${relativeTime(t)}, ${friendlyTime(context, t)}';
+  }
+}
+
+/// A hairline of progress through the video, and what's left.
+class _MediaProgress extends StatelessWidget {
+  final AgentMedia media;
+  const _MediaProgress({required this.media});
+
+  @override
+  Widget build(BuildContext context) {
+    final bt = context.bt;
+    final text = Theme.of(context).textTheme;
+    final p = media.progress ?? 0;
+    final left = media.left;
+    return Semantics(
+      label: left == null
+          ? null
+          : '${(p * 100).round()}% through, ${aboutMinutes(left)} left',
+      excludeSemantics: true,
+      child: Row(
+        key: const Key('hero-progress'),
+        children: [
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(Radii.pill),
+              child: SizedBox(
+                height: 3,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    ColoredBox(color: bt.hairline),
+                    TweenAnimationBuilder<double>(
+                      tween: Tween(end: p),
+                      duration: Motion.of(context, Motion.slow),
+                      curve: Motion.settle,
+                      builder: (context, v, _) => FractionallySizedBox(
+                        alignment: Alignment.centerLeft,
+                        widthFactor: v,
+                        child: ColoredBox(color: bt.coral),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          if (left != null) ...[
+            const SizedBox(width: Gap.md),
+            Text(
+              '${aboutMinutes(left)} left',
+              style: text.labelMedium!.copyWith(
+                fontSize: 12,
+                color: bt.muted,
+                fontFeatures: Fonts.tabular,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// "Pausing after this one · <title>", with Cancel.
+class _ArmedBand extends StatelessWidget {
+  final EndAfterArmed armed;
+  final bool cancelling;
+  final VoidCallback? onCancel;
+
+  const _ArmedBand({
+    super.key,
+    required this.armed,
+    required this.cancelling,
+    this.onCancel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bt = context.bt;
+    final text = Theme.of(context).textTheme;
+    final cap = armed.capAt;
+    return Semantics(
+      container: true,
+      liveRegion: true,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(Gap.md, Gap.sm, Gap.xs, Gap.sm),
+        decoration: BoxDecoration(
+          color: bt.sunTint,
+          borderRadius: Radii.tile,
+          border: Border.all(color: bt.sun.withValues(alpha: 0.55)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.hourglass_bottom_rounded, size: 20, color: bt.sunInk),
+            const SizedBox(width: Gap.sm + 2),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text.rich(
+                    TextSpan(
+                      children: [
+                        const TextSpan(text: 'Pausing after this one'),
+                        if (armed.title != null)
+                          TextSpan(
+                            text: ' · ${armed.title}',
+                            style: const TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                      ],
+                    ),
+                    key: const Key('end-after-line'),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: text.titleSmall!.copyWith(
+                      fontSize: 14,
+                      color: bt.ink,
+                    ),
+                  ),
+                  if (cap != null)
+                    Text(
+                      'At the latest by ${friendlyTime(context, cap)}',
+                      style: text.bodySmall!.copyWith(color: bt.sunInk),
+                    ),
+                ],
+              ),
+            ),
+            TextButton(
+              key: const Key('end-after-cancel'),
+              style: TextButton.styleFrom(foregroundColor: bt.ink),
+              onPressed: cancelling ? null : onCancel,
+              child: Text(cancelling ? 'Cancelling…' : 'Cancel'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

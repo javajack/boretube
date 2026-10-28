@@ -56,6 +56,14 @@ String journalTitle(JournalEntry e) {
         'agentInstall' => 'Always On set up',
         'agentRepair' => 'Always On repaired',
         'agentUninstall' => 'Always On removed',
+        'agentUpdate' => 'Always On updated',
+        'shorts' => e.before == 'detected'
+            ? 'Shorts spotted in $target'
+            : 'Shorts stopped in $target',
+        'endAfter' => e.before == 'armed'
+            ? 'Pause after this one: on'
+            : 'Paused after ${e.before}',
+        'cancelEndAfter' => 'Pause after this one: cancelled',
         'blockedApp' || 'closedApp' || 'closeApp' => 'Closed $target',
         'endBreak' => 'Break ended',
         'muteFor' => 'Quiet for $target',
@@ -91,8 +99,11 @@ IconData journalIcon(String op) => switch (op) {
       'restore' => Icons.settings_backup_restore_rounded,
       'agentInstall' ||
       'agentRepair' ||
+      'agentUpdate' ||
       'agentUninstall' =>
         Icons.shield_outlined,
+      'shorts' => Icons.swipe_vertical_rounded,
+      'endAfter' || 'cancelEndAfter' => Icons.hourglass_bottom_rounded,
       _ => Icons.build_outlined,
     };
 

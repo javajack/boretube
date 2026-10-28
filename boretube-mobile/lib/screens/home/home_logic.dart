@@ -365,3 +365,57 @@ String? awayDigest(Iterable<ActivityItem> items, DateTime since) {
     icon: null,
   );
 }
+
+// ── What's playing and "When this ends" ──
+
+/// What Always On sees playing, when it matches the app on the TV; null
+/// when there is nothing to show (no Always On, no session, Home screen).
+AgentMedia? heroMediaOf(AgentLink link, NowPlaying now) {
+  if (!link.up || !now.online || now.isHome) return null;
+  final m = link.status!.media;
+  if (m == null || !m.live) return null;
+  if (now.id != null && m.pkg.isNotEmpty && now.id != m.pkg) return null;
+  return m;
+}
+
+/// "about 21 min", rounded up and never below 1.
+String aboutMinutes(Duration d) {
+  final m = (d.inSeconds / 60).ceil().clamp(1, 24 * 60);
+  return 'about $m min';
+}
+
+/// The "When this ends" chip in honest words: a time only when the TV
+/// knows how long the video is.
+String endAfterLabel(AgentMedia m) {
+  final left = m.timed ? m.left : null;
+  return left == null
+      ? 'After this one'
+      : 'When this ends · ${aboutMinutes(left)}';
+}
+
+/// Longest wait for the video to end before the break starts anyway.
+const kEndAfterCapMin = 45;
+
+/// How long the break after this one lasts: an hour, or until bedtime is
+/// over when it is bedtime already.
+int endAfterBreakMinutes(List<ScheduleRow> schedule, DateTime now) {
+  final b = nextBedtime(schedule, now);
+  if (b != null && b.now) {
+    return (b.end.difference(now).inSeconds / 60).ceil().clamp(1, 1440);
+  }
+  return 60;
+}
+
+/// Shorts the TV closed today, from Always On's journal.
+int shortsStopsToday(Iterable<ActivityItem> items, DateTime now) {
+  final day = DateTime(now.year, now.month, now.day);
+  return items
+      .where(
+        (i) =>
+            i.entry.ok &&
+            i.entry.op == 'shorts' &&
+            i.entry.before.startsWith('shorts') &&
+            !i.entry.time.isBefore(day),
+      )
+      .length;
+}

@@ -20,6 +20,7 @@ enum NudgeId {
   alwaysOn,
   bedtime,
   noShorts,
+  shorts,
   cleanTv,
   volumeLimit,
   friendlyMessage,
@@ -38,7 +39,8 @@ class Nudge {
   final String action;
   final NudgeTarget target;
 
-  /// Better TV section to scroll to ([betterTvFocusProvider] ids).
+  /// The section to open: a Better TV id ([betterTvFocusProvider]) or a
+  /// Routines card ([routinesFocusProvider]).
   final String? focus;
 
   const Nudge({
@@ -234,6 +236,26 @@ Nudge? noShortsNudge(NudgeInputs i) {
   );
 }
 
+/// 3b. Shorts keep showing up (3+ today by Always On's count) and the TV
+/// does nothing about them yet.
+Nudge? shortsNudge(NudgeInputs i) {
+  final s = i.status?.shorts;
+  if (!i.alwaysOn || s == null || s.mode != ShortsMode.off) return null;
+  if ((i.rules?.shortsRule.mode ?? ShortsMode.off) != ShortsMode.off) {
+    return null;
+  }
+  if (s.todayCount < 3) return null;
+  return Nudge(
+    id: NudgeId.shorts,
+    title: 'Shorts keep sneaking in…',
+    message: 'The TV counted ${s.todayCount} Shorts today. It can stop '
+        'them, or allow a few a day.',
+    action: 'Choose for Shorts',
+    target: NudgeTarget.routines,
+    focus: 'shorts',
+  );
+}
+
 /// 4. Home mode started working in the last two days and the TV still has
 /// its promo apps on.
 Nudge? cleanTvNudge(NudgeInputs i) {
@@ -395,6 +417,7 @@ List<Nudge> nudgeCandidates(NudgeInputs i) {
     NudgeId.alwaysOn: alwaysOnNudge,
     NudgeId.bedtime: bedtimeNudge,
     NudgeId.noShorts: noShortsNudge,
+    NudgeId.shorts: shortsNudge,
     NudgeId.cleanTv: cleanTvNudge,
     NudgeId.volumeLimit: volumeLimitNudge,
     NudgeId.friendlyMessage: friendlyMessageNudge,

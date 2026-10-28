@@ -45,6 +45,17 @@ class _HomeTabState extends ConsumerState<HomeTab> {
   final _inflight = <QuickAction>{};
   Timer? _tick;
 
+  /// "Pause after this one" sent, until the TV's status says so.
+  EndAfterArmed? _armedLocal;
+  DateTime? _armedAt;
+
+  /// Cancel sent: ignore a stale "armed" from a poll already on the wire.
+  DateTime? _cancelledAt;
+  bool _endAfterBusy = false;
+
+  /// How long a local guess about "armed" outlives the TV's word.
+  static const _armGrace = Duration(seconds: 10);
+
   @override
   void dispose() {
     _tick?.cancel();
@@ -146,6 +157,96 @@ class _HomeTabState extends ConsumerState<HomeTab> {
         QuickAction.takeBreak,
         () => _break.extend(const Duration(minutes: 15)),
       );
+
+  // ── When this ends ──
+
+  /// Asks Always On to start a break when [m] ends (or after the cap).
+  Future<void> _endAfter(AgentMedia m, int breakMin) async {
+    final c = ref.read(agentForActionsProvider);
+    if (c == null || _endAfterBusy) return;
+    unawaited(HapticFeedback.lightImpact());
+    final t = ref.read(breakClockProvider)();
+    setState(() {
+      _endAfterBusy = true;
+      _cancelledAt = null;
+      _armedAt = t;
+      _armedLocal = (
+        title: m.title,
+        capAt: t.add(const Duration(minutes: kEndAfterCapMin)),
+      );
+    });
+    String? failed;
+    try {
+      final r = await c.action(
+        AgentAction.endAfter(capMin: kEndAfterCapMin, breakMin: breakMin),
+      );
+      if (!r.ok) {
+        failed = 'The TV couldn\'t follow this video. Pause TV still works.';
+      }
+    } on AgentException catch (e) {
+      failed = 'Didn\'t work: ${e.message}';
+    }
+    if (!mounted) return;
+    setState(() {
+      _endAfterBusy = false;
+      if (failed != null) {
+        _armedLocal = null;
+        _armedAt = null;
+      }
+    });
+    if (failed != null) {
+      showStatusSnack(context, failed, ok: false);
+      return;
+    }
+    unawaited(ref.read(agentStatusProvider.notifier).refresh());
+  }
+
+  Future<void> _cancelEndAfter() async {
+    final c = ref.read(agentForActionsProvider);
+    if (c == null || _endAfterBusy) return;
+    unawaited(HapticFeedback.lightImpact());
+    final before = (_armedLocal, _armedAt);
+    setState(() {
+      _endAfterBusy = true;
+      _cancelledAt = ref.read(breakClockProvider)();
+      _armedLocal = null;
+      _armedAt = null;
+    });
+    String? failed;
+    try {
+      final r = await c.action(
+        const AgentAction(AgentActionKind.cancelEndAfter),
+      );
+      if (!r.ok) failed = r.detail.isEmpty ? 'TV unreachable' : r.detail;
+    } on AgentException catch (e) {
+      failed = e.message;
+    }
+    if (!mounted) return;
+    setState(() {
+      _endAfterBusy = false;
+      if (failed != null) {
+        _cancelledAt = null;
+        _armedLocal = before.$1;
+        _armedAt = before.$2;
+      }
+    });
+    if (failed != null) {
+      showStatusSnack(context, 'Didn\'t cancel: $failed', ok: false);
+      return;
+    }
+    unawaited(ref.read(agentStatusProvider.notifier).refresh());
+  }
+
+  /// What the hero shows as armed: the TV's word, or (briefly) ours.
+  EndAfterArmed? _armed(AgentEndAfter? tv, DateTime t, bool onBreak) {
+    if (onBreak) return null;
+    final cancelled = _cancelledAt;
+    if (cancelled != null && t.difference(cancelled) < _armGrace) return null;
+    if (tv != null && tv.armed) return (title: tv.title, capAt: tv.capAt);
+    final at = _armedAt;
+    if (at != null && t.difference(at) < _armGrace) return _armedLocal;
+    return null;
+  }
 
   void _openVolume() => showBtSheet<void>(
         context,
@@ -267,6 +368,7 @@ class _HomeTabState extends ConsumerState<HomeTab> {
     if (!mounted) return;
     switch (n.target) {
       case NudgeTarget.routines:
+        ref.read(routinesFocusProvider.notifier).state = n.focus;
         ref.read(shellTabProvider.notifier).state = 1;
       case NudgeTarget.betterTv:
         ref.read(betterTvFocusProvider.notifier).state = n.focus;
@@ -384,6 +486,16 @@ class _HomeTabState extends ConsumerState<HomeTab> {
     final schedule = rules?.tvTime.schedule ?? const [];
     final bedtime = nextBedtime(schedule, t);
     final untilBed = minutesUntilBedtime(schedule, t);
+    final alwaysOnNow = level == Protection.alwaysOn &&
+        link.healthy &&
+        link.status!.mode == AgentMode.normal;
+    final media = level == Protection.alwaysOn ? heroMediaOf(link, now) : null;
+    final armed =
+        alwaysOnNow ? _armed(link.status!.endAfter, t, brk.active) : null;
+    if (brk.active && _armedAt != null) {
+      _armedLocal = null;
+      _armedAt = null;
+    }
 
     // Status sentence.
     final parts = <String>[
@@ -412,6 +524,32 @@ class _HomeTabState extends ConsumerState<HomeTab> {
 
     // Today.
     final stops = stopsToday(activity, t);
+    final shorts = link.up ? link.status!.shorts : null;
+    final shortsStops = shortsStopsToday(activity, t);
+    final TodayLine? shortsLine =
+        shorts == null || shorts.mode == ShortsMode.off
+            ? null
+            : (
+                icon: Icons.swipe_vertical_rounded,
+                color: bt.coralInk,
+                before: shortsStops > 0
+                    ? 'Shorts stopped '
+                    : shorts.todayCount == 0
+                        ? 'No Shorts today'
+                        : 'Shorts today: ',
+                bold: shortsStops > 0
+                    ? '$shortsStops×'
+                    : shorts.todayCount == 0
+                        ? ''
+                        : '${shorts.todayCount}',
+                after: shortsStops > 0
+                    ? ' today'
+                    : shorts.todayCount > 0 &&
+                            shorts.mode == ShortsMode.budget &&
+                            shorts.perDay != null
+                        ? ' of ${shorts.perDay}'
+                        : '',
+              );
     final limit = rules?.tvTime.dailyLimitMin ?? 0;
     final today = <TodayLine>[
       if (bedtime != null && bedtime.now)
@@ -439,6 +577,7 @@ class _HomeTabState extends ConsumerState<HomeTab> {
           bold: spanLabel(Duration(minutes: limit)),
           after: ' limit',
         ),
+      if (shortsLine != null) shortsLine,
       (
         icon: Icons.shield_rounded,
         color: bt.mintInk,
@@ -556,6 +695,10 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                     onBadge: () => _openWhatWorks(tv, level, degraded),
                     onRetry: () =>
                         ref.read(nowPlayingProvider.notifier).refresh(),
+                    media: media,
+                    armed: armed,
+                    cancelling: _endAfterBusy && armed != null,
+                    onCancelArmed: _cancelEndAfter,
                   ),
       ),
       if (problem != null && !problem.serious && !brk.active) ...[
@@ -656,11 +799,36 @@ class _HomeTabState extends ConsumerState<HomeTab> {
                   ),
                 ),
               ],
-              // HOOK(§8 "End after this one"): a "When this ends" chip goes
-              // here once the agent reports `status.media`. Its label must
-              // stay honest: "When this ends (about N min)" only with media
-              // data, else "In about 20 min" with 10/20/30. Not built yet.
             ],
+          ),
+          // §8 "End after this one": only with Always On reading the
+          // video, and only claiming a time when the TV knows it.
+          AnimatedSize(
+            duration: Motion.of(context, Motion.medium),
+            curve: Motion.settle,
+            alignment: Alignment.topCenter,
+            child: alwaysOnNow && media != null && armed == null && canPause
+                ? Padding(
+                    padding: const EdgeInsets.only(top: Gap.sm),
+                    child: PillChoice(
+                      key: const Key('pause-end-after'),
+                      label: endAfterLabel(media),
+                      icon: Icons.hourglass_bottom_rounded,
+                      radius: Radii.input,
+                      selected: false,
+                      semanticLabel: media.timed && media.left != null
+                          ? 'Pause TV when this video ends, '
+                              '${aboutMinutes(media.left!)} from now'
+                          : 'Pause TV after this video',
+                      onTap: _endAfterBusy || _blocked(QuickAction.takeBreak)
+                          ? null
+                          : () => _endAfter(
+                                media,
+                                endAfterBreakMinutes(schedule, t),
+                              ),
+                    ),
+                  )
+                : const SizedBox(width: double.infinity),
           ),
           const SizedBox(height: Gap.md + 2),
           _SecondaryRow(

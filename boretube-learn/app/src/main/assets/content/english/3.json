@@ -1,0 +1,299 @@
+{
+ "id": "english-3",
+ "subject": "english",
+ "grade": 3,
+ "version": 1,
+ "reviewed": {
+  "by": "",
+  "at": ""
+ },
+ "skills": [
+  {
+   "id": "en3.article",
+   "title": "A or an",
+   "outcome": "EN-3.05",
+   "badge": "an",
+   "formats": [
+    "quickfire"
+   ],
+   "items": [
+    {
+     "id": "apple",
+     "q": "___ apple",
+     "options": [
+      "an",
+      "a"
+     ],
+     "answer": 0,
+     "explain": "Apple starts with a vowel sound, so we say an apple."
+    },
+    {
+     "id": "egg",
+     "q": "___ egg",
+     "options": [
+      "an",
+      "a"
+     ],
+     "answer": 0,
+     "explain": "Egg starts with a vowel sound, so we say an egg."
+    },
+    {
+     "id": "orange",
+     "q": "___ orange",
+     "options": [
+      "an",
+      "a"
+     ],
+     "answer": 0,
+     "explain": "Orange starts with a vowel sound, so we say an orange."
+    },
+    {
+     "id": "umbrella",
+     "q": "___ umbrella",
+     "options": [
+      "an",
+      "a"
+     ],
+     "answer": 0,
+     "explain": "Umbrella starts with a vowel sound, so we say an umbrella."
+    },
+    {
+     "id": "ice cream",
+     "q": "___ ice cream",
+     "options": [
+      "an",
+      "a"
+     ],
+     "answer": 0,
+     "explain": "Ice starts with a vowel sound, so we say an ice cream."
+    },
+    {
+     "id": "owl",
+     "q": "___ owl",
+     "options": [
+      "an",
+      "a"
+     ],
+     "answer": 0,
+     "explain": "Owl starts with a vowel sound, so we say an owl."
+    },
+    {
+     "id": "ball",
+     "q": "___ ball",
+     "options": [
+      "a",
+      "an"
+     ],
+     "answer": 0,
+     "explain": "Ball starts with a b sound, so we say a ball."
+    },
+    {
+     "id": "cat",
+     "q": "___ cat",
+     "options": [
+      "a",
+      "an"
+     ],
+     "answer": 0,
+     "explain": "Cat starts with a c sound, so we say a cat."
+    },
+    {
+     "id": "dog",
+     "q": "___ dog",
+     "options": [
+      "a",
+      "an"
+     ],
+     "answer": 0,
+     "explain": "Dog starts with a d sound, so we say a dog."
+    },
+    {
+     "id": "tree",
+     "q": "___ tree",
+     "options": [
+      "a",
+      "an"
+     ],
+     "answer": 0,
+     "explain": "Tree starts with a t sound, so we say a tree."
+    },
+    {
+     "id": "kite",
+     "q": "___ kite",
+     "options": [
+      "a",
+      "an"
+     ],
+     "answer": 0,
+     "explain": "Kite starts with a k sound, so we say a kite."
+    },
+    {
+     "id": "mango",
+     "q": "___ mango",
+     "options": [
+      "a",
+      "an"
+     ],
+     "answer": 0,
+     "explain": "Mango starts with an m sound, so we say a mango."
+    }
+   ]
+  },
+  {
+   "id": "en3.action",
+   "title": "Action words",
+   "outcome": "EN-3.07",
+   "badge": "run",
+   "formats": [
+    "quickfire",
+    "catch"
+   ],
+   "items": [
+    {
+     "id": "run",
+     "q": "Which one is an action word?",
+     "options": [
+      "run",
+      "ball",
+      "red",
+      "park"
+     ],
+     "answer": 0,
+     "explain": "An action word tells what we do: run."
+    },
+    {
+     "id": "jump",
+     "q": "Which one is an action word?",
+     "options": [
+      "jump",
+      "rope",
+      "high",
+      "boy"
+     ],
+     "answer": 0,
+     "explain": "An action word tells what we do: jump."
+    },
+    {
+     "id": "eat",
+     "q": "Which one is an action word?",
+     "options": [
+      "eat",
+      "food",
+      "plate",
+      "hot"
+     ],
+     "answer": 0,
+     "explain": "An action word tells what we do: eat."
+    },
+    {
+     "id": "swim",
+     "q": "Which one is an action word?",
+     "options": [
+      "swim",
+      "pool",
+      "fish",
+      "cold"
+     ],
+     "answer": 0,
+     "explain": "An action word tells what we do: swim."
+    },
+    {
+     "id": "sing",
+     "q": "Which one is an action word?",
+     "options": [
+      "sing",
+      "song",
+      "loud",
+      "bird"
+     ],
+     "answer": 0,
+     "explain": "An action word tells what we do: sing."
+    },
+    {
+     "id": "write",
+     "q": "Which one is an action word?",
+     "options": [
+      "write",
+      "pen",
+      "page",
+      "neat"
+     ],
+     "answer": 0,
+     "explain": "An action word tells what we do: write."
+    },
+    {
+     "id": "read",
+     "q": "Which one is an action word?",
+     "options": [
+      "read",
+      "book",
+      "story",
+      "good"
+     ],
+     "answer": 0,
+     "explain": "An action word tells what we do: read."
+    },
+    {
+     "id": "dance",
+     "q": "Which one is an action word?",
+     "options": [
+      "dance",
+      "music",
+      "girl",
+      "happy"
+     ],
+     "answer": 0,
+     "explain": "An action word tells what we do: dance."
+    },
+    {
+     "id": "sleep",
+     "q": "Which one is an action word?",
+     "options": [
+      "sleep",
+      "bed",
+      "night",
+      "tired"
+     ],
+     "answer": 0,
+     "explain": "An action word tells what we do: sleep."
+    },
+    {
+     "id": "climb",
+     "q": "Which one is an action word?",
+     "options": [
+      "climb",
+      "tree",
+      "tall",
+      "hill"
+     ],
+     "answer": 0,
+     "explain": "An action word tells what we do: climb."
+    },
+    {
+     "id": "cook",
+     "q": "Which one is an action word?",
+     "options": [
+      "cook",
+      "food",
+      "kitchen",
+      "tasty"
+     ],
+     "answer": 0,
+     "explain": "An action word tells what we do: cook."
+    },
+    {
+     "id": "throw",
+     "q": "Which one is an action word?",
+     "options": [
+      "throw",
+      "ball",
+      "far",
+      "boy"
+     ],
+     "answer": 0,
+     "explain": "An action word tells what we do: throw."
+    }
+   ]
+  }
+ ]
+}

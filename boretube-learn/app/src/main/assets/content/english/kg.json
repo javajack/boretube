@@ -1,0 +1,370 @@
+{
+ "id": "english-kg",
+ "subject": "english",
+ "grade": 0,
+ "version": 1,
+ "reviewed": {
+  "by": "",
+  "at": ""
+ },
+ "skills": [
+  {
+   "id": "en0.letters",
+   "title": "First letters",
+   "outcome": "EN-0.01",
+   "badge": "A",
+   "formats": [
+    "quickfire"
+   ],
+   "items": [
+    {
+     "id": "cat",
+     "q": "Which letter does this start with?",
+     "options": [
+      "C",
+      "B",
+      "D",
+      "S"
+     ],
+     "answer": 0,
+     "explain": "Cat starts with C: c-a-t.",
+     "picture": "cat",
+     "fact": "Cat starts with C"
+    },
+    {
+     "id": "ball",
+     "q": "Which letter does this start with?",
+     "options": [
+      "B",
+      "C",
+      "P",
+      "D"
+     ],
+     "answer": 0,
+     "explain": "Ball starts with B: b-a-l-l.",
+     "picture": "ball",
+     "fact": "Ball starts with B"
+    },
+    {
+     "id": "apple",
+     "q": "Which letter does this start with?",
+     "options": [
+      "A",
+      "E",
+      "O",
+      "B"
+     ],
+     "answer": 0,
+     "explain": "Apple starts with A: a-p-p-l-e.",
+     "picture": "apple",
+     "fact": "Apple starts with A"
+    },
+    {
+     "id": "dog",
+     "q": "Which letter does this start with?",
+     "options": [
+      "D",
+      "B",
+      "G",
+      "P"
+     ],
+     "answer": 0,
+     "explain": "Dog starts with D: d-o-g.",
+     "picture": "dog",
+     "fact": "Dog starts with D"
+    },
+    {
+     "id": "sun",
+     "q": "Which letter does this start with?",
+     "options": [
+      "S",
+      "C",
+      "Z",
+      "M"
+     ],
+     "answer": 0,
+     "explain": "Sun starts with S: s-u-n.",
+     "picture": "sun",
+     "fact": "Sun starts with S"
+    },
+    {
+     "id": "fish",
+     "q": "Which letter does this start with?",
+     "options": [
+      "F",
+      "V",
+      "H",
+      "S"
+     ],
+     "answer": 0,
+     "explain": "Fish starts with F: f-i-s-h.",
+     "picture": "fish",
+     "fact": "Fish starts with F"
+    },
+    {
+     "id": "egg",
+     "q": "Which letter does this start with?",
+     "options": [
+      "E",
+      "A",
+      "I",
+      "G"
+     ],
+     "answer": 0,
+     "explain": "Egg starts with E: e-g-g.",
+     "picture": "egg",
+     "fact": "Egg starts with E"
+    },
+    {
+     "id": "house",
+     "q": "Which letter does this start with?",
+     "options": [
+      "H",
+      "M",
+      "N",
+      "B"
+     ],
+     "answer": 0,
+     "explain": "House starts with H: h-o-u-s-e.",
+     "picture": "house",
+     "fact": "House starts with H"
+    },
+    {
+     "id": "moon",
+     "q": "Which letter does this start with?",
+     "options": [
+      "M",
+      "N",
+      "W",
+      "B"
+     ],
+     "answer": 0,
+     "explain": "Moon starts with M: m-o-o-n.",
+     "picture": "moon",
+     "fact": "Moon starts with M"
+    },
+    {
+     "id": "tree",
+     "q": "Which letter does this start with?",
+     "options": [
+      "T",
+      "D",
+      "F",
+      "R"
+     ],
+     "answer": 0,
+     "explain": "Tree starts with T: t-r-e-e.",
+     "picture": "tree",
+     "fact": "Tree starts with T"
+    },
+    {
+     "id": "bus",
+     "q": "Which letter does this start with?",
+     "options": [
+      "B",
+      "D",
+      "P",
+      "V"
+     ],
+     "answer": 0,
+     "explain": "Bus starts with B: b-u-s.",
+     "picture": "bus",
+     "fact": "Bus starts with B"
+    },
+    {
+     "id": "nose",
+     "q": "Which letter does this start with?",
+     "options": [
+      "N",
+      "M",
+      "U",
+      "S"
+     ],
+     "answer": 0,
+     "explain": "Nose starts with N: n-o-s-e.",
+     "picture": "nose",
+     "fact": "Nose starts with N"
+    }
+   ]
+  },
+  {
+   "id": "en0.words",
+   "title": "Picture words",
+   "outcome": "EN-0.02",
+   "badge": "Aa",
+   "formats": [
+    "quickfire"
+   ],
+   "items": [
+    {
+     "id": "cup",
+     "q": "Which word is this?",
+     "options": [
+      "cup",
+      "cap",
+      "cut",
+      "pup"
+     ],
+     "answer": 0,
+     "explain": "This is a cup.",
+     "picture": "cup",
+     "fact": "This is a cup"
+    },
+    {
+     "id": "car",
+     "q": "Which word is this?",
+     "options": [
+      "car",
+      "cat",
+      "jar",
+      "bar"
+     ],
+     "answer": 0,
+     "explain": "This is a car.",
+     "picture": "car",
+     "fact": "This is a car"
+    },
+    {
+     "id": "book",
+     "q": "Which word is this?",
+     "options": [
+      "book",
+      "look",
+      "cook",
+      "boat"
+     ],
+     "answer": 0,
+     "explain": "This is a book.",
+     "picture": "book",
+     "fact": "This is a book"
+    },
+    {
+     "id": "cow",
+     "q": "Which word is this?",
+     "options": [
+      "cow",
+      "how",
+      "cot",
+      "owl"
+     ],
+     "answer": 0,
+     "explain": "This is a cow.",
+     "picture": "cow",
+     "fact": "This is a cow"
+    },
+    {
+     "id": "bird",
+     "q": "Which word is this?",
+     "options": [
+      "bird",
+      "bed",
+      "bud",
+      "card"
+     ],
+     "answer": 0,
+     "explain": "This is a bird.",
+     "picture": "bird",
+     "fact": "This is a bird"
+    },
+    {
+     "id": "star",
+     "q": "Which word is this?",
+     "options": [
+      "star",
+      "stop",
+      "car",
+      "jar"
+     ],
+     "answer": 0,
+     "explain": "This is a star.",
+     "picture": "star",
+     "fact": "This is a star"
+    },
+    {
+     "id": "hand",
+     "q": "Which word is this?",
+     "options": [
+      "hand",
+      "band",
+      "sand",
+      "head"
+     ],
+     "answer": 0,
+     "explain": "This is a hand.",
+     "picture": "hand",
+     "fact": "This is a hand"
+    },
+    {
+     "id": "boat",
+     "q": "Which word is this?",
+     "options": [
+      "boat",
+      "coat",
+      "goat",
+      "book"
+     ],
+     "answer": 0,
+     "explain": "This is a boat.",
+     "picture": "boat",
+     "fact": "This is a boat"
+    },
+    {
+     "id": "ant",
+     "q": "Which word is this?",
+     "options": [
+      "ant",
+      "and",
+      "cat",
+      "hat"
+     ],
+     "answer": 0,
+     "explain": "This is a ant.",
+     "picture": "ant",
+     "fact": "This is a ant"
+    },
+    {
+     "id": "mango",
+     "q": "Which word is this?",
+     "options": [
+      "mango",
+      "melon",
+      "man",
+      "banana"
+     ],
+     "answer": 0,
+     "explain": "This is a mango.",
+     "picture": "mango",
+     "fact": "This is a mango"
+    },
+    {
+     "id": "leaf",
+     "q": "Which word is this?",
+     "options": [
+      "leaf",
+      "loaf",
+      "leg",
+      "lamp"
+     ],
+     "answer": 0,
+     "explain": "This is a leaf.",
+     "picture": "leaf",
+     "fact": "This is a leaf"
+    },
+    {
+     "id": "fire",
+     "q": "Which word is this?",
+     "options": [
+      "fire",
+      "five",
+      "tire",
+      "fish"
+     ],
+     "answer": 0,
+     "explain": "This is a fire.",
+     "picture": "fire",
+     "fact": "This is a fire"
+    }
+   ]
+  }
+ ]
+}

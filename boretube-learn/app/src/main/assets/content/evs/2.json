@@ -1,0 +1,324 @@
+{
+ "id": "evs-2",
+ "subject": "evs",
+ "grade": 2,
+ "version": 1,
+ "reviewed": {
+  "by": "",
+  "at": ""
+ },
+ "skills": [
+  {
+   "id": "ev2.homes",
+   "title": "Animal homes",
+   "outcome": "EV-2.04",
+   "badge": "nest",
+   "formats": [
+    "quickfire",
+    "catch"
+   ],
+   "items": [
+    {
+     "id": "h0",
+     "q": "Where does a bird live?",
+     "options": [
+      "nest",
+      "kennel",
+      "hive",
+      "stable"
+     ],
+     "answer": 0,
+     "explain": "A bird lives in a nest."
+    },
+    {
+     "id": "h1",
+     "q": "Where does a bee live?",
+     "options": [
+      "hive",
+      "nest",
+      "den",
+      "web"
+     ],
+     "answer": 0,
+     "explain": "A bee lives in a hive."
+    },
+    {
+     "id": "h2",
+     "q": "Where does a dog live?",
+     "options": [
+      "kennel",
+      "hive",
+      "nest",
+      "web"
+     ],
+     "answer": 0,
+     "explain": "A dog lives in a kennel."
+    },
+    {
+     "id": "h3",
+     "q": "Where does a horse live?",
+     "options": [
+      "stable",
+      "nest",
+      "hive",
+      "burrow"
+     ],
+     "answer": 0,
+     "explain": "A horse lives in a stable."
+    },
+    {
+     "id": "h4",
+     "q": "Where does a spider live?",
+     "options": [
+      "web",
+      "stable",
+      "kennel",
+      "den"
+     ],
+     "answer": 0,
+     "explain": "A spider lives in a web."
+    },
+    {
+     "id": "h5",
+     "q": "Where does a lion live?",
+     "options": [
+      "den",
+      "nest",
+      "web",
+      "hive"
+     ],
+     "answer": 0,
+     "explain": "A lion lives in a den."
+    },
+    {
+     "id": "h6",
+     "q": "Where does a rabbit live?",
+     "options": [
+      "burrow",
+      "nest",
+      "hive",
+      "web"
+     ],
+     "answer": 0,
+     "explain": "A rabbit lives in a burrow."
+    },
+    {
+     "id": "h7",
+     "q": "Where does a cow live?",
+     "options": [
+      "shed",
+      "nest",
+      "web",
+      "hive"
+     ],
+     "answer": 0,
+     "explain": "A cow lives in a shed."
+    },
+    {
+     "id": "h8",
+     "q": "Where does a fish live?",
+     "options": [
+      "pond",
+      "nest",
+      "hive",
+      "den"
+     ],
+     "answer": 0,
+     "explain": "A fish lives in a pond."
+    },
+    {
+     "id": "h9",
+     "q": "Where does a hen live?",
+     "options": [
+      "coop",
+      "web",
+      "den",
+      "hive"
+     ],
+     "answer": 0,
+     "explain": "A hen lives in a coop."
+    },
+    {
+     "id": "h10",
+     "q": "Where does a ant live?",
+     "options": [
+      "anthill",
+      "stable",
+      "nest",
+      "kennel"
+     ],
+     "answer": 0,
+     "explain": "A ant lives in a anthill."
+    },
+    {
+     "id": "h11",
+     "q": "Where does a pig live?",
+     "options": [
+      "sty",
+      "hive",
+      "web",
+      "nest"
+     ],
+     "answer": 0,
+     "explain": "A pig lives in a sty."
+    }
+   ]
+  },
+  {
+   "id": "ev2.plants",
+   "title": "Parts of a plant",
+   "outcome": "EV-2.02",
+   "badge": "leaf",
+   "formats": [
+    "quickfire",
+    "catch"
+   ],
+   "items": [
+    {
+     "id": "p0",
+     "q": "Which part is under the soil?",
+     "options": [
+      "roots",
+      "leaves",
+      "flower",
+      "fruit"
+     ],
+     "answer": 0,
+     "explain": "Roots grow under the soil."
+    },
+    {
+     "id": "p1",
+     "q": "Which part makes food for the plant?",
+     "options": [
+      "leaves",
+      "roots",
+      "stem",
+      "seeds"
+     ],
+     "answer": 0,
+     "explain": "Green leaves make food for the plant."
+    },
+    {
+     "id": "p2",
+     "q": "Which part holds the plant up?",
+     "options": [
+      "stem",
+      "leaves",
+      "flower",
+      "fruit"
+     ],
+     "answer": 0,
+     "explain": "The stem holds the plant up."
+    },
+    {
+     "id": "p3",
+     "q": "Which part drinks water from the soil?",
+     "options": [
+      "roots",
+      "flower",
+      "fruit",
+      "leaves"
+     ],
+     "answer": 0,
+     "explain": "Roots take in water from the soil."
+    },
+    {
+     "id": "p4",
+     "q": "What grows into a new plant?",
+     "options": [
+      "seed",
+      "leaf",
+      "stem",
+      "root"
+     ],
+     "answer": 0,
+     "explain": "A seed grows into a new plant."
+    },
+    {
+     "id": "p5",
+     "q": "What colour are most leaves?",
+     "options": [
+      "green",
+      "blue",
+      "black",
+      "white"
+     ],
+     "answer": 0,
+     "explain": "Most leaves are green."
+    },
+    {
+     "id": "p6",
+     "q": "Which part is often colourful and smells nice?",
+     "options": [
+      "flower",
+      "root",
+      "stem",
+      "seed"
+     ],
+     "answer": 0,
+     "explain": "Flowers are colourful and smell nice."
+    },
+    {
+     "id": "p7",
+     "q": "A mango is which part of the tree?",
+     "options": [
+      "fruit",
+      "root",
+      "leaf",
+      "stem"
+     ],
+     "answer": 0,
+     "explain": "A mango is the fruit of the mango tree."
+    },
+    {
+     "id": "p8",
+     "q": "A carrot is which part of the plant?",
+     "options": [
+      "root",
+      "leaf",
+      "fruit",
+      "flower"
+     ],
+     "answer": 0,
+     "explain": "We eat the root of the carrot plant."
+    },
+    {
+     "id": "p9",
+     "q": "Spinach is which part of the plant?",
+     "options": [
+      "leaves",
+      "roots",
+      "fruit",
+      "seeds"
+     ],
+     "answer": 0,
+     "explain": "We eat the leaves of spinach."
+    },
+    {
+     "id": "p10",
+     "q": "What does a plant need to grow?",
+     "options": [
+      "water",
+      "sugar",
+      "salt",
+      "milk"
+     ],
+     "answer": 0,
+     "explain": "Plants need water to grow."
+    },
+    {
+     "id": "p11",
+     "q": "The trunk of a tree is its ___.",
+     "options": [
+      "stem",
+      "root",
+      "leaf",
+      "fruit"
+     ],
+     "answer": 0,
+     "explain": "A tree trunk is a big, hard stem."
+    }
+   ]
+  }
+ ]
+}

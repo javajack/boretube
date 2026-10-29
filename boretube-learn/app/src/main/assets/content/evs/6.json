@@ -1,0 +1,324 @@
+{
+ "id": "evs-6",
+ "subject": "evs",
+ "grade": 6,
+ "version": 1,
+ "reviewed": {
+  "by": "",
+  "at": ""
+ },
+ "skills": [
+  {
+   "id": "sc6.living",
+   "title": "Living and non-living",
+   "outcome": "SC-6.09",
+   "badge": "leaf",
+   "formats": [
+    "quickfire",
+    "catch"
+   ],
+   "items": [
+    {
+     "id": "lv0",
+     "q": "Which one is living?",
+     "options": [
+      "tree",
+      "rock",
+      "chair",
+      "pen"
+     ],
+     "answer": 0,
+     "explain": "A tree grows and needs food, so it is living."
+    },
+    {
+     "id": "lv1",
+     "q": "Which one is non-living?",
+     "options": [
+      "stone",
+      "dog",
+      "plant",
+      "bird"
+     ],
+     "answer": 0,
+     "explain": "A stone does not grow or breathe."
+    },
+    {
+     "id": "lv2",
+     "q": "All living things need ___.",
+     "options": [
+      "food",
+      "toys",
+      "paint",
+      "money"
+     ],
+     "answer": 0,
+     "explain": "All living things need food to live."
+    },
+    {
+     "id": "lv3",
+     "q": "Living things can ___.",
+     "options": [
+      "grow",
+      "melt",
+      "shine",
+      "rust"
+     ],
+     "answer": 0,
+     "explain": "Living things grow over time."
+    },
+    {
+     "id": "lv4",
+     "q": "Plants breathe through their ___.",
+     "options": [
+      "leaves",
+      "roots",
+      "fruits",
+      "seeds"
+     ],
+     "answer": 0,
+     "explain": "Leaves have tiny pores for breathing."
+    },
+    {
+     "id": "lv5",
+     "q": "Which one is living?",
+     "options": [
+      "mushroom",
+      "cloud",
+      "river",
+      "sand"
+     ],
+     "answer": 0,
+     "explain": "A mushroom grows, so it is living."
+    },
+    {
+     "id": "lv6",
+     "q": "Which one is non-living?",
+     "options": [
+      "car",
+      "cat",
+      "tree",
+      "fish"
+     ],
+     "answer": 0,
+     "explain": "A car moves but does not grow."
+    },
+    {
+     "id": "lv7",
+     "q": "A seed is ___.",
+     "options": [
+      "living",
+      "non-living",
+      "a stone",
+      "a toy"
+     ],
+     "answer": 0,
+     "explain": "A seed is alive and can grow into a plant."
+    },
+    {
+     "id": "lv8",
+     "q": "Living things make more of their own ___.",
+     "options": [
+      "kind",
+      "toys",
+      "houses",
+      "roads"
+     ],
+     "answer": 0,
+     "explain": "Living things have young ones of their kind."
+    },
+    {
+     "id": "lv9",
+     "q": "Which one responds to touch?",
+     "options": [
+      "touch-me-not",
+      "rock",
+      "table",
+      "pen"
+     ],
+     "answer": 0,
+     "explain": "A touch-me-not plant closes its leaves when touched."
+    },
+    {
+     "id": "lv10",
+     "q": "Which one needs air to live?",
+     "options": [
+      "fish",
+      "stone",
+      "book",
+      "chair"
+     ],
+     "answer": 0,
+     "explain": "Fish take air from the water."
+    },
+    {
+     "id": "lv11",
+     "q": "Which one is non-living?",
+     "options": [
+      "water",
+      "frog",
+      "grass",
+      "ant"
+     ],
+     "answer": 0,
+     "explain": "Water is needed by living things but is not alive."
+    }
+   ]
+  },
+  {
+   "id": "sc6.food",
+   "title": "Food and nutrients",
+   "outcome": "SC-6.02",
+   "badge": "rice",
+   "formats": [
+    "quickfire",
+    "catch"
+   ],
+   "items": [
+    {
+     "id": "nu0",
+     "q": "Rice and roti mostly give us ___.",
+     "options": [
+      "energy",
+      "bones",
+      "teeth",
+      "hair"
+     ],
+     "answer": 0,
+     "explain": "Rice and roti are full of carbohydrates for energy."
+    },
+    {
+     "id": "nu1",
+     "q": "Which nutrient helps our body grow?",
+     "options": [
+      "protein",
+      "sugar",
+      "fat",
+      "water"
+     ],
+     "answer": 0,
+     "explain": "Protein builds and repairs our body."
+    },
+    {
+     "id": "nu2",
+     "q": "Dal and eggs are rich in ___.",
+     "options": [
+      "protein",
+      "sugar",
+      "fat",
+      "salt"
+     ],
+     "answer": 0,
+     "explain": "Dal and eggs have lots of protein."
+    },
+    {
+     "id": "nu3",
+     "q": "Milk helps make our ___ strong.",
+     "options": [
+      "bones",
+      "hair",
+      "nails",
+      "eyes"
+     ],
+     "answer": 0,
+     "explain": "Milk has calcium for strong bones."
+    },
+    {
+     "id": "nu4",
+     "q": "Which fruit has lots of vitamin C?",
+     "options": [
+      "orange",
+      "bread",
+      "rice",
+      "butter"
+     ],
+     "answer": 0,
+     "explain": "Oranges are rich in vitamin C."
+    },
+    {
+     "id": "nu5",
+     "q": "Ghee and butter are rich in ___.",
+     "options": [
+      "fat",
+      "protein",
+      "fibre",
+      "water"
+     ],
+     "answer": 0,
+     "explain": "Ghee and butter are mostly fat."
+    },
+    {
+     "id": "nu6",
+     "q": "Fibre in food helps our ___.",
+     "options": [
+      "stomach",
+      "hair",
+      "eyes",
+      "ears"
+     ],
+     "answer": 0,
+     "explain": "Fibre helps our stomach and digestion."
+    },
+    {
+     "id": "nu7",
+     "q": "Eating many kinds of food is a ___ diet.",
+     "options": [
+      "balanced",
+      "sweet",
+      "small",
+      "fast"
+     ],
+     "answer": 0,
+     "explain": "A balanced diet has all the nutrients we need."
+    },
+    {
+     "id": "nu8",
+     "q": "Too little iron can make us ___.",
+     "options": [
+      "tired",
+      "taller",
+      "faster",
+      "louder"
+     ],
+     "answer": 0,
+     "explain": "Iron carries oxygen in our blood."
+    },
+    {
+     "id": "nu9",
+     "q": "Carrots are good for our ___.",
+     "options": [
+      "eyes",
+      "ears",
+      "nails",
+      "hair"
+     ],
+     "answer": 0,
+     "explain": "Carrots have vitamin A for our eyes."
+    },
+    {
+     "id": "nu10",
+     "q": "Which test shows starch in food?",
+     "options": [
+      "iodine",
+      "salt",
+      "sugar",
+      "oil"
+     ],
+     "answer": 0,
+     "explain": "Iodine turns blue-black when starch is present."
+    },
+    {
+     "id": "nu11",
+     "q": "We should drink plenty of ___.",
+     "options": [
+      "water",
+      "cola",
+      "syrup",
+      "oil"
+     ],
+     "answer": 0,
+     "explain": "Our body needs lots of water."
+    }
+   ]
+  }
+ ]
+}

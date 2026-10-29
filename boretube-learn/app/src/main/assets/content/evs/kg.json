@@ -1,0 +1,346 @@
+{
+ "id": "evs-kg",
+ "subject": "evs",
+ "grade": 0,
+ "version": 1,
+ "reviewed": {
+  "by": "",
+  "at": ""
+ },
+ "skills": [
+  {
+   "id": "ev0.animals",
+   "title": "Animals around us",
+   "outcome": "EV-0.01",
+   "badge": "cow",
+   "formats": [
+    "quickfire"
+   ],
+   "items": [
+    {
+     "id": "fly",
+     "q": "Which one can fly?",
+     "options": [
+      "pic:bird",
+      "pic:cat",
+      "pic:cow",
+      "pic:fish"
+     ],
+     "answer": 0,
+     "explain": "A bird has wings, so it can fly.",
+     "fact": "The bird"
+    },
+    {
+     "id": "swim",
+     "q": "Which one lives in water?",
+     "options": [
+      "pic:fish",
+      "pic:dog",
+      "pic:cat",
+      "pic:cow"
+     ],
+     "answer": 0,
+     "explain": "A fish lives and swims in water.",
+     "fact": "The fish"
+    },
+    {
+     "id": "milk",
+     "q": "Which one gives us milk?",
+     "options": [
+      "pic:cow",
+      "pic:dog",
+      "pic:fish",
+      "pic:ant"
+     ],
+     "answer": 0,
+     "explain": "We get milk from the cow.",
+     "fact": "The cow"
+    },
+    {
+     "id": "bark",
+     "q": "Which one says woof?",
+     "options": [
+      "pic:dog",
+      "pic:cat",
+      "pic:cow",
+      "pic:bird"
+     ],
+     "answer": 0,
+     "explain": "A dog barks: woof woof.",
+     "fact": "The dog"
+    },
+    {
+     "id": "meow",
+     "q": "Which one says meow?",
+     "options": [
+      "pic:cat",
+      "pic:dog",
+      "pic:cow",
+      "pic:fish"
+     ],
+     "answer": 0,
+     "explain": "A cat says meow.",
+     "fact": "The cat"
+    },
+    {
+     "id": "moo",
+     "q": "Which one says moo?",
+     "options": [
+      "pic:cow",
+      "pic:cat",
+      "pic:dog",
+      "pic:bird"
+     ],
+     "answer": 0,
+     "explain": "A cow says moo.",
+     "fact": "The cow"
+    },
+    {
+     "id": "tiny",
+     "q": "Which one is very tiny?",
+     "options": [
+      "pic:ant",
+      "pic:cow",
+      "pic:dog",
+      "pic:cat"
+     ],
+     "answer": 0,
+     "explain": "An ant is very tiny.",
+     "fact": "The ant"
+    },
+    {
+     "id": "egg",
+     "q": "Which one comes from a hen?",
+     "options": [
+      "pic:egg",
+      "pic:apple",
+      "pic:ball",
+      "pic:cup"
+     ],
+     "answer": 0,
+     "explain": "A hen lays eggs.",
+     "fact": "The egg"
+    },
+    {
+     "id": "tweet",
+     "q": "Which one sings tweet tweet?",
+     "options": [
+      "pic:bird",
+      "pic:fish",
+      "pic:cow",
+      "pic:ant"
+     ],
+     "answer": 0,
+     "explain": "A bird sings tweet tweet.",
+     "fact": "The bird"
+    },
+    {
+     "id": "fins",
+     "q": "Which one has fins?",
+     "options": [
+      "pic:fish",
+      "pic:bird",
+      "pic:cat",
+      "pic:dog"
+     ],
+     "answer": 0,
+     "explain": "A fish has fins to swim.",
+     "fact": "The fish"
+    },
+    {
+     "id": "pet",
+     "q": "Which one guards the house?",
+     "options": [
+      "pic:dog",
+      "pic:fish",
+      "pic:ant",
+      "pic:bird"
+     ],
+     "answer": 0,
+     "explain": "A dog guards the house.",
+     "fact": "The dog"
+    },
+    {
+     "id": "grass",
+     "q": "Which one eats grass?",
+     "options": [
+      "pic:cow",
+      "pic:cat",
+      "pic:fish",
+      "pic:bird"
+     ],
+     "answer": 0,
+     "explain": "A cow eats grass.",
+     "fact": "The cow"
+    }
+   ]
+  },
+  {
+   "id": "ev0.body",
+   "title": "My body",
+   "outcome": "EV-0.02",
+   "badge": "eye",
+   "formats": [
+    "quickfire"
+   ],
+   "items": [
+    {
+     "id": "see",
+     "q": "Which one do we see with?",
+     "options": [
+      "pic:eye",
+      "pic:ear",
+      "pic:nose",
+      "pic:hand"
+     ],
+     "answer": 0,
+     "explain": "We see with our eyes.",
+     "fact": "The eye"
+    },
+    {
+     "id": "hear",
+     "q": "Which one do we hear with?",
+     "options": [
+      "pic:ear",
+      "pic:eye",
+      "pic:nose",
+      "pic:tooth"
+     ],
+     "answer": 0,
+     "explain": "We hear with our ears.",
+     "fact": "The ear"
+    },
+    {
+     "id": "smell",
+     "q": "Which one do we smell with?",
+     "options": [
+      "pic:nose",
+      "pic:ear",
+      "pic:eye",
+      "pic:hand"
+     ],
+     "answer": 0,
+     "explain": "We smell with our nose.",
+     "fact": "The nose"
+    },
+    {
+     "id": "hold",
+     "q": "Which one do we hold things with?",
+     "options": [
+      "pic:hand",
+      "pic:nose",
+      "pic:ear",
+      "pic:eye"
+     ],
+     "answer": 0,
+     "explain": "We hold things with our hands.",
+     "fact": "The hand"
+    },
+    {
+     "id": "chew",
+     "q": "Which one helps us chew?",
+     "options": [
+      "pic:tooth",
+      "pic:ear",
+      "pic:eye",
+      "pic:nose"
+     ],
+     "answer": 0,
+     "explain": "Our teeth help us chew food.",
+     "fact": "The tooth"
+    },
+    {
+     "id": "brush",
+     "q": "Which one do we brush every day?",
+     "options": [
+      "pic:tooth",
+      "pic:hand",
+      "pic:ear",
+      "pic:eye"
+     ],
+     "answer": 0,
+     "explain": "We brush our teeth every day.",
+     "fact": "The tooth"
+    },
+    {
+     "id": "flower",
+     "q": "Which one smells a flower?",
+     "options": [
+      "pic:nose",
+      "pic:hand",
+      "pic:tooth",
+      "pic:ear"
+     ],
+     "answer": 0,
+     "explain": "We smell flowers with our nose.",
+     "fact": "The nose"
+    },
+    {
+     "id": "music",
+     "q": "Which one hears music?",
+     "options": [
+      "pic:ear",
+      "pic:nose",
+      "pic:hand",
+      "pic:eye"
+     ],
+     "answer": 0,
+     "explain": "We hear music with our ears.",
+     "fact": "The ear"
+    },
+    {
+     "id": "colours",
+     "q": "Which one sees colours?",
+     "options": [
+      "pic:eye",
+      "pic:ear",
+      "pic:tooth",
+      "pic:hand"
+     ],
+     "answer": 0,
+     "explain": "Our eyes see colours.",
+     "fact": "The eye"
+    },
+    {
+     "id": "wave",
+     "q": "Which one do we wave with?",
+     "options": [
+      "pic:hand",
+      "pic:eye",
+      "pic:nose",
+      "pic:tooth"
+     ],
+     "answer": 0,
+     "explain": "We wave with our hand.",
+     "fact": "The hand"
+    },
+    {
+     "id": "wash",
+     "q": "Which one do we wash before eating?",
+     "options": [
+      "pic:hand",
+      "pic:ear",
+      "pic:nose",
+      "pic:eye"
+     ],
+     "answer": 0,
+     "explain": "We wash our hands before eating.",
+     "fact": "The hand"
+    },
+    {
+     "id": "blink",
+     "q": "Which one can blink?",
+     "options": [
+      "pic:eye",
+      "pic:ear",
+      "pic:nose",
+      "pic:tooth"
+     ],
+     "answer": 0,
+     "explain": "Our eyes blink.",
+     "fact": "The eye"
+    }
+   ]
+  }
+ ]
+}

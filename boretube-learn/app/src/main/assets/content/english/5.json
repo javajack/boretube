@@ -1,0 +1,311 @@
+{
+ "id": "english-5",
+ "subject": "english",
+ "grade": 5,
+ "version": 1,
+ "reviewed": {
+  "by": "",
+  "at": ""
+ },
+ "skills": [
+  {
+   "id": "en5.synonym",
+   "title": "Same meaning",
+   "outcome": "EN-5.04",
+   "badge": "=",
+   "formats": [
+    "quickfire",
+    "catch"
+   ],
+   "items": [
+    {
+     "id": "happy-glad",
+     "q": "Which word means the same as happy?",
+     "options": [
+      "glad",
+      "sad",
+      "angry",
+      "tired"
+     ],
+     "answer": 0,
+     "explain": "Happy and glad mean the same."
+    },
+    {
+     "id": "big-large",
+     "q": "Which word means the same as big?",
+     "options": [
+      "large",
+      "tiny",
+      "thin",
+      "short"
+     ],
+     "answer": 0,
+     "explain": "Big and large mean the same."
+    },
+    {
+     "id": "fast-quick",
+     "q": "Which word means the same as fast?",
+     "options": [
+      "quick",
+      "slow",
+      "late",
+      "lazy"
+     ],
+     "answer": 0,
+     "explain": "Fast and quick mean the same."
+    },
+    {
+     "id": "begin-start",
+     "q": "Which word means the same as begin?",
+     "options": [
+      "start",
+      "end",
+      "stop",
+      "close"
+     ],
+     "answer": 0,
+     "explain": "Begin and start mean the same."
+    },
+    {
+     "id": "small-little",
+     "q": "Which word means the same as small?",
+     "options": [
+      "little",
+      "huge",
+      "wide",
+      "tall"
+     ],
+     "answer": 0,
+     "explain": "Small and little mean the same."
+    },
+    {
+     "id": "shut-close",
+     "q": "Which word means the same as shut?",
+     "options": [
+      "close",
+      "open",
+      "break",
+      "push"
+     ],
+     "answer": 0,
+     "explain": "Shut and close mean the same."
+    },
+    {
+     "id": "smart-clever",
+     "q": "Which word means the same as smart?",
+     "options": [
+      "clever",
+      "silly",
+      "slow",
+      "weak"
+     ],
+     "answer": 0,
+     "explain": "Smart and clever mean the same."
+    },
+    {
+     "id": "angry-cross",
+     "q": "Which word means the same as angry?",
+     "options": [
+      "cross",
+      "calm",
+      "happy",
+      "kind"
+     ],
+     "answer": 0,
+     "explain": "Angry and cross mean the same."
+    },
+    {
+     "id": "gift-present",
+     "q": "Which word means the same as gift?",
+     "options": [
+      "present",
+      "price",
+      "letter",
+      "party"
+     ],
+     "answer": 0,
+     "explain": "Gift and present mean the same."
+    },
+    {
+     "id": "shout-yell",
+     "q": "Which word means the same as shout?",
+     "options": [
+      "yell",
+      "whisper",
+      "sing",
+      "hum"
+     ],
+     "answer": 0,
+     "explain": "Shout and yell mean the same."
+    },
+    {
+     "id": "scared-afraid",
+     "q": "Which word means the same as scared?",
+     "options": [
+      "afraid",
+      "brave",
+      "bold",
+      "proud"
+     ],
+     "answer": 0,
+     "explain": "Scared and afraid mean the same."
+    },
+    {
+     "id": "look-see",
+     "q": "Which word means the same as look?",
+     "options": [
+      "see",
+      "hear",
+      "taste",
+      "smell"
+     ],
+     "answer": 0,
+     "explain": "Look and see mean the same."
+    }
+   ]
+  },
+  {
+   "id": "en5.punct",
+   "title": "Full stop or question mark",
+   "outcome": "EN-5.07",
+   "badge": "?",
+   "formats": [
+    "quickfire"
+   ],
+   "items": [
+    {
+     "id": "p0",
+     "q": "Which mark ends this? \"Where are you going\"",
+     "options": [
+      "?",
+      ".",
+      "!"
+     ],
+     "answer": 0,
+     "explain": "It asks something, so it ends with a question mark."
+    },
+    {
+     "id": "p1",
+     "q": "Which mark ends this? \"I like mangoes\"",
+     "options": [
+      ".",
+      "?",
+      "!"
+     ],
+     "answer": 0,
+     "explain": "It tells something, so it ends with a full stop."
+    },
+    {
+     "id": "p2",
+     "q": "Which mark ends this? \"What is your name\"",
+     "options": [
+      "?",
+      ".",
+      "!"
+     ],
+     "answer": 0,
+     "explain": "It asks something, so it ends with a question mark."
+    },
+    {
+     "id": "p3",
+     "q": "Which mark ends this? \"The sky is blue\"",
+     "options": [
+      ".",
+      "?",
+      "!"
+     ],
+     "answer": 0,
+     "explain": "It tells something, so it ends with a full stop."
+    },
+    {
+     "id": "p4",
+     "q": "Which mark ends this? \"How old are you\"",
+     "options": [
+      "?",
+      ".",
+      "!"
+     ],
+     "answer": 0,
+     "explain": "It asks something, so it ends with a question mark."
+    },
+    {
+     "id": "p5",
+     "q": "Which mark ends this? \"We play after school\"",
+     "options": [
+      ".",
+      "?",
+      "!"
+     ],
+     "answer": 0,
+     "explain": "It tells something, so it ends with a full stop."
+    },
+    {
+     "id": "p6",
+     "q": "Which mark ends this? \"Can you swim\"",
+     "options": [
+      "?",
+      ".",
+      "!"
+     ],
+     "answer": 0,
+     "explain": "It asks something, so it ends with a question mark."
+    },
+    {
+     "id": "p7",
+     "q": "Which mark ends this? \"My sister reads books\"",
+     "options": [
+      ".",
+      "?",
+      "!"
+     ],
+     "answer": 0,
+     "explain": "It tells something, so it ends with a full stop."
+    },
+    {
+     "id": "p8",
+     "q": "Which mark ends this? \"Wow, what a goal\"",
+     "options": [
+      "!",
+      "?",
+      "."
+     ],
+     "answer": 0,
+     "explain": "It shows a strong feeling, so it ends with an exclamation mark."
+    },
+    {
+     "id": "p9",
+     "q": "Which mark ends this? \"Did you eat lunch\"",
+     "options": [
+      "?",
+      ".",
+      "!"
+     ],
+     "answer": 0,
+     "explain": "It asks something, so it ends with a question mark."
+    },
+    {
+     "id": "p10",
+     "q": "Which mark ends this? \"The train is late\"",
+     "options": [
+      ".",
+      "?",
+      "!"
+     ],
+     "answer": 0,
+     "explain": "It tells something, so it ends with a full stop."
+    },
+    {
+     "id": "p11",
+     "q": "Which mark ends this? \"Ouch, that hurts\"",
+     "options": [
+      "!",
+      "?",
+      "."
+     ],
+     "answer": 0,
+     "explain": "It shows a strong feeling, so it ends with an exclamation mark."
+    }
+   ]
+  }
+ ]
+}

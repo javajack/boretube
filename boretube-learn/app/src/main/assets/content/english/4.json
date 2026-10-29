@@ -1,0 +1,312 @@
+{
+ "id": "english-4",
+ "subject": "english",
+ "grade": 4,
+ "version": 1,
+ "reviewed": {
+  "by": "",
+  "at": ""
+ },
+ "skills": [
+  {
+   "id": "en4.past",
+   "title": "Past tense",
+   "outcome": "EN-4.06",
+   "badge": "-ed",
+   "formats": [
+    "quickfire",
+    "catch"
+   ],
+   "items": [
+    {
+     "id": "go-went",
+     "q": "Yesterday, I ___ to school.",
+     "options": [
+      "went",
+      "go",
+      "goes",
+      "going"
+     ],
+     "answer": 0,
+     "explain": "Yesterday is the past: go becomes went."
+    },
+    {
+     "id": "play-played",
+     "q": "Yesterday, I ___ football.",
+     "options": [
+      "played",
+      "play",
+      "plays",
+      "playing"
+     ],
+     "answer": 0,
+     "explain": "Yesterday is the past: play becomes played."
+    },
+    {
+     "id": "eat-ate",
+     "q": "Yesterday, I ___ a mango.",
+     "options": [
+      "ate",
+      "eat",
+      "eats",
+      "eating"
+     ],
+     "answer": 0,
+     "explain": "Yesterday is the past: eat becomes ate."
+    },
+    {
+     "id": "see-saw",
+     "q": "Yesterday, I ___ a rainbow.",
+     "options": [
+      "saw",
+      "see",
+      "sees",
+      "seeing"
+     ],
+     "answer": 0,
+     "explain": "Yesterday is the past: see becomes saw."
+    },
+    {
+     "id": "write-wrote",
+     "q": "Yesterday, I ___ a letter.",
+     "options": [
+      "wrote",
+      "write",
+      "writes",
+      "writing"
+     ],
+     "answer": 0,
+     "explain": "Yesterday is the past: write becomes wrote."
+    },
+    {
+     "id": "walk-walked",
+     "q": "Yesterday, I ___ to the park.",
+     "options": [
+      "walked",
+      "walk",
+      "walks",
+      "walking"
+     ],
+     "answer": 0,
+     "explain": "Yesterday is the past: walk becomes walked."
+    },
+    {
+     "id": "drink-drank",
+     "q": "Yesterday, I ___ milk.",
+     "options": [
+      "drank",
+      "drink",
+      "drinks",
+      "drinking"
+     ],
+     "answer": 0,
+     "explain": "Yesterday is the past: drink becomes drank."
+    },
+    {
+     "id": "jump-jumped",
+     "q": "Yesterday, I ___ very high.",
+     "options": [
+      "jumped",
+      "jump",
+      "jumps",
+      "jumping"
+     ],
+     "answer": 0,
+     "explain": "Yesterday is the past: jump becomes jumped."
+    },
+    {
+     "id": "make-made",
+     "q": "Yesterday, I ___ a kite.",
+     "options": [
+      "made",
+      "make",
+      "makes",
+      "making"
+     ],
+     "answer": 0,
+     "explain": "Yesterday is the past: make becomes made."
+    },
+    {
+     "id": "run-ran",
+     "q": "Yesterday, I ___ a race.",
+     "options": [
+      "ran",
+      "run",
+      "runs",
+      "running"
+     ],
+     "answer": 0,
+     "explain": "Yesterday is the past: run becomes ran."
+    },
+    {
+     "id": "cook-cooked",
+     "q": "Yesterday, I ___ rice.",
+     "options": [
+      "cooked",
+      "cook",
+      "cooks",
+      "cooking"
+     ],
+     "answer": 0,
+     "explain": "Yesterday is the past: cook becomes cooked."
+    },
+    {
+     "id": "sing-sang",
+     "q": "Yesterday, I ___ a song.",
+     "options": [
+      "sang",
+      "sing",
+      "sings",
+      "singing"
+     ],
+     "answer": 0,
+     "explain": "Yesterday is the past: sing becomes sang."
+    }
+   ]
+  },
+  {
+   "id": "en4.describe",
+   "title": "Describing words",
+   "outcome": "EN-4.08",
+   "badge": "red",
+   "formats": [
+    "quickfire",
+    "catch"
+   ],
+   "items": [
+    {
+     "id": "red",
+     "q": "Which word describes? \"the red ball\"",
+     "options": [
+      "red",
+      "the",
+      "ball"
+     ],
+     "answer": 0,
+     "explain": "Red tells us more about the ball."
+    },
+    {
+     "id": "tall",
+     "q": "Which word describes? \"a tall tree\"",
+     "options": [
+      "tall",
+      "a",
+      "tree"
+     ],
+     "answer": 0,
+     "explain": "Tall tells us more about the tree."
+    },
+    {
+     "id": "hot",
+     "q": "Which word describes? \"the hot tea\"",
+     "options": [
+      "hot",
+      "the",
+      "tea"
+     ],
+     "answer": 0,
+     "explain": "Hot tells us more about the tea."
+    },
+    {
+     "id": "happy",
+     "q": "Which word describes? \"a happy girl\"",
+     "options": [
+      "happy",
+      "a",
+      "girl"
+     ],
+     "answer": 0,
+     "explain": "Happy tells us more about the girl."
+    },
+    {
+     "id": "soft",
+     "q": "Which word describes? \"the soft pillow\"",
+     "options": [
+      "soft",
+      "the",
+      "pillow"
+     ],
+     "answer": 0,
+     "explain": "Soft tells us more about the pillow."
+    },
+    {
+     "id": "big",
+     "q": "Which word describes? \"a big elephant\"",
+     "options": [
+      "big",
+      "a",
+      "elephant"
+     ],
+     "answer": 0,
+     "explain": "Big tells us more about the elephant."
+    },
+    {
+     "id": "sweet",
+     "q": "Which word describes? \"the sweet mango\"",
+     "options": [
+      "sweet",
+      "the",
+      "mango"
+     ],
+     "answer": 0,
+     "explain": "Sweet tells us more about the mango."
+    },
+    {
+     "id": "cold",
+     "q": "Which word describes? \"a cold drink\"",
+     "options": [
+      "cold",
+      "a",
+      "drink"
+     ],
+     "answer": 0,
+     "explain": "Cold tells us more about the drink."
+    },
+    {
+     "id": "noisy",
+     "q": "Which word describes? \"the noisy class\"",
+     "options": [
+      "noisy",
+      "the",
+      "class"
+     ],
+     "answer": 0,
+     "explain": "Noisy tells us more about the class."
+    },
+    {
+     "id": "little",
+     "q": "Which word describes? \"a little kitten\"",
+     "options": [
+      "little",
+      "a",
+      "kitten"
+     ],
+     "answer": 0,
+     "explain": "Little tells us more about the kitten."
+    },
+    {
+     "id": "old",
+     "q": "Which word describes? \"the old house\"",
+     "options": [
+      "old",
+      "the",
+      "house"
+     ],
+     "answer": 0,
+     "explain": "Old tells us more about the house."
+    },
+    {
+     "id": "bright",
+     "q": "Which word describes? \"a bright star\"",
+     "options": [
+      "bright",
+      "a",
+      "star"
+     ],
+     "answer": 0,
+     "explain": "Bright tells us more about the star."
+    }
+   ]
+  }
+ ]
+}

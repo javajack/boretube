@@ -1,0 +1,311 @@
+{
+ "id": "evs-5",
+ "subject": "evs",
+ "grade": 5,
+ "version": 1,
+ "reviewed": {
+  "by": "",
+  "at": ""
+ },
+ "skills": [
+  {
+   "id": "ev5.states",
+   "title": "Solid, liquid, gas",
+   "outcome": "EV-5.06",
+   "badge": "ice",
+   "formats": [
+    "quickfire"
+   ],
+   "items": [
+    {
+     "id": "st0",
+     "q": "Ice is a ___.",
+     "options": [
+      "solid",
+      "liquid",
+      "gas"
+     ],
+     "answer": 0,
+     "explain": "Ice keeps its shape, so it is a solid."
+    },
+    {
+     "id": "st1",
+     "q": "Water is a ___.",
+     "options": [
+      "liquid",
+      "solid",
+      "gas"
+     ],
+     "answer": 0,
+     "explain": "Water flows and takes the shape of its pot."
+    },
+    {
+     "id": "st2",
+     "q": "Steam is a ___.",
+     "options": [
+      "gas",
+      "solid",
+      "liquid"
+     ],
+     "answer": 0,
+     "explain": "Steam spreads out into the air, so it is a gas."
+    },
+    {
+     "id": "st3",
+     "q": "A stone is a ___.",
+     "options": [
+      "solid",
+      "liquid",
+      "gas"
+     ],
+     "answer": 0,
+     "explain": "A stone keeps its shape, so it is a solid."
+    },
+    {
+     "id": "st4",
+     "q": "Milk is a ___.",
+     "options": [
+      "liquid",
+      "solid",
+      "gas"
+     ],
+     "answer": 0,
+     "explain": "Milk flows and takes the shape of its glass."
+    },
+    {
+     "id": "st5",
+     "q": "Air is a ___.",
+     "options": [
+      "gas",
+      "solid",
+      "liquid"
+     ],
+     "answer": 0,
+     "explain": "Air spreads out everywhere, so it is a gas."
+    },
+    {
+     "id": "st6",
+     "q": "Juice is a ___.",
+     "options": [
+      "liquid",
+      "solid",
+      "gas"
+     ],
+     "answer": 0,
+     "explain": "Juice flows and can be poured, so it is a liquid."
+    },
+    {
+     "id": "st7",
+     "q": "A wooden table is a ___.",
+     "options": [
+      "solid",
+      "liquid",
+      "gas"
+     ],
+     "answer": 0,
+     "explain": "A table keeps its shape, so it is a solid."
+    },
+    {
+     "id": "st8",
+     "q": "Oil is a ___.",
+     "options": [
+      "liquid",
+      "solid",
+      "gas"
+     ],
+     "answer": 0,
+     "explain": "Oil flows and can be poured, so it is a liquid."
+    },
+    {
+     "id": "st9",
+     "q": "Smoke is a ___.",
+     "options": [
+      "gas",
+      "solid",
+      "liquid"
+     ],
+     "answer": 0,
+     "explain": "Smoke spreads out into the air, so it is a gas."
+    },
+    {
+     "id": "st10",
+     "q": "A coin is a ___.",
+     "options": [
+      "solid",
+      "liquid",
+      "gas"
+     ],
+     "answer": 0,
+     "explain": "A coin keeps its shape, so it is a solid."
+    },
+    {
+     "id": "st11",
+     "q": "The air in a balloon is a ___.",
+     "options": [
+      "gas",
+      "solid",
+      "liquid"
+     ],
+     "answer": 0,
+     "explain": "Air fills the whole balloon, so it is a gas."
+    }
+   ]
+  },
+  {
+   "id": "ev5.seeds",
+   "title": "Seeds and growing",
+   "outcome": "EV-5.03",
+   "badge": "seed",
+   "formats": [
+    "quickfire",
+    "catch"
+   ],
+   "items": [
+    {
+     "id": "sd0",
+     "q": "What does a seed need to sprout?",
+     "options": [
+      "water",
+      "sugar",
+      "salt",
+      "plastic"
+     ],
+     "answer": 0,
+     "explain": "Seeds need water to sprout."
+    },
+    {
+     "id": "sd1",
+     "q": "A baby plant coming out of a seed is a ___.",
+     "options": [
+      "sprout",
+      "root",
+      "flower",
+      "fruit"
+     ],
+     "answer": 0,
+     "explain": "A tiny new plant from a seed is a sprout."
+    },
+    {
+     "id": "sd2",
+     "q": "Which seeds do we eat as dal?",
+     "options": [
+      "lentils",
+      "mango",
+      "apple",
+      "neem"
+     ],
+     "answer": 0,
+     "explain": "Dal is made from lentil seeds."
+    },
+    {
+     "id": "sd3",
+     "q": "How are some seeds carried far away?",
+     "options": [
+      "wind",
+      "roots",
+      "rocks",
+      "soil"
+     ],
+     "answer": 0,
+     "explain": "Light seeds fly away on the wind."
+    },
+    {
+     "id": "sd4",
+     "q": "What do plants need to make food?",
+     "options": [
+      "sunlight",
+      "darkness",
+      "sand",
+      "smoke"
+     ],
+     "answer": 0,
+     "explain": "Plants use sunlight to make food."
+    },
+    {
+     "id": "sd5",
+     "q": "Which part of a mango is the seed?",
+     "options": [
+      "stone",
+      "skin",
+      "pulp",
+      "juice"
+     ],
+     "answer": 0,
+     "explain": "The hard stone inside a mango is its seed."
+    },
+    {
+     "id": "sd6",
+     "q": "Farmers sow seeds in the ___.",
+     "options": [
+      "field",
+      "river",
+      "road",
+      "sky"
+     ],
+     "answer": 0,
+     "explain": "Farmers sow seeds in fields."
+    },
+    {
+     "id": "sd7",
+     "q": "Which fruit has its seeds outside?",
+     "options": [
+      "strawberry",
+      "mango",
+      "apple",
+      "orange"
+     ],
+     "answer": 0,
+     "explain": "A strawberry has tiny seeds on the outside."
+    },
+    {
+     "id": "sd8",
+     "q": "Moong seeds kept in wet cloth will ___.",
+     "options": [
+      "sprout",
+      "melt",
+      "burn",
+      "break"
+     ],
+     "answer": 0,
+     "explain": "Wet moong seeds sprout in a day or two."
+    },
+    {
+     "id": "sd9",
+     "q": "A plant without sunlight turns ___.",
+     "options": [
+      "yellow",
+      "blue",
+      "red",
+      "black"
+     ],
+     "answer": 0,
+     "explain": "Without sunlight, plants become pale and yellow."
+    },
+    {
+     "id": "sd10",
+     "q": "Which one helps spread seeds?",
+     "options": [
+      "birds",
+      "stones",
+      "chairs",
+      "clouds"
+     ],
+     "answer": 0,
+     "explain": "Birds eat fruit and drop the seeds."
+    },
+    {
+     "id": "sd11",
+     "q": "A seed grows best in ___ soil.",
+     "options": [
+      "wet",
+      "dry",
+      "burnt",
+      "frozen"
+     ],
+     "answer": 0,
+     "explain": "Seeds grow best in soil that is wet."
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,310 @@
+{
+ "id": "english-7",
+ "subject": "english",
+ "grade": 7,
+ "version": 1,
+ "reviewed": {
+  "by": "",
+  "at": ""
+ },
+ "skills": [
+  {
+   "id": "en7.tense",
+   "title": "Now, then, later",
+   "outcome": "EN-7.04",
+   "badge": "-ing",
+   "formats": [
+    "quickfire"
+   ],
+   "items": [
+    {
+     "id": "t0",
+     "q": "She ___ a book now.",
+     "options": [
+      "is reading",
+      "read",
+      "will read",
+      "was reading"
+     ],
+     "answer": 0,
+     "explain": "Now means it is happening: is reading."
+    },
+    {
+     "id": "t1",
+     "q": "Yesterday, we ___ a film.",
+     "options": [
+      "watched",
+      "watch",
+      "will watch",
+      "are watching"
+     ],
+     "answer": 0,
+     "explain": "Yesterday means the past: watched."
+    },
+    {
+     "id": "t2",
+     "q": "Tomorrow, I ___ my aunt.",
+     "options": [
+      "will visit",
+      "visited",
+      "visit",
+      "am visiting"
+     ],
+     "answer": 0,
+     "explain": "Tomorrow means later: will visit."
+    },
+    {
+     "id": "t3",
+     "q": "They ___ cricket right now.",
+     "options": [
+      "are playing",
+      "played",
+      "will play",
+      "play"
+     ],
+     "answer": 0,
+     "explain": "Right now means it is happening: are playing."
+    },
+    {
+     "id": "t4",
+     "q": "Last week, he ___ a letter.",
+     "options": [
+      "wrote",
+      "writes",
+      "will write",
+      "is writing"
+     ],
+     "answer": 0,
+     "explain": "Last week means the past: wrote."
+    },
+    {
+     "id": "t5",
+     "q": "Next year, we ___ to Goa.",
+     "options": [
+      "will go",
+      "went",
+      "go",
+      "are going"
+     ],
+     "answer": 0,
+     "explain": "Next year means later: will go."
+    },
+    {
+     "id": "t6",
+     "q": "Look, the baby ___!",
+     "options": [
+      "is sleeping",
+      "slept",
+      "will sleep",
+      "sleep"
+     ],
+     "answer": 0,
+     "explain": "Look means it is happening now: is sleeping."
+    },
+    {
+     "id": "t7",
+     "q": "Last night, it ___ heavily.",
+     "options": [
+      "rained",
+      "rains",
+      "will rain",
+      "is raining"
+     ],
+     "answer": 0,
+     "explain": "Last night means the past: rained."
+    },
+    {
+     "id": "t8",
+     "q": "Soon, the train ___.",
+     "options": [
+      "will arrive",
+      "arrived",
+      "arrives",
+      "was arriving"
+     ],
+     "answer": 0,
+     "explain": "Soon means later: will arrive."
+    },
+    {
+     "id": "t9",
+     "q": "Listen, the birds ___.",
+     "options": [
+      "are singing",
+      "sang",
+      "will sing",
+      "sing"
+     ],
+     "answer": 0,
+     "explain": "Listen means it is happening now: are singing."
+    },
+    {
+     "id": "t10",
+     "q": "Two days ago, I ___ a cake.",
+     "options": [
+      "baked",
+      "bake",
+      "will bake",
+      "am baking"
+     ],
+     "answer": 0,
+     "explain": "Two days ago means the past: baked."
+    },
+    {
+     "id": "t11",
+     "q": "This evening, Mom ___ dal.",
+     "options": [
+      "will cook",
+      "cooked",
+      "cooks",
+      "was cooking"
+     ],
+     "answer": 0,
+     "explain": "This evening is later today: will cook."
+    }
+   ]
+  },
+  {
+   "id": "en7.agree",
+   "title": "Is or are",
+   "outcome": "EN-7.06",
+   "badge": "are",
+   "formats": [
+    "quickfire"
+   ],
+   "items": [
+    {
+     "id": "a0",
+     "q": "The boys ___ playing.",
+     "options": [
+      "are",
+      "is",
+      "am"
+     ],
+     "answer": 0,
+     "explain": "Boys means many, so we use are."
+    },
+    {
+     "id": "a1",
+     "q": "My sister ___ singing.",
+     "options": [
+      "is",
+      "are",
+      "am"
+     ],
+     "answer": 0,
+     "explain": "Sister is one person, so we use is."
+    },
+    {
+     "id": "a2",
+     "q": "I ___ ready.",
+     "options": [
+      "am",
+      "is",
+      "are"
+     ],
+     "answer": 0,
+     "explain": "With I, we always use am."
+    },
+    {
+     "id": "a3",
+     "q": "The flowers ___ pretty.",
+     "options": [
+      "are",
+      "is",
+      "am"
+     ],
+     "answer": 0,
+     "explain": "Flowers means many, so we use are."
+    },
+    {
+     "id": "a4",
+     "q": "The sun ___ hot.",
+     "options": [
+      "is",
+      "are",
+      "am"
+     ],
+     "answer": 0,
+     "explain": "The sun is one thing, so we use is."
+    },
+    {
+     "id": "a5",
+     "q": "We ___ friends.",
+     "options": [
+      "are",
+      "is",
+      "am"
+     ],
+     "answer": 0,
+     "explain": "We means more than one, so we use are."
+    },
+    {
+     "id": "a6",
+     "q": "He ___ my teacher.",
+     "options": [
+      "is",
+      "are",
+      "am"
+     ],
+     "answer": 0,
+     "explain": "He is one person, so we use is."
+    },
+    {
+     "id": "a7",
+     "q": "The children ___ in the park.",
+     "options": [
+      "are",
+      "is",
+      "am"
+     ],
+     "answer": 0,
+     "explain": "Children means many, so we use are."
+    },
+    {
+     "id": "a8",
+     "q": "This mango ___ sweet.",
+     "options": [
+      "is",
+      "are",
+      "am"
+     ],
+     "answer": 0,
+     "explain": "One mango, so we use is."
+    },
+    {
+     "id": "a9",
+     "q": "You ___ kind.",
+     "options": [
+      "are",
+      "is",
+      "am"
+     ],
+     "answer": 0,
+     "explain": "With you, we always use are."
+    },
+    {
+     "id": "a10",
+     "q": "The dogs ___ barking.",
+     "options": [
+      "are",
+      "is",
+      "am"
+     ],
+     "answer": 0,
+     "explain": "Dogs means many, so we use are."
+    },
+    {
+     "id": "a11",
+     "q": "My bag ___ heavy.",
+     "options": [
+      "is",
+      "are",
+      "am"
+     ],
+     "answer": 0,
+     "explain": "One bag, so we use is."
+    }
+   ]
+  }
+ ]
+}

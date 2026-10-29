@@ -1,0 +1,324 @@
+{
+ "id": "evs-1",
+ "subject": "evs",
+ "grade": 1,
+ "version": 1,
+ "reviewed": {
+  "by": "",
+  "at": ""
+ },
+ "skills": [
+  {
+   "id": "ev1.fruits",
+   "title": "Fruits and vegetables",
+   "outcome": "EV-1.03",
+   "badge": "fruit",
+   "formats": [
+    "quickfire",
+    "catch"
+   ],
+   "items": [
+    {
+     "id": "f0",
+     "q": "Which one is a fruit?",
+     "options": [
+      "mango",
+      "carrot",
+      "potato",
+      "onion"
+     ],
+     "answer": 0,
+     "explain": "A mango is a sweet fruit."
+    },
+    {
+     "id": "f1",
+     "q": "Which one is a vegetable?",
+     "options": [
+      "carrot",
+      "apple",
+      "banana",
+      "grapes"
+     ],
+     "answer": 0,
+     "explain": "A carrot is a vegetable that grows in soil."
+    },
+    {
+     "id": "f2",
+     "q": "Which fruit is yellow?",
+     "options": [
+      "banana",
+      "apple",
+      "grapes",
+      "plum"
+     ],
+     "answer": 0,
+     "explain": "A ripe banana is yellow."
+    },
+    {
+     "id": "f3",
+     "q": "Which one grows under the soil?",
+     "options": [
+      "potato",
+      "mango",
+      "apple",
+      "banana"
+     ],
+     "answer": 0,
+     "explain": "A potato grows under the soil."
+    },
+    {
+     "id": "f4",
+     "q": "Which fruit is red?",
+     "options": [
+      "apple",
+      "banana",
+      "lemon",
+      "pear"
+     ],
+     "answer": 0,
+     "explain": "An apple can be red."
+    },
+    {
+     "id": "f5",
+     "q": "Which one is sour?",
+     "options": [
+      "lemon",
+      "mango",
+      "banana",
+      "apple"
+     ],
+     "answer": 0,
+     "explain": "A lemon tastes sour."
+    },
+    {
+     "id": "f6",
+     "q": "Which vegetable makes us cry?",
+     "options": [
+      "onion",
+      "carrot",
+      "pea",
+      "corn"
+     ],
+     "answer": 0,
+     "explain": "Cutting an onion can make our eyes water."
+    },
+    {
+     "id": "f7",
+     "q": "Which fruit has many seeds inside?",
+     "options": [
+      "melon",
+      "mango",
+      "plum",
+      "cherry"
+     ],
+     "answer": 0,
+     "explain": "A melon has many seeds inside."
+    },
+    {
+     "id": "f8",
+     "q": "Which one is green?",
+     "options": [
+      "peas",
+      "carrot",
+      "apple",
+      "orange"
+     ],
+     "answer": 0,
+     "explain": "Peas are small and green."
+    },
+    {
+     "id": "f9",
+     "q": "Which fruit do we peel?",
+     "options": [
+      "orange",
+      "grapes",
+      "cherry",
+      "plum"
+     ],
+     "answer": 0,
+     "explain": "We peel an orange before eating."
+    },
+    {
+     "id": "f10",
+     "q": "Which one is the king of fruits?",
+     "options": [
+      "mango",
+      "carrot",
+      "onion",
+      "potato"
+     ],
+     "answer": 0,
+     "explain": "The mango is called the king of fruits."
+    },
+    {
+     "id": "f11",
+     "q": "Which one is a leafy vegetable?",
+     "options": [
+      "spinach",
+      "apple",
+      "mango",
+      "banana"
+     ],
+     "answer": 0,
+     "explain": "Spinach has big green leaves we eat."
+    }
+   ]
+  },
+  {
+   "id": "ev1.senses",
+   "title": "Our senses",
+   "outcome": "EV-1.01",
+   "badge": "ear",
+   "formats": [
+    "quickfire",
+    "catch"
+   ],
+   "items": [
+    {
+     "id": "s0",
+     "q": "We hear with our ___.",
+     "options": [
+      "ears",
+      "eyes",
+      "nose",
+      "hands"
+     ],
+     "answer": 0,
+     "explain": "Our ears help us hear."
+    },
+    {
+     "id": "s1",
+     "q": "We see with our ___.",
+     "options": [
+      "eyes",
+      "ears",
+      "tongue",
+      "skin"
+     ],
+     "answer": 0,
+     "explain": "Our eyes help us see."
+    },
+    {
+     "id": "s2",
+     "q": "We taste with our ___.",
+     "options": [
+      "tongue",
+      "nose",
+      "ears",
+      "eyes"
+     ],
+     "answer": 0,
+     "explain": "Our tongue tells us the taste."
+    },
+    {
+     "id": "s3",
+     "q": "We smell with our ___.",
+     "options": [
+      "nose",
+      "tongue",
+      "ears",
+      "eyes"
+     ],
+     "answer": 0,
+     "explain": "Our nose helps us smell."
+    },
+    {
+     "id": "s4",
+     "q": "We feel hot and cold with our ___.",
+     "options": [
+      "skin",
+      "ears",
+      "nose",
+      "teeth"
+     ],
+     "answer": 0,
+     "explain": "Our skin feels hot and cold."
+    },
+    {
+     "id": "s5",
+     "q": "Sugar tastes ___.",
+     "options": [
+      "sweet",
+      "sour",
+      "salty",
+      "bitter"
+     ],
+     "answer": 0,
+     "explain": "Sugar tastes sweet."
+    },
+    {
+     "id": "s6",
+     "q": "A lemon tastes ___.",
+     "options": [
+      "sour",
+      "sweet",
+      "salty",
+      "spicy"
+     ],
+     "answer": 0,
+     "explain": "A lemon tastes sour."
+    },
+    {
+     "id": "s7",
+     "q": "A drum sounds ___.",
+     "options": [
+      "loud",
+      "soft",
+      "sweet",
+      "sour"
+     ],
+     "answer": 0,
+     "explain": "A drum makes a loud sound."
+    },
+    {
+     "id": "s8",
+     "q": "Ice feels ___.",
+     "options": [
+      "cold",
+      "hot",
+      "warm",
+      "soft"
+     ],
+     "answer": 0,
+     "explain": "Ice feels cold."
+    },
+    {
+     "id": "s9",
+     "q": "A pillow feels ___.",
+     "options": [
+      "soft",
+      "hard",
+      "hot",
+      "sharp"
+     ],
+     "answer": 0,
+     "explain": "A pillow feels soft."
+    },
+    {
+     "id": "s10",
+     "q": "How many senses do we have?",
+     "options": [
+      "five",
+      "two",
+      "three",
+      "ten"
+     ],
+     "answer": 0,
+     "explain": "We have five senses."
+    },
+    {
+     "id": "s11",
+     "q": "Salt tastes ___.",
+     "options": [
+      "salty",
+      "sweet",
+      "sour",
+      "bitter"
+     ],
+     "answer": 0,
+     "explain": "Salt tastes salty."
+    }
+   ]
+  }
+ ]
+}

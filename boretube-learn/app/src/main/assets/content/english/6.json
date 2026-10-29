@@ -1,0 +1,324 @@
+{
+ "id": "english-6",
+ "subject": "english",
+ "grade": 6,
+ "version": 1,
+ "reviewed": {
+  "by": "",
+  "at": ""
+ },
+ "skills": [
+  {
+   "id": "en6.prep",
+   "title": "Where things are",
+   "outcome": "EN-6.05",
+   "badge": "in",
+   "formats": [
+    "quickfire",
+    "catch"
+   ],
+   "items": [
+    {
+     "id": "pr0",
+     "q": "The ball is ___ the box. (inside it)",
+     "options": [
+      "in",
+      "on",
+      "under",
+      "behind"
+     ],
+     "answer": 0,
+     "explain": "Inside something means in."
+    },
+    {
+     "id": "pr1",
+     "q": "The cat is ___ the table. (below it)",
+     "options": [
+      "under",
+      "on",
+      "in",
+      "above"
+     ],
+     "answer": 0,
+     "explain": "Below something means under."
+    },
+    {
+     "id": "pr2",
+     "q": "The book is ___ the desk. (on top of it)",
+     "options": [
+      "on",
+      "under",
+      "in",
+      "behind"
+     ],
+     "answer": 0,
+     "explain": "On top of something means on."
+    },
+    {
+     "id": "pr3",
+     "q": "The boy is ___ the tree. (at its back)",
+     "options": [
+      "behind",
+      "in",
+      "on",
+      "under"
+     ],
+     "answer": 0,
+     "explain": "At the back of something means behind."
+    },
+    {
+     "id": "pr4",
+     "q": "The bird is ___ the house. (higher than it)",
+     "options": [
+      "above",
+      "under",
+      "in",
+      "behind"
+     ],
+     "answer": 0,
+     "explain": "Higher than something means above."
+    },
+    {
+     "id": "pr5",
+     "q": "The shop is ___ the school. (close to it)",
+     "options": [
+      "near",
+      "under",
+      "in",
+      "on"
+     ],
+     "answer": 0,
+     "explain": "Close to something means near."
+    },
+    {
+     "id": "pr6",
+     "q": "The dog is ___ the two chairs. (in the middle)",
+     "options": [
+      "between",
+      "on",
+      "under",
+      "above"
+     ],
+     "answer": 0,
+     "explain": "In the middle of two things means between."
+    },
+    {
+     "id": "pr7",
+     "q": "The car is ___ the garage. (inside it)",
+     "options": [
+      "in",
+      "on",
+      "above",
+      "behind"
+     ],
+     "answer": 0,
+     "explain": "Inside something means in."
+    },
+    {
+     "id": "pr8",
+     "q": "The shoes is ___ the bed. (below it)",
+     "options": [
+      "under",
+      "on",
+      "in",
+      "above"
+     ],
+     "answer": 0,
+     "explain": "Below something means under."
+    },
+    {
+     "id": "pr9",
+     "q": "The cup is ___ the plate. (on top of it)",
+     "options": [
+      "on",
+      "under",
+      "in",
+      "behind"
+     ],
+     "answer": 0,
+     "explain": "On top of something means on."
+    },
+    {
+     "id": "pr10",
+     "q": "The girl is ___ the door. (at its back)",
+     "options": [
+      "behind",
+      "in",
+      "on",
+      "above"
+     ],
+     "answer": 0,
+     "explain": "At the back of something means behind."
+    },
+    {
+     "id": "pr11",
+     "q": "The moon is ___ the hills. (higher than them)",
+     "options": [
+      "above",
+      "under",
+      "in",
+      "behind"
+     ],
+     "answer": 0,
+     "explain": "Higher than something means above."
+    }
+   ]
+  },
+  {
+   "id": "en6.pronoun",
+   "title": "Pronouns",
+   "outcome": "EN-6.06",
+   "badge": "she",
+   "formats": [
+    "quickfire",
+    "catch"
+   ],
+   "items": [
+    {
+     "id": "pn0",
+     "q": "Riya is my friend. ___ lives near me.",
+     "options": [
+      "She",
+      "He",
+      "It",
+      "They"
+     ],
+     "answer": 0,
+     "explain": "Riya is a girl, so we use she."
+    },
+    {
+     "id": "pn1",
+     "q": "Arjun likes cricket. ___ plays every day.",
+     "options": [
+      "He",
+      "She",
+      "It",
+      "They"
+     ],
+     "answer": 0,
+     "explain": "Arjun is a boy, so we use he."
+    },
+    {
+     "id": "pn2",
+     "q": "The dog is hungry. ___ wants food.",
+     "options": [
+      "It",
+      "He",
+      "She",
+      "We"
+     ],
+     "answer": 0,
+     "explain": "A dog is an animal, so we use it."
+    },
+    {
+     "id": "pn3",
+     "q": "Meena and Ravi are here. ___ are my cousins.",
+     "options": [
+      "They",
+      "He",
+      "She",
+      "It"
+     ],
+     "answer": 0,
+     "explain": "Two people means they."
+    },
+    {
+     "id": "pn4",
+     "q": "My mother is a doctor. ___ works at a hospital.",
+     "options": [
+      "She",
+      "He",
+      "It",
+      "They"
+     ],
+     "answer": 0,
+     "explain": "Mother is a woman, so we use she."
+    },
+    {
+     "id": "pn5",
+     "q": "Grandpa tells stories. ___ is very funny.",
+     "options": [
+      "He",
+      "She",
+      "It",
+      "They"
+     ],
+     "answer": 0,
+     "explain": "Grandpa is a man, so we use he."
+    },
+    {
+     "id": "pn6",
+     "q": "The kite is in the sky. ___ is very high.",
+     "options": [
+      "It",
+      "He",
+      "She",
+      "They"
+     ],
+     "answer": 0,
+     "explain": "A kite is a thing, so we use it."
+    },
+    {
+     "id": "pn7",
+     "q": "Tom and I play chess. ___ play after school.",
+     "options": [
+      "We",
+      "They",
+      "He",
+      "It"
+     ],
+     "answer": 0,
+     "explain": "Tom and I means we."
+    },
+    {
+     "id": "pn8",
+     "q": "The birds sing at dawn. ___ wake me up.",
+     "options": [
+      "They",
+      "It",
+      "He",
+      "She"
+     ],
+     "answer": 0,
+     "explain": "Many birds means they."
+    },
+    {
+     "id": "pn9",
+     "q": "Aunt Lata makes ladoos. ___ makes them for Diwali.",
+     "options": [
+      "She",
+      "He",
+      "It",
+      "We"
+     ],
+     "answer": 0,
+     "explain": "Aunt Lata is a woman, so we use she."
+    },
+    {
+     "id": "pn10",
+     "q": "The bus is late. ___ will come soon.",
+     "options": [
+      "It",
+      "He",
+      "She",
+      "They"
+     ],
+     "answer": 0,
+     "explain": "A bus is a thing, so we use it."
+    },
+    {
+     "id": "pn11",
+     "q": "My brothers love football. ___ play every evening.",
+     "options": [
+      "They",
+      "He",
+      "It",
+      "She"
+     ],
+     "answer": 0,
+     "explain": "Many brothers means they."
+    }
+   ]
+  }
+ ]
+}

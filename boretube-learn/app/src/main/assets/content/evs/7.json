@@ -1,0 +1,322 @@
+{
+ "id": "evs-7",
+ "subject": "evs",
+ "grade": 7,
+ "version": 1,
+ "reviewed": {
+  "by": "",
+  "at": ""
+ },
+ "skills": [
+  {
+   "id": "sc7.plants",
+   "title": "How plants make food",
+   "outcome": "SC-7.01",
+   "badge": "leaf",
+   "formats": [
+    "quickfire"
+   ],
+   "items": [
+    {
+     "id": "ps0",
+     "q": "Plants make food using ___.",
+     "options": [
+      "sunlight",
+      "moonlight",
+      "smoke",
+      "sand"
+     ],
+     "answer": 0,
+     "explain": "Plants use sunlight to make their food."
+    },
+    {
+     "id": "ps1",
+     "q": "The green colour in leaves is ___.",
+     "options": [
+      "chlorophyll",
+      "starch",
+      "sugar",
+      "oxygen"
+     ],
+     "answer": 0,
+     "explain": "Chlorophyll makes leaves green and traps sunlight."
+    },
+    {
+     "id": "ps2",
+     "q": "Plants take in which gas to make food?",
+     "options": [
+      "carbon dioxide",
+      "oxygen",
+      "helium",
+      "smoke"
+     ],
+     "answer": 0,
+     "explain": "Plants take in carbon dioxide from the air."
+    },
+    {
+     "id": "ps3",
+     "q": "Plants give out which gas?",
+     "options": [
+      "oxygen",
+      "carbon dioxide",
+      "steam",
+      "smoke"
+     ],
+     "answer": 0,
+     "explain": "Plants give out oxygen that we breathe."
+    },
+    {
+     "id": "ps4",
+     "q": "Leaves store food as ___.",
+     "options": [
+      "starch",
+      "salt",
+      "oil",
+      "sand"
+     ],
+     "answer": 0,
+     "explain": "Plants store their food as starch."
+    },
+    {
+     "id": "ps5",
+     "q": "Water reaches the leaves through the ___.",
+     "options": [
+      "stem",
+      "flower",
+      "fruit",
+      "seed"
+     ],
+     "answer": 0,
+     "explain": "The stem carries water up from the roots."
+    },
+    {
+     "id": "ps6",
+     "q": "Tiny pores on leaves are ___.",
+     "options": [
+      "stomata",
+      "roots",
+      "petals",
+      "seeds"
+     ],
+     "answer": 0,
+     "explain": "Stomata are tiny pores that let gases in and out."
+    },
+    {
+     "id": "ps7",
+     "q": "Making food with sunlight is called ___.",
+     "options": [
+      "photosynthesis",
+      "digestion",
+      "breathing",
+      "melting"
+     ],
+     "answer": 0,
+     "explain": "Photosynthesis means making food using light."
+    },
+    {
+     "id": "ps8",
+     "q": "Which plant eats insects?",
+     "options": [
+      "pitcher plant",
+      "mango tree",
+      "rose",
+      "grass"
+     ],
+     "answer": 0,
+     "explain": "A pitcher plant traps and eats insects."
+    },
+    {
+     "id": "ps9",
+     "q": "Cuscuta takes food from other plants. It is a ___.",
+     "options": [
+      "parasite",
+      "seed",
+      "fruit",
+      "root"
+     ],
+     "answer": 0,
+     "explain": "A parasite lives on another plant for food."
+    },
+    {
+     "id": "ps10",
+     "q": "Fungi like mushrooms get food from ___.",
+     "options": [
+      "dead matter",
+      "sunlight",
+      "rocks",
+      "air"
+     ],
+     "answer": 0,
+     "explain": "Mushrooms feed on dead and rotting things."
+    },
+    {
+     "id": "ps11",
+     "q": "Which part of the plant makes most food?",
+     "options": [
+      "leaves",
+      "roots",
+      "stem",
+      "flower"
+     ],
+     "answer": 0,
+     "explain": "Leaves are the plant's food factories."
+    }
+   ]
+  },
+  {
+   "id": "sc7.heat",
+   "title": "Heat",
+   "outcome": "SC-7.04",
+   "badge": "fire",
+   "formats": [
+    "quickfire"
+   ],
+   "items": [
+    {
+     "id": "ht0",
+     "q": "Which one lets heat pass easily?",
+     "options": [
+      "iron",
+      "wood",
+      "plastic",
+      "cloth"
+     ],
+     "answer": 0,
+     "explain": "Metals like iron let heat pass through quickly."
+    },
+    {
+     "id": "ht1",
+     "q": "Which one is a poor conductor of heat?",
+     "options": [
+      "wood",
+      "iron",
+      "copper",
+      "steel"
+     ],
+     "answer": 0,
+     "explain": "Wood does not let heat pass easily."
+    },
+    {
+     "id": "ht2",
+     "q": "We measure temperature with a ___.",
+     "options": [
+      "thermometer",
+      "ruler",
+      "scale",
+      "clock"
+     ],
+     "answer": 0,
+     "explain": "A thermometer measures how hot or cold something is."
+    },
+    {
+     "id": "ht3",
+     "q": "Normal body temperature is about ___.",
+     "options": [
+      "37 °C",
+      "10 °C",
+      "60 °C",
+      "100 °C"
+     ],
+     "answer": 0,
+     "explain": "Our body is usually about 37 degrees Celsius."
+    },
+    {
+     "id": "ht4",
+     "q": "Heat from the sun reaches us by ___.",
+     "options": [
+      "radiation",
+      "conduction",
+      "water",
+      "wires"
+     ],
+     "answer": 0,
+     "explain": "Sunlight's heat travels to us by radiation."
+    },
+    {
+     "id": "ht5",
+     "q": "Warm air ___.",
+     "options": [
+      "rises",
+      "sinks",
+      "freezes",
+      "stops"
+     ],
+     "answer": 0,
+     "explain": "Warm air is lighter, so it rises."
+    },
+    {
+     "id": "ht6",
+     "q": "In summer, we wear ___ clothes.",
+     "options": [
+      "light",
+      "dark",
+      "woollen",
+      "thick"
+     ],
+     "answer": 0,
+     "explain": "Light colours and thin cloth keep us cool."
+    },
+    {
+     "id": "ht7",
+     "q": "Woollen clothes keep us warm by trapping ___.",
+     "options": [
+      "air",
+      "water",
+      "light",
+      "dust"
+     ],
+     "answer": 0,
+     "explain": "Wool traps air, which keeps the heat in."
+    },
+    {
+     "id": "ht8",
+     "q": "A pan handle is made of plastic because plastic is a ___.",
+     "options": [
+      "poor conductor",
+      "good conductor",
+      "metal",
+      "liquid"
+     ],
+     "answer": 0,
+     "explain": "Plastic stops the heat reaching our hand."
+    },
+    {
+     "id": "ht9",
+     "q": "Heat moves from a ___ object to a cooler one.",
+     "options": [
+      "hotter",
+      "colder",
+      "heavier",
+      "smaller"
+     ],
+     "answer": 0,
+     "explain": "Heat always flows from hot to cold."
+    },
+    {
+     "id": "ht10",
+     "q": "A sea breeze blows from sea to land in the ___.",
+     "options": [
+      "day",
+      "night",
+      "winter",
+      "rain"
+     ],
+     "answer": 0,
+     "explain": "In the day, land heats faster, so air moves in."
+    },
+    {
+     "id": "ht11",
+     "q": "Ice melts when we ___ it.",
+     "options": [
+      "heat",
+      "cool",
+      "freeze",
+      "shake"
+     ],
+     "answer": 0,
+     "explain": "Heating ice turns it into water."
+    }
+   ]
+  }
+ ]
+}

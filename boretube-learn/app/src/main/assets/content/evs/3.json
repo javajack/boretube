@@ -1,0 +1,324 @@
+{
+ "id": "evs-3",
+ "subject": "evs",
+ "grade": 3,
+ "version": 1,
+ "reviewed": {
+  "by": "",
+  "at": ""
+ },
+ "skills": [
+  {
+   "id": "ev3.water",
+   "title": "Water around us",
+   "outcome": "EV-3.05",
+   "badge": "drop",
+   "formats": [
+    "quickfire",
+    "catch"
+   ],
+   "items": [
+    {
+     "id": "w0",
+     "q": "Where does rain fall from?",
+     "options": [
+      "clouds",
+      "trees",
+      "rivers",
+      "hills"
+     ],
+     "answer": 0,
+     "explain": "Rain falls from the clouds."
+    },
+    {
+     "id": "w1",
+     "q": "Water turns into ice when it is very ___.",
+     "options": [
+      "cold",
+      "hot",
+      "dry",
+      "windy"
+     ],
+     "answer": 0,
+     "explain": "Very cold water freezes into ice."
+    },
+    {
+     "id": "w2",
+     "q": "Which of these needs water every day?",
+     "options": [
+      "plants",
+      "stones",
+      "chairs",
+      "toys"
+     ],
+     "answer": 0,
+     "explain": "All plants need water to live."
+    },
+    {
+     "id": "w3",
+     "q": "We should not ___ water.",
+     "options": [
+      "waste",
+      "drink",
+      "save",
+      "boil"
+     ],
+     "answer": 0,
+     "explain": "Water is precious, so we should not waste it."
+    },
+    {
+     "id": "w4",
+     "q": "Rivers flow into the ___.",
+     "options": [
+      "sea",
+      "sky",
+      "forest",
+      "desert"
+     ],
+     "answer": 0,
+     "explain": "Rivers carry their water to the sea."
+    },
+    {
+     "id": "w5",
+     "q": "Boiling water makes ___.",
+     "options": [
+      "steam",
+      "ice",
+      "sand",
+      "smoke"
+     ],
+     "answer": 0,
+     "explain": "Hot boiling water turns into steam."
+    },
+    {
+     "id": "w6",
+     "q": "Clean water to drink is ___ water.",
+     "options": [
+      "safe",
+      "dirty",
+      "salty",
+      "muddy"
+     ],
+     "answer": 0,
+     "explain": "Clean water is safe to drink."
+    },
+    {
+     "id": "w7",
+     "q": "Sea water tastes ___.",
+     "options": [
+      "salty",
+      "sweet",
+      "sour",
+      "bitter"
+     ],
+     "answer": 0,
+     "explain": "Sea water has salt in it."
+    },
+    {
+     "id": "w8",
+     "q": "What do we use to collect rain water?",
+     "options": [
+      "tank",
+      "basket",
+      "net",
+      "sieve"
+     ],
+     "answer": 0,
+     "explain": "A tank can store rain water."
+    },
+    {
+     "id": "w9",
+     "q": "A dry place with little rain is a ___.",
+     "options": [
+      "desert",
+      "river",
+      "lake",
+      "sea"
+     ],
+     "answer": 0,
+     "explain": "Deserts get very little rain."
+    },
+    {
+     "id": "w10",
+     "q": "Which animal lives in water?",
+     "options": [
+      "fish",
+      "camel",
+      "goat",
+      "lion"
+     ],
+     "answer": 0,
+     "explain": "Fish live in water."
+    },
+    {
+     "id": "w11",
+     "q": "Turning off the tap ___ water.",
+     "options": [
+      "saves",
+      "wastes",
+      "dirties",
+      "heats"
+     ],
+     "answer": 0,
+     "explain": "Closing the tap saves water."
+    }
+   ]
+  },
+  {
+   "id": "ev3.food",
+   "title": "Food we eat",
+   "outcome": "EV-3.03",
+   "badge": "rice",
+   "formats": [
+    "quickfire",
+    "catch"
+   ],
+   "items": [
+    {
+     "id": "fd0",
+     "q": "Which one comes from plants?",
+     "options": [
+      "rice",
+      "egg",
+      "milk",
+      "honey"
+     ],
+     "answer": 0,
+     "explain": "Rice grows on rice plants."
+    },
+    {
+     "id": "fd1",
+     "q": "Which one comes from animals?",
+     "options": [
+      "milk",
+      "rice",
+      "wheat",
+      "dal"
+     ],
+     "answer": 0,
+     "explain": "We get milk from cows and buffaloes."
+    },
+    {
+     "id": "fd2",
+     "q": "Bees give us ___.",
+     "options": [
+      "honey",
+      "milk",
+      "eggs",
+      "wool"
+     ],
+     "answer": 0,
+     "explain": "Bees make honey."
+    },
+    {
+     "id": "fd3",
+     "q": "Roti is made from ___.",
+     "options": [
+      "wheat",
+      "rice",
+      "corn",
+      "sugar"
+     ],
+     "answer": 0,
+     "explain": "Roti is made from wheat flour."
+    },
+    {
+     "id": "fd4",
+     "q": "Which food is a pulse?",
+     "options": [
+      "dal",
+      "rice",
+      "bread",
+      "milk"
+     ],
+     "answer": 0,
+     "explain": "Dal is made from pulses."
+    },
+    {
+     "id": "fd5",
+     "q": "We should wash fruits before ___.",
+     "options": [
+      "eating",
+      "buying",
+      "growing",
+      "selling"
+     ],
+     "answer": 0,
+     "explain": "Washing removes dirt and germs before eating."
+    },
+    {
+     "id": "fd6",
+     "q": "Too many sweets are bad for our ___.",
+     "options": [
+      "teeth",
+      "hair",
+      "nails",
+      "eyes"
+     ],
+     "answer": 0,
+     "explain": "Too much sugar harms our teeth."
+    },
+    {
+     "id": "fd7",
+     "q": "Which one is a healthy snack?",
+     "options": [
+      "fruit",
+      "chips",
+      "candy",
+      "cola"
+     ],
+     "answer": 0,
+     "explain": "Fruit is a healthy snack."
+    },
+    {
+     "id": "fd8",
+     "q": "Curd is made from ___.",
+     "options": [
+      "milk",
+      "water",
+      "rice",
+      "eggs"
+     ],
+     "answer": 0,
+     "explain": "Curd is made from milk."
+    },
+    {
+     "id": "fd9",
+     "q": "Which one gives us oil?",
+     "options": [
+      "mustard",
+      "rice",
+      "milk",
+      "tea"
+     ],
+     "answer": 0,
+     "explain": "Mustard seeds give us oil."
+    },
+    {
+     "id": "fd10",
+     "q": "Paneer is made from ___.",
+     "options": [
+      "milk",
+      "wheat",
+      "rice",
+      "dal"
+     ],
+     "answer": 0,
+     "explain": "Paneer is made from milk."
+    },
+    {
+     "id": "fd11",
+     "q": "Hens give us ___.",
+     "options": [
+      "eggs",
+      "milk",
+      "honey",
+      "wool"
+     ],
+     "answer": 0,
+     "explain": "Hens lay eggs."
+    }
+   ]
+  }
+ ]
+}

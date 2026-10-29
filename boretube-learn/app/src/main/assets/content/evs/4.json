@@ -1,0 +1,323 @@
+{
+ "id": "evs-4",
+ "subject": "evs",
+ "grade": 4,
+ "version": 1,
+ "reviewed": {
+  "by": "",
+  "at": ""
+ },
+ "skills": [
+  {
+   "id": "ev4.travel",
+   "title": "Ways we travel",
+   "outcome": "EV-4.06",
+   "badge": "bus",
+   "formats": [
+    "quickfire"
+   ],
+   "items": [
+    {
+     "id": "tr0",
+     "q": "Which one travels on water?",
+     "options": [
+      "boat",
+      "bus",
+      "train",
+      "car"
+     ],
+     "answer": 0,
+     "explain": "A boat moves on water."
+    },
+    {
+     "id": "tr1",
+     "q": "Which one flies in the sky?",
+     "options": [
+      "plane",
+      "ship",
+      "bus",
+      "cart"
+     ],
+     "answer": 0,
+     "explain": "A plane flies in the sky."
+    },
+    {
+     "id": "tr2",
+     "q": "Which one runs on rails?",
+     "options": [
+      "train",
+      "bus",
+      "boat",
+      "kite"
+     ],
+     "answer": 0,
+     "explain": "A train runs on rails."
+    },
+    {
+     "id": "tr3",
+     "q": "Which one needs no fuel?",
+     "options": [
+      "cycle",
+      "car",
+      "bus",
+      "plane"
+     ],
+     "answer": 0,
+     "explain": "We pedal a cycle, so it needs no fuel."
+    },
+    {
+     "id": "tr4",
+     "q": "A big boat that carries many people is a ___.",
+     "options": [
+      "ship",
+      "kite",
+      "cart",
+      "bike"
+     ],
+     "answer": 0,
+     "explain": "A ship is a very big boat."
+    },
+    {
+     "id": "tr5",
+     "q": "Which one is pulled by a bullock?",
+     "options": [
+      "cart",
+      "car",
+      "train",
+      "ship"
+     ],
+     "answer": 0,
+     "explain": "A bullock cart is pulled by bullocks."
+    },
+    {
+     "id": "tr6",
+     "q": "Where do planes land?",
+     "options": [
+      "airport",
+      "station",
+      "port",
+      "garage"
+     ],
+     "answer": 0,
+     "explain": "Planes land at an airport."
+    },
+    {
+     "id": "tr7",
+     "q": "Where do trains stop?",
+     "options": [
+      "station",
+      "airport",
+      "port",
+      "garden"
+     ],
+     "answer": 0,
+     "explain": "Trains stop at a railway station."
+    },
+    {
+     "id": "tr8",
+     "q": "Where do ships stop?",
+     "options": [
+      "port",
+      "station",
+      "airport",
+      "garage"
+     ],
+     "answer": 0,
+     "explain": "Ships stop at a port."
+    },
+    {
+     "id": "tr9",
+     "q": "Red traffic light means ___.",
+     "options": [
+      "stop",
+      "go",
+      "run",
+      "turn"
+     ],
+     "answer": 0,
+     "explain": "Red means stop."
+    },
+    {
+     "id": "tr10",
+     "q": "Green traffic light means ___.",
+     "options": [
+      "go",
+      "stop",
+      "wait",
+      "sit"
+     ],
+     "answer": 0,
+     "explain": "Green means go."
+    },
+    {
+     "id": "tr11",
+     "q": "We cross the road at the ___.",
+     "options": [
+      "zebra crossing",
+      "middle",
+      "corner",
+      "bridge"
+     ],
+     "answer": 0,
+     "explain": "The zebra crossing is the safe place to cross."
+    }
+   ]
+  },
+  {
+   "id": "ev4.animals",
+   "title": "Animal groups",
+   "outcome": "EV-4.03",
+   "badge": "egg",
+   "formats": [
+    "quickfire",
+    "catch"
+   ],
+   "items": [
+    {
+     "id": "an0",
+     "q": "Which animal lays eggs?",
+     "options": [
+      "hen",
+      "cow",
+      "dog",
+      "cat"
+     ],
+     "answer": 0,
+     "explain": "A hen lays eggs."
+    },
+    {
+     "id": "an1",
+     "q": "Which animal gives birth to babies?",
+     "options": [
+      "cow",
+      "hen",
+      "duck",
+      "snake"
+     ],
+     "answer": 0,
+     "explain": "A cow gives birth to calves."
+    },
+    {
+     "id": "an2",
+     "q": "Which animal eats only plants?",
+     "options": [
+      "goat",
+      "lion",
+      "tiger",
+      "wolf"
+     ],
+     "answer": 0,
+     "explain": "A goat eats only plants."
+    },
+    {
+     "id": "an3",
+     "q": "Which animal eats other animals?",
+     "options": [
+      "lion",
+      "cow",
+      "goat",
+      "deer"
+     ],
+     "answer": 0,
+     "explain": "A lion hunts other animals for food."
+    },
+    {
+     "id": "an4",
+     "q": "Which animal has feathers?",
+     "options": [
+      "parrot",
+      "cat",
+      "fish",
+      "frog"
+     ],
+     "answer": 0,
+     "explain": "A parrot has feathers."
+    },
+    {
+     "id": "an5",
+     "q": "Which animal has scales?",
+     "options": [
+      "fish",
+      "dog",
+      "hen",
+      "cow"
+     ],
+     "answer": 0,
+     "explain": "A fish has scales on its body."
+    },
+    {
+     "id": "an6",
+     "q": "Which animal can live on land and in water?",
+     "options": [
+      "frog",
+      "cat",
+      "cow",
+      "hen"
+     ],
+     "answer": 0,
+     "explain": "A frog lives on land and in water."
+    },
+    {
+     "id": "an7",
+     "q": "Which one is an insect?",
+     "options": [
+      "ant",
+      "cat",
+      "fish",
+      "crow"
+     ],
+     "answer": 0,
+     "explain": "An ant is an insect with six legs."
+    },
+    {
+     "id": "an8",
+     "q": "How many legs does an insect have?",
+     "options": [
+      "six",
+      "two",
+      "four",
+      "eight"
+     ],
+     "answer": 0,
+     "explain": "Insects have six legs."
+    },
+    {
+     "id": "an9",
+     "q": "Which animal keeps awake at night?",
+     "options": [
+      "owl",
+      "hen",
+      "cow",
+      "crow"
+     ],
+     "answer": 0,
+     "explain": "An owl is awake at night."
+    },
+    {
+     "id": "an10",
+     "q": "Which animal carries its home?",
+     "options": [
+      "snail",
+      "dog",
+      "lion",
+      "crow"
+     ],
+     "answer": 0,
+     "explain": "A snail carries its shell on its back."
+    },
+    {
+     "id": "an11",
+     "q": "Which bird cannot fly?",
+     "options": [
+      "ostrich",
+      "crow",
+      "parrot",
+      "sparrow"
+     ],
+     "answer": 0,
+     "explain": "An ostrich is a bird that cannot fly."
+    }
+   ]
+  }
+ ]
+}

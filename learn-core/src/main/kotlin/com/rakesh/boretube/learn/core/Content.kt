@@ -80,6 +80,10 @@ object PackValidator {
                 if (!i.explain.endsWith(".") || Regex("[.!?]\\s").containsMatchIn(i.explain)) e += "$w: explanation must be one sentence"
                 if (JARGON.any { it in i.explain.lowercase() }) e += "$w: jargon in explanation"
                 if (i.picture != null && i.picture !in pictures) e += "$w: unknown picture ${i.picture}"
+                for (o in i.options.filter { it.startsWith("pic:") }) {
+                    if (o.removePrefix("pic:") !in pictures) e += "$w: unknown picture option $o"
+                    if ("catch" in s.formats) e += "$w: catch can't show picture options"
+                }
             }
         }
         return e

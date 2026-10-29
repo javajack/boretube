@@ -1,0 +1,324 @@
+{
+ "id": "english-1",
+ "subject": "english",
+ "grade": 1,
+ "version": 1,
+ "reviewed": {
+  "by": "",
+  "at": ""
+ },
+ "skills": [
+  {
+   "id": "en1.naming",
+   "title": "Naming words",
+   "outcome": "EN-1.07",
+   "badge": "Aa",
+   "formats": [
+    "quickfire",
+    "catch"
+   ],
+   "items": [
+    {
+     "id": "cat",
+     "q": "Which one is a naming word?",
+     "options": [
+      "cat",
+      "run",
+      "big",
+      "soft"
+     ],
+     "answer": 0,
+     "explain": "A naming word names a thing: cat."
+    },
+    {
+     "id": "book",
+     "q": "Which one is a naming word?",
+     "options": [
+      "book",
+      "read",
+      "red",
+      "fast"
+     ],
+     "answer": 0,
+     "explain": "A naming word names a thing: book."
+    },
+    {
+     "id": "tree",
+     "q": "Which one is a naming word?",
+     "options": [
+      "tree",
+      "tall",
+      "grow",
+      "very"
+     ],
+     "answer": 0,
+     "explain": "A naming word names a thing: tree."
+    },
+    {
+     "id": "ball",
+     "q": "Which one is a naming word?",
+     "options": [
+      "ball",
+      "kick",
+      "round",
+      "high"
+     ],
+     "answer": 0,
+     "explain": "A naming word names a thing: ball."
+    },
+    {
+     "id": "mango",
+     "q": "Which one is a naming word?",
+     "options": [
+      "mango",
+      "sweet",
+      "eat",
+      "ripe"
+     ],
+     "answer": 0,
+     "explain": "A naming word names a thing: mango."
+    },
+    {
+     "id": "school",
+     "q": "Which one is a naming word?",
+     "options": [
+      "school",
+      "go",
+      "early",
+      "happy"
+     ],
+     "answer": 0,
+     "explain": "A naming word names a thing: school."
+    },
+    {
+     "id": "chair",
+     "q": "Which one is a naming word?",
+     "options": [
+      "chair",
+      "sit",
+      "soft",
+      "down"
+     ],
+     "answer": 0,
+     "explain": "A naming word names a thing: chair."
+    },
+    {
+     "id": "river",
+     "q": "Which one is a naming word?",
+     "options": [
+      "river",
+      "flow",
+      "cold",
+      "deep"
+     ],
+     "answer": 0,
+     "explain": "A naming word names a thing: river."
+    },
+    {
+     "id": "pencil",
+     "q": "Which one is a naming word?",
+     "options": [
+      "pencil",
+      "write",
+      "sharp",
+      "long"
+     ],
+     "answer": 0,
+     "explain": "A naming word names a thing: pencil."
+    },
+    {
+     "id": "bird",
+     "q": "Which one is a naming word?",
+     "options": [
+      "bird",
+      "fly",
+      "small",
+      "up"
+     ],
+     "answer": 0,
+     "explain": "A naming word names a thing: bird."
+    },
+    {
+     "id": "cup",
+     "q": "Which one is a naming word?",
+     "options": [
+      "cup",
+      "drink",
+      "hot",
+      "full"
+     ],
+     "answer": 0,
+     "explain": "A naming word names a thing: cup."
+    },
+    {
+     "id": "bus",
+     "q": "Which one is a naming word?",
+     "options": [
+      "bus",
+      "ride",
+      "slow",
+      "yellow"
+     ],
+     "answer": 0,
+     "explain": "A naming word names a thing: bus."
+    }
+   ]
+  },
+  {
+   "id": "en1.rhyme",
+   "title": "Rhyming words",
+   "outcome": "EN-1.03",
+   "badge": "-at",
+   "formats": [
+    "quickfire",
+    "catch"
+   ],
+   "items": [
+    {
+     "id": "cat-hat",
+     "q": "Which word rhymes with cat?",
+     "options": [
+      "hat",
+      "cup",
+      "dog",
+      "sun"
+     ],
+     "answer": 0,
+     "explain": "Cat and hat end with the same sound."
+    },
+    {
+     "id": "sun-fun",
+     "q": "Which word rhymes with sun?",
+     "options": [
+      "fun",
+      "sit",
+      "cat",
+      "pen"
+     ],
+     "answer": 0,
+     "explain": "Sun and fun end with the same sound."
+    },
+    {
+     "id": "ball-tall",
+     "q": "Which word rhymes with ball?",
+     "options": [
+      "tall",
+      "bell",
+      "book",
+      "fish"
+     ],
+     "answer": 0,
+     "explain": "Ball and tall end with the same sound."
+    },
+    {
+     "id": "pen-hen",
+     "q": "Which word rhymes with pen?",
+     "options": [
+      "hen",
+      "pin",
+      "cup",
+      "box"
+     ],
+     "answer": 0,
+     "explain": "Pen and hen end with the same sound."
+    },
+    {
+     "id": "cake-lake",
+     "q": "Which word rhymes with cake?",
+     "options": [
+      "lake",
+      "cook",
+      "kite",
+      "milk"
+     ],
+     "answer": 0,
+     "explain": "Cake and lake end with the same sound."
+    },
+    {
+     "id": "star-car",
+     "q": "Which word rhymes with star?",
+     "options": [
+      "car",
+      "stop",
+      "sun",
+      "tree"
+     ],
+     "answer": 0,
+     "explain": "Star and car end with the same sound."
+    },
+    {
+     "id": "bee-tree",
+     "q": "Which word rhymes with bee?",
+     "options": [
+      "tree",
+      "bat",
+      "box",
+      "cow"
+     ],
+     "answer": 0,
+     "explain": "Bee and tree end with the same sound."
+    },
+    {
+     "id": "king-ring",
+     "q": "Which word rhymes with king?",
+     "options": [
+      "ring",
+      "kite",
+      "rain",
+      "cup"
+     ],
+     "answer": 0,
+     "explain": "King and ring end with the same sound."
+    },
+    {
+     "id": "frog-log",
+     "q": "Which word rhymes with frog?",
+     "options": [
+      "log",
+      "fish",
+      "leg",
+      "fan"
+     ],
+     "answer": 0,
+     "explain": "Frog and log end with the same sound."
+    },
+    {
+     "id": "bed-red",
+     "q": "Which word rhymes with bed?",
+     "options": [
+      "red",
+      "bad",
+      "bus",
+      "map"
+     ],
+     "answer": 0,
+     "explain": "Bed and red end with the same sound."
+    },
+    {
+     "id": "goat-boat",
+     "q": "Which word rhymes with goat?",
+     "options": [
+      "boat",
+      "gate",
+      "bean",
+      "pot"
+     ],
+     "answer": 0,
+     "explain": "Goat and boat end with the same sound."
+    },
+    {
+     "id": "mouse-house",
+     "q": "Which word rhymes with mouse?",
+     "options": [
+      "house",
+      "mouth",
+      "moon",
+      "horse"
+     ],
+     "answer": 0,
+     "explain": "Mouse and house end with the same sound."
+    }
+   ]
+  }
+ ]
+}

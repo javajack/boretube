@@ -1,0 +1,324 @@
+{
+ "id": "english-2",
+ "subject": "english",
+ "grade": 2,
+ "version": 1,
+ "reviewed": {
+  "by": "",
+  "at": ""
+ },
+ "skills": [
+  {
+   "id": "en2.opposite",
+   "title": "Opposites",
+   "outcome": "EN-2.04",
+   "badge": "↔",
+   "formats": [
+    "quickfire",
+    "catch"
+   ],
+   "items": [
+    {
+     "id": "big-small",
+     "q": "What is the opposite of big?",
+     "options": [
+      "small",
+      "tall",
+      "long",
+      "wide"
+     ],
+     "answer": 0,
+     "explain": "Big and small are opposites."
+    },
+    {
+     "id": "hot-cold",
+     "q": "What is the opposite of hot?",
+     "options": [
+      "cold",
+      "warm",
+      "wet",
+      "dry"
+     ],
+     "answer": 0,
+     "explain": "Hot and cold are opposites."
+    },
+    {
+     "id": "up-down",
+     "q": "What is the opposite of up?",
+     "options": [
+      "down",
+      "over",
+      "top",
+      "high"
+     ],
+     "answer": 0,
+     "explain": "Up and down are opposites."
+    },
+    {
+     "id": "happy-sad",
+     "q": "What is the opposite of happy?",
+     "options": [
+      "sad",
+      "glad",
+      "kind",
+      "funny"
+     ],
+     "answer": 0,
+     "explain": "Happy and sad are opposites."
+    },
+    {
+     "id": "fast-slow",
+     "q": "What is the opposite of fast?",
+     "options": [
+      "slow",
+      "quick",
+      "far",
+      "late"
+     ],
+     "answer": 0,
+     "explain": "Fast and slow are opposites."
+    },
+    {
+     "id": "day-night",
+     "q": "What is the opposite of day?",
+     "options": [
+      "night",
+      "noon",
+      "sun",
+      "light"
+     ],
+     "answer": 0,
+     "explain": "Day and night are opposites."
+    },
+    {
+     "id": "open-close",
+     "q": "What is the opposite of open?",
+     "options": [
+      "close",
+      "push",
+      "pull",
+      "lock"
+     ],
+     "answer": 0,
+     "explain": "Open and close are opposites."
+    },
+    {
+     "id": "full-empty",
+     "q": "What is the opposite of full?",
+     "options": [
+      "empty",
+      "half",
+      "heavy",
+      "big"
+     ],
+     "answer": 0,
+     "explain": "Full and empty are opposites."
+    },
+    {
+     "id": "old-new",
+     "q": "What is the opposite of old?",
+     "options": [
+      "new",
+      "tall",
+      "kind",
+      "nice"
+     ],
+     "answer": 0,
+     "explain": "Old and new are opposites."
+    },
+    {
+     "id": "in-out",
+     "q": "What is the opposite of in?",
+     "options": [
+      "out",
+      "on",
+      "at",
+      "by"
+     ],
+     "answer": 0,
+     "explain": "In and out are opposites."
+    },
+    {
+     "id": "wet-dry",
+     "q": "What is the opposite of wet?",
+     "options": [
+      "dry",
+      "cold",
+      "hot",
+      "soft"
+     ],
+     "answer": 0,
+     "explain": "Wet and dry are opposites."
+    },
+    {
+     "id": "hard-soft",
+     "q": "What is the opposite of hard?",
+     "options": [
+      "soft",
+      "tough",
+      "big",
+      "loud"
+     ],
+     "answer": 0,
+     "explain": "Hard and soft are opposites."
+    }
+   ]
+  },
+  {
+   "id": "en2.plural",
+   "title": "One and many",
+   "outcome": "EN-2.06",
+   "badge": "s",
+   "formats": [
+    "quickfire",
+    "catch"
+   ],
+   "items": [
+    {
+     "id": "cat",
+     "q": "One cat, two ___?",
+     "options": [
+      "cats",
+      "cat",
+      "cates",
+      "catz"
+     ],
+     "answer": 0,
+     "explain": "For more than one, add s: cats."
+    },
+    {
+     "id": "book",
+     "q": "One book, two ___?",
+     "options": [
+      "books",
+      "book",
+      "bookes",
+      "bookz"
+     ],
+     "answer": 0,
+     "explain": "For more than one, add s: books."
+    },
+    {
+     "id": "pen",
+     "q": "One pen, two ___?",
+     "options": [
+      "pens",
+      "pen",
+      "penes",
+      "penz"
+     ],
+     "answer": 0,
+     "explain": "For more than one, add s: pens."
+    },
+    {
+     "id": "tree",
+     "q": "One tree, two ___?",
+     "options": [
+      "trees",
+      "tree",
+      "treees",
+      "treez"
+     ],
+     "answer": 0,
+     "explain": "For more than one, add s: trees."
+    },
+    {
+     "id": "ball",
+     "q": "One ball, two ___?",
+     "options": [
+      "balls",
+      "ball",
+      "balles",
+      "ballz"
+     ],
+     "answer": 0,
+     "explain": "For more than one, add s: balls."
+    },
+    {
+     "id": "girl",
+     "q": "One girl, two ___?",
+     "options": [
+      "girls",
+      "girl",
+      "girles",
+      "girlz"
+     ],
+     "answer": 0,
+     "explain": "For more than one, add s: girls."
+    },
+    {
+     "id": "box",
+     "q": "One box, two ___?",
+     "options": [
+      "boxes",
+      "boxs",
+      "box",
+      "boxies"
+     ],
+     "answer": 0,
+     "explain": "Words ending in x add es: boxes."
+    },
+    {
+     "id": "bus",
+     "q": "One bus, two ___?",
+     "options": [
+      "buses",
+      "buss",
+      "bus",
+      "busies"
+     ],
+     "answer": 0,
+     "explain": "Words ending in s add es: buses."
+    },
+    {
+     "id": "dish",
+     "q": "One dish, two ___?",
+     "options": [
+      "dishes",
+      "dishs",
+      "dish",
+      "dishies"
+     ],
+     "answer": 0,
+     "explain": "Words ending in sh add es: dishes."
+    },
+    {
+     "id": "watch",
+     "q": "One watch, two ___?",
+     "options": [
+      "watches",
+      "watchs",
+      "watch",
+      "watchies"
+     ],
+     "answer": 0,
+     "explain": "Words ending in ch add es: watches."
+    },
+    {
+     "id": "dog",
+     "q": "One dog, two ___?",
+     "options": [
+      "dogs",
+      "dog",
+      "doges",
+      "dogz"
+     ],
+     "answer": 0,
+     "explain": "For more than one, add s: dogs."
+    },
+    {
+     "id": "cup",
+     "q": "One cup, two ___?",
+     "options": [
+      "cups",
+      "cup",
+      "cupes",
+      "cupz"
+     ],
+     "answer": 0,
+     "explain": "For more than one, add s: cups."
+    }
+   ]
+  }
+ ]
+}

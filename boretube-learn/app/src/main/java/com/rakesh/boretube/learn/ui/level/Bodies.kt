@@ -148,7 +148,7 @@ fun QuickFireBody(
         if (header != null) header() else Header(q, index, of, followUp, if (pies != null) "Same-size pizzas. Pick the bigger share." else null)
         Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
             when (val v = q.visual) {
-                is Visual.Objects -> Mangoes(v.count)
+                is Visual.Objects -> Mangoes(v.count, kind = v.kind)
                 is Visual.Clock -> ClockFace(v.hour, v.minute, Modifier.fillMaxHeight().aspectRatio(1f))
                 is Visual.Picture -> com.rakesh.boretube.learn.ui.PictureArt(v.id, Modifier.fillMaxHeight())
                 else -> {}

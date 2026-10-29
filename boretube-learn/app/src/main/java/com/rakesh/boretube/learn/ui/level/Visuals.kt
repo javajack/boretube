@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,7 +37,7 @@ import kotlin.math.sin
 @Composable
 fun QuestionVisual(v: Visual, modifier: Modifier = Modifier, numbered: Boolean = false) {
     when (v) {
-        is Visual.Objects -> Mangoes(v.count, modifier, numbered)
+        is Visual.Objects -> Mangoes(v.count, modifier, numbered, v.kind)
         is Visual.Clock -> ClockFace(v.hour, v.minute, modifier.aspectRatio(1f))
         is Visual.Dots -> DotGrid(v, modifier)
         is Visual.Picture -> com.rakesh.boretube.learn.ui.PictureArt(v.id, modifier)
@@ -59,16 +60,29 @@ private val MANGO = Path().apply {
 private val SHINE = Path().apply { moveTo(24f, 36f); cubicTo(28f, 28f, 34f, 24f, 40f, 24f) }
 
 @Composable
-fun Mangoes(n: Int, modifier: Modifier = Modifier, numbered: Boolean = false) {
+fun Mangoes(n: Int, modifier: Modifier = Modifier, numbered: Boolean = false, kind: String = "mango") {
     val perRow = if (n <= 5) n else (n + 1) / 2
     val rows = if (n <= 5) listOf(n) else listOf(perRow, n - perRow)
     var k = 0
+    // Any picture in the library can be counted; mangoes keep their own drawing.
+    val pic = kind.takeIf { it != "mango" && it in com.rakesh.boretube.learn.ui.Pictures.ids }
     Column(modifier, verticalArrangement = Arrangement.spacedBy(Gap.f13), horizontalAlignment = Alignment.CenterHorizontally) {
         for (count in rows) {
             Row(horizontalArrangement = Arrangement.spacedBy(Gap.f21)) {
-                repeat(count) { Mango(if (numbered) ++k else null, Modifier.width(if (n <= 5) 96.dp else 72.dp)) }
+                repeat(count) {
+                    val w = Modifier.width(if (n <= 5) 96.dp else 72.dp)
+                    if (pic == null) Mango(if (numbered) ++k else null, w) else CountedPicture(pic, if (numbered) ++k else null, w)
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun CountedPicture(id: String, label: Int?, modifier: Modifier) {
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        com.rakesh.boretube.learn.ui.PictureArt(id, Modifier.fillMaxWidth())
+        if (label != null) BasicText("$label", style = Text.display(20.sp))
     }
 }
 

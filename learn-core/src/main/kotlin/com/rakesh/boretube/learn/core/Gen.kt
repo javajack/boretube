@@ -100,12 +100,16 @@ class GenSkill(
         error("$id: no question at tier $t")
     }
 
-    /** Weighted by grid size, so every seed is about as likely. */
+    /**
+     * Weighted by the square root of grid size: a big grid (every pair of
+     * numbers, every name × item) still comes up more, but small kinds of
+     * question (picture tiles, a story) get a fair share of play.
+     */
     private fun pick(pool: List<Template>, r: Random): Template {
-        val total = pool.sumOf { it.size.toDouble() }
+        val total = pool.sumOf { kotlin.math.sqrt(it.size.toDouble()) }
         var x = r.nextDouble() * total
         for (t in pool) {
-            x -= t.size
+            x -= kotlin.math.sqrt(t.size.toDouble())
             if (x <= 0) return t
         }
         return pool.last()

@@ -124,6 +124,22 @@ class SafetyGuardTest {
         assertEquals(3, s.bootCount)
     }
 
+    @Test fun quickPowerCutsAreColdBootsAndNeverALoop() {
+        // A parent switching the TV off at the wall every minute or so.
+        var s = SafetyState()
+        for (id in listOf("a", "b", "c", "d")) {
+            s = SafetyGuard.recordBoot(s, id, 0, prevUpMs = min, bootReason = "cold")
+        }
+        assertEquals(Mode.normal, s.mode)
+        // Switched on, then two quick crash restarts: that is a loop.
+        s = SafetyGuard.recordBoot(s, "e", 0, prevUpMs = min, bootReason = "kernel_panic")
+        assertEquals(Mode.normal, s.mode)
+        s = SafetyGuard.recordBoot(s, "f", 0, prevUpMs = min, bootReason = "watchdog")
+        assertEquals(Mode.safe, s.mode)
+        assertTrue(SafetyGuard.isColdBoot("cold,powerkey"))
+        assertFalse(SafetyGuard.isColdBoot(null))
+    }
+
     @Test fun anUnknownPreviousSessionIsNotShort() {
         var s = SafetyState()
         for (id in listOf("a", "b", "c")) s = SafetyGuard.recordBoot(s, id, 0, prevUpMs = null)

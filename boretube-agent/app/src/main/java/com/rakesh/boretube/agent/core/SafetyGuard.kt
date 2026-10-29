@@ -44,11 +44,22 @@ object SafetyGuard {
      * a power cut the VU3 starts at a fixed date (2026-05-15 12:14) until NTP,
      * so every cold boot looked like the same minute (verified 2026-10-30).
      * Enters safe mode when [BOOT_LOOP_COUNT] boots come in a row, each after
-     * a session shorter than [SHORT_SESSION_MS].
+     * a session shorter than [SHORT_SESSION_MS] and none of them a cold boot
+     * ([bootReason] is `sys.boot.reason`, null when unknown).
      */
-    fun recordBoot(s: SafetyState, bootId: String, now: Long, prevUpMs: Long? = null): SafetyState {
+    fun recordBoot(
+        s: SafetyState,
+        bootId: String,
+        now: Long,
+        prevUpMs: Long? = null,
+        bootReason: String? = null,
+    ): SafetyState {
         if (bootId == s.lastBootId) return s
-        val short = prevUpMs != null && prevUpMs in 0 until SHORT_SESSION_MS
+        // A cold boot is power being applied (at the wall, or the plug): a
+        // parent switching the TV off and on, never a loop (VU3: `cold` for a
+        // power cut, `reboot,shell` for adb, verified 2026-10-30).
+        val cold = isColdBoot(bootReason)
+        val short = !cold && prevUpMs != null && prevUpMs in 0 until SHORT_SESSION_MS
         val run = if (short) s.shortBoots + 1 else 0
         var next = s.copy(
             boots = (s.boots + now).takeLast(10),
@@ -61,6 +72,10 @@ object SafetyGuard {
         }
         return next
     }
+
+    /** `sys.boot.reason` says power was just applied. */
+    fun isColdBoot(reason: String?): Boolean =
+        reason != null && reason.substringBefore(',').trim().equals("cold", ignoreCase = true)
 
     fun setMode(s: SafetyState, mode: Mode, reason: String): SafetyState {
         // Leaving safe mode by hand forgets the boot burst so it doesn't re-trip at once.

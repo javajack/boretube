@@ -174,7 +174,9 @@ class GuardController(private val ctx: Context) : AgentApi {
         synchronized(lock) {
             // How long the previous boot stayed up: read before this boot's
             // first checkpoint replaces it (a restart in the same boot is a no-op).
-            safety = SafetyGuard.recordBoot(safety, bootId(), System.currentTimeMillis(), store.upMs)
+            safety = SafetyGuard.recordBoot(
+                safety, bootId(), System.currentTimeMillis(), store.upMs, bootReason,
+            )
             store.safety = safety
             store.upMs = SystemClock.elapsedRealtime()
         }
@@ -209,6 +211,18 @@ class GuardController(private val ctx: Context) : AgentApi {
 
     private inline fun safely(what: String, block: () -> Unit) {
         try { block() } catch (e: Throwable) { Log.w(TAG, "$what failed", e) }
+    }
+
+    /** `sys.boot.reason` (`cold` after a power cut), or null if unreadable. */
+    private val bootReason: String? by lazy {
+        try {
+            val p = ProcessBuilder("getprop", "sys.boot.reason").redirectErrorStream(true).start()
+            val out = p.inputStream.bufferedReader().readText().trim()
+            p.waitFor()
+            out.ifEmpty { null }
+        } catch (_: Exception) {
+            null
+        }
     }
 
     private fun bootId(): String = try {
@@ -724,6 +738,7 @@ class GuardController(private val ctx: Context) : AgentApi {
             version = BuildConfig.VERSION_NAME,
             uptimeSec = (SystemClock.elapsedRealtime() - startedElapsed) / 1000,
             bootCount = s.bootCount,
+            bootReason = bootReason,
             selfAdb = selfAdb.name,
             mode = s.mode.name,
             modeReason = s.modeReason,

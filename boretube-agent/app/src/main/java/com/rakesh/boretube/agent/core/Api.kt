@@ -24,6 +24,8 @@ data class StatusDoc(
     val api: Int = API_VERSION,
     val uptimeSec: Long,
     val bootCount: Int,
+    /** `sys.boot.reason` of this boot (`cold` after a power cut), if readable. */
+    val bootReason: String? = null,
     /** ok | needsApproval | unavailable */
     val selfAdb: String,
     /** normal | safe | paused */

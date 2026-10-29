@@ -142,4 +142,6 @@ Notes:
 - **After power is cut at the wall, the VU3 boots with its clock at a fixed date, 2026-05-15 12:14**, until NTP syncs. TV Guard's journal entry for that boot carried that time.
 - **TV Guard ≤ 1.4.1 counted boots by wall-clock time**, so three power cuts on different days all looked like the same minute. The result was "boot loop: 3 boots in 15 min" and a false safe mode.
 - **1.4.2 counts boots by the TV's own uptime** (`elapsedRealtime`, checkpointed every 30 s). Safe mode needs 3 boots in a row, each after a session shorter than 5 minutes.
+- **`sys.boot.reason` tells a power cut from a restart:** `cold` after power at the wall, `reboot,shell` after `adb reboot`. `persist.sys.boot.reason.history` keeps the last few, with the reset clock (`cold,1514764820` is 2018-01-01).
+- **1.4.2 still tripped** when the TV was switched off at the wall every minute or two. **1.4.3 never counts a cold boot as part of a loop.** It reports the reason as `bootReason` in `/v1/status`.
 - **Never use wall-clock time for anything that has to survive a power cut on this TV.**

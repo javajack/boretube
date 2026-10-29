@@ -98,7 +98,10 @@ void main() {
       expect(store.activeId, 'adb:$_serial');
     });
 
-    test('older id with same UDN is merged and replaced', () async {
+    test('the saved id stays when the same TV shows up under another id',
+        () async {
+      // Everything else is keyed by the TV id (agent token, baselines,
+      // restore points, plan state): a re-key orphans all of it.
       final checked = DateTime.utc(2026, 10, 1);
       final store = await _load();
       await store.upsert(Tv(
@@ -119,13 +122,72 @@ void main() {
         adbSerial: _serial,
         udn: _uuid,
       ));
-      expect(store.tvs.map((t) => t.id), ['adb:$_serial', 'udn:x']);
-      final tv = store.byId('adb:$_serial')!;
+      expect(store.tvs.map((t) => t.id), ['udn:$_uuid', 'udn:x']);
+      final tv = store.byId('udn:$_uuid')!;
       expect(tv.ip, '192.168.1.7');
+      expect(tv.adbSerial, _serial);
       expect(tv.model, 'BRAVIA VU3');
       expect(tv.capabilities, {TvCapability.cast, TvCapability.dial});
       expect(tv.capabilitiesCheckedAt, checked);
+      expect(store.activeId, 'udn:$_uuid');
+    });
+
+    test('TV Guard announcing itself does not re-key the saved TV', () async {
+      final store = await _load();
+      await store.upsert(const Tv(
+        id: 'adb:$_serial',
+        name: 'Living Room TV',
+        ip: '192.168.1.3',
+        adbSerial: _serial,
+        udn: _uuid,
+      ));
+      await store.upsert(const Tv(
+        id: 'agent:b816a77435caf382',
+        name: 'Living Room TV',
+        ip: '192.168.1.3',
+        adbSerial: _serial,
+        udn: _uuid,
+        agentPort: 8790,
+      ));
+      expect(store.tvs.single.id, 'adb:$_serial');
+      expect(store.tvs.single.agentPort, 8790);
       expect(store.activeId, 'adb:$_serial');
+    });
+
+    test('a TV already re-keyed gets its old id back when data is under it',
+        () async {
+      // The 2026-10-29 bug: the TV moved to agent:…, its data stayed under
+      // adb:<serial>.
+      final store = await _load({
+        'tvs_v2': jsonEncode([
+          const Tv(
+            id: 'agent:b816a77435caf382',
+            name: 'Living Room TV',
+            ip: '192.168.1.3',
+            adbSerial: _serial,
+          ).toJson(),
+        ]),
+        'active_tv_id': 'agent:b816a77435caf382',
+        'baseline.adb:$_serial': '{}',
+      });
+      expect(store.tvs.single.id, 'adb:$_serial');
+      expect(store.activeId, 'adb:$_serial');
+      final again = await TvStore.load();
+      expect(again.tvs.single.id, 'adb:$_serial');
+    });
+
+    test('no data under the old id: the id is left alone', () async {
+      final store = await _load({
+        'tvs_v2': jsonEncode([
+          const Tv(
+            id: 'agent:b816a77435caf382',
+            name: 'Living Room TV',
+            ip: '192.168.1.3',
+            adbSerial: _serial,
+          ).toJson(),
+        ]),
+      });
+      expect(store.tvs.single.id, 'agent:b816a77435caf382');
     });
   });
 

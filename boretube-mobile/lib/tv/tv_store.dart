@@ -49,11 +49,33 @@ class TvStore extends ChangeNotifier {
       }
       await store._save();
     }
+    if (_repairRekeyed(p, store)) await store._save();
     if (store._activeId != null && store.byId(store._activeId!) == null) {
       store._activeId = tvs.isEmpty ? null : tvs.first.id;
       await store._save();
     }
     return store;
+  }
+
+  /// Before 2.0.1 a saved TV could be re-keyed (`adb:<serial>` → `agent:…`)
+  /// when TV Guard announced itself, orphaning everything kept under the old
+  /// id. Gives such a TV its old id back when data still lives under it.
+  static bool _repairRekeyed(SharedPreferences p, TvStore store) {
+    final keys = p.getKeys();
+    var changed = false;
+    for (var i = 0; i < store._tvs.length; i++) {
+      final t = store._tvs[i];
+      final serial = t.adbSerial;
+      if (serial == null || serial.isEmpty || t.id.startsWith('adb:')) continue;
+      final old = 'adb:$serial';
+      if (store.byId(old) != null) continue;
+      // Data is kept as "<what>.<tvId>" (baseline.adb:…, nudge.build.adb:…).
+      if (!keys.any((k) => k.endsWith('.$old'))) continue;
+      store._tvs[i] = t.copyWith(id: old);
+      if (store._activeId == t.id) store._activeId = old;
+      changed = true;
+    }
+    return changed;
   }
 
   static Tv? _migrate(String? legacy) {
@@ -99,7 +121,9 @@ class TvStore extends ChangeNotifier {
 
   /// Adds or updates [tv] by id. Entries for the same physical TV under
   /// another id (same ADB serial or UDN, or a temporary `ip:` id at the
-  /// same IP) are merged into [tv] and replaced; the active id follows.
+  /// same IP) are merged into one. The saved id wins: the agent token,
+  /// baselines, restore points and plan state are all keyed by it, so only
+  /// a temporary `ip:` id may be upgraded. The active id follows.
   Future<void> upsert(Tv tv) async {
     bool eq(String? a, String? b) => a != null && a.isNotEmpty && a == b;
     final same = <int>[];
@@ -116,6 +140,10 @@ class TvStore extends ChangeNotifier {
     for (final i in same) {
       merged = _merge(_tvs[i], merged);
     }
+    final kept = [for (final i in same) _tvs[i].id]
+        .where((id) => !id.startsWith('ip:'))
+        .firstOrNull;
+    if (kept != null) merged = merged.copyWith(id: kept);
     if (same.isEmpty) {
       _tvs.add(merged);
     } else {

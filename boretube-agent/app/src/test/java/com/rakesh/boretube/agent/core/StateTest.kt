@@ -140,6 +140,27 @@ class SafetyGuardTest {
         assertFalse(SafetyGuard.isColdBoot(null))
     }
 
+    @Test fun aColdBootLearnedLateUndoesItsOwnTrip() {
+        // The first boot's own predecessor was short too: it trips on "b".
+        var s = SafetyState()
+        for (id in listOf("a", "b")) s = SafetyGuard.recordBoot(s, id, 0, prevUpMs = min)
+        assertEquals(Mode.safe, s.mode)
+        s = SafetyGuard.learnBootReason(s, "cold")
+        assertEquals(Mode.normal, s.mode)
+        assertEquals(0, s.shortBoots)
+        // Not cold: nothing changes.
+        var t = SafetyState()
+        for (id in listOf("a", "b")) t = SafetyGuard.recordBoot(t, id, 0, prevUpMs = min)
+        assertEquals(Mode.safe, SafetyGuard.learnBootReason(t, "reboot,shell").mode)
+        // A trip from an earlier boot stays: switching on again doesn't clear a real loop.
+        t = SafetyGuard.recordBoot(t, "d", 0, prevUpMs = 30 * min)
+        assertEquals(Mode.safe, SafetyGuard.learnBootReason(t, "cold").mode)
+        // A cold boot ends a run even without a trip.
+        val u = SafetyGuard.recordBoot(SafetyState(), "a", 0, prevUpMs = min)
+        assertEquals(1, u.shortBoots)
+        assertEquals(0, SafetyGuard.learnBootReason(u, "cold").shortBoots)
+    }
+
     @Test fun anUnknownPreviousSessionIsNotShort() {
         var s = SafetyState()
         for (id in listOf("a", "b", "c")) s = SafetyGuard.recordBoot(s, id, 0, prevUpMs = null)

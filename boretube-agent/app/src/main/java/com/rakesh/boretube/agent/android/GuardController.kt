@@ -214,7 +214,7 @@ class GuardController(private val ctx: Context) : AgentApi {
     }
 
     /** `sys.boot.reason` (`cold` after a power cut), or null if unreadable. */
-    private val bootReason: String? by lazy {
+    private val appBootReason: String? by lazy {
         try {
             val p = ProcessBuilder("getprop", "sys.boot.reason").redirectErrorStream(true).start()
             val out = p.inputStream.bufferedReader().readText().trim()
@@ -223,6 +223,25 @@ class GuardController(private val ctx: Context) : AgentApi {
         } catch (_: Exception) {
             null
         }
+    }
+
+    /** Read through self-ADB once it's up (the VU3 hides it from apps). */
+    @Volatile private var shellBootReason: String? = null
+
+    private val bootReason: String? get() = appBootReason ?: shellBootReason
+
+    /** Asks self-ADB for the boot reason once per process, then tells the guard. */
+    private fun learnBootReason() {
+        if (appBootReason != null || shellBootReason != null) return
+        val r = shell.run("getprop sys.boot.reason").stdout.trim().ifEmpty { return }
+        shellBootReason = r
+        val forgiven = synchronized(lock) {
+            val was = safety.mode
+            safety = SafetyGuard.learnBootReason(safety, r)
+            store.safety = safety
+            was == Mode.safe && safety.mode == Mode.normal
+        }
+        if (forgiven) record("mode", "agent", "safe", "normal: $r boot, ${safety.modeReason}", true, "agent")
     }
 
     private fun bootId(): String = try {
@@ -513,6 +532,7 @@ class GuardController(private val ctx: Context) : AgentApi {
         shell.ensureConnected(now)
         store.ensureExternalFiles()
         if (shell.state != SelfAdb.ok) return
+        safely("bootReason") { learnBootReason() }
         heal(now, periodic = lastPeriodicHeal == 0L || now - lastPeriodicHeal >= PermissionHeal.PERIOD_MS)
         if (restoring.get()) return
         val (p, mode, evAt) = synchronized(lock) { Triple(profile, safety.mode, pkgEventAt) }

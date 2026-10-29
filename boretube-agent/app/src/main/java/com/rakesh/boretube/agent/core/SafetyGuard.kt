@@ -21,6 +21,8 @@ data class SafetyState(
     val bootCount: Int = 0,
     /** Boots in a row that followed a short session (see [SafetyGuard.recordBoot]). */
     val shortBoots: Int = 0,
+    /** The boot whose start tripped the boot-loop guard, if any. */
+    val trippedBootId: String = "",
     val approvedFingerprint: String? = null,
 )
 
@@ -68,9 +70,32 @@ object SafetyGuard {
             shortBoots = run,
         )
         if (run + 1 >= BOOT_LOOP_COUNT && s.mode != Mode.safe) {
-            next = next.copy(mode = Mode.safe, modeReason = "boot loop: ${run + 1} boots, each within 5 min")
+            next = next.copy(
+                mode = Mode.safe,
+                modeReason = "boot loop: ${run + 1} boots, each within 5 min",
+                trippedBootId = bootId,
+            )
         }
         return next
+    }
+
+    /**
+     * The boot reason learned late (apps can't read `sys.boot.reason`; self-ADB
+     * can, once connected): a cold boot ends the run, and undoes a boot-loop
+     * trip made by this same boot.
+     */
+    fun learnBootReason(s: SafetyState, reason: String?): SafetyState {
+        if (!isColdBoot(reason)) return s
+        val tripped = s.mode == Mode.safe && s.trippedBootId == s.lastBootId &&
+            s.modeReason.startsWith("boot loop")
+        if (!tripped) return s.copy(shortBoots = 0)
+        return s.copy(
+            mode = Mode.normal,
+            modeReason = "switched on at the wall, not a loop",
+            boots = emptyList(),
+            shortBoots = 0,
+            trippedBootId = "",
+        )
     }
 
     /** `sys.boot.reason` says power was just applied. */

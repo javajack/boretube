@@ -131,7 +131,7 @@ Expected: all green. The engine tests now run in learn-core, and the agent's 153
   - On `LearnState`: `stars: Map<String, Int> = emptyMap()` and `mastered: List<String> = emptyList()`
   - `fun Learner.isMastered(s: LearnState, skillId: String): Boolean`: true when `stats[skillId].right >= 3 && days.size >= 2`.
 
-- [ ] **Step 1: Write the failing tests.**
+- [x] **Step 1: Write the failing tests.**
 
 ```kotlin
 class LevelsTest {
@@ -194,9 +194,9 @@ class LevelsTest {
 
 `finish` records each answer through `Learner.record` (same day), computes stars from main answers (`!followUp`), keeps the best per skill, appends to `mastered` when `isMastered` turns true, and picks `toPractise` as the first main answer that was wrong.
 
-- [ ] **Step 2: Run them and watch them fail.** `cd learn-core && ./gradlew -q test --tests '*LevelsTest*'`. Expected: compile errors (`Levels` not defined).
+- [x] **Step 2: Run them and watch them fail.** `cd learn-core && ./gradlew -q test --tests '*LevelsTest*'`. Expected: compile errors (`Levels` not defined).
 
-- [ ] **Step 3: Implement `Levels.kt`.**
+- [x] **Step 3: Implement `Levels.kt`.**
 
 ```kotlin
 package com.rakesh.boretube.learn.core
@@ -270,9 +270,9 @@ object Levels {
 
 (7 of 8 is 0.875, so it gets 3 stars; 5 of 8 is 0.625, so 2 stars; 4 of 8 is 0.5, so 1 star. This matches the tests.) Add `fun isMastered(s: LearnState, skillId: String)` to `Learner`, reusing `PROMOTE_RIGHT` and `PROMOTE_DAYS`. Add the two `LearnState` fields with defaults; old JSON still parses.
 
-- [ ] **Step 4: Run all learn-core tests.** Expected: PASS.
+- [x] **Step 4: Run all learn-core tests.** Expected: PASS.
 
-- [ ] **Step 5: Commit.** `git commit -m "learn-core: levels (8-question plan, Catch options, stars, mastery)"`.
+- [x] **Step 5: Commit.** `git commit -m "learn-core: levels (8-question plan, Catch options, stars, mastery)"`.
 
 ---
 

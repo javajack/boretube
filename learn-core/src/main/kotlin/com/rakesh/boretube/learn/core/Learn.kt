@@ -38,6 +38,10 @@ data class LearnState(
     val stats: Map<String, SkillStat> = emptyMap(),
     val facts: List<Fact> = emptyList(),
     val week: WeekLog = WeekLog(),
+    /** boretube Learn: best stars per skill. */
+    val stars: Map<String, Int> = emptyMap(),
+    /** boretube Learn: skills mastered, in the order they were (one sticker each). */
+    val mastered: List<String> = emptyList(),
 )
 
 /** Spaced repetition, promotion/demotion and the round mix. Pure. */
@@ -56,6 +60,12 @@ object Learner {
         if (s.grade == grade) s else s.copy(grade = grade, rung = Maths.firstRung(grade))
 
     fun isGuess(ms: Long) = ms < GUESS_MS
+
+    /** Mastered: [PROMOTE_RIGHT] real right answers on at least [PROMOTE_DAYS] days. */
+    fun isMastered(s: LearnState, skillId: String): Boolean {
+        val st = s.stats[skillId] ?: return false
+        return st.right >= PROMOTE_RIGHT && st.days.size >= PROMOTE_DAYS
+    }
 
     fun record(s: LearnState, q: Question, correct: Boolean, ms: Long, now: Long, today: LocalDate): LearnState {
         val guess = isGuess(ms)

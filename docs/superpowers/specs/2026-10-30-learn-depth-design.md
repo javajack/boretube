@@ -152,3 +152,15 @@ All strings use **Indian/British English**: colour, centre, metre, -ise, maths, 
   - Eid: lanterns and twinkles.
   - Christmas: snow and twinkles.
   - New Year and Children's Day: balloons.
+
+**Every festival looks different** (the user, 2026-10-30). `FestivalLooksTest` enforces it.
+- Diwali: diyas, a marigold toran and twinkles. Gurpurab: golden string lights and diyas.
+- Christmas: coloured fairy lights, snow and a decorated tree.
+- Ganpati: a kumkum-and-gold toran and a row of modaks.
+- Navratri: a garba-colour toran and crossed dandiya sticks. Dussehra: a marigold toran and twinkles.
+- Onam: a marigold toran and pookalam circles in the corners.
+- Raksha Bandhan: rakhi threads. Janmashtami: matki pots and a peacock feather.
+- Eid al-Fitr: lanterns, a crescent and twinkles. Eid al-Adha: string lights, a crescent and twinkles.
+- Holi: colour puffs. Sankranti: kites.
+- Republic Day: bunting. Independence Day: bunting and kites.
+- New Year: balloons and twinkles. Children's Day: balloons.

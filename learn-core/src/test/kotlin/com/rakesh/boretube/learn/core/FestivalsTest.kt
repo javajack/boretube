@@ -71,3 +71,18 @@ class FestivalLinesTest {
         for ((id, line) in seen) assertTrue("$id: \"$line\" is ${line.length} chars (max 30)", line.length <= 30)
     }
 }
+
+class FestivalLooksTest {
+    /** The user, 2026-10-30: "make all of them distinct". */
+    @Test fun everyFestivalLooksDifferent() {
+        var day = LocalDate.of(2026, 1, 1)
+        val looks = HashMap<String, Set<Seasons.Decor>>()
+        while (day.year <= 2027) {
+            Seasons.of(day)?.takeIf { it.decor.isNotEmpty() }?.let { looks[it.id] = it.decor }
+            day = day.plusDays(1)
+        }
+        assertEquals(17, looks.size)
+        val byLook = looks.entries.groupBy({ it.value }, { it.key })
+        assertTrue("these look the same: ${byLook.values.filter { it.size > 1 }}", byLook.values.all { it.size == 1 })
+    }
+}

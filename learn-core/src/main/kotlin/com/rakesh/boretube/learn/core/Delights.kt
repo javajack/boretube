@@ -61,7 +61,10 @@ object Cheer {
  */
 object Seasons {
     /** Decorations the town draws for a theme. */
-    enum class Decor { toran, bunting, diyas, puffs, kites, balloons, snow, twinkles, lanterns }
+    enum class Decor {
+        toran, redToran, garbaToran, bunting, diyas, puffs, kites, balloons, snow, twinkles, lanterns, crescent,
+        fairyLights, warmLights, rakhis, matki, modaks, dandiya, pookalam, xmasTree,
+    }
 
     data class Theme(val id: String, val line: String, val pic: String, val decor: Set<Decor> = emptySet())
 
@@ -103,26 +106,26 @@ object Seasons {
     private val MOVING = listOf(
         Festival(Theme("diwali", "Happy Diwali! Tubby lit diyas.", "diya", setOf(Decor.diyas, Decor.toran, Decor.twinkles)), DATES.getValue("diwali"), 2, 2),
         Festival(Theme("holi", "Happy Holi! So many colours!", "pichkari", setOf(Decor.puffs)), DATES.getValue("holi"), 1, 2),
-        Festival(Theme("navratri", "Navratri! Time for garba!", "drum", setOf(Decor.toran, Decor.twinkles)), DATES.getValue("navratri"), 0, 0, DATES.getValue("dussehra").map { it.minusDays(1) }),
-        Festival(Theme("dussehra", "Happy Dussehra!", "flower", setOf(Decor.toran)), DATES.getValue("dussehra"), 0, 1),
-        Festival(Theme("ganesh", "Ganpati Bappa Morya!", "ladoo", setOf(Decor.toran)), DATES.getValue("ganesh"), 1, 3),
-        Festival(Theme("eidfitr", "Eid Mubarak! Sweet seviyan!", "lantern", setOf(Decor.lanterns, Decor.twinkles)), DATES.getValue("eidfitr"), 1, 2),
-        Festival(Theme("eidadha", "Eid Mubarak!", "lantern", setOf(Decor.lanterns, Decor.twinkles)), DATES.getValue("eidadha"), 1, 2),
-        Festival(Theme("rakhi", "Happy Raksha Bandhan!", "giftbox", setOf(Decor.toran)), DATES.getValue("rakhi"), 1, 0),
-        Festival(Theme("janmashtami", "Happy Janmashtami!", "flute", setOf(Decor.toran)), DATES.getValue("janmashtami"), 1, 1),
-        Festival(Theme("onam", "Happy Onam! Pookalam time!", "rangoli", setOf(Decor.toran)), DATES.getValue("onam"), 2, 1),
-        Festival(Theme("gurpurab", "Happy Gurpurab!", "diya", setOf(Decor.diyas)), DATES.getValue("gurpurab"), 1, 1),
+        Festival(Theme("navratri", "Navratri! Time for garba!", "drum", setOf(Decor.garbaToran, Decor.dandiya)), DATES.getValue("navratri"), 0, 0, DATES.getValue("dussehra").map { it.minusDays(1) }),
+        Festival(Theme("dussehra", "Happy Dussehra!", "flower", setOf(Decor.toran, Decor.twinkles)), DATES.getValue("dussehra"), 0, 1),
+        Festival(Theme("ganesh", "Ganpati Bappa Morya!", "ladoo", setOf(Decor.redToran, Decor.modaks)), DATES.getValue("ganesh"), 1, 3),
+        Festival(Theme("eidfitr", "Eid Mubarak! Sweet seviyan!", "lantern", setOf(Decor.lanterns, Decor.crescent, Decor.twinkles)), DATES.getValue("eidfitr"), 1, 2),
+        Festival(Theme("eidadha", "Eid Mubarak!", "lantern", setOf(Decor.warmLights, Decor.crescent, Decor.twinkles)), DATES.getValue("eidadha"), 1, 2),
+        Festival(Theme("rakhi", "Happy Raksha Bandhan!", "giftbox", setOf(Decor.rakhis)), DATES.getValue("rakhi"), 1, 0),
+        Festival(Theme("janmashtami", "Happy Janmashtami!", "flute", setOf(Decor.matki)), DATES.getValue("janmashtami"), 1, 1),
+        Festival(Theme("onam", "Happy Onam! Pookalam time!", "rangoli", setOf(Decor.toran, Decor.pookalam)), DATES.getValue("onam"), 2, 1),
+        Festival(Theme("gurpurab", "Happy Gurpurab!", "diya", setOf(Decor.warmLights, Decor.diyas)), DATES.getValue("gurpurab"), 1, 1),
         Festival(Theme("sankranti", "Happy Sankranti! Kites up!", "kite", setOf(Decor.kites)), DATES.getValue("sankranti"), 1, 1),
     )
 
     /** Same date every year: (month-day, days before, days after). */
     private val FIXED = listOf(
-        Triple(MonthDay.of(12, 31), 0, 1) to Theme("newyear", "Happy New Year!", "balloon", setOf(Decor.balloons)),
+        Triple(MonthDay.of(12, 31), 0, 1) to Theme("newyear", "Happy New Year!", "balloon", setOf(Decor.balloons, Decor.twinkles)),
         Triple(MonthDay.of(1, 26), 1, 0) to Theme("republic", "Happy Republic Day!", "star", setOf(Decor.bunting)),
         Triple(MonthDay.of(8, 15), 1, 0) to Theme("independence", "Happy Independence Day!", "kite", setOf(Decor.bunting, Decor.kites)),
         Triple(MonthDay.of(10, 2), 0, 0) to Theme("gandhi", "It's Gandhi Jayanti today.", "flower"),
         Triple(MonthDay.of(11, 14), 0, 0) to Theme("children", "Happy Children's Day!", "balloon", setOf(Decor.balloons)),
-        Triple(MonthDay.of(12, 25), 2, 1) to Theme("christmas", "Merry Christmas!", "star", setOf(Decor.snow, Decor.twinkles)),
+        Triple(MonthDay.of(12, 25), 2, 1) to Theme("christmas", "Merry Christmas!", "star", setOf(Decor.fairyLights, Decor.snow, Decor.xmasTree)),
     )
 
     fun of(day: LocalDate): Theme? {

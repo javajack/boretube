@@ -41,4 +41,10 @@ class FestiveTownTest {
     @Test fun navratri() = town("2027-10-03", "navratri")
     @Test fun christmas() = town("2026-12-25", "christmas")
     @Test fun childrensDay() = town("2026-11-14", "children")
+    @Test fun ganesh() = town("2026-09-14", "ganesh")
+    @Test fun onam() = town("2026-08-26", "onam")
+    @Test fun rakhi() = town("2026-08-28", "rakhi")
+    @Test fun janmashtami() = town("2026-09-04", "janmashtami")
+    @Test fun gurpurab() = town("2026-11-24", "gurpurab")
+    @Test fun dussehra() = town("2026-10-20", "dussehra")
 }

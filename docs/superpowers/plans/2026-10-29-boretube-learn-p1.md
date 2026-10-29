@@ -546,7 +546,7 @@ class TownScreenTest {
 - Consumes: `Levels.finish`, `LevelResult`.
 - Produces: `@Composable fun DoneScreen(result: LevelResult, skillTitle: String, sounds: Sounds, onAnother: () -> Unit, onTown: () -> Unit)`.
 
-- [ ] **Step 1: Write the failing tests.**
+- [x] **Step 1: Write the failing tests.**
   - **`SpeakableTest`:** `"7 × 8 = 56"` gives `"7 times 8 is 56"` in English and `"7 गुणा 8 बराबर 56"` in Hindi.
   - **`DoneScreenTest`:**
     - **Play another** has the default focus;
@@ -555,13 +555,13 @@ class TownScreenTest {
     - the practise line appears when `toPractise != null`;
     - a screenshot.
   - **The level without TTS:** a `Speaker` that throws on `say` must not stop the level. Wrap calls in `runCatching`; test with a `ThrowingSpeaker`.
-- [ ] **Step 2: Run them and watch them fail.**
-- [ ] **Step 3: Implement.**
+- [x] **Step 2: Run them and watch them fail.**
+- [x] **Step 3: Implement.**
   - The stars count in one at a time (`star_1..3`, 320 ms apart), then `level_done_bazaar`.
   - P1 sticker card: a sticker for each mastered skill. P1 ships one generic "Peacock" art for every skill, with the skill title as the line; distinct art comes in P2.
   - Questions are spoken when shown if `settings.lang != "en"` or the grade is ≤ 1. Otherwise only ▲ "hear it again" speaks.
-- [ ] **Step 4: Run them and watch them pass.**
-- [ ] **Step 5: Commit.** `git commit -m "boretube-learn: read aloud and Level done"`.
+- [x] **Step 4: Run them and watch them pass.**
+- [x] **Step 5: Commit.** `git commit -m "boretube-learn: read aloud and Level done"`.
 
 ---
 

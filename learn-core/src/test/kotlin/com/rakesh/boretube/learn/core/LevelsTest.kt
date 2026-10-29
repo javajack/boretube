@@ -67,6 +67,8 @@ class LevelsTest {
         val half = all.mapIndexed { i, a -> if (i < 4) a.copy(picked = (q.answer + 1) % 4, correct = false) else a }
         val r2 = Levels.finish(s, "tablesHigh", half, day.plusDays(1))
         assertEquals(1, r2.stars)
+        assertEquals(4, r2.right)
+        assertEquals(8, r2.total)
         assertEquals(3, r2.bestStars)
         assertEquals(3, r2.state.stars["tablesHigh"])
         assertTrue(r2.newlyMastered)

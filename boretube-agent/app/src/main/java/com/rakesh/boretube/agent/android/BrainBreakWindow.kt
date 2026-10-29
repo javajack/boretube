@@ -11,6 +11,7 @@ import android.view.WindowManager
 import com.rakesh.boretube.learn.core.BrainBreakSession
 import com.rakesh.boretube.learn.core.Question
 import com.rakesh.boretube.learn.core.QuizScreen
+import com.rakesh.boretube.learn.core.Speakable
 import java.util.Locale
 
 /**
@@ -174,9 +175,9 @@ class BrainBreakWindow(private val ctx: Context, private val host: Host) {
         val hindi = lang != "en" && voiceStatus == "ok"
         val text = when (sc) {
             is QuizScreen.Ask -> if (hindi) sc.q.spokenHi ?: sc.q.spoken else sc.q.spoken
-            is QuizScreen.Right -> (if (hindi) "शाबाश! " else "Yes! ") + speakable(sc.q.fact, hindi)
+            is QuizScreen.Right -> (if (hindi) "शाबाश! " else "Yes! ") + Speakable.of(sc.q.fact, hindi)
             // The why is English only for now; in Hindi, say the fact.
-            is QuizScreen.Learn -> if (hindi) speakable(sc.q.fact, true) else speakable(sc.q.explain, false)
+            is QuizScreen.Learn -> if (hindi) Speakable.of(sc.q.fact, true) else Speakable.of(sc.q.explain, false)
             is QuizScreen.Done -> if (hindi) "बहुत बढ़िया! ब्रेन ब्रेक पूरा हुआ।" else "Brain break done!"
         }
         try {
@@ -201,17 +202,5 @@ class BrainBreakWindow(private val ctx: Context, private val host: Host) {
         const val DONE_SECONDS = 5
         private val HINDI = Locale("hi", "IN")
         private val ENGLISH = Locale("en", "IN")
-
-        /** Maths symbols as words, so TTS doesn't say "multiplication sign". */
-        fun speakable(t: String, hindi: Boolean): String {
-            val words = if (hindi) {
-                listOf("×" to " गुणा ", "÷" to " भाग ", "−" to " घटा ", "+" to " जोड़ ", "=" to " बराबर ")
-            } else {
-                listOf("×" to " times ", "÷" to " divided by ", "−" to " minus ", "+" to " plus ", "=" to " is ")
-            }
-            var s = t
-            for ((a, b) in words) s = s.replace(a, b)
-            return s.replace(Regex("\\s+"), " ").trim()
-        }
     }
 }

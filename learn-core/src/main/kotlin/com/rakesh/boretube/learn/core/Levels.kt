@@ -16,6 +16,9 @@ data class LevelResult(
     val newlyMastered: Boolean,
     /** The first missed main question, to name on the done screen. */
     val toPractise: Question?,
+    /** Main questions answered right, of [total] (follow-ups don't count). */
+    val right: Int = 0,
+    val total: Int = 0,
 )
 
 /** A level: [LEVEL_SIZE] questions on one skill, in one format. Pure. */
@@ -84,7 +87,7 @@ object Levels {
             stars = st.stars + (skillId to best),
             mastered = if (newly) st.mastered + skillId else st.mastered,
         )
-        return LevelResult(st, stars, best, newly, main.firstOrNull { !it.correct }?.q)
+        return LevelResult(st, stars, best, newly, main.firstOrNull { !it.correct }?.q, main.count { it.correct }, main.size)
     }
 
     private const val DAY_MS = 86_400_000L

@@ -128,6 +128,23 @@ class LevelScreenTest {
         assertTrue(Sfx.catch_right in sounds.played)
     }
 
+    @Test fun aBrokenSpeakerNeverStopsTheLevel() {
+        val broken = object : Speaker {
+            override fun say(text: String, hindi: Boolean) = throw IllegalStateException("no TTS engine")
+            override fun stop() {}
+        }
+        rule.setContent {
+            CompositionLocalProvider(LocalUptime provides { clock }) { DesignFrame {
+                LevelScreen("count10", LearnState(grade = 0), LearnSettings(grade = 0, lang = "hi", set = true), sounds, broken, Random(3), now,
+                    onDone = { done = it }, onLeave = { left = true })
+            } }
+        }
+        val q = LevelPlan.build(LearnState(grade = 0), "count10", now, Random(3)).first()
+        key(Key.DirectionUp)
+        pick(q.answer)
+        rule.onNodeWithTag("right").assertExists()
+    }
+
     @Test fun screenshots() {
         start("tablesLow")
         rule.onRoot().captureRoboImage("src/test/screenshots/level_catch.png")

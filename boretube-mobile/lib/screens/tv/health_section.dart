@@ -55,7 +55,8 @@ List<HealthCheck> agentHealthChecks(
           TvPresence.asleep => 'Sleeping with the TV',
           TvPresence.unreachable => 'Can\'t reach the TV right now',
           TvPresence.waking => 'Starting up with the TV…',
-          TvPresence.checking || TvPresence.on => null,
+          TvPresence.checking => 'Checking…',
+          TvPresence.on => null,
         }
       : null;
   return [

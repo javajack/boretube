@@ -9,6 +9,7 @@ import '../services/tv_service.dart';
 import '../tv/presence.dart';
 import '../tv/tv.dart';
 import '../tv/tv_store.dart';
+import 'agent_providers.dart';
 import 'providers.dart';
 import 'settings_provider.dart';
 import 'tv_providers.dart';
@@ -487,6 +488,11 @@ final classicLockActiveProvider = StreamProvider<bool>((ref) {
 
 /// The active TV's power state (on, waking, asleep, unreachable), from the
 /// now-playing poll; re-read on every poll, so "waking" expires by itself.
-final tvPresenceProvider = Provider<TvPresence>(
-  (ref) => presenceOf(ref.watch(nowPlayingProvider), DateTime.now()),
-);
+final tvPresenceProvider = Provider<TvPresence>((ref) {
+  final link = ref.watch(agentStatusProvider);
+  return presenceOf(
+    ref.watch(nowPlayingProvider),
+    DateTime.now(),
+    helperLastOk: link.kind == AgentLinkKind.down ? link.lastOk : null,
+  );
+});

@@ -488,7 +488,9 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
     // the buttons could reach.
     final quiet = state == GuardState.sleeping ||
         state == GuardState.starting ||
-        state == GuardState.tvUnreachable;
+        state == GuardState.tvUnreachable ||
+        // Silent, and not yet known whether the TV went with it.
+        (state == GuardState.checking && link.kind == AgentLinkKind.down);
     final mode = s?.mode;
     final busy = _busy != null;
     final update = ref.watch(agentUpdateProvider);
@@ -507,6 +509,7 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
         ? switch (state) {
             GuardState.sleeping => 'Sleeping with the TV · back when it\'s on',
             GuardState.starting => 'Starting up with the TV…',
+            GuardState.checking => 'Checking the TV…',
             _ => 'Can\'t reach the TV right now',
           }
         : s == null

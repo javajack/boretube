@@ -230,6 +230,8 @@ GuardState guardStateOf({
       case TvPresence.waking:
         return GuardState.starting;
       case TvPresence.checking:
+        // Not yet known whether the TV went quiet with it.
+        if (link.kind == AgentLinkKind.down) return GuardState.checking;
       case TvPresence.on:
         break;
     }

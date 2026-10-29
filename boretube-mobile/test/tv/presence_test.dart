@@ -53,6 +53,37 @@ void main() {
     });
   });
 
+  group('a silent helper and a TV reading that may be stale', () {
+    final lastOk = t.subtract(const Duration(seconds: 15));
+
+    test('not proven awake since the helper went quiet: checking', () {
+      // Power cut: the helper gave up first; the TV reading still holds
+      // its last success, from before the cut.
+      final stale = NowPlaying(online: true, lastSeen: lastOk);
+      expect(presenceOf(stale, t, helperLastOk: lastOk), TvPresence.checking);
+      expect(
+        g(const AgentLink(AgentLinkKind.down),
+            presenceOf(stale, t, helperLastOk: lastOk)),
+        GuardState.checking,
+      );
+    });
+
+    test('the TV kept answering after the helper went quiet: a real fault', () {
+      final fresh = NowPlaying(online: true, lastSeen: t);
+      expect(presenceOf(fresh, t, helperLastOk: lastOk), TvPresence.on);
+    });
+
+    test('asleep or unreachable wins over checking', () {
+      expect(
+        presenceOf(const NowPlaying(online: true, asleep: true), t,
+            helperLastOk: lastOk),
+        TvPresence.asleep,
+      );
+      expect(presenceOf(const NowPlaying(), t, helperLastOk: lastOk),
+          TvPresence.unreachable);
+    });
+  });
+
   group('the notifier notices waking up', () {
     test('asleep → awake starts the waking clock; awake → awake keeps it',
         () async {
@@ -109,9 +140,6 @@ void main() {
     final up = AgentLink(AgentLinkKind.up, status: s);
     const down = AgentLink(AgentLinkKind.down, status: s);
 
-    GuardState g(AgentLink link, TvPresence p) =>
-        guardStateOf(link: link, onBreak: false, classic: false, presence: p);
-
     test('silent while the TV sleeps is not a fault', () {
       expect(g(down, TvPresence.asleep), GuardState.sleeping);
       expect(g(down, TvPresence.unreachable), GuardState.tvUnreachable);
@@ -159,3 +187,6 @@ void main() {
     });
   });
 }
+
+GuardState g(AgentLink link, TvPresence p) =>
+    guardStateOf(link: link, onBreak: false, classic: false, presence: p);

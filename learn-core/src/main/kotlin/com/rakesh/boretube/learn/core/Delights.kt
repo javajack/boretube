@@ -41,7 +41,8 @@ object Cheer {
         }
         val theme = Seasons.of(day)
         return when {
-            theme != null -> "$hello ${theme.line}"
+            // A festival or season speaks for itself (the header has room for one short line).
+            theme != null -> theme.line
             lastMastered != null -> "$hello You mastered $lastMastered. What next?"
             else -> "$hello Where shall we go?"
         }
@@ -100,18 +101,18 @@ object Seasons {
     )
 
     private val MOVING = listOf(
-        Festival(Theme("diwali", "Happy Diwali! Tubby lit a row of diyas.", "diya", setOf(Decor.diyas, Decor.toran, Decor.twinkles)), DATES.getValue("diwali"), 2, 2),
+        Festival(Theme("diwali", "Happy Diwali! Tubby lit diyas.", "diya", setOf(Decor.diyas, Decor.toran, Decor.twinkles)), DATES.getValue("diwali"), 2, 2),
         Festival(Theme("holi", "Happy Holi! So many colours!", "pichkari", setOf(Decor.puffs)), DATES.getValue("holi"), 1, 2),
-        Festival(Theme("navratri", "Navratri! Nine nights of garba and dandiya.", "drum", setOf(Decor.toran, Decor.twinkles)), DATES.getValue("navratri"), 0, 0, DATES.getValue("dussehra").map { it.minusDays(1) }),
-        Festival(Theme("dussehra", "Happy Dussehra! Good wins over bad.", "flower", setOf(Decor.toran)), DATES.getValue("dussehra"), 0, 1),
-        Festival(Theme("ganesh", "Ganpati Bappa Morya! Happy Ganesh Chaturthi.", "ladoo", setOf(Decor.toran)), DATES.getValue("ganesh"), 1, 3),
-        Festival(Theme("eidfitr", "Eid Mubarak! Sweet seviyan today.", "lantern", setOf(Decor.lanterns, Decor.twinkles)), DATES.getValue("eidfitr"), 1, 2),
-        Festival(Theme("eidadha", "Eid Mubarak! Time with family and friends.", "lantern", setOf(Decor.lanterns, Decor.twinkles)), DATES.getValue("eidadha"), 1, 2),
-        Festival(Theme("rakhi", "Happy Raksha Bandhan! Tie a rakhi with love.", "giftbox", setOf(Decor.toran)), DATES.getValue("rakhi"), 1, 0),
-        Festival(Theme("janmashtami", "Happy Janmashtami! Makhan for little Krishna.", "flute", setOf(Decor.toran)), DATES.getValue("janmashtami"), 1, 1),
-        Festival(Theme("onam", "Happy Onam! A flower pookalam for you.", "rangoli", setOf(Decor.toran)), DATES.getValue("onam"), 2, 1),
-        Festival(Theme("gurpurab", "Happy Gurpurab! Tubby lit lamps for Guru Nanak.", "diya", setOf(Decor.diyas)), DATES.getValue("gurpurab"), 1, 1),
-        Festival(Theme("sankranti", "Happy Makar Sankranti and Pongal! Kites up!", "kite", setOf(Decor.kites)), DATES.getValue("sankranti"), 1, 1),
+        Festival(Theme("navratri", "Navratri! Time for garba!", "drum", setOf(Decor.toran, Decor.twinkles)), DATES.getValue("navratri"), 0, 0, DATES.getValue("dussehra").map { it.minusDays(1) }),
+        Festival(Theme("dussehra", "Happy Dussehra!", "flower", setOf(Decor.toran)), DATES.getValue("dussehra"), 0, 1),
+        Festival(Theme("ganesh", "Ganpati Bappa Morya!", "ladoo", setOf(Decor.toran)), DATES.getValue("ganesh"), 1, 3),
+        Festival(Theme("eidfitr", "Eid Mubarak! Sweet seviyan!", "lantern", setOf(Decor.lanterns, Decor.twinkles)), DATES.getValue("eidfitr"), 1, 2),
+        Festival(Theme("eidadha", "Eid Mubarak!", "lantern", setOf(Decor.lanterns, Decor.twinkles)), DATES.getValue("eidadha"), 1, 2),
+        Festival(Theme("rakhi", "Happy Raksha Bandhan!", "giftbox", setOf(Decor.toran)), DATES.getValue("rakhi"), 1, 0),
+        Festival(Theme("janmashtami", "Happy Janmashtami!", "flute", setOf(Decor.toran)), DATES.getValue("janmashtami"), 1, 1),
+        Festival(Theme("onam", "Happy Onam! Pookalam time!", "rangoli", setOf(Decor.toran)), DATES.getValue("onam"), 2, 1),
+        Festival(Theme("gurpurab", "Happy Gurpurab!", "diya", setOf(Decor.diyas)), DATES.getValue("gurpurab"), 1, 1),
+        Festival(Theme("sankranti", "Happy Sankranti! Kites up!", "kite", setOf(Decor.kites)), DATES.getValue("sankranti"), 1, 1),
     )
 
     /** Same date every year: (month-day, days before, days after). */
@@ -135,9 +136,9 @@ object Seasons {
             }
         }
         return when (day.monthValue) {
-            7, 8 -> Theme("monsoon", "Rainy days! Shall we learn inside?", "rain")
-            12, 1 -> Theme("winter", "Brrr, it's chilly! Let's warm up our brains.", "sweater")
-            in 4..6 -> Theme("summer", "Hot sunny days! Stay cool and learn.", "sun")
+            7, 8 -> Theme("monsoon", "Rainy days! Learn inside?", "rain")
+            12, 1 -> Theme("winter", "Chilly! Warm up your brain.", "sweater")
+            in 4..6 -> Theme("summer", "Sunny days! Stay cool.", "sun")
             else -> null
         }
     }

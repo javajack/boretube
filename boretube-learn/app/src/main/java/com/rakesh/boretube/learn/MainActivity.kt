@@ -30,9 +30,17 @@ class MainActivity : ComponentActivity() {
         val world = World.of(ContentRepo.load(assets, includeUnreviewed = BuildConfig.DEBUG), generated.skills())
         // The generators take seconds on a TV chip: build them while the child looks at the town.
         Thread({ ContentRepo.warm(generated) }, "generators").apply { priority = Thread.MIN_PRIORITY }.start()
+        // Festival preview for grown-ups and screenshots:
+        //   adb shell am start -n com.rakesh.boretube.learn/.MainActivity --es preview_day 2026-11-08
+        // Only the town's decorations and greeting follow it; progress keeps the real date.
+        val preview = intent?.getStringExtra("preview_day")?.let { runCatching { java.time.LocalDate.parse(it) }.getOrNull() }
         setContent {
             DesignFrame {
-                LearnApp(progress, settings, sounds, speaker, Random.Default, world = world, players = players, onExit = { finish() })
+                LearnApp(
+                    progress, settings, sounds, speaker, Random.Default, world = world, players = players,
+                    festiveDay = { preview ?: java.time.LocalDate.now() },
+                    onExit = { finish() },
+                )
             }
         }
     }

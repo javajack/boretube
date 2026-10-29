@@ -57,3 +57,17 @@ class FestivalsTest {
         assertEquals("summer", on("2027-05-02"))
     }
 }
+
+class FestivalLinesTest {
+    /** The town header has room for one short line beside the chips. */
+    @Test fun everyFestivalAndSeasonLineFitsTheHeader() {
+        var day = LocalDate.of(2026, 1, 1)
+        val seen = HashMap<String, String>()
+        while (day.year <= Seasons.COVERED_UNTIL) {
+            Seasons.of(day)?.let { seen[it.id] = it.line }
+            day = day.plusDays(1)
+        }
+        assertTrue(seen.size >= 20)
+        for ((id, line) in seen) assertTrue("$id: \"$line\" is ${line.length} chars (max 30)", line.length <= 30)
+    }
+}

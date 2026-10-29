@@ -59,6 +59,8 @@ fun LearnApp(
     today: () -> LocalDate = { LocalDate.now() },
     hour: () -> Int = { LocalTime.now().hour },
     world: World = World.MATHS,
+    /** The day the town dresses up for: today, unless a festival is being previewed (it never touches progress). */
+    festiveDay: () -> LocalDate = today,
     /** The children sharing this TV (null: one child, [progress] and [settingsRepo] only). */
     players: PlayersRepo? = null,
     onExit: () -> Unit,
@@ -112,8 +114,8 @@ fun LearnApp(
                 onClass = { screen = Screen.Class },
                 onSettings = { screen = Screen.Settings },
                 onStickers = { screen = Screen.Stickers },
-                festive = com.rakesh.boretube.learn.core.Seasons.of(today()),
-                hello = Cheer.greeting(hour(), today(), state.mastered.lastOrNull()?.takeIf { world.catalog.skill(it) != null }?.let { world.title(it) }),
+                festive = com.rakesh.boretube.learn.core.Seasons.of(festiveDay()),
+                hello = Cheer.greeting(hour(), festiveDay(), state.mastered.lastOrNull()?.takeIf { world.catalog.skill(it) != null }?.let { world.title(it) }),
                 onDiscover = { d ->
                     if (d.skill == null) { nonce++; sounds.play(Sfx.run_start); screen = Screen.Run(d.land, nonce) } else play(d.skill)
                 },

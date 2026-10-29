@@ -191,7 +191,7 @@ fun SortBody(q: Question, index: Int, of: Int, followUp: Boolean, placed: Int?, 
                             scaleX = s; scaleY = s
                             rotationZ = slide * 8f
                         }
-                        .widthIn(min = 300.dp, max = 460.dp)
+                        .widthIn(min = 300.dp, max = 520.dp)
                         .clip(RoundedCornerShape(Radii.r34))
                         .background(if (placed != null) Palette.mint else Palette.card)
                         .border(1.dp, Palette.hairline, RoundedCornerShape(Radii.r34))
@@ -204,7 +204,7 @@ fun SortBody(q: Question, index: Int, of: Int, followUp: Boolean, placed: Int?, 
                         if (pic != null) com.rakesh.boretube.learn.ui.PictureArt(pic, Modifier.size(160.dp))
                         BasicText(
                             q.prompt,
-                            style = Text.display(if (pic != null) TypeScale.s43 else questionSize(q.prompt)).copy(textAlign = TextAlign.Center),
+                            style = Text.display(if (pic != null) TypeScale.s43 else sortSize(q.prompt)).copy(textAlign = TextAlign.Center),
                             maxLines = 3,
                         )
                     }
@@ -353,6 +353,14 @@ private fun OrderItem(item: String, ink: Color) {
     } else {
         BasicText(item, style = Text.display(orderSize(item)).copy(color = ink, textAlign = TextAlign.Center), maxLines = 2)
     }
+}
+
+/** A sort card's word: big, but a long word must never break in the middle ("Tortois-e"). */
+private fun sortSize(t: String) = when {
+    t.length <= 6 -> TypeScale.s55
+    t.length <= 12 && ' ' !in t -> TypeScale.s43
+    t.length <= 24 -> TypeScale.s34
+    else -> TypeScale.s26
 }
 
 private fun orderSize(t: String) = when {

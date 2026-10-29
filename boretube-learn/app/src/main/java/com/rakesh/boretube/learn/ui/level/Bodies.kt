@@ -63,11 +63,23 @@ import com.rakesh.boretube.learn.ui.TubbyMood
 import com.rakesh.boretube.learn.ui.TypeScale
 import com.rakesh.boretube.learn.ui.selectedRing
 
+/** Tile text: numbers big, words smaller, long words smaller still. */
+private fun tileSize(label: String, pies: Boolean): TextUnit = when {
+    pies -> TypeScale.s43
+    label.length <= 5 -> TypeScale.s55
+    label.length <= 9 -> TypeScale.s34
+    else -> TypeScale.s26
+}
+
+/** An option as words ("pic:cow" reads as "cow"). */
+fun optionText(o: String) = o.removePrefix("pic:")
+
 /** The question, as big as it fits: 89 for "7 × 8 = ?", smaller for words. */
 private fun questionSize(t: String): TextUnit = when {
     t.length <= 12 -> TypeScale.s89
     t.length <= 22 -> TypeScale.s55
-    else -> TypeScale.s43
+    t.length <= 40 -> TypeScale.s43
+    else -> TypeScale.s34
 }
 
 @Composable
@@ -75,7 +87,7 @@ private fun Header(q: Question, index: Int, of: Int, followUp: Boolean, sub: Str
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Gap.f4)) {
             if (followUp) BasicText("Now try this one", style = Text.body(TypeScale.s21, FontWeight.Bold).copy(color = Palette.coralInk))
-            BasicText(q.prompt, style = Text.display(questionSize(q.prompt)), maxLines = 1)
+            BasicText(q.prompt, style = Text.display(questionSize(q.prompt)), maxLines = if (q.prompt.length > 40) 2 else 1)
             sub?.let { BasicText(it, style = Text.muted()) }
         }
         Column(Modifier.width(233.dp).padding(top = Gap.f21), horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(Gap.f8)) {
@@ -155,9 +167,13 @@ fun QuickFireBody(q: Question, index: Int, of: Int, followUp: Boolean, sel: Int,
                     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Gap.f13)) {
                         val frac = pies?.firstOrNull { "${it.first}/${it.second}" == label }
                         if (frac != null) Pie(frac.first, frac.second, Modifier.size(110.dp), empty = if (selected) Palette.muted else Palette.hairline, line = if (selected) Palette.ink else Palette.card)
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            if (isRight) { Tick(ink, Modifier.size(40.dp)); Spacer(Modifier.width(Gap.f8)) }
-                            BasicText(label, style = Text.display(if (label.length > 5) TypeScale.s34 else if (pies != null) TypeScale.s43 else TypeScale.s55).copy(color = ink), maxLines = 1)
+                        if (label.startsWith("pic:")) {
+                            com.rakesh.boretube.learn.ui.PictureArt(label.removePrefix("pic:"), Modifier.size(110.dp))
+                        } else {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (isRight) { Tick(ink, Modifier.size(40.dp)); Spacer(Modifier.width(Gap.f8)) }
+                                BasicText(label, style = Text.display(tileSize(label, pies != null)).copy(color = ink), maxLines = 1)
+                            }
                         }
                     }
                 }
@@ -260,7 +276,7 @@ fun LearnMoment(q: Question, picked: Int, pickedLabel: String = "You picked ") {
                     }
                 }
                 BasicText(fact, style = Text.display(if (q.fact.length <= 12) TypeScale.s89 else TypeScale.s55), maxLines = 1)
-                val pick = q.options.getOrNull(picked) ?: ""
+                val pick = optionText(q.options.getOrNull(picked) ?: "")
                 BasicText(
                     buildAnnotatedString {
                         append(pickedLabel)

@@ -10,7 +10,6 @@ import androidx.compose.runtime.setValue
 import com.rakesh.boretube.learn.core.Learner
 import com.rakesh.boretube.learn.core.LevelResult
 import com.rakesh.boretube.learn.core.Levels
-import com.rakesh.boretube.learn.core.Maths
 import com.rakesh.boretube.learn.data.ProgressRepo
 import com.rakesh.boretube.learn.data.SettingsRepo
 import com.rakesh.boretube.learn.sound.Sfx
@@ -18,7 +17,7 @@ import com.rakesh.boretube.learn.sound.Sounds
 import com.rakesh.boretube.learn.speech.Speaker
 import com.rakesh.boretube.learn.ui.level.LevelScreen
 import com.rakesh.boretube.learn.world.LandId
-import com.rakesh.boretube.learn.world.Lands
+import com.rakesh.boretube.learn.world.World
 import java.time.LocalDate
 import java.time.LocalTime
 import kotlin.random.Random
@@ -42,6 +41,7 @@ fun LearnApp(
     now: () -> Long = { System.currentTimeMillis() },
     today: () -> LocalDate = { LocalDate.now() },
     hour: () -> Int = { LocalTime.now().hour },
+    world: World = World.MATHS,
     onExit: () -> Unit,
 ) {
     var settings by remember { mutableStateOf(settingsRepo.get()) }
@@ -63,26 +63,26 @@ fun LearnApp(
                 progress.save(state)
                 screen = Screen.Town
             }, onBack = onExit)
-            Screen.Town -> TownScreen(state, settings, sounds, hour(), onBack = onExit) { id ->
+            Screen.Town -> TownScreen(state, settings, sounds, hour(), world, onBack = onExit) { id ->
                 sounds.play(Sfx.enter_bazaar)
                 screen = Screen.Land(id)
             }
-            is Screen.Land -> LandScreen(Lands.of(s.id), state, settings, sounds, onPlay = ::play, onBack = { screen = Screen.Town })
+            is Screen.Land -> LandScreen(world.of(s.id), state, settings, sounds, world, onPlay = ::play, onBack = { screen = Screen.Town })
             is Screen.Level -> LevelScreen(
-                s.skillId, state, settings, sounds, speaker, random, now(),
+                s.skillId, state, settings, sounds, speaker, random, now(), world.catalog,
                 onDone = { answers ->
                     val r = Levels.finish(state, s.skillId, answers, today(), now())
                     state = r.state
                     progress.save(state)
                     screen = Screen.Done(r, s.skillId)
                 },
-                onLeave = { screen = Screen.Land(LandId.bazaar) },
+                onLeave = { screen = Screen.Land(world.landOf(s.skillId).id) },
             )
             is Screen.Done -> DoneScreen(
-                s.result, Maths.skill(s.skillId)?.title ?: s.skillId, sounds,
+                s.result, world.title(s.skillId), sounds,
                 onAnother = {
                     // The level the path offers next: the child's rung, or this skill again.
-                    play(Lands.progress(state, Lands.of(LandId.bazaar), settings.grade).next ?: s.skillId)
+                    play(world.progress(state, world.landOf(s.skillId), settings.grade).next ?: s.skillId)
                 },
                 onTown = { screen = Screen.Town },
             )

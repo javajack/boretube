@@ -12,7 +12,7 @@
    "id": "sc6.living",
    "title": "Living and non-living",
    "outcome": "SC-6.09",
-   "badge": "leaf",
+   "badge": "tree",
    "formats": [
     "quickfire",
     "catch"
@@ -168,7 +168,7 @@
    "id": "sc6.food",
    "title": "Food and nutrients",
    "outcome": "SC-6.02",
-   "badge": "rice",
+   "badge": "egg",
    "formats": [
     "quickfire",
     "catch"

@@ -1,8 +1,10 @@
 package com.rakesh.boretube.learn.world
 
 import androidx.compose.ui.graphics.Color
+import com.rakesh.boretube.learn.core.Catalog
 import com.rakesh.boretube.learn.core.LearnState
 import com.rakesh.boretube.learn.core.Maths
+import com.rakesh.boretube.learn.core.Pack
 import com.rakesh.boretube.learn.sound.Sfx
 import com.rakesh.boretube.learn.ui.Palette
 
@@ -15,60 +17,49 @@ data class LandInfo(
     val tint: Color,
     /** The land's own focus tick. */
     val tick: Sfx,
-    /** Skill ids, easy to hard (empty until the land's packs ship). */
+    /** Skill ids, easy to hard (empty until the land's banks are reviewed). */
     val skills: List<String>,
 )
 
 data class LandProgress(val mastered: Int, val total: Int, val next: String?)
 
-/** Tubby's Town (spec §1). P1: Number Bazaar has the maths ladder; the other lands come with P3 packs. */
-object Lands {
-    val all = listOf(
-        LandInfo(LandId.bazaar, "Number Bazaar", "Maths", Palette.bazaar, Sfx.focus_bazaar, Maths.LADDER.map { it.id }),
-        LandInfo(LandId.garden, "Word Garden", "English", Palette.garden, Sfx.focus_garden, emptyList()),
-        LandInfo(LandId.trail, "Nature Trail", "EVS", Palette.trail, Sfx.focus_trail, emptyList()),
+/**
+ * Tubby's Town for one [catalog] (spec §1): Number Bazaar holds the maths
+ * ladder, Word Garden the English banks, Nature Trail the EVS/Science banks.
+ */
+class World(val catalog: Catalog) {
+    val lands: List<LandInfo> = listOf(
+        LandInfo(LandId.bazaar, "Number Bazaar", "Maths", Palette.bazaar, Sfx.focus_bazaar, catalog.bySubject("maths").map { it.id }),
+        LandInfo(LandId.garden, "Word Garden", "English", Palette.garden, Sfx.focus_garden, catalog.bySubject("english").map { it.id }),
+        LandInfo(LandId.trail, "Nature Trail", "EVS", Palette.trail, Sfx.focus_trail, catalog.bySubject("evs").map { it.id }),
     )
 
-    fun of(id: LandId): LandInfo = all.first { it.id == id }
+    fun of(id: LandId): LandInfo = lands.first { it.id == id }
+
+    /** The land a skill lives in (Number Bazaar if unknown). */
+    fun landOf(skillId: String): LandInfo = lands.firstOrNull { skillId in it.skills } ?: of(LandId.bazaar)
 
     /** The levels a child of [grade] sees: one class below to one class above. */
-    fun path(land: LandInfo, grade: Int): List<String> {
-        if (land.skills.isEmpty()) return emptyList()
-        val lo = Maths.minRung(grade)
-        val hi = Maths.maxRung(grade)
-        return land.skills.filter { Maths.indexOf(it) in lo..hi }
-    }
+    fun path(land: LandInfo, grade: Int): List<String> =
+        land.skills.filter { (catalog.skill(it)?.grade ?: -9) in (grade - 1)..(grade + 1) }
 
-    /** Mastered / total on the path, and the next skill to play (the rung, else the first not mastered). */
+    /** Mastered / total on the path, and the next skill (the maths rung, else the first not mastered). */
     fun progress(s: LearnState, land: LandInfo, grade: Int): LandProgress {
         val path = path(land, grade)
-        val current = Maths.LADDER.getOrNull(s.rung)?.id?.takeIf { it in path && it !in s.mastered }
+        val rung = if (land.id == LandId.bazaar) Maths.LADDER.getOrNull(s.rung)?.id else null
+        val current = rung?.takeIf { it in path && it !in s.mastered }
         val next = current ?: path.firstOrNull { it !in s.mastered }
         return LandProgress(path.count { it in s.mastered }, path.size, next)
     }
 
-    /** The short mark inside a path node. */
-    fun badge(skillId: String): String = when (skillId) {
-        "count10" -> "123"
-        "biggest10" -> "5>2"
-        "add10" -> "2+3"
-        "sub10" -> "5−2"
-        "next20" -> "19"
-        "make10" -> "9+6"
-        "placeValue" -> "47"
-        "add100" -> "+99"
-        "tablesLow" -> "×5"
-        "money" -> "₹"
-        "clock" -> "3:30"
-        "tablesHigh" -> "×7"
-        "divide" -> "÷"
-        "mul21" -> "23×4"
-        "fractions" -> "¾"
-        "halfOf" -> "½"
-        "decimals" -> "0.5"
-        "percent" -> "%"
-        "negatives" -> "−3"
-        "equations" -> "x"
-        else -> "?"
+    fun badge(skillId: String): String = catalog.skill(skillId)?.badge ?: "?"
+    fun title(skillId: String): String = catalog.skill(skillId)?.title ?: skillId
+
+    companion object {
+        val MATHS = World(Catalog.MATHS)
+        fun of(packs: List<Pack>) = World(Catalog.of(packs))
     }
 }
+
+/** The maths-only world (tests, and before any bank is reviewed). */
+val Lands: World get() = World.MATHS

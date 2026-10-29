@@ -36,5 +36,5 @@
 - [ ] learn-core: `SkillSource`, `Catalog`, the pack model and validator, `Visual.Picture`, plays, format rotation, Pairs and Build question sets (tests).
 - [x] App: Build and Pairs screens with sounds (`build_*`, `card_*`, `pair_match`), wired into levels (tests and screenshots).
 - [x] Banks: English and EVS KG–7 plus the review pages; the validator test runs over every pack.
-- [ ] App: the content repo (assets, reviewed gate), Lands from the catalogue, the picture library, Garden and Trail playable (tests and screenshots).
+- [x] App: the content repo (assets, reviewed gate), Lands from the catalogue, the picture library, Garden and Trail playable (tests and screenshots).
 - [ ] Learn 0.2.0 bundled in the phone; the user reviews the banks; the user installs; a device check.

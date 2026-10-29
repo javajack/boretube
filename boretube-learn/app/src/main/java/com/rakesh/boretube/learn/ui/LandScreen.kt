@@ -38,12 +38,11 @@ import androidx.compose.ui.unit.dp
 import com.rakesh.boretube.learn.core.Format
 import com.rakesh.boretube.learn.core.LearnState
 import com.rakesh.boretube.learn.core.Levels
-import com.rakesh.boretube.learn.core.Maths
 import com.rakesh.boretube.learn.data.LearnSettings
 import com.rakesh.boretube.learn.sound.Sfx
 import com.rakesh.boretube.learn.sound.Sounds
 import com.rakesh.boretube.learn.world.LandInfo
-import com.rakesh.boretube.learn.world.Lands
+import com.rakesh.boretube.learn.world.World
 
 private const val PANEL_W = 470f
 private const val NODE = 89f
@@ -56,11 +55,12 @@ fun LandScreen(
     state: LearnState,
     settings: LearnSettings,
     sounds: Sounds,
+    world: World = World.MATHS,
     onPlay: (String) -> Unit,
     onBack: () -> Unit,
 ) {
-    val path = remember(land, settings.grade) { Lands.path(land, settings.grade) }
-    val progress = Lands.progress(state, land, settings.grade)
+    val path = remember(land, settings.grade) { world.path(land, settings.grade) }
+    val progress = world.progress(state, land, settings.grade)
     val start = path.indexOf(progress.next).takeIf { it >= 0 } ?: 0
     var sel by remember(path) { mutableIntStateOf(start) }
     val centres = remember(path) { nodeCentres(path.size) }
@@ -97,7 +97,7 @@ fun LandScreen(
             ProgressBar(if (progress.total == 0) 0f else progress.mastered / progress.total.toFloat(), Palette.sunflower)
             BasicText("${progress.mastered} of ${progress.total} skills · ${path.sumOf { state.stars[it] ?: 0 }} stars", style = Text.body(TypeScale.s21))
             Spacer(Modifier.weight(1f))
-            selected?.let { LevelCard(it, state.stars[it] ?: 0) }
+            selected?.let { LevelCard(it, state.stars[it] ?: 0, state.plays[it] ?: 0, world) }
             BasicText("◀ ▶ walk the path · OK to play", style = Text.muted(TypeScale.s18))
         }
         // The path and its nodes.
@@ -124,6 +124,7 @@ fun LandScreen(
                 current = id == progress.next,
                 selected = i == sel,
                 stars = state.stars[id] ?: 0,
+                world = world,
                 modifier = Modifier.offset(x = (PANEL_W + c.x - 90f).dp, y = (c.y - NODE / 2f).dp),
             )
         }
@@ -131,7 +132,7 @@ fun LandScreen(
 }
 
 @Composable
-private fun PathNode(id: String, done: Boolean, current: Boolean, selected: Boolean, stars: Int, modifier: Modifier) {
+private fun PathNode(id: String, done: Boolean, current: Boolean, selected: Boolean, stars: Int, world: World, modifier: Modifier) {
     Column(modifier.width(180.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Gap.f4)) {
         val fill = when {
             current -> Palette.coral
@@ -148,15 +149,17 @@ private fun PathNode(id: String, done: Boolean, current: Boolean, selected: Bool
                 .then(if (!current && !done) Modifier.border(3.dp, Palette.outline, CircleShape) else Modifier),
             contentAlignment = Alignment.Center,
         ) {
-            BasicText(
-                if (done && !current) "✓" else Lands.badge(id),
-                style = Text.display(TypeScale.s26).copy(color = if (current) Palette.card else Palette.ink),
-            )
+            val badge = world.badge(id)
+            when {
+                done && !current -> BasicText("✓", style = Text.display(TypeScale.s26))
+                badge in Pictures.ids -> PictureArt(badge, Modifier.size(55.dp))
+                else -> BasicText(badge, style = Text.display(TypeScale.s26).copy(color = if (current) Palette.card else Palette.ink))
+            }
         }
         if (stars > 0) StarRow(stars, size = 18.dp) else Spacer(Modifier.height(18.dp))
         // A canvas-coloured backing so the dotted path never runs through the words.
         BasicText(
-            Maths.skill(id)?.title ?: id,
+            world.title(id),
             modifier = Modifier.clip(RoundedCornerShape(Radii.r8)).background(Palette.canvas).padding(horizontal = Gap.f8, vertical = Gap.f4),
             style = Text.body(TypeScale.s18, if (selected) FontWeight.ExtraBold else FontWeight.SemiBold).copy(textAlign = TextAlign.Center),
             maxLines = 2,
@@ -165,14 +168,20 @@ private fun PathNode(id: String, done: Boolean, current: Boolean, selected: Bool
 }
 
 @Composable
-private fun LevelCard(id: String, best: Int) {
+private fun LevelCard(id: String, best: Int, plays: Int, world: World) {
     Column(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(Radii.r21)).background(Palette.cream).padding(horizontal = Gap.f21, vertical = Gap.f21),
         verticalArrangement = Arrangement.spacedBy(Gap.f8),
     ) {
-        BasicText(Maths.skill(id)?.title ?: id, style = Text.display(TypeScale.s34))
-        val format = if (Levels.formatFor(id) == Format.catch) "Catch" else "Quick-fire"
-        BasicText("$format · ${Levels.LEVEL_SIZE} questions · 3 min", style = Text.muted(), maxLines = 1)
+        BasicText(world.title(id), style = Text.display(TypeScale.s34))
+        val line = when (Levels.formatFor(id, plays, world.catalog)) {
+            Format.catch -> "Catch · ${Levels.LEVEL_SIZE} questions"
+            Format.pairs -> "Pairs · ${Levels.PAIRS} to match"
+            Format.build -> "Build · ${Levels.BUILDS} numbers"
+            Format.quickfire -> "Quick-fire · ${Levels.LEVEL_SIZE} questions"
+        }
+        BasicText(line, style = Text.muted(), maxLines = 1)
+        BasicText("About 3 minutes", style = Text.muted(TypeScale.s18))
         if (best > 0) StarRow(best, size = 26.dp) else BasicText("New level, no stars yet", style = Text.body(TypeScale.s21))
     }
 }

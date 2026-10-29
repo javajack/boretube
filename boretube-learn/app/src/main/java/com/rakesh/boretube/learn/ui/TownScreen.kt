@@ -27,12 +27,11 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.rakesh.boretube.learn.core.LearnState
-import com.rakesh.boretube.learn.core.Maths
 import com.rakesh.boretube.learn.data.LearnSettings
 import com.rakesh.boretube.learn.sound.Sfx
 import com.rakesh.boretube.learn.sound.Sounds
 import com.rakesh.boretube.learn.world.LandId
-import com.rakesh.boretube.learn.world.Lands
+import com.rakesh.boretube.learn.world.World
 import kotlinx.coroutines.delay
 import java.time.LocalTime
 
@@ -43,6 +42,7 @@ fun TownScreen(
     settings: LearnSettings,
     sounds: Sounds,
     hour: Int = LocalTime.now().hour,
+    world: World = World.MATHS,
     onBack: () -> Unit = {},
     onLand: (LandId) -> Unit,
 ) {
@@ -59,12 +59,12 @@ fun TownScreen(
             .remote(Unit) { key ->
                 when (key) {
                     RemoteKey.Left, RemoteKey.Right -> {
-                        val n = (sel + if (key == RemoteKey.Left) -1 else 1).coerceIn(0, Lands.all.lastIndex)
-                        if (n != sel) { sel = n; sounds.tick(Lands.all[n].tick) }
+                        val n = (sel + if (key == RemoteKey.Left) -1 else 1).coerceIn(0, world.lands.lastIndex)
+                        if (n != sel) { sel = n; sounds.tick(world.lands[n].tick) }
                         true
                     }
                     RemoteKey.Ok -> {
-                        val land = Lands.all[sel]
+                        val land = world.lands[sel]
                         if (land.skills.isEmpty()) { sounds.play(Sfx.back); soon = land.id } else { sounds.play(Sfx.select); onLand(land.id) }
                         true
                     }
@@ -89,8 +89,8 @@ fun TownScreen(
             }
         }
         Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(Gap.f34), verticalAlignment = Alignment.CenterVertically) {
-            Lands.all.forEachIndexed { i, land ->
-                val p = Lands.progress(state, land, settings.grade)
+            world.lands.forEachIndexed { i, land ->
+                val p = world.progress(state, land, settings.grade)
                 val shape = RoundedCornerShape(Radii.r34)
                 Column(
                     Modifier
@@ -111,7 +111,7 @@ fun TownScreen(
                             BasicText("${land.subject} · ${p.mastered} of ${p.total} skills", style = Text.muted())
                             p.next?.let { next ->
                                 BasicText(
-                                    "Next: ${Maths.skill(next)?.title ?: next}",
+                                    "Next: ${world.title(next)}",
                                     style = Text.body(TypeScale.s21, FontWeight.Bold).copy(color = Palette.coralInk),
                                     maxLines = 1,
                                 )

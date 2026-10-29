@@ -310,7 +310,7 @@ EVS = {
         ]),
     ],
     1: [
-        skill("ev1.fruits", "Fruits and vegetables", "EV-1.03", "fruit", ["quickfire", "catch"], [
+        skill("ev1.fruits", "Fruits and vegetables", "EV-1.03", "apple", ["quickfire", "catch"], [
             it(f"f{i}", q, [right] + other, why)
             for i, (q, right, other, why) in enumerate([
                 ("Which one is a fruit?", "mango", ["carrot", "potato", "onion"], "A mango is a sweet fruit."),
@@ -346,7 +346,7 @@ EVS = {
         ]),
     ],
     2: [
-        skill("ev2.homes", "Animal homes", "EV-2.04", "nest", ["quickfire", "catch"], [
+        skill("ev2.homes", "Animal homes", "EV-2.04", "bird", ["quickfire", "catch"], [
             it(f"h{i}", f"Where does a {a} live?", [home] + other, f"A {a} lives in a {home}.")
             for i, (a, home, other) in enumerate([
                 ("bird", "nest", ["kennel", "hive", "stable"]), ("bee", "hive", ["nest", "den", "web"]),
@@ -393,7 +393,7 @@ EVS = {
                 ("Turning off the tap ___ water.", "saves", ["wastes", "dirties", "heats"], "Closing the tap saves water."),
             ])
         ]),
-        skill("ev3.food", "Food we eat", "EV-3.03", "rice", ["quickfire", "catch"], [
+        skill("ev3.food", "Food we eat", "EV-3.03", "carrot", ["quickfire", "catch"], [
             it(f"fd{i}", q, [right] + other, why)
             for i, (q, right, other, why) in enumerate([
                 ("Which one comes from plants?", "rice", ["egg", "milk", "honey"], "Rice grows on rice plants."),
@@ -429,7 +429,7 @@ EVS = {
                 ("We cross the road at the ___.", "zebra crossing", ["middle", "corner", "bridge"], "The zebra crossing is the safe place to cross."),
             ])
         ]),
-        skill("ev4.animals", "Animal groups", "EV-4.03", "egg", ["quickfire", "catch"], [
+        skill("ev4.animals", "Animal groups", "EV-4.03", "ant", ["quickfire", "catch"], [
             it(f"an{i}", q, [right] + other, why)
             for i, (q, right, other, why) in enumerate([
                 ("Which animal lays eggs?", "hen", ["cow", "dog", "cat"], "A hen lays eggs."),
@@ -448,7 +448,7 @@ EVS = {
         ]),
     ],
     5: [
-        skill("ev5.states", "Solid, liquid, gas", "EV-5.06", "ice", ["quickfire"], [
+        skill("ev5.states", "Solid, liquid, gas", "EV-5.06", "cup", ["quickfire"], [
             it(f"st{i}", f"{thing} is a ___.", [right] + [x for x in ["solid", "liquid", "gas"] if x != right], why)
             for i, (thing, right, why) in enumerate([
                 ("Ice", "solid", "Ice keeps its shape, so it is a solid."),
@@ -484,7 +484,7 @@ EVS = {
         ]),
     ],
     6: [
-        skill("sc6.living", "Living and non-living", "SC-6.09", "leaf", ["quickfire", "catch"], [
+        skill("sc6.living", "Living and non-living", "SC-6.09", "tree", ["quickfire", "catch"], [
             it(f"lv{i}", q, [right] + other, why)
             for i, (q, right, other, why) in enumerate([
                 ("Which one is living?", "tree", ["rock", "chair", "pen"], "A tree grows and needs food, so it is living."),
@@ -501,7 +501,7 @@ EVS = {
                 ("Which one is non-living?", "water", ["frog", "grass", "ant"], "Water is needed by living things but is not alive."),
             ])
         ]),
-        skill("sc6.food", "Food and nutrients", "SC-6.02", "rice", ["quickfire", "catch"], [
+        skill("sc6.food", "Food and nutrients", "SC-6.02", "egg", ["quickfire", "catch"], [
             it(f"nu{i}", q, [right] + other, why)
             for i, (q, right, other, why) in enumerate([
                 ("Rice and roti mostly give us ___.", "energy", ["bones", "teeth", "hair"], "Rice and roti are full of carbohydrates for energy."),

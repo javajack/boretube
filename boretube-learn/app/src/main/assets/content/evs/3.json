@@ -168,7 +168,7 @@
    "id": "ev3.food",
    "title": "Food we eat",
    "outcome": "EV-3.03",
-   "badge": "rice",
+   "badge": "carrot",
    "formats": [
     "quickfire",
     "catch"

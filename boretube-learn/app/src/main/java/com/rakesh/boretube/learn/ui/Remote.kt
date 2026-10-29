@@ -5,6 +5,7 @@ import android.view.KeyEvent as AndroidKeyEvent
 import androidx.compose.foundation.focusable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.focus.FocusRequester
@@ -41,6 +42,9 @@ class OkGrace(private val graceMs: Long = GRACE_MS) {
     companion object { const val GRACE_MS = 350L }
 }
 
+/** Uptime in ms for the OK grace and answer timing; tests drive it by hand. */
+val LocalUptime = staticCompositionLocalOf<() -> Long> { { SystemClock.uptimeMillis() } }
+
 /**
  * Makes this the screen's single key target: takes focus when it appears and
  * routes remote keys to [onKey] (return true when handled). [screenKey]
@@ -48,7 +52,8 @@ class OkGrace(private val graceMs: Long = GRACE_MS) {
  */
 fun Modifier.remote(screenKey: Any?, onKey: (RemoteKey) -> Boolean): Modifier = composed {
     val focus = remember { FocusRequester() }
-    val shownAt = remember(screenKey) { SystemClock.uptimeMillis() }
+    val uptime = LocalUptime.current
+    val shownAt = remember(screenKey) { uptime() }
     val grace = remember { OkGrace() }
     LaunchedEffect(Unit) { focus.requestFocus() }
     this
@@ -56,7 +61,7 @@ fun Modifier.remote(screenKey: Any?, onKey: (RemoteKey) -> Boolean): Modifier = 
         .onPreviewKeyEvent { e ->
             val key = remoteKeyOf(e.nativeKeyEvent.keyCode) ?: return@onPreviewKeyEvent false
             if (e.type != KeyEventType.KeyDown) return@onPreviewKeyEvent true
-            if (!grace.accept(key, e.nativeKeyEvent.repeatCount, SystemClock.uptimeMillis(), shownAt)) return@onPreviewKeyEvent true
+            if (!grace.accept(key, e.nativeKeyEvent.repeatCount, uptime(), shownAt)) return@onPreviewKeyEvent true
             onKey(key)
         }
         .focusable()

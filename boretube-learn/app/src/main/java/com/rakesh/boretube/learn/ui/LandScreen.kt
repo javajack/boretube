@@ -178,8 +178,8 @@ private fun LevelCard(id: String, best: Int) {
 }
 
 @Composable
-fun ProgressBar(fraction: Float, color: androidx.compose.ui.graphics.Color) {
-    Box(Modifier.fillMaxWidth().height(13.dp).clip(RoundedCornerShape(Radii.r8)).background(Palette.canvas)) {
+fun ProgressBar(fraction: Float, color: androidx.compose.ui.graphics.Color, track: androidx.compose.ui.graphics.Color = Palette.canvas) {
+    Box(Modifier.fillMaxWidth().height(13.dp).clip(RoundedCornerShape(Radii.r8)).background(track)) {
         Box(Modifier.fillMaxWidth(fraction.coerceIn(0f, 1f)).fillMaxHeight().background(color))
     }
 }

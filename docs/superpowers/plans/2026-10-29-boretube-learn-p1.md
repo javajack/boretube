@@ -497,7 +497,7 @@ class TownScreenTest {
 - Consumes: `Levels.plan`, `Levels.forCatch`, `Levels.formatFor`, `BrainBreakSession`, `QuizScreen`, `Sounds`, the `Speaker` from Task 8 (pass in `Speaker.Silent` for tests).
 - Produces: `@Composable fun LevelScreen(skillId: String, state: LearnState, settings: LearnSettings, sounds: Sounds, speaker: Speaker, random: Random, onDone: (List<Answered>) -> Unit, onLeave: () -> Unit)`.
 
-- [ ] **Step 1: Write the failing tests.**
+- [x] **Step 1: Write the failing tests.**
 
 ```kotlin
 @Test fun okRightAfterAScreenChangeIsIgnored() {
@@ -516,8 +516,8 @@ class TownScreenTest {
 
 (In the code, write these bodies out fully. The seeded `Random` fixes which tile is right, so `val q = Levels.plan(state, id, 8, now, Random(3)).first()` gives the expected answer index.)
 
-- [ ] **Step 2: Run them and watch them fail.**
-- [ ] **Step 3: Implement.**
+- [x] **Step 2: Run them and watch them fail.**
+- [x] **Step 3: Implement.**
   - **Quick-fire** (daylight version of the brain-break layout):
     - the question top left at 89 (fit down to 55), and "n of 8" with a thin bar top right;
     - 4 tiles in one row, 144 tall (233 for pies), white with the hairline; the focused tile is ink with cream text;
@@ -529,8 +529,8 @@ class TownScreenTest {
   - **Right:** `sounds.right(streak)`, a tile flash to mint for 200 ms, then the next question after 900 ms.
   - **Miss:** `miss`, then the learn moment (`learn_open`): the fact with the answer in sunflower, "You picked X" struck through, the explanation in Figtree 34, the learn visual, and **Got it**. The follow-up uses `followup_win` when it's right.
   - Back opens the leave sheet.
-- [ ] **Step 4: Run them, watch them pass, and look at the screenshots** (compare with mock artboard 4).
-- [ ] **Step 5: Commit.** `git commit -m "boretube-learn: Quick-fire and Catch levels with the learn moment"`.
+- [x] **Step 4: Run them, watch them pass, and look at the screenshots** (compare with mock artboard 4).
+- [x] **Step 5: Commit.** `git commit -m "boretube-learn: Quick-fire and Catch levels with the learn moment"`.
 
 ---
 

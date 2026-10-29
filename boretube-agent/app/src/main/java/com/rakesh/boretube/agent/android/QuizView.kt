@@ -576,9 +576,11 @@ class QuizView(
         fill.color = CREAM
         c.drawCircle(x(cx), y(cy), s(r), fill)
         fill.color = INK
+        // Hour dots, except at 12, 3, 6 and 9 where the numbers are.
         for (i in 0 until 12) {
+            if (i % 3 == 0) continue
             val a = Math.toRadians(i * 30.0)
-            c.drawCircle(x(cx + (r - 16f) * sin(a).toFloat()), y(cy - (r - 16f) * cos(a).toFloat()), s(if (i % 3 == 0) 6f else 3.5f), fill)
+            c.drawCircle(x(cx + (r - 16f) * sin(a).toFloat()), y(cy - (r - 16f) * cos(a).toFloat()), s(3.5f), fill)
         }
         body.textSize = s(r * 0.2f)
         body.color = INK

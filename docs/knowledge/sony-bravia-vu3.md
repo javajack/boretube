@@ -104,3 +104,14 @@ Final state:
 - 0 of 18 re-enabled.
 - After resuming, the watchdog dry run had nothing to do.
 - An `adb reboot` sent over ADB returns after ~31 s, when the connection drops. Monitors must use timeouts on every adb call: a bare `adb shell` can hang across a reboot.
+
+## Brain breaks on the VU3 (verified 2026-10-29, TV Guard 1.4.0 → 1.4.1)
+
+- **The quiz window is a focusable `TYPE_APPLICATION_OVERLAY`.** It takes the remote over SmartTube.
+  - **Back** is swallowed.
+  - **Home** opens launcherx underneath, but the quiz stays on top. Both were tried on the real remote.
+- **Pausing works through the media-session transport controls** (listener path): SmartTube's state goes `paused`, then `playing` after Done.
+- **After Home mid-quiz, don't resume.** The foreground is the launcher, so 1.4.1 resumes only when the paused app is still in front. It journals "not resumed" otherwise.
+- **TextToSpeech binds to `com.google.android.tts`** (the rolled-back known-good Speech Services) and reports voice `ok`. The Hindi voice hasn't been checked by ear yet.
+- **Progress survives both an agent update and a reboot:** 7 breaks, 14 right, 2 learned, and the rung on "Tables of 6, 7, 8 and 9".
+- **A round with a wrong answer journals** "2 questions: 1 right, 1 learned"; the learn screen and the easier follow-up were seen on the TV.

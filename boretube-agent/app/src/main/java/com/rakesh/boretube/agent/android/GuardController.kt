@@ -129,8 +129,15 @@ class GuardController(private val ctx: Context) : AgentApi {
             bbPkg = null
             playClock.reset()
             bbOpen.set(false)
-            // After the window is gone, so a fallback key event reaches the app.
-            guardExec.schedule({ safely("resume") { media(pkg, play = true) } }, 300, TimeUnit.MILLISECONDS)
+            // After the window is gone, so a fallback key event reaches the app. Only when that app is
+            // still in front: after Home mid-quiz, playing it would bring back sound behind the launcher.
+            guardExec.schedule({
+                safely("resume") {
+                    val fg = fgw.poll()
+                    if (pkg != null && fg == pkg) media(pkg, play = true)
+                    else if (pkg != null) record("brainBreak", pkg, "not resumed", "${fg ?: "nothing"} in front", true, "agent")
+                }
+            }, 300, TimeUnit.MILLISECONDS)
         }
     })
     private val fingerprint: String = Build.FINGERPRINT

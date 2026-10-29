@@ -25,6 +25,17 @@ class ProgressStoreTest {
         assertEquals(2, ProgressStore(tmp.root).load().grade)
     }
 
+    @Test fun aSaveNeverRotatesACorruptFileOverTheGoodBackup() {
+        val st = ProgressStore(tmp.root)
+        st.save(LearnState(grade = 2))
+        st.save(LearnState(grade = 3)) // .bak = 2, current = 3
+        File(tmp.root, "progress.json").writeText("") // power cut mid-write
+        st.save(LearnState(grade = 4))
+        File(tmp.root, "progress.json").writeText("{garbage")
+        // The backup is still a real save, not the empty file.
+        assertEquals(2, ProgressStore(tmp.root).load().grade)
+    }
+
     @Test fun nothingSavedIsEmptyProgress() {
         assertEquals(LearnState(), ProgressStore(tmp.root).load())
         File(tmp.root, "progress.json").writeText("")

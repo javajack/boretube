@@ -23,9 +23,9 @@
      "q": "Which one is a naming word?",
      "options": [
       "cat",
-      "run",
       "big",
-      "soft"
+      "soft",
+      "quickly"
      ],
      "answer": 0,
      "explain": "A naming word names a thing: cat."
@@ -35,9 +35,9 @@
      "q": "Which one is a naming word?",
      "options": [
       "book",
-      "read",
+      "happy",
       "red",
-      "fast"
+      "tall"
      ],
      "answer": 0,
      "explain": "A naming word names a thing: book."
@@ -47,9 +47,9 @@
      "q": "Which one is a naming word?",
      "options": [
       "tree",
-      "tall",
-      "grow",
-      "very"
+      "slowly",
+      "very",
+      "sweet"
      ],
      "answer": 0,
      "explain": "A naming word names a thing: tree."
@@ -59,9 +59,9 @@
      "q": "Which one is a naming word?",
      "options": [
       "ball",
-      "kick",
-      "round",
-      "high"
+      "cold",
+      "loudly",
+      "shiny"
      ],
      "answer": 0,
      "explain": "A naming word names a thing: ball."
@@ -71,9 +71,9 @@
      "q": "Which one is a naming word?",
      "options": [
       "mango",
-      "sweet",
-      "eat",
-      "ripe"
+      "round",
+      "early",
+      "heavy"
      ],
      "answer": 0,
      "explain": "A naming word names a thing: mango."
@@ -83,9 +83,9 @@
      "q": "Which one is a naming word?",
      "options": [
       "school",
-      "go",
-      "early",
-      "happy"
+      "bright",
+      "quietly",
+      "tiny"
      ],
      "answer": 0,
      "explain": "A naming word names a thing: school."
@@ -95,9 +95,9 @@
      "q": "Which one is a naming word?",
      "options": [
       "chair",
-      "sit",
-      "soft",
-      "down"
+      "kind",
+      "noisy",
+      "big"
      ],
      "answer": 0,
      "explain": "A naming word names a thing: chair."
@@ -107,9 +107,9 @@
      "q": "Which one is a naming word?",
      "options": [
       "river",
-      "flow",
-      "cold",
-      "deep"
+      "soft",
+      "quickly",
+      "happy"
      ],
      "answer": 0,
      "explain": "A naming word names a thing: river."
@@ -119,9 +119,9 @@
      "q": "Which one is a naming word?",
      "options": [
       "pencil",
-      "write",
-      "sharp",
-      "long"
+      "red",
+      "tall",
+      "slowly"
      ],
      "answer": 0,
      "explain": "A naming word names a thing: pencil."
@@ -131,9 +131,9 @@
      "q": "Which one is a naming word?",
      "options": [
       "bird",
-      "fly",
-      "small",
-      "up"
+      "very",
+      "sweet",
+      "cold"
      ],
      "answer": 0,
      "explain": "A naming word names a thing: bird."
@@ -143,9 +143,9 @@
      "q": "Which one is a naming word?",
      "options": [
       "cup",
-      "drink",
-      "hot",
-      "full"
+      "loudly",
+      "shiny",
+      "round"
      ],
      "answer": 0,
      "explain": "A naming word names a thing: cup."
@@ -155,9 +155,9 @@
      "q": "Which one is a naming word?",
      "options": [
       "bus",
-      "ride",
-      "slow",
-      "yellow"
+      "early",
+      "heavy",
+      "bright"
      ],
      "answer": 0,
      "explain": "A naming word names a thing: bus."
@@ -167,9 +167,9 @@
      "q": "Which one is a naming word?",
      "options": [
       "door",
-      "open",
-      "tall",
-      "slowly"
+      "quietly",
+      "tiny",
+      "kind"
      ],
      "answer": 0,
      "explain": "A naming word names a thing: door."
@@ -179,9 +179,9 @@
      "q": "Which one is a naming word?",
      "options": [
       "apple",
-      "bite",
-      "red",
-      "juicy"
+      "noisy",
+      "big",
+      "soft"
      ],
      "answer": 0,
      "explain": "A naming word names a thing: apple."
@@ -191,9 +191,9 @@
      "q": "Which one is a naming word?",
      "options": [
       "train",
-      "go",
-      "fast",
-      "long"
+      "quickly",
+      "happy",
+      "red"
      ],
      "answer": 0,
      "explain": "A naming word names a thing: train."
@@ -203,9 +203,9 @@
      "q": "Which one is a naming word?",
      "options": [
       "table",
-      "sit",
-      "wooden",
-      "near"
+      "tall",
+      "slowly",
+      "very"
      ],
      "answer": 0,
      "explain": "A naming word names a thing: table."
@@ -215,9 +215,9 @@
      "q": "Which one is a naming word?",
      "options": [
       "shoe",
-      "walk",
-      "new",
-      "tight"
+      "sweet",
+      "cold",
+      "loudly"
      ],
      "answer": 0,
      "explain": "A naming word names a thing: shoe."
@@ -227,9 +227,9 @@
      "q": "Which one is a naming word?",
      "options": [
       "flower",
-      "smell",
-      "pretty",
-      "bloom"
+      "shiny",
+      "round",
+      "early"
      ],
      "answer": 0,
      "explain": "A naming word names a thing: flower."
@@ -239,9 +239,9 @@
      "q": "Which one is a naming word?",
      "options": [
       "milk",
-      "drink",
-      "white",
-      "cold"
+      "heavy",
+      "bright",
+      "quietly"
      ],
      "answer": 0,
      "explain": "A naming word names a thing: milk."
@@ -251,9 +251,9 @@
      "q": "Which one is a naming word?",
      "options": [
       "kite",
-      "fly",
-      "high",
-      "colourful"
+      "tiny",
+      "kind",
+      "noisy"
      ],
      "answer": 0,
      "explain": "A naming word names a thing: kite."
@@ -263,9 +263,9 @@
      "q": "Which one is a naming word?",
      "options": [
       "box",
-      "pack",
-      "heavy",
-      "open"
+      "big",
+      "soft",
+      "quickly"
      ],
      "answer": 0,
      "explain": "A naming word names a thing: box."
@@ -275,9 +275,9 @@
      "q": "Which one is a naming word?",
      "options": [
       "lamp",
-      "glow",
-      "bright",
-      "on"
+      "happy",
+      "red",
+      "tall"
      ],
      "answer": 0,
      "explain": "A naming word names a thing: lamp."
@@ -287,9 +287,9 @@
      "q": "Which one is a naming word?",
      "options": [
       "doll",
-      "play",
-      "cute",
-      "small"
+      "slowly",
+      "very",
+      "sweet"
      ],
      "answer": 0,
      "explain": "A naming word names a thing: doll."
@@ -299,9 +299,9 @@
      "q": "Which one is a naming word?",
      "options": [
       "boat",
-      "row",
-      "wet",
-      "float"
+      "cold",
+      "loudly",
+      "shiny"
      ],
      "answer": 0,
      "explain": "A naming word names a thing: boat."
@@ -311,9 +311,9 @@
      "q": "Which one is a naming word?",
      "options": [
       "clock",
-      "tick",
       "round",
-      "late"
+      "early",
+      "heavy"
      ],
      "answer": 0,
      "explain": "A naming word names a thing: clock."
@@ -323,9 +323,9 @@
      "q": "Which one is a naming word?",
      "options": [
       "cake",
-      "bake",
-      "sweet",
-      "soft"
+      "bright",
+      "quietly",
+      "tiny"
      ],
      "answer": 0,
      "explain": "A naming word names a thing: cake."
@@ -335,9 +335,9 @@
      "q": "Which one is a naming word?",
      "options": [
       "fan",
-      "spin",
-      "fast",
-      "cool"
+      "kind",
+      "noisy",
+      "big"
      ],
      "answer": 0,
      "explain": "A naming word names a thing: fan."
@@ -347,9 +347,9 @@
      "q": "Which one is a naming word?",
      "options": [
       "star",
-      "shine",
-      "bright",
-      "far"
+      "soft",
+      "quickly",
+      "happy"
      ],
      "answer": 0,
      "explain": "A naming word names a thing: star."
@@ -359,9 +359,9 @@
      "q": "Which one is a naming word?",
      "options": [
       "hat",
-      "wear",
-      "big",
-      "funny"
+      "red",
+      "tall",
+      "slowly"
      ],
      "answer": 0,
      "explain": "A naming word names a thing: hat."
@@ -371,9 +371,9 @@
      "q": "Which one is a naming word?",
      "options": [
       "bag",
-      "carry",
-      "full",
-      "heavy"
+      "very",
+      "sweet",
+      "cold"
      ],
      "answer": 0,
      "explain": "A naming word names a thing: bag."

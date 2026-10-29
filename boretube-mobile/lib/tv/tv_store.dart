@@ -71,6 +71,24 @@ class TvStore extends ChangeNotifier {
       if (store.byId(old) != null) continue;
       // Data is kept as "<what>.<tvId>" (baseline.adb:…, nudge.build.adb:…).
       if (!keys.any((k) => k.endsWith('.$old'))) continue;
+      // Carry anything saved under the newer id across where the old id has
+      // nothing of its own (journal, watch state, a newer baseline…).
+      for (final k in keys.where((k) => k.endsWith('.${t.id}')).toList()) {
+        final to = '${k.substring(0, k.length - t.id.length)}$old';
+        if (p.containsKey(to)) continue;
+        final v = p.get(k);
+        if (v is String) {
+          p.setString(to, v);
+        } else if (v is bool) {
+          p.setBool(to, v);
+        } else if (v is int) {
+          p.setInt(to, v);
+        } else if (v is double) {
+          p.setDouble(to, v);
+        } else if (v is List<String>) {
+          p.setStringList(to, v);
+        }
+      }
       store._tvs[i] = t.copyWith(id: old);
       if (store._activeId == t.id) store._activeId = old;
       changed = true;
@@ -124,7 +142,8 @@ class TvStore extends ChangeNotifier {
   /// same IP) are merged into one. The saved id wins: the agent token,
   /// baselines, restore points and plan state are all keyed by it, so only
   /// a temporary `ip:` id may be upgraded. The active id follows.
-  Future<void> upsert(Tv tv) async {
+  /// Returns the id the TV is stored under (which can differ from [tv.id]).
+  Future<String> upsert(Tv tv) async {
     bool eq(String? a, String? b) => a != null && a.isNotEmpty && a == b;
     final same = <int>[];
     for (var i = 0; i < _tvs.length; i++) {
@@ -157,6 +176,7 @@ class TvStore extends ChangeNotifier {
     _activeId ??= merged.id;
     await _save();
     notifyListeners();
+    return merged.id;
   }
 
   /// [newer] wins, but keeps [older]'s known identity, capabilities

@@ -74,6 +74,41 @@ class LevelScreenTest {
         rule.onNodeWithTag("ask").assertExists()
     }
 
+    @Test fun steadyOkMashingNeverAnswersOrSkipsTheLearnMoment() {
+        start("clock")
+        val plan = expected("clock")
+        pick(plan[0].answer)
+        // OK every 400 ms for 4 s, no arrows: lands on "Yes!", then the next question.
+        repeat(10) { settle(400); key(Key.DirectionCenter) }
+        rule.onNodeWithText("2 of 8").assertExists()
+        rule.onNodeWithTag("ask").assertExists()
+        // A miss: mashing straight through doesn't skip the learn moment.
+        key(Key.DirectionRight); key(Key.DirectionLeft) // a child choosing moves first
+        repeat((plan[1].answer + 1) % plan[1].options.size) { key(Key.DirectionRight) }
+        settle(); key(Key.DirectionCenter)
+        rule.onNodeWithTag("learn-moment").assertExists()
+        repeat(2) { settle(400); key(Key.DirectionCenter) }
+        rule.onNodeWithTag("learn-moment").assertExists()
+    }
+
+    @Test fun withoutAHindiVoiceTheEnglishWordsAreSpoken() {
+        val said = mutableListOf<Pair<String, Boolean>>()
+        val noHindi = object : Speaker {
+            override fun say(text: String, hindi: Boolean) { said += text to hindi }
+            override fun stop() {}
+            override fun hindiReady() = false
+        }
+        rule.setContent {
+            CompositionLocalProvider(LocalUptime provides { clock }) { DesignFrame {
+                LevelScreen("tablesLow", LearnState(grade = 3), LearnSettings(grade = 3, lang = "hi", set = true), sounds, noHindi, Random(3), now,
+                    onDone = {}, onLeave = {})
+            } }
+        }
+        settle()
+        val q = expected("tablesLow").first()
+        assertEquals(q.spoken to false, said.first())
+    }
+
     @Test fun aMissShowsTheLearnMomentThenAnEasierOne() {
         start("clock")
         val q = expected("clock").first()
@@ -81,7 +116,7 @@ class LevelScreenTest {
         rule.onNodeWithTag("learn-moment").assertExists()
         rule.onNodeWithText(q.explain).assertExists()
         assertTrue(Sfx.miss in sounds.played)
-        settle()
+        settle(1_100) // the learn moment is read for at least a second
         key(Key.DirectionCenter)
         rule.onNodeWithText("Now try this one").assertExists()
     }

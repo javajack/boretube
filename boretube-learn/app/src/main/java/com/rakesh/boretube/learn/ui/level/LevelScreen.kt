@@ -87,8 +87,13 @@ private fun QuizLevel(
     var shownAt by remember { mutableLongStateOf(uptime()) }
     var leaving by remember { mutableStateOf(false) }
     var leaveSel by remember { mutableIntStateOf(0) }
-    val hindi = settings.lang != "en"
-    val autoSpeak = hindi || settings.grade <= 1
+    // Hindi text only when the TV has a Hindi voice; otherwise the English words.
+    val hindi = settings.lang != "en" && speaker.hindiReady()
+    val autoSpeak = settings.lang != "en" || settings.grade <= 1
+    // A steady masher: an OK within MASH_MS of the last one, with no arrow
+    // between, is ignored on questions and the learn moment.
+    var lastOk by remember { mutableLongStateOf(Long.MIN_VALUE / 2) }
+    var arrowed by remember { mutableStateOf(false) }
 
     fun speak(s: QuizScreen) {
         val text = when (s) {
@@ -157,6 +162,7 @@ private fun QuizLevel(
                 when (key) {
                     RemoteKey.Back -> { leaving = true; leaveSel = 0; sounds.play(Sfx.back) }
                     RemoteKey.Left, RemoteKey.Right -> {
+                        arrowed = true
                         val ask = screen as? QuizScreen.Ask ?: return@remote true
                         val n = (sel + if (key == RemoteKey.Left) -1 else 1).coerceIn(0, ask.q.options.lastIndex)
                         if (n != sel) {
@@ -165,10 +171,17 @@ private fun QuizLevel(
                         }
                     }
                     RemoteKey.Up -> speak(screen)
-                    RemoteKey.Ok -> when (screen) {
-                        is QuizScreen.Ask -> answer(sel)
-                        is QuizScreen.Learn, is QuizScreen.Right -> show(session.next())
-                        else -> {}
+                    RemoteKey.Ok -> {
+                        val t = uptime()
+                        val mashed = !arrowed && t - lastOk < MASH_MS
+                        lastOk = t
+                        arrowed = false
+                        if (!mashed) when (screen) {
+                            is QuizScreen.Ask -> answer(sel)
+                            is QuizScreen.Learn -> show(session.next())
+                            // "Yes!" moves on by itself.
+                            else -> {}
+                        }
                     }
                     else -> return@remote false
                 }
@@ -186,6 +199,9 @@ private fun QuizLevel(
         if (leaving) LeaveSheet(leaveSel)
     }
 }
+
+/** OKs closer together than this, with no arrow between, are mashing. */
+const val MASH_MS = 1_000L
 
 /** How long the "Yes!" lingers before the next question. */
 const val RIGHT_MS = 900L

@@ -207,9 +207,13 @@ class CapabilityController
       } catch (_) {
         key = null;
       }
-      final report =
+      final probed =
           await _ref.read(capabilityProberProvider).probe(target, key: key);
-      await _ref.read(tvStoreProvider).upsert(report.tv);
+      // The store may keep its saved id for this TV; report that one.
+      final id = await _ref.read(tvStoreProvider).upsert(probed.tv);
+      final report = id == probed.tv.id
+          ? probed
+          : CapabilityReport(probed.tv.copyWith(id: id), probed.details);
       if (mounted) state = AsyncValue.data(report);
       return report;
     } catch (e, st) {

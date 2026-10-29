@@ -30,6 +30,8 @@ class TtsSpeaker(ctx: Context) : Speaker {
         }
     }
 
+    override fun hindiReady(): Boolean = !ready || hindiAvailable
+
     override fun stop() {
         runCatching { tts.stop() }
     }

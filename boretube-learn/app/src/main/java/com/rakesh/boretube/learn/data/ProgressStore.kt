@@ -23,15 +23,26 @@ class ProgressStore(private val dir: File) : ProgressRepo {
 
     override fun load(): LearnState = read(file) ?: read(backup) ?: LearnState()
 
+    /** Never throws (a full disk loses this save, not the app). */
     @Synchronized
     override fun save(s: LearnState) {
-        dir.mkdirs()
-        temp.writeText(JSON.encodeToString(LearnState.serializer(), s))
-        if (file.exists()) {
-            backup.delete()
-            file.renameTo(backup)
+        runCatching {
+            dir.mkdirs()
+            java.io.FileOutputStream(temp).use { out ->
+                out.write(JSON.encodeToString(LearnState.serializer(), s).toByteArray())
+                out.fd.sync() // on disk before the rename, so a power cut can't leave it empty
+            }
+            if (file.exists()) {
+                // Only a readable save becomes the backup: never rotate a broken file over a good one.
+                if (read(file) != null) {
+                    backup.delete()
+                    file.renameTo(backup)
+                } else {
+                    file.delete()
+                }
+            }
+            temp.renameTo(file)
         }
-        temp.renameTo(file)
     }
 
     private fun read(f: File): LearnState? = try {

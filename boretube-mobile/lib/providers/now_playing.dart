@@ -384,11 +384,13 @@ class Relocator {
     try {
       final found = await discovery.relocate(saved);
       if (found == null || found.ip == saved.ip) return found;
-      await store.upsert(found);
-      if (found.id != saved.id && store.byId(saved.id) != null) {
+      // upsert merges it into the saved entry and says which id it kept. A
+      // temporary ip: entry at the old address is the one thing to drop.
+      final id = await store.upsert(found);
+      if (id != saved.id && saved.id.startsWith('ip:')) {
         await store.remove(saved.id);
       }
-      await store.setActive(found.id);
+      await store.setActive(id);
       notify('${saved.name} moved to ${shortIp(found.ip)}');
       return found;
     } catch (_) {

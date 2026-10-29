@@ -584,7 +584,7 @@
     },
     {
      "id": "t10",
-     "q": "Pickle tastes ___.",
+     "q": "Lemon pickle tastes ___.",
      "options": [
       "sour",
       "sweet",
@@ -592,7 +592,7 @@
       "bitter"
      ],
      "answer": 0,
-     "explain": "Pickle tastes sour."
+     "explain": "Lemon pickle tastes sour."
     },
     {
      "id": "t11",

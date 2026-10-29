@@ -550,8 +550,24 @@ def merge_extra():
     assert not unknown, f"EXTRA names unknown skills: {unknown}"
 
 
+# Wrong options for "Which one is a naming word?" must never be nouns: plain
+# describing words and adverbs only (many verbs double as nouns: drink, ride).
+NOT_NOUNS = ["big", "soft", "quickly", "happy", "red", "tall", "slowly", "very", "sweet", "cold",
+             "loudly", "shiny", "round", "early", "heavy", "bright", "quietly", "tiny", "kind", "noisy"]
+
+
+def fix_naming_options():
+    for s in ENGLISH[1]:
+        if s["id"] != "en1.naming":
+            continue
+        for n, item in enumerate(s["items"]):
+            picks = [NOT_NOUNS[(n * 3 + k) % len(NOT_NOUNS)] for k in range(3)]
+            item["options"] = [item["options"][0]] + picks
+
+
 def write_packs():
     merge_extra()
+    fix_naming_options()
     reviewed = json.load(open(REVIEWED)) if os.path.exists(REVIEWED) else {}
     written = []
     for subject, by_grade in (("english", ENGLISH), ("evs", EVS)):

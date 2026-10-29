@@ -219,6 +219,23 @@ void main() {
       expect(store.activeId, 'udn:new');
     });
 
+    test('found under another id at a new IP: the saved TV moves, kept',
+        () async {
+      // Discovery can name the same TV differently (agent:…); the saved
+      // entry and everything keyed by its id must survive.
+      final r = Relocator(
+        store: store,
+        discovery: _Moved(
+          saved.copyWith(id: 'agent:x', ip: '192.168.1.9'),
+        ),
+        notify: (_) {},
+      );
+      await r.relocateActive();
+      expect(store.tvs.map((t) => t.id), ['udn:abc']);
+      expect(store.active!.ip, '192.168.1.9');
+      expect(store.activeId, 'udn:abc');
+    });
+
     test('not found: nothing changes', () async {
       final messages = <String>[];
       await Relocator(

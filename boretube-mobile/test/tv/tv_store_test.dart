@@ -176,6 +176,50 @@ void main() {
       expect(again.tvs.single.id, 'adb:$_serial');
     });
 
+    test('upsert says which id it kept', () async {
+      final store = await _load();
+      expect(
+        await store.upsert(const Tv(
+          id: 'adb:$_serial',
+          name: 'B',
+          ip: '192.168.1.3',
+          adbSerial: _serial,
+        )),
+        'adb:$_serial',
+      );
+      expect(
+        await store.upsert(const Tv(
+          id: 'agent:x',
+          name: 'B',
+          ip: '192.168.1.3',
+          adbSerial: _serial,
+        )),
+        'adb:$_serial',
+      );
+    });
+
+    test('the repair carries data saved under the newer id across', () async {
+      final store = await _load({
+        'tvs_v2': jsonEncode([
+          const Tv(
+            id: 'agent:b816a77435caf382',
+            name: 'Living Room TV',
+            ip: '192.168.1.3',
+            adbSerial: _serial,
+          ).toJson(),
+        ]),
+        'active_tv_id': 'agent:b816a77435caf382',
+        'baseline.adb:$_serial': 'old',
+        'baseline.agent:b816a77435caf382': 'newer',
+        'journal.agent:b816a77435caf382': 'kept',
+      });
+      expect(store.tvs.single.id, 'adb:$_serial');
+      final p = await SharedPreferences.getInstance();
+      // Where both exist, the old id's copy stays; the rest is carried over.
+      expect(p.getString('baseline.adb:$_serial'), 'old');
+      expect(p.getString('journal.adb:$_serial'), 'kept');
+    });
+
     test('no data under the old id: the id is left alone', () async {
       final store = await _load({
         'tvs_v2': jsonEncode([

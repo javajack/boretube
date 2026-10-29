@@ -5,6 +5,9 @@ interface Speaker {
     fun say(text: String, hindi: Boolean)
     fun stop()
 
+    /** A Hindi voice is installed (otherwise Hindi text would come out garbled). */
+    fun hindiReady(): Boolean = true
+
     object Silent : Speaker {
         override fun say(text: String, hindi: Boolean) {}
         override fun stop() {}

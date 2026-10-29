@@ -294,7 +294,7 @@ EXTRA = {
             ("A whistle sounds ___.", "loud", ["soft", "sweet", "sour"], "A whistle makes a loud sound."),
             ("Cotton feels ___.", "soft", ["hard", "rough", "sharp"], "Cotton feels soft."),
             ("We feel touch with our ___.", "skin", ["ears", "eyes", "nose"], "Our skin feels touch."),
-            ("Pickle tastes ___.", "sour", ["sweet", "plain", "bitter"], "Pickle tastes sour."),
+            ("Lemon pickle tastes ___.", "sour", ["sweet", "plain", "bitter"], "Lemon pickle tastes sour."),
             ("Chilli tastes ___.", "spicy", ["sweet", "sour", "plain"], "Chilli tastes spicy hot."),
         ])
     ],

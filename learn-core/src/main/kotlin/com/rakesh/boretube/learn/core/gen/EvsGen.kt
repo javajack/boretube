@@ -493,7 +493,7 @@ private class EvsSkills(private val d: EvsData) {
         return listOf("soap" to "soap", "hands" to "soap", "brush" to "toothbrush", "comb" to "comb", "fruit" to "apple", "vegetable" to "carrot",
             "water" to "drop", "tap" to "drop", "tv" to "tv", "book" to "book", "toys" to "ball", "fire" to "fire", "matches" to "fire",
             "knife" to "knife", "scissors" to "scissors", "wire" to "wire", "plug" to "switch", "kite" to "kite", "bus" to "bus",
-            "helmet" to "scooter", "seat belt" to "car", "road" to "car", "crossing" to "car", "light" to "bulb", "dustbin" to "bucket",
+            "helmet" to "scooter", "seat belt" to "car", "road" to "car", "crossing" to "car", "lighter" to "fire", "light" to "bulb", "dustbin" to "bucket",
             "swim" to "wave", "pool" to "wave", "bed" to "bed", "stairs" to "ladder", "breakfast" to "roti", "sneez" to "nose",
             "cough" to "mouth", "nose" to "nose", "nails" to "hand", "junk" to "icecream", "park" to "park", "school" to "school",
             "flowers" to "flower", "plants" to "tree", "birds" to "bird", "animals" to "dog", "dog" to "dog", "fridge" to "fridge",

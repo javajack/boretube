@@ -48,8 +48,8 @@ object MathsGen {
     /** Plain number with a real minus sign. */
     private fun s(n: Int) = if (n < 0) "$MI${-n}" else "$n"
 
-    /** Indian grouping (1,23,45,678); four digits and fewer stay plain unless [all]. */
-    private fun ind(n: Long, all: Boolean = false): String {
+    /** Indian grouping (5,700 and 1,23,45,678), as NCERT writes numbers of four digits and more. */
+    private fun ind(n: Long, all: Boolean = true): String {
         if (n < 0) return MI + ind(-n, all)
         val t = n.toString()
         if (t.length <= 3 || (t.length == 4 && !all)) return t
@@ -1548,7 +1548,7 @@ object MathsGen {
             val m = if (p[0] == 0) 10 else 100
             val ans = n * m
             val zeros = if (m == 10) "one zero" else "two zeros"
-            gq("$n $X $m = ?", nums(ans, listOf(ans * 10, ans / 10, n + m, ans + n), r), "$n $X $m: put $zeros after $n to get $ans.", "$n $X $m = $ans")
+            gq("$n $X $m = ?", nums(ans, listOf(ans * 10, ans / 10, n + m, ans + n), r), "$n $X $m: put $zeros after $n to get ${g(ans)}.", "$n $X $m = ${g(ans)}")
         },
         tp("tens", 2, 9, 3, 8) { p, r ->
             val d = p[0] + 1

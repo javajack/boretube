@@ -31,7 +31,7 @@ class World(val catalog: Catalog) {
     val lands: List<LandInfo> = listOf(
         LandInfo(LandId.bazaar, "Number Bazaar", "Maths", Palette.bazaar, Sfx.focus_bazaar, catalog.bySubject("maths").map { it.id }),
         LandInfo(LandId.garden, "Word Garden", "English", Palette.garden, Sfx.focus_garden, catalog.bySubject("english").map { it.id }),
-        LandInfo(LandId.trail, "Nature Trail", "EVS", Palette.trail, Sfx.focus_trail, catalog.bySubject("evs").map { it.id }),
+        LandInfo(LandId.trail, "Nature Trail", "EVS and Science", Palette.trail, Sfx.focus_trail, catalog.bySubject("evs").map { it.id }),
     )
 
     fun of(id: LandId): LandInfo = lands.first { it.id == id }
@@ -48,7 +48,9 @@ class World(val catalog: Catalog) {
         val path = path(land, grade)
         val rung = if (land.id == LandId.bazaar) Maths.LADDER.getOrNull(s.rung)?.id else null
         val current = rung?.takeIf { it in path && it !in s.mastered }
-        val next = current ?: path.firstOrNull { it !in s.mastered }
+        // The child's own class first; the class below and above after.
+        val own = path.firstOrNull { it !in s.mastered && catalog.skill(it)?.grade == grade }
+        val next = current ?: own ?: path.firstOrNull { it !in s.mastered }
         return LandProgress(path.count { it in s.mastered }, path.size, next)
     }
 
@@ -57,7 +59,8 @@ class World(val catalog: Catalog) {
 
     companion object {
         val MATHS = World(Catalog.MATHS)
-        fun of(packs: List<Pack>) = World(Catalog.of(packs))
+        fun of(packs: List<Pack>, generated: List<com.rakesh.boretube.learn.core.SkillSource> = emptyList()) =
+            World(Catalog.of(packs, generated))
     }
 }
 

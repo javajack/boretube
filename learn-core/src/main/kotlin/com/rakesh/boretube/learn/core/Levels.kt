@@ -4,7 +4,15 @@ import java.time.LocalDate
 import kotlin.random.Random
 
 /** How a level plays (boretube Learn). */
-enum class Format { quickfire, catch, pairs, build }
+enum class Format {
+    quickfire, catch, pairs, build,
+    /** A statement, and a big True or False. */
+    truefalse,
+    /** Tiles to put in order, first to last. */
+    order,
+    /** One thing at a time into the left or right basket (two shared options). */
+    sort,
+}
 
 data class LevelResult(
     val state: LearnState,
@@ -36,17 +44,30 @@ object Levels {
      * are distinct while the skill has enough of them; a small skill repeats,
      * but never the same key twice in a row.
      */
-    fun plan(s: LearnState, skillId: String, n: Int = LEVEL_SIZE, now: Long, r: Random, catalog: Catalog = Catalog.MATHS): List<Question> {
+    fun plan(
+        s: LearnState,
+        skillId: String,
+        n: Int = LEVEL_SIZE,
+        now: Long,
+        r: Random,
+        catalog: Catalog = Catalog.MATHS,
+        format: Format? = null,
+    ): List<Question> {
         val skill = catalog.skill(skillId) ?: return emptyList()
+        if (format == Format.sort && skill is GenSkill) return skill.sortSet(n, tierOf(s, skillId), r)
         val out = mutableListOf<Question>()
         for (f in s.facts.filter { it.dueAt <= now && it.key.startsWith("$skillId:") }.sortedBy { it.dueAt }) {
-            if (out.size < n) catalog.fromKey(f.key, r)?.let { out += it }
+            if (out.size < n) catalog.fromKey(f.key, r)?.takeIf { fits(it, format) }?.let { out += it }
         }
         val seen = out.map { it.key }.toMutableSet()
+        val tier = tierOf(s, skillId)
+        // Mostly the child's tier, with a stretch or two from the next one.
+        val stretchFrom = if (tier < skill.tiers) n - STRETCH else n
         var tries = 0
         while (out.size < n && tries < n * 40) {
             tries++
-            val q = skill.next(r)
+            val t = if (out.size >= stretchFrom) tier + 1 else tier
+            val q = skill.next(r, t, format)
             val fresh = q.key !in seen
             val allowRepeat = tries > n * 20 && out.lastOrNull()?.key != q.key
             if (fresh || allowRepeat) {
@@ -56,6 +77,25 @@ object Levels {
         }
         return out
     }
+
+    /** The tier [skillId] is on for this child (1 until they earn more). */
+    fun tierOf(s: LearnState, skillId: String): Int = s.tiers[skillId] ?: 1
+
+    /** Whether a question rebuilt from a due fact suits [format]. */
+    fun fits(q: Question, format: Format?): Boolean = when (format) {
+        Format.order -> q.order != null
+        Format.truefalse -> q.options == listOf("True", "False")
+        Format.sort -> q.options.size == 2 && q.order == null
+        null -> q.order == null
+        else -> q.order == null && q.options != listOf("True", "False")
+    }
+
+    /** 3 stars moves a skill up a tier, 1 star moves it down. */
+    fun nextTier(current: Int, stars: Int, max: Int): Int = when {
+        stars >= 3 -> (current + 1).coerceAtMost(max)
+        stars <= 1 -> (current - 1).coerceAtLeast(1)
+        else -> current
+    }.coerceIn(1, maxOf(1, max))
 
     /** Three options for Catch: the answer and the first two mistakes, reshuffled. */
     fun forCatch(q: Question, r: Random): Question {
@@ -77,7 +117,14 @@ object Levels {
     }
 
     /** Records every answer, then the stars (best kept) and mastery. */
-    fun finish(s: LearnState, skillId: String, results: List<Answered>, today: LocalDate, now: Long = today.toEpochDay() * DAY_MS): LevelResult {
+    fun finish(
+        s: LearnState,
+        skillId: String,
+        results: List<Answered>,
+        today: LocalDate,
+        now: Long = today.toEpochDay() * DAY_MS,
+        catalog: Catalog = Catalog.MATHS,
+    ): LevelResult {
         var st = s
         for (a in results) st = Learner.record(st, a.q, a.correct, a.ms, now, today)
         val main = results.filter { !it.followUp }
@@ -88,6 +135,9 @@ object Levels {
             stars = st.stars + (skillId to best),
             mastered = if (newly) st.mastered + skillId else st.mastered,
             plays = st.plays + (skillId to (st.plays[skillId] ?: 0) + 1),
+            tiers = catalog.skill(skillId)?.tiers?.takeIf { it > 1 }?.let { max ->
+                st.tiers + (skillId to nextTier(tierOf(st, skillId), stars, max))
+            } ?: st.tiers,
         )
         return LevelResult(st, stars, best, newly, main.firstOrNull { !it.correct }?.q, main.count { it.correct }, main.size)
     }
@@ -129,5 +179,7 @@ object Levels {
 
     const val PAIRS = 6
     const val BUILDS = 5
+    /** Questions from the next tier in a level, when there is one. */
+    const val STRETCH = 2
     private const val DAY_MS = 86_400_000L
 }

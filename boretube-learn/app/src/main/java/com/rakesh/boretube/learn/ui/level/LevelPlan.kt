@@ -17,13 +17,17 @@ object LevelPlan {
         catalog: Catalog = Catalog.MATHS,
         format: Format = Levels.formatFor(skillId, state.plays[skillId] ?: 0, catalog),
     ): List<Question> {
-        val plan = Levels.plan(state, skillId, Levels.LEVEL_SIZE, now, random, catalog)
+        val n = if (format == Format.order) ORDER_SIZE else Levels.LEVEL_SIZE
+        val plan = Levels.plan(state, skillId, n, now, random, catalog, format)
         return if (format == Format.catch) plan.map { Levels.forCatch(it, random) } else plan
     }
 
     /** The easier follow-up after a miss, in the same format. */
     fun easier(q: Question, random: Random, catalog: Catalog = Catalog.MATHS, format: Format = Format.quickfire): Question? {
-        val e = catalog.easierThan(q, random) ?: return null
+        val e = catalog.easierThan(q, random)?.takeIf { Levels.fits(it, format) } ?: return null
         return if (format == Format.catch) Levels.forCatch(e, random) else e
     }
+
+    /** Order puzzles in a level (each is a few tiles). */
+    const val ORDER_SIZE = 4
 }

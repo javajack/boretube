@@ -100,7 +100,13 @@ interface SkillSource {
     val subject: String
     /** Formats in rotation (one per play). */
     val formats: List<Format>
+    /** How many difficulty tiers it has (1 = one level of difficulty). */
+    val tiers: Int get() = 1
     fun next(r: Random): Question
+    /** A question at [tier] (1 easy, 2 medium, 3 hard). */
+    fun next(r: Random, tier: Int): Question = next(r)
+    /** A question at [tier] made for [format] (null: any). */
+    fun next(r: Random, tier: Int, format: Format?): Question = next(r, tier)
     /** Rebuilds the question a key names (spaced repetition), or null. */
     fun build(key: String, r: Random): Question?
     fun easier(q: Question, r: Random): Question?
@@ -175,6 +181,7 @@ class Catalog(val sources: List<SkillSource>) {
     companion object {
         val MATHS = Catalog(Maths.LADDER.map { MathsSource(it) })
 
-        fun of(packs: List<Pack>) = Catalog(MATHS.sources + packs.flatMap { p -> p.skills.map { PackSource(p, it) } })
+        fun of(packs: List<Pack>, generated: List<SkillSource> = emptyList()) =
+            Catalog(MATHS.sources + generated + packs.flatMap { p -> p.skills.map { PackSource(p, it) } })
     }
 }

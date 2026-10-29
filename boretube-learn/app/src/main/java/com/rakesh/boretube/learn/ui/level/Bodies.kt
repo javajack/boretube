@@ -4,6 +4,13 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.graphicsLayer
+import kotlinx.coroutines.delay
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -68,14 +75,15 @@ private fun tileSize(label: String, pies: Boolean): TextUnit = when {
     pies -> TypeScale.s43
     label.length <= 5 -> TypeScale.s55
     label.length <= 9 -> TypeScale.s34
-    else -> TypeScale.s26
+    label.length <= 16 -> TypeScale.s26
+    else -> TypeScale.s21
 }
 
 /** An option as words ("pic:cow" reads as "cow"). */
 fun optionText(o: String) = o.removePrefix("pic:")
 
 /** The question, as big as it fits: 89 for "7 × 8 = ?", smaller for words. */
-private fun questionSize(t: String): TextUnit = when {
+internal fun questionSize(t: String): TextUnit = when {
     t.length <= 12 -> TypeScale.s89
     t.length <= 22 -> TypeScale.s55
     t.length <= 40 -> TypeScale.s43
@@ -83,22 +91,25 @@ private fun questionSize(t: String): TextUnit = when {
 }
 
 @Composable
-private fun Header(q: Question, index: Int, of: Int, followUp: Boolean, sub: String?) {
+internal fun Header(q: Question, index: Int, of: Int, followUp: Boolean, sub: String?, prompt: String = q.prompt) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Gap.f4)) {
             if (followUp) BasicText("Now try this one", style = Text.body(TypeScale.s21, FontWeight.Bold).copy(color = Palette.coralInk))
-            BasicText(q.prompt, style = Text.display(questionSize(q.prompt)), maxLines = if (q.prompt.length > 40) 2 else 1)
+            BasicText(prompt, style = Text.display(questionSize(prompt)), maxLines = if (prompt.length > 40) 3 else 1)
             sub?.let { BasicText(it, style = Text.muted()) }
         }
-        Column(Modifier.width(233.dp).padding(top = Gap.f21), horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(Gap.f8)) {
-            BasicText("${index + 1} of $of", style = Text.body(TypeScale.s21, FontWeight.SemiBold))
-            ProgressBar((index + 1) / of.toFloat(), Palette.coral, track = Palette.hairline)
+        Column(Modifier.width(320.dp).padding(top = Gap.f21), horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(Gap.f8)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Gap.f8)) {
+                ComboChip(LocalCombo.current)
+                BasicText("${index + 1} of $of", style = Text.body(TypeScale.s21, FontWeight.SemiBold))
+            }
+            Box(Modifier.width(233.dp)) { ProgressBar((index + 1) / of.toFloat(), Palette.coral, track = Palette.hairline) }
         }
     }
 }
 
 @Composable
-private fun Hint(left: String, right: String?) {
+internal fun Hint(left: String, right: String?) {
     Row(Modifier.fillMaxWidth()) {
         BasicText(left, style = Text.muted(), modifier = Modifier.weight(1f))
         right?.let { BasicText(it, style = Text.muted()) }
@@ -106,7 +117,7 @@ private fun Hint(left: String, right: String?) {
 }
 
 @Composable
-private fun Tick(color: Color, modifier: Modifier) {
+internal fun Tick(color: Color, modifier: Modifier) {
     Canvas(modifier) {
         val k = size.width / 24f
         val p = Path().apply { moveTo(5f * k, 12.5f * k); lineTo(9.5f * k, 17f * k); lineTo(19f * k, 7.5f * k) }
@@ -119,13 +130,22 @@ private fun Tick(color: Color, modifier: Modifier) {
  * answer's index while the "Yes!" shows (null while asking).
  */
 @Composable
-fun QuickFireBody(q: Question, index: Int, of: Int, followUp: Boolean, sel: Int, right: Int?, voice: Boolean) {
+fun QuickFireBody(
+    q: Question,
+    index: Int,
+    of: Int,
+    followUp: Boolean,
+    sel: Int,
+    right: Int?,
+    voice: Boolean,
+    header: (@Composable () -> Unit)? = null,
+) {
     val pies = (q.visual as? Visual.Pies)?.fractions
     Column(
         Modifier.fillMaxSize().padding(horizontal = Safe.x, vertical = Safe.y).testTag(if (right == null) "ask" else "right"),
         verticalArrangement = Arrangement.spacedBy(Gap.f21),
     ) {
-        Header(q, index, of, followUp, if (pies != null) "Same-size pizzas. Pick the bigger share." else null)
+        if (header != null) header() else Header(q, index, of, followUp, if (pies != null) "Same-size pizzas. Pick the bigger share." else null)
         Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
             when (val v = q.visual) {
                 is Visual.Objects -> Mangoes(v.count)
@@ -141,10 +161,10 @@ fun QuickFireBody(q: Question, index: Int, of: Int, followUp: Boolean, sel: Int,
                 val selected = right == null && i == sel
                 val shape = RoundedCornerShape(Radii.r21)
                 val fill by animateFloatAsState(if (dim) 0.35f else 1f, tween(Motion.flip), label = "dim")
+                Box(Modifier.weight(1f).fillMaxHeight()) {
                 Box(
                     Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
+                        .fillMaxSize()
                         .alpha(fill)
                         .selectedRing(selected || isRight, shape, primary = true, scale = 1.06f)
                         .clip(shape)
@@ -170,12 +190,18 @@ fun QuickFireBody(q: Question, index: Int, of: Int, followUp: Boolean, sel: Int,
                         if (label.startsWith("pic:")) {
                             com.rakesh.boretube.learn.ui.PictureArt(label.removePrefix("pic:"), Modifier.size(110.dp))
                         } else {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                            Row(Modifier.padding(horizontal = Gap.f13), verticalAlignment = Alignment.CenterVertically) {
                                 if (isRight) { Tick(ink, Modifier.size(40.dp)); Spacer(Modifier.width(Gap.f8)) }
-                                BasicText(label, style = Text.display(tileSize(label, pies != null)).copy(color = ink), maxLines = 1)
+                                BasicText(
+                                    label,
+                                    style = Text.display(tileSize(label, pies != null)).copy(color = ink, textAlign = androidx.compose.ui.text.style.TextAlign.Center),
+                                    maxLines = if (label.length > 12) 2 else 1,
+                                )
                             }
                         }
                     }
+                }
+                if (isRight) Burst(q.key, Modifier.matchParentSize())
                 }
             }
         }
@@ -252,50 +278,128 @@ private fun Basket(modifier: Modifier) {
     }
 }
 
-/** A miss: the fact with the answer picked out, what they chose, the one-line why, a picture, Got it. */
+/**
+ * A miss (spec P2b §7): the wrong pick shakes and is struck out, the right
+ * fact slides in with its answer marked like a highlighter, Tubby has his
+ * "aha" ([onAha] plays the chime), then the why reads in word by word with
+ * its key words picked out, and Got it breathes until pressed. Order
+ * questions show the right order chip by chip.
+ */
 @Composable
-fun LearnMoment(q: Question, picked: Int, pickedLabel: String = "You picked ") {
+fun LearnMoment(
+    q: Question,
+    picked: Int,
+    pickedLabel: String = "You picked ",
+    pickedOrder: List<String>? = null,
+    onAha: () -> Unit = {},
+) {
+    val strike = remember(q.key) { Animatable(0f) }
+    val factIn = remember(q.key) { Animatable(0f) }
+    val mark = remember(q.key) { Animatable(0f) }
+    val words = remember(q.key) { q.explain.split(" ") }
+    var shownWords by remember(q.key) { mutableIntStateOf(0) }
+    var chips by remember(q.key) { mutableIntStateOf(0) }
+    var aha by remember(q.key) { mutableStateOf(false) }
+    var shakeKey by remember(q.key) { mutableStateOf<Any?>(null) }
+    LaunchedEffect(q.key) {
+        delay(140)
+        shakeKey = q.key
+        strike.animateTo(1f, tween(Motion.sheet))
+        factIn.animateTo(1f, spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMediumLow))
+        val order = q.order
+        if (order != null) {
+            for (k in 1..order.size) { delay(170); chips = k }
+        } else {
+            mark.animateTo(1f, tween(Motion.slow, easing = FastOutSlowInEasing))
+        }
+        aha = true
+        onAha()
+        delay(220)
+        for (k in 1..words.size) { delay(WORD_MS); shownWords = k }
+    }
+    val keys = remember(q.key) { keyWords(q) }
     Column(
         Modifier.fillMaxSize().background(Palette.canvas).padding(horizontal = Safe.x, vertical = Safe.y).testTag("learn-moment"),
         verticalArrangement = Arrangement.spacedBy(Gap.f21),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Tubby(TubbyMood.think, Modifier.width(66.dp))
+            val tilt by animateFloatAsState(if (aha) 0f else -8f, spring(Spring.DampingRatioMediumBouncy), label = "tilt")
+            Tubby(if (aha) TubbyMood.cheer else TubbyMood.think, Modifier.width(66.dp).graphicsLayer { rotationZ = tilt })
             Spacer(Modifier.width(Gap.f21))
-            BasicText("Almost! Let's learn this one.", style = Text.display(TypeScale.s34))
+            BasicText(if (aha) "Aha! Here's the trick." else "Almost! Let's learn this one.", style = Text.display(TypeScale.s34))
         }
         Row(Modifier.weight(1f).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Gap.f55)) {
             Column(Modifier.weight(0.618f), verticalArrangement = Arrangement.spacedBy(Gap.f21)) {
-                val ans = q.answerText
-                val fact = buildAnnotatedString {
-                    if (q.fact.endsWith(ans)) {
-                        append(q.fact.removeSuffix(ans))
-                        withStyle(SpanStyle(color = Palette.sunflowerInk)) { append(ans) }
-                    } else {
-                        withStyle(SpanStyle(color = Palette.sunflowerInk)) { append(q.fact) }
-                    }
-                }
-                BasicText(fact, style = Text.display(if (q.fact.length <= 12) TypeScale.s89 else TypeScale.s55), maxLines = 1)
-                val pick = optionText(q.options.getOrNull(picked) ?: "")
+                // What they chose, shaken and struck out.
+                val pick = pickedOrder?.joinToString(", ") ?: optionText(q.options.getOrNull(picked) ?: "")
                 BasicText(
                     buildAnnotatedString {
-                        append(pickedLabel)
-                        withStyle(SpanStyle(textDecoration = TextDecoration.LineThrough)) { append(pick) }
+                        append(if (pickedOrder != null) "Your order: " else pickedLabel)
+                        val struck = strike.value > 0.5f
+                        withStyle(SpanStyle(textDecoration = if (struck) TextDecoration.LineThrough else null, color = if (struck) Palette.coralInk else Palette.muted)) { append(pick) }
                     },
                     style = Text.muted(TypeScale.s26),
+                    maxLines = 1,
+                    modifier = Modifier.shake(shakeKey),
                 )
-                BasicText(q.explain, style = Text.body(TypeScale.s34, FontWeight.Medium).copy(lineHeight = TypeScale.s43), maxLines = 3)
+                // The right fact, sliding in, its answer highlighted.
+                Box(Modifier.graphicsLayer { alpha = factIn.value; translationY = (1f - factIn.value) * 34.dp.toPx() }) {
+                    val order = q.order
+                    if (order != null) {
+                        OrderAnswer(order, chips)
+                    } else {
+                        val ans = q.answerText
+                        val hi = SpanStyle(color = Palette.sunflowerInk, background = Palette.sunflowerSoft.copy(alpha = 0.85f * mark.value))
+                        val fact = buildAnnotatedString {
+                            val at = q.fact.lastIndexOf(ans).takeIf { ans.isNotBlank() } ?: -1
+                            if (at >= 0) {
+                                append(q.fact.substring(0, at))
+                                withStyle(hi) { append(ans) }
+                                append(q.fact.substring(at + ans.length))
+                            } else {
+                                withStyle(hi) { append(q.fact) }
+                            }
+                        }
+                        val size = when {
+                            q.fact.length <= 12 -> TypeScale.s89
+                            q.fact.length <= 24 -> TypeScale.s55
+                            else -> TypeScale.s43
+                        }
+                        val bump = 1f + 0.06f * kotlin.math.sin(mark.value * kotlin.math.PI.toFloat())
+                        BasicText(fact, style = Text.display(size), maxLines = 2, modifier = Modifier.graphicsLayer { scaleX = bump; scaleY = bump; transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0f, 0.5f) })
+                    }
+                }
+                // The why, word by word, its key words in the land's ink.
+                BasicText(
+                    buildAnnotatedString {
+                        words.forEachIndexed { k, w ->
+                            if (k > 0) append(" ")
+                            val visible = k < shownWords
+                            val key = w.lowercase().trim('.', ',', '!', '?', '"', '\'', ':') in keys
+                            val style = when {
+                                !visible -> SpanStyle(color = Color.Transparent)
+                                key -> SpanStyle(color = Palette.coralInk, fontWeight = FontWeight.Bold)
+                                else -> SpanStyle()
+                            }
+                            withStyle(style) { append(w) }
+                        }
+                    },
+                    style = Text.body(TypeScale.s34, FontWeight.Medium).copy(lineHeight = TypeScale.s43),
+                    maxLines = 3,
+                )
             }
             Box(Modifier.weight(0.382f), contentAlignment = Alignment.Center) {
                 val v = q.learnVisual
-                if (v != null) QuestionVisual(v, Modifier.height(300.dp), numbered = true)
-                else Tubby(TubbyMood.think, Modifier.width(220.dp))
+                val pop by animateFloatAsState(if (aha) 1f else 0.92f, spring(Spring.DampingRatioMediumBouncy), label = "visual")
+                if (v != null) QuestionVisual(v, Modifier.height(300.dp).graphicsLayer { scaleX = pop; scaleY = pop }, numbered = true)
+                else Tubby(if (aha) TubbyMood.cheer else TubbyMood.think, Modifier.width(220.dp).graphicsLayer { scaleX = pop; scaleY = pop })
             }
         }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             BasicText("We'll ask this one again soon.", style = Text.muted(), modifier = Modifier.weight(1f))
             Box(
                 Modifier
+                    .breathe(shownWords >= words.size)
                     .height(89.dp)
                     .selectedRing(true, RoundedCornerShape(Radii.r21), primary = true)
                     .clip(RoundedCornerShape(Radii.r21))
@@ -306,6 +410,15 @@ fun LearnMoment(q: Question, picked: Int, pickedLabel: String = "You picked ") {
         }
     }
 }
+
+/** Words in the why worth picking out: the answer's words and any numbers. */
+internal fun keyWords(q: Question): Set<String> {
+    val fromAnswer = (q.order ?: listOf(q.answerText)).flatMap { optionText(it).lowercase().split(" ", "-", "/") }
+    return (fromAnswer + Regex("\\d+").findAll(q.explain).map { it.value }).filter { it.length >= 2 || it.any(Char::isDigit) }
+        .filter { it !in setOf("the", "an", "of", "to", "is", "in", "on", "it", "as", "at", "and") }.toSet()
+}
+
+private const val WORD_MS = 70L
 
 /** "Leave this level?": Stay is the default; Leave on the right. */
 @Composable

@@ -14,3 +14,9 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
     testImplementation("junit:junit:4.13.2")
 }
+
+tasks.test {
+    // GenSkillsTest: -Pgen.subject=english limits it to one subject.
+    systemProperty("gen.subject", (project.findProperty("gen.subject") as String?) ?: "")
+    testLogging { showStandardStreams = true }
+}

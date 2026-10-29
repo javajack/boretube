@@ -153,6 +153,27 @@ SOUNDS = {
     # Rewards.
     **{f"star_{n}": (lambda n=n: norm(seq((0, marimba([PENT["C6"], PENT["E6"], PENT["G6"]][n - 1], 0.5)),
                                           *sparkle(0.03)), -11)) for n in range(1, 4)},
+    # P2b. The learn moment's highlight lands: a soft "aha", two notes up.
+    "aha": lambda: norm(seq((0, bell(PENT["G5"], 0.35, 0.4)), (0.11, bell(PENT["C6"], 0.55, 0.5))), -15),
+    # A combo flame catches (3, 5, 8 in a row): a breath of air, then a glint.
+    "combo": lambda: norm(seq((0, 0.6 * noise_sweep(0.22, 0.15, 0.7, seed=11)), (0.08, marimba(PENT["A6"], 0.18)), *sparkle(0.12)), -14),
+    # Sort: the card drops into the left or the right basket.
+    "sort_left": lambda: norm(seq((0, 0.5 * noise_sweep(0.12, 0.6, 0.2, seed=12)), (0.06, woodblock(PENT["G4"], 0.12))), -14),
+    "sort_right": lambda: norm(seq((0, 0.5 * noise_sweep(0.12, 0.6, 0.2, seed=13)), (0.06, woodblock(PENT["C5"], 0.12))), -14),
+    # Order: each tile placed climbs the scale.
+    **{f"order_{n}": (lambda n=n: norm(marimba(LADDER[n + 1], 0.3), -14)) for n in range(1, 6)},
+    # True or false: the card flips to its side.
+    "tf_flip": lambda: norm(seq((0, noise_sweep(0.07, 0.3, 0.9, seed=14)), (0.03, woodblock(PENT["E6"], 0.06))), -18),
+    # Streak run.
+    "run_start": lambda: norm(seq((0, tabla(160)), (0.1, tabla(180)), (0.2, tabla(200)), (0.3, marimba(PENT["G5"], 0.4))), -12),
+    "run_milestone": lambda: norm(seq((0, bell(PENT["C6"], 0.6, 0.7)), (0.05, bell(PENT["E6"], 0.6, 0.7)),
+                                      (0.1, bell(PENT["G6"], 0.8, 0.7)), *sparkle(0.12)), -10),
+    "run_end": lambda: norm(seq((0, soft(PENT["G5"], 0.3)), (0.18, soft(PENT["E5"], 0.3)), (0.36, soft(PENT["C5"], 0.55))), -15),
+    "run_record": lambda: norm(seq(
+        (0.00, tabla()), (0.00, marimba(PENT["C5"])), (0.10, marimba(PENT["G5"])), (0.20, marimba(PENT["C6"])),
+        (0.32, bell(PENT["E6"], 0.9, 0.8)), (0.32, 0.6 * bell(PENT["G5"], 0.9, 0.6)), (0.30, tabla(210)), *sparkle(0.4), *sparkle(0.7)), -9),
+    # A rare golden star on a perfect level.
+    "star_gold": lambda: norm(seq((0, bell(PENT["E6"], 0.9, 1.0)), (0.07, bell(PENT["A6"], 0.9, 0.9)), *sparkle(0.05), *sparkle(0.25)), -10),
     "level_done_bazaar": lambda: norm(seq(
         (0.00, tabla()), (0.16, tabla(150)),
         (0.00, marimba(PENT["C5"])), (0.12, marimba(PENT["E5"])), (0.24, marimba(PENT["G5"])),
@@ -184,7 +205,7 @@ def main():
     for name in sorted(SOUNDS):
         x = SOUNDS[name]()
         dur = len(x) / SR
-        limit = 2.0 if name.startswith(("level_done", "enter_", "followup")) else 1.0
+        limit = 2.0 if name.startswith(("level_done", "enter_", "followup", "run_")) else 1.0
         if dur > limit:
             sys.exit(f"{name} is {dur:.2f} s (limit {limit} s)")
         total += write_ogg(name, x)

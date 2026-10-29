@@ -2,7 +2,9 @@ package com.rakesh.boretube.learn.data
 
 import android.content.res.AssetManager
 import android.util.Log
+import com.rakesh.boretube.learn.core.GenSkill
 import com.rakesh.boretube.learn.core.Pack
+import com.rakesh.boretube.learn.core.gen.Generated
 import com.rakesh.boretube.learn.core.PackValidator
 import com.rakesh.boretube.learn.ui.Pictures
 import kotlinx.serialization.json.Json
@@ -29,6 +31,17 @@ object ContentRepo {
             }
         }
         return out
+    }
+
+    /**
+     * The generated skills (spec P2b), built from the tables in
+     * assets/content/data. Their questions are all checked by the learn-core
+     * tests, so they need no review gate; a skill that fails to build is
+     * left out.
+     */
+    fun generated(assets: AssetManager): List<GenSkill> {
+        val data: (String) -> String? = { name -> runCatching { assets.open("content/data/$name").bufferedReader().readText() }.getOrNull() }
+        return runCatching { Generated.skills(data) }.getOrElse { Log.w(TAG, "generated skills failed", it); emptyList() }
     }
 
     private const val TAG = "BoretubeLearnContent"

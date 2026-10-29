@@ -44,6 +44,10 @@ data class LearnState(
     val mastered: List<String> = emptyList(),
     /** boretube Learn: levels played per skill (format rotation). */
     val plays: Map<String, Int> = emptyMap(),
+    /** boretube Learn: the difficulty tier each skill is on (absent = 1). */
+    val tiers: Map<String, Int> = emptyMap(),
+    /** boretube Learn: the longest streak run per land. */
+    val bestRuns: Map<String, Int> = emptyMap(),
 )
 
 /** Spaced repetition, promotion/demotion and the round mix. Pure. */

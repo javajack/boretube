@@ -18,11 +18,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.rakesh.boretube.learn.core.LevelResult
@@ -36,16 +38,32 @@ import kotlinx.coroutines.delay
  * **Play another** (default) or **Back to town**.
  */
 @Composable
-fun DoneScreen(result: LevelResult, skillTitle: String, sounds: Sounds, onAnother: () -> Unit, onTown: () -> Unit) {
+fun DoneScreen(
+    result: LevelResult,
+    skillTitle: String,
+    sounds: Sounds,
+    onAnother: () -> Unit,
+    onTown: () -> Unit,
+    /** A perfect level sometimes earns a golden star: a surprise, never a goal. */
+    golden: Boolean = result.total > 0 && result.right == result.total && result.state.plays.values.sum() % 3 == 0,
+) {
     var shown by remember { mutableIntStateOf(0) }
+    var gold by remember { mutableStateOf(false) }
     var sel by remember { mutableIntStateOf(0) }
     LaunchedEffect(result) {
+        // A held breath before the first star lands.
+        delay(STAR_GAP_MS + 260)
         for (n in 1..result.stars) {
-            delay(STAR_GAP_MS)
             shown = n
             sounds.play(Sfx.star(n))
+            delay(STAR_GAP_MS)
         }
-        delay(STAR_GAP_MS)
+        if (golden) {
+            delay(180)
+            gold = true
+            sounds.play(Sfx.star_gold)
+            delay(STAR_GAP_MS)
+        }
         sounds.play(Sfx.level_done_bazaar)
     }
     Row(
@@ -68,7 +86,11 @@ fun DoneScreen(result: LevelResult, skillTitle: String, sounds: Sounds, onAnothe
         Column(Modifier.weight(0.382f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Gap.f21)) {
             Tubby(TubbyMood.cheer, Modifier.width(233.dp))
             BasicText("Level done!", style = Text.display(TypeScale.s55))
-            StarRow(shown, 3, size = 72.dp)
+            Box(contentAlignment = Alignment.Center) {
+                PoppingStars(shown, 3, size = 72.dp)
+                if (shown > 0) com.rakesh.boretube.learn.ui.level.Burst(shown, Modifier.size(260.dp, 80.dp), reach = 55.dp)
+            }
+            if (gold) GoldStar()
             BasicText("${result.right} of ${result.total} right · $skillTitle", style = Text.muted(), maxLines = 1)
         }
         Column(Modifier.weight(0.618f), verticalArrangement = Arrangement.spacedBy(Gap.f34)) {
@@ -119,3 +141,39 @@ private fun DoneButton(label: String, selected: Boolean, primary: Boolean, modif
 }
 
 private const val STAR_GAP_MS = 320L
+
+/** Stars that land one by one with a bounce (the empty ones wait as outlines). */
+@Composable
+private fun PoppingStars(filled: Int, total: Int, size: androidx.compose.ui.unit.Dp) {
+    Row(horizontalArrangement = Arrangement.spacedBy(size / 6)) {
+        repeat(total) { i ->
+            val on = i < filled
+            val s by androidx.compose.animation.core.animateFloatAsState(
+                if (on) 1f else 0.82f,
+                androidx.compose.animation.core.spring(androidx.compose.animation.core.Spring.DampingRatioHighBouncy, androidx.compose.animation.core.Spring.StiffnessMedium),
+                label = "star",
+            )
+            Star(on, Modifier.size(size).graphicsLayer { scaleX = s; scaleY = s; rotationZ = if (on) 0f else -12f }.testTag(if (on) "star-full" else "star-empty"))
+        }
+    }
+}
+
+/** The rare golden star: a ribbon under the three. */
+@Composable
+private fun GoldStar() {
+    val inn = remember { androidx.compose.animation.core.Animatable(0f) }
+    LaunchedEffect(Unit) { inn.animateTo(1f, androidx.compose.animation.core.spring(androidx.compose.animation.core.Spring.DampingRatioMediumBouncy)) }
+    Row(
+        Modifier
+            .graphicsLayer { scaleX = inn.value; scaleY = inn.value }
+            .clip(RoundedCornerShape(Radii.r21))
+            .background(Palette.ink)
+            .padding(horizontal = Gap.f21, vertical = Gap.f8)
+            .testTag("gold-star"),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Gap.f8),
+    ) {
+        Star(true, Modifier.size(34.dp))
+        BasicText("Golden star: every one right!", style = Text.body(TypeScale.s21, androidx.compose.ui.text.font.FontWeight.Bold).copy(color = Palette.sunflowerSoft))
+    }
+}

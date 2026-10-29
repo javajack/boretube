@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -55,6 +56,7 @@ fun LevelScreen(
     when (format) {
         Format.pairs -> PairsLevel(skillId, state, sounds, random, now, catalog, onDone, onLeave)
         Format.build -> BuildLevel(state, sounds, speaker, settings, random, now, onDone, onLeave)
+        // Quick-fire, Catch, True or false, Sort and Order share the pass-or-learn loop.
         else -> QuizLevel(skillId, format, state, settings, sounds, speaker, random, now, catalog, onDone, onLeave)
     }
 }
@@ -94,6 +96,11 @@ private fun QuizLevel(
     // between, is ignored on questions and the learn moment.
     var lastOk by remember { mutableLongStateOf(Long.MIN_VALUE / 2) }
     var arrowed by remember { mutableStateOf(false) }
+    // Order: the tiles placed so far (option indexes), and the last try for the learn moment.
+    var placed by remember { mutableStateOf(listOf<Int>()) }
+    var tried by remember { mutableStateOf<List<String>?>(null) }
+    // Sort: which basket the card went to while the "Yes!" shows.
+    var sortedTo by remember { mutableStateOf<Int?>(null) }
 
     fun speak(s: QuizScreen) {
         val text = when (s) {
@@ -108,6 +115,7 @@ private fun QuizLevel(
         screen = next
         sel = 0
         shownAt = uptime()
+        if (next is QuizScreen.Ask) { placed = emptyList(); sortedTo = null }
     }
 
     fun answer(choice: Int) {
@@ -117,6 +125,7 @@ private fun QuizLevel(
             streak++
             if (format == Format.catch) sounds.play(Sfx.catch_right)
             if (ask.followUp) sounds.play(Sfx.followup_win) else sounds.right(streak)
+            if (streak in COMBO_STEPS) sounds.play(Sfx.combo)
         } else {
             streak = 0
             sounds.play(if (format == Format.catch) Sfx.catch_miss else Sfx.miss)
@@ -124,15 +133,42 @@ private fun QuizLevel(
         show(next)
     }
 
+    /** Order: OK places the picked tile; the last one checks the whole order. */
+    fun place() {
+        val ask = screen as? QuizScreen.Ask ?: return
+        val left = ask.q.options.indices.filter { it !in placed }
+        val i = left.getOrNull(sel) ?: return
+        placed = placed + i
+        sounds.play(Sfx.order(placed.size))
+        sel = 0
+        if (placed.size == ask.q.options.size) {
+            val mine = placed.map { ask.q.options[it] }
+            tried = mine
+            val ok = mine == ask.q.order
+            val keep = placed
+            answer(if (ok) ask.q.answer else (ask.q.answer + 1) % ask.q.options.size)
+            if (ok) placed = keep
+        }
+    }
+
+    // Sort: the cards each basket holds so far (right answers only).
+    val counts = session.results.filter { it.correct }.let { r -> r.count { it.picked == 0 } to r.count { it.picked == 1 } }
+
     // What each new screen does by itself.
     LaunchedEffect(screen) {
         when (val s = screen) {
             is QuizScreen.Ask -> {
-                sounds.play(if (format == Format.catch) Sfx.catch_drop else Sfx.q_show)
+                sounds.play(
+                    when (format) {
+                        Format.catch -> Sfx.catch_drop
+                        Format.truefalse -> Sfx.tf_flip
+                        else -> Sfx.q_show
+                    },
+                )
                 if (autoSpeak) speak(s)
             }
             is QuizScreen.Right -> {
-                delay(RIGHT_MS)
+                delay(if (format == Format.order) ORDER_RIGHT_MS else RIGHT_MS)
                 if (screen === s) show(session.next())
             }
             is QuizScreen.Learn -> {
@@ -160,11 +196,25 @@ private fun QuizLevel(
                     return@remote true
                 }
                 when (key) {
-                    RemoteKey.Back -> { leaving = true; leaveSel = 0; sounds.play(Sfx.back) }
+                    RemoteKey.Back -> if (format == Format.order && placed.isNotEmpty() && screen is QuizScreen.Ask) {
+                        placed = placed.dropLast(1)
+                        sel = 0
+                        sounds.play(Sfx.build_undo)
+                    } else { leaving = true; leaveSel = 0; sounds.play(Sfx.back) }
                     RemoteKey.Left, RemoteKey.Right -> {
                         arrowed = true
                         val ask = screen as? QuizScreen.Ask ?: return@remote true
-                        val n = (sel + if (key == RemoteKey.Left) -1 else 1).coerceIn(0, ask.q.options.lastIndex)
+                        if (format == Format.sort) {
+                            // The card goes straight into a basket: ◀ left, ▶ right.
+                            val side = if (key == RemoteKey.Left) 0 else 1
+                            sounds.play(if (side == 0) Sfx.sort_left else Sfx.sort_right)
+                            sortedTo = side
+                            answer(side)
+                            if (screen is QuizScreen.Right) sortedTo = side
+                            return@remote true
+                        }
+                        val last = if (format == Format.order) ask.q.options.size - placed.size - 1 else ask.q.options.lastIndex
+                        val n = (sel + if (key == RemoteKey.Left) -1 else 1).coerceIn(0, last.coerceAtLeast(0))
                         if (n != sel) {
                             sel = n
                             sounds.tick(if (format == Format.catch) Sfx.catch_move else Sfx.focus_bazaar)
@@ -173,11 +223,17 @@ private fun QuizLevel(
                     RemoteKey.Up -> speak(screen)
                     RemoteKey.Ok -> {
                         val t = uptime()
-                        val mashed = !arrowed && t - lastOk < MASH_MS
+                        // Order is placed with OK after OK: that's play, not mashing.
+                        val mashed = format != Format.order && !arrowed && t - lastOk < MASH_MS
                         lastOk = t
                         arrowed = false
                         if (!mashed) when (screen) {
-                            is QuizScreen.Ask -> answer(sel)
+                            is QuizScreen.Ask -> when (format) {
+                                Format.order -> place()
+                                // Sort answers with the arrows; OK does nothing there.
+                                Format.sort -> {}
+                                else -> answer(sel)
+                            }
                             is QuizScreen.Learn -> show(session.next())
                             // "Yes!" moves on by itself.
                             else -> {}
@@ -188,13 +244,29 @@ private fun QuizLevel(
                 true
             },
     ) {
-        when (val s = screen) {
-            is QuizScreen.Ask -> if (format == Format.catch) CatchBody(s.q, s.index, s.of, s.followUp, sel, null)
-                else QuickFireBody(s.q, s.index, s.of, s.followUp, sel, null, voice = true)
-            is QuizScreen.Right -> if (format == Format.catch) CatchBody(s.q, s.index, s.of, false, s.q.answer, s.q.answer)
-                else QuickFireBody(s.q, s.index, s.of, false, s.q.answer, s.q.answer, voice = true)
-            is QuizScreen.Learn -> LearnMoment(s.q, s.picked)
-            is QuizScreen.Done -> {}
+        CompositionLocalProvider(LocalCombo provides streak) {
+            when (val s = screen) {
+                is QuizScreen.Ask -> when (format) {
+                    Format.catch -> CatchBody(s.q, s.index, s.of, s.followUp, sel, null)
+                    Format.truefalse -> TrueFalseBody(s.q, s.index, s.of, s.followUp, sel, null)
+                    Format.sort -> SortBody(s.q, s.index, s.of, s.followUp, null, counts)
+                    Format.order -> OrderBody(s.q, s.index, s.of, s.followUp, placed, sel, right = false, wrongShake = null)
+                    else -> QuickFireBody(s.q, s.index, s.of, s.followUp, sel, null, voice = true)
+                }
+                is QuizScreen.Right -> when (format) {
+                    Format.catch -> CatchBody(s.q, s.index, s.of, false, s.q.answer, s.q.answer)
+                    Format.truefalse -> TrueFalseBody(s.q, s.index, s.of, false, s.q.answer, s.q.answer)
+                    Format.sort -> SortBody(s.q, s.index, s.of, false, sortedTo ?: s.q.answer, counts)
+                    Format.order -> OrderBody(s.q, s.index, s.of, false, s.q.order!!.map { s.q.options.indexOf(it) }, 0, right = true, wrongShake = null)
+                    else -> QuickFireBody(s.q, s.index, s.of, false, s.q.answer, s.q.answer, voice = true)
+                }
+                is QuizScreen.Learn -> LearnMoment(
+                    s.q, s.picked,
+                    pickedOrder = if (s.q.order != null) tried else null,
+                    onAha = { sounds.play(Sfx.aha) },
+                )
+                is QuizScreen.Done -> {}
+            }
         }
         if (leaving) LeaveSheet(leaveSel)
     }
@@ -205,4 +277,5 @@ const val MASH_MS = 1_000L
 
 /** How long the "Yes!" lingers before the next question. */
 const val RIGHT_MS = 900L
+private const val ORDER_RIGHT_MS = 1_300L
 private const val LEARN_SOUND_DELAY_MS = 260L

@@ -36,6 +36,10 @@ data class Question(
     val visual: Visual? = null,
     /** The picture on the learn screen (null = none). */
     val learnVisual: Visual? = null,
+    /** 1 easy, 2 medium, 3 hard (generated skills; the ladder is 1). */
+    val tier: Int = 1,
+    /** Put in order: the items, first to last ([options] holds them shuffled). */
+    val order: List<String>? = null,
 ) {
     val answerText: String get() = options[answer]
 }

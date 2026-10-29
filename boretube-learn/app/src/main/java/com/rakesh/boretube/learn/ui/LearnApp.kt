@@ -16,6 +16,9 @@ import com.rakesh.boretube.learn.sound.Sfx
 import com.rakesh.boretube.learn.sound.Sounds
 import com.rakesh.boretube.learn.speech.Speaker
 import com.rakesh.boretube.learn.ui.level.LevelScreen
+import com.rakesh.boretube.learn.ui.level.RunDoneScreen
+import com.rakesh.boretube.learn.ui.level.RunScreen
+import com.rakesh.boretube.learn.core.Runs
 import com.rakesh.boretube.learn.world.LandId
 import com.rakesh.boretube.learn.world.World
 import java.time.LocalDate
@@ -28,6 +31,8 @@ private sealed interface Screen {
     data class Land(val id: LandId) : Screen
     data class Level(val skillId: String, val nonce: Int) : Screen
     data class Done(val result: LevelResult, val skillId: String) : Screen
+    data class Run(val land: LandId, val nonce: Int) : Screen
+    data class RunDone(val run: com.rakesh.boretube.learn.core.Run, val record: Boolean, val land: LandId) : Screen
 }
 
 /** The whole app: first run, the town, a land, a level, level done. Progress is saved after every level. */
@@ -67,11 +72,40 @@ fun LearnApp(
                 sounds.play(Sfx.enter_bazaar)
                 screen = Screen.Land(id)
             }
-            is Screen.Land -> LandScreen(world.of(s.id), state, settings, sounds, world, onPlay = ::play, onBack = { screen = Screen.Town })
+            is Screen.Land -> LandScreen(
+                world.of(s.id), state, settings, sounds, world,
+                onRun = { nonce++; screen = Screen.Run(s.id, nonce) }.takeIf { world.path(world.of(s.id), settings.grade).isNotEmpty() },
+                onPlay = ::play,
+                onBack = { screen = Screen.Town },
+            )
+            is Screen.Run -> {
+                val land = world.of(s.land)
+                RunScreen(
+                    land = s.land.name,
+                    landName = land.name,
+                    pool = world.path(land, settings.grade).mapNotNull { world.catalog.skill(it) },
+                    settings = settings, sounds = sounds, speaker = speaker, random = random,
+                    onDone = { run, answers ->
+                        var st = state
+                        val day = today()
+                        for (a in answers) st = Learner.record(st, a.q, a.correct, a.ms, now(), day)
+                        val record = Runs.isRecord(st, run)
+                        state = Runs.finish(st, run)
+                        progress.save(state)
+                        screen = if (answers.isEmpty()) Screen.Land(s.land) else Screen.RunDone(run, record, s.land)
+                    },
+                    onLeave = { screen = Screen.Land(s.land) },
+                )
+            }
+            is Screen.RunDone -> RunDoneScreen(
+                s.run, s.record, world.of(s.land).name, sounds,
+                onAgain = { nonce++; sounds.play(Sfx.run_start); screen = Screen.Run(s.land, nonce) },
+                onBack = { screen = Screen.Land(s.land) },
+            )
             is Screen.Level -> LevelScreen(
                 s.skillId, state, settings, sounds, speaker, random, now(), world.catalog,
                 onDone = { answers ->
-                    val r = Levels.finish(state, s.skillId, answers, today(), now())
+                    val r = Levels.finish(state, s.skillId, answers, today(), now(), world.catalog)
                     state = r.state
                     progress.save(state)
                     screen = Screen.Done(r, s.skillId)

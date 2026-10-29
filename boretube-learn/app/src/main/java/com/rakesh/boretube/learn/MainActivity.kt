@@ -24,7 +24,7 @@ class MainActivity : ComponentActivity() {
         sounds = SoundPoolSounds(this) { settings.get().sounds }
         speaker = TtsSpeaker(this)
         val progress = ProgressStore(filesDir)
-        val world = World.of(ContentRepo.load(assets, includeUnreviewed = BuildConfig.DEBUG))
+        val world = World.of(ContentRepo.load(assets, includeUnreviewed = BuildConfig.DEBUG), ContentRepo.generated(assets))
         setContent {
             DesignFrame {
                 LearnApp(progress, settings, sounds, speaker, Random.Default, world = world, onExit = { finish() })

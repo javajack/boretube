@@ -7,7 +7,9 @@ enum class Sfx {
     q_show, right_1, right_2, right_3, right_4, right_5, miss, learn_open, followup_win,
     catch_drop, catch_move, catch_right, catch_miss,
     build_ten, build_one, build_undo, build_hit, card_flip, card_back, pair_match,
-    star_1, star_2, star_3, level_done_bazaar;
+    star_1, star_2, star_3, level_done_bazaar,
+    aha, combo, sort_left, sort_right, order_1, order_2, order_3, order_4, order_5, tf_flip,
+    run_start, run_milestone, run_end, run_record, star_gold;
 
     val res: String get() = name
 
@@ -16,6 +18,9 @@ enum class Sfx {
         fun right(streak: Int): Sfx = entries[right_1.ordinal + (streak.coerceIn(1, 5) - 1)]
 
         fun star(n: Int): Sfx = entries[star_1.ordinal + (n.coerceIn(1, 3) - 1)]
+
+        /** The [n]th tile placed in an Order puzzle climbs the scale. */
+        fun order(n: Int): Sfx = entries[order_1.ordinal + (n.coerceIn(1, 5) - 1)]
     }
 }
 

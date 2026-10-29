@@ -61,6 +61,8 @@ fun TownScreen(
     onSettings: (() -> Unit)? = null,
     /** The sticker book (null: no button). */
     onStickers: (() -> Unit)? = null,
+    /** Today's festival or season, if any: the town dresses up for it. */
+    festive: com.rakesh.boretube.learn.core.Seasons.Theme? = null,
     /** Tubby's greeting (default: by the time of day). */
     hello: String = greeting(hour),
     onDiscover: (Discovery) -> Unit = {},
@@ -78,143 +80,147 @@ fun TownScreen(
     }
     val stars = state.stars.values.sum()
     val heads = listOfNotNull(onPlayers?.let { 0 }, onClass?.let { 1 }, onStickers?.let { 3 }, onSettings?.let { 2 })
-    Column(
-        Modifier
-            .fillMaxSize()
-            .background(Palette.canvas)
-            .remote(row) { key ->
-                when (key) {
-                    RemoteKey.Up -> {
-                        val n = if (row == 0 && heads.isEmpty()) 0 else (row - 1).coerceAtLeast(-1)
-                        if (n != row) { row = n; if (row == -1) top = heads.first(); sounds.tick(Sfx.focus_bazaar) }
-                        true
-                    }
-                    RemoteKey.Down -> {
-                        val n = if (row == 0 && discoveries.isEmpty()) 0 else (row + 1).coerceAtMost(1)
-                        if (n != row) { row = n; card = 0; sounds.tick(Sfx.focus_bazaar) }
-                        true
-                    }
-                    RemoteKey.Left, RemoteKey.Right -> {
-                        val d = if (key == RemoteKey.Left) -1 else 1
-                        when (row) {
-                            -1 -> { val n = (heads.indexOf(top) + d).coerceIn(0, heads.lastIndex); if (heads[n] != top) { top = heads[n]; sounds.tick(Sfx.focus_bazaar) } }
-                            1 -> { val n = (card + d).coerceIn(0, discoveries.lastIndex); if (n != card) { card = n; sounds.tick(Sfx.focus_bazaar) } }
-                            else -> { val n = (sel + d).coerceIn(0, world.lands.lastIndex); if (n != sel) { sel = n; sounds.tick(world.lands[n].tick) } }
+    // Festival decorations: a slow backdrop behind the cards, garlands and lamps in the margins.
+    Box(Modifier.fillMaxSize().background(Palette.canvas)) {
+        FestiveBackdrop(festive?.decor.orEmpty())
+        Column(
+            Modifier
+                .fillMaxSize()
+                .remote(row) { key ->
+                    when (key) {
+                        RemoteKey.Up -> {
+                            val n = if (row == 0 && heads.isEmpty()) 0 else (row - 1).coerceAtLeast(-1)
+                            if (n != row) { row = n; if (row == -1) top = heads.first(); sounds.tick(Sfx.focus_bazaar) }
+                            true
                         }
-                        true
+                        RemoteKey.Down -> {
+                            val n = if (row == 0 && discoveries.isEmpty()) 0 else (row + 1).coerceAtMost(1)
+                            if (n != row) { row = n; card = 0; sounds.tick(Sfx.focus_bazaar) }
+                            true
+                        }
+                        RemoteKey.Left, RemoteKey.Right -> {
+                            val d = if (key == RemoteKey.Left) -1 else 1
+                            when (row) {
+                                -1 -> { val n = (heads.indexOf(top) + d).coerceIn(0, heads.lastIndex); if (heads[n] != top) { top = heads[n]; sounds.tick(Sfx.focus_bazaar) } }
+                                1 -> { val n = (card + d).coerceIn(0, discoveries.lastIndex); if (n != card) { card = n; sounds.tick(Sfx.focus_bazaar) } }
+                                else -> { val n = (sel + d).coerceIn(0, world.lands.lastIndex); if (n != sel) { sel = n; sounds.tick(world.lands[n].tick) } }
+                            }
+                            true
+                        }
+                        RemoteKey.Ok -> {
+                            when (row) {
+                                -1 -> { sounds.play(Sfx.select); when (top) { 0 -> onPlayers?.invoke(); 1 -> onClass?.invoke(); 3 -> onStickers?.invoke(); else -> onSettings?.invoke() } }
+                                1 -> discoveries.getOrNull(card)?.let { sounds.play(Sfx.select); onDiscover(it) }
+                                else -> {
+                                    val land = world.lands[sel]
+                                    if (land.skills.isEmpty()) { sounds.play(Sfx.back); soon = land.id } else { sounds.play(Sfx.select); onLand(land.id) }
+                                }
+                            }
+                            true
+                        }
+                        RemoteKey.Back -> { if (row != 0) { row = 0; sounds.play(Sfx.back) } else onBack(); true }
+                        else -> false
                     }
-                    RemoteKey.Ok -> {
-                        when (row) {
-                            -1 -> { sounds.play(Sfx.select); when (top) { 0 -> onPlayers?.invoke(); 1 -> onClass?.invoke(); 3 -> onStickers?.invoke(); else -> onSettings?.invoke() } }
-                            1 -> discoveries.getOrNull(card)?.let { sounds.play(Sfx.select); onDiscover(it) }
-                            else -> {
-                                val land = world.lands[sel]
-                                if (land.skills.isEmpty()) { sounds.play(Sfx.back); soon = land.id } else { sounds.play(Sfx.select); onLand(land.id) }
+                }
+                .padding(horizontal = Safe.x, vertical = Safe.y),
+            verticalArrangement = Arrangement.spacedBy(Gap.f21),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Tubby(TubbyMood.calm, Modifier.width(66.dp))
+                Spacer(Modifier.width(Gap.f21))
+                Column(Modifier.weight(1f)) {
+                    BasicText("Tubby's Town", style = Text.display(TypeScale.s43))
+                    BasicText(hello, style = Text.muted(), maxLines = 1)
+                }
+                if (stars > 0) {
+                    StarRow(1, 1, size = 26.dp)
+                    Spacer(Modifier.width(Gap.f8))
+                    BasicText("$stars ${if (stars == 1) "star" else "stars"}", style = Text.body(TypeScale.s21, FontWeight.SemiBold))
+                    Spacer(Modifier.width(Gap.f34))
+                }
+                if (player != null && onPlayers != null) {
+                    HeaderChip(Modifier.testTag("who"), row == -1 && top == 0) {
+                        Box(Modifier.size(44.dp).clip(CircleShape).background(Palette.cream), contentAlignment = Alignment.Center) { PictureArt(player.pic, Modifier.size(36.dp)) }
+                        BasicText("Who's playing", style = Text.body(TypeScale.s18, FontWeight.Bold).copy(color = if (row == -1 && top == 0) Palette.cream else Palette.ink))
+                    }
+                    Spacer(Modifier.width(Gap.f13))
+                }
+                if (onClass != null) {
+                    HeaderChip(Modifier.testTag("class"), row == -1 && top == 1) {
+                        BasicText(gradeName(settings.grade), style = Text.display(TypeScale.s21).copy(color = if (row == -1 && top == 1) Palette.cream else Palette.ink))
+                        BasicText("change", style = Text.body(TypeScale.s18, FontWeight.SemiBold).copy(color = if (row == -1 && top == 1) Palette.sunflowerSoft else Palette.muted))
+                    }
+                }
+                if (onStickers != null) {
+                    Spacer(Modifier.width(Gap.f13))
+                    HeaderChip(Modifier.testTag("stickers"), row == -1 && top == 3) {
+                        // The sticker book: a sticker icon, like the cog beside it.
+                        PictureArt("giftbox", Modifier.size(34.dp).padding(start = Gap.f4))
+                    }
+                }
+                if (onSettings != null) {
+                    Spacer(Modifier.width(Gap.f13))
+                    HeaderChip(Modifier.testTag("settings"), row == -1 && top == 2) {
+                        Gear(if (row == -1 && top == 2) Palette.cream else Palette.ink, Modifier.size(30.dp).padding(start = Gap.f4))
+                    }
+                }
+            }
+            Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(Gap.f34), verticalAlignment = Alignment.CenterVertically) {
+                world.lands.forEachIndexed { i, land ->
+                    val p = world.progress(state, land, settings.grade)
+                    val shape = RoundedCornerShape(Radii.r34)
+                    Column(
+                        Modifier
+                            .weight(1f)
+                            .height(if (discoveries.isEmpty()) 440.dp else 360.dp)
+                            .testTag("land-${land.id}")
+                            .selectedRing(row == 0 && i == sel, shape)
+                            .clip(shape)
+                            .background(land.tint),
+                    ) {
+                        LandScene(land.id, Modifier.fillMaxWidth().height(if (discoveries.isEmpty()) 250.dp else 190.dp))
+                        Column(Modifier.padding(horizontal = Gap.f34, vertical = Gap.f21), verticalArrangement = Arrangement.spacedBy(Gap.f8)) {
+                            BasicText(land.name, style = Text.display(TypeScale.s34))
+                            if (land.skills.isEmpty()) {
+                                BasicText(land.subject, style = Text.muted())
+                                BasicText("New levels coming soon", style = Text.muted())
+                            } else {
+                                BasicText("${land.subject} · ${p.mastered} of ${p.total} skills", style = Text.muted(), maxLines = 1)
+                                p.next?.let { next ->
+                                    BasicText(
+                                        "Next: ${world.title(next)}",
+                                        style = Text.body(TypeScale.s21, FontWeight.Bold).copy(color = Palette.coralInk),
+                                        maxLines = 1,
+                                    )
+                                } ?: BasicText("Every skill mastered!", style = Text.body(TypeScale.s21, FontWeight.Bold).copy(color = Palette.mintInk))
                             }
                         }
-                        true
-                    }
-                    RemoteKey.Back -> { if (row != 0) { row = 0; sounds.play(Sfx.back) } else onBack(); true }
-                    else -> false
-                }
-            }
-            .padding(horizontal = Safe.x, vertical = Safe.y),
-        verticalArrangement = Arrangement.spacedBy(Gap.f21),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Tubby(TubbyMood.calm, Modifier.width(66.dp))
-            Spacer(Modifier.width(Gap.f21))
-            Column(Modifier.weight(1f)) {
-                BasicText("Tubby's Town", style = Text.display(TypeScale.s43))
-                BasicText(hello, style = Text.muted(), maxLines = 1)
-            }
-            if (stars > 0) {
-                StarRow(1, 1, size = 26.dp)
-                Spacer(Modifier.width(Gap.f8))
-                BasicText("$stars ${if (stars == 1) "star" else "stars"}", style = Text.body(TypeScale.s21, FontWeight.SemiBold))
-                Spacer(Modifier.width(Gap.f34))
-            }
-            if (player != null && onPlayers != null) {
-                HeaderChip(Modifier.testTag("who"), row == -1 && top == 0) {
-                    Box(Modifier.size(44.dp).clip(CircleShape).background(Palette.cream), contentAlignment = Alignment.Center) { PictureArt(player.pic, Modifier.size(36.dp)) }
-                    BasicText("Who's playing", style = Text.body(TypeScale.s18, FontWeight.Bold).copy(color = if (row == -1 && top == 0) Palette.cream else Palette.ink))
-                }
-                Spacer(Modifier.width(Gap.f13))
-            }
-            if (onClass != null) {
-                HeaderChip(Modifier.testTag("class"), row == -1 && top == 1) {
-                    BasicText(gradeName(settings.grade), style = Text.display(TypeScale.s21).copy(color = if (row == -1 && top == 1) Palette.cream else Palette.ink))
-                    BasicText("change", style = Text.body(TypeScale.s18, FontWeight.SemiBold).copy(color = if (row == -1 && top == 1) Palette.sunflowerSoft else Palette.muted))
-                }
-            }
-            if (onStickers != null) {
-                Spacer(Modifier.width(Gap.f13))
-                HeaderChip(Modifier.testTag("stickers"), row == -1 && top == 3) {
-                    // The sticker book: a sticker icon, like the cog beside it.
-                    PictureArt("giftbox", Modifier.size(34.dp).padding(start = Gap.f4))
-                }
-            }
-            if (onSettings != null) {
-                Spacer(Modifier.width(Gap.f13))
-                HeaderChip(Modifier.testTag("settings"), row == -1 && top == 2) {
-                    Gear(if (row == -1 && top == 2) Palette.cream else Palette.ink, Modifier.size(30.dp).padding(start = Gap.f4))
-                }
-            }
-        }
-        Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(Gap.f34), verticalAlignment = Alignment.CenterVertically) {
-            world.lands.forEachIndexed { i, land ->
-                val p = world.progress(state, land, settings.grade)
-                val shape = RoundedCornerShape(Radii.r34)
-                Column(
-                    Modifier
-                        .weight(1f)
-                        .height(if (discoveries.isEmpty()) 440.dp else 360.dp)
-                        .testTag("land-${land.id}")
-                        .selectedRing(row == 0 && i == sel, shape)
-                        .clip(shape)
-                        .background(land.tint),
-                ) {
-                    LandScene(land.id, Modifier.fillMaxWidth().height(if (discoveries.isEmpty()) 250.dp else 190.dp))
-                    Column(Modifier.padding(horizontal = Gap.f34, vertical = Gap.f21), verticalArrangement = Arrangement.spacedBy(Gap.f8)) {
-                        BasicText(land.name, style = Text.display(TypeScale.s34))
-                        if (land.skills.isEmpty()) {
-                            BasicText(land.subject, style = Text.muted())
-                            BasicText("New levels coming soon", style = Text.muted())
-                        } else {
-                            BasicText("${land.subject} · ${p.mastered} of ${p.total} skills", style = Text.muted(), maxLines = 1)
-                            p.next?.let { next ->
-                                BasicText(
-                                    "Next: ${world.title(next)}",
-                                    style = Text.body(TypeScale.s21, FontWeight.Bold).copy(color = Palette.coralInk),
-                                    maxLines = 1,
-                                )
-                            } ?: BasicText("Every skill mastered!", style = Text.body(TypeScale.s21, FontWeight.Bold).copy(color = Palette.mintInk))
-                        }
                     }
                 }
             }
-        }
-        if (discoveries.isNotEmpty()) {
-            Column(verticalArrangement = Arrangement.spacedBy(Gap.f8)) {
-                BasicText("Today in Tubby's Town", style = Text.body(TypeScale.s21, FontWeight.Bold))
-                Row(Modifier.fillMaxWidth().height(96.dp), horizontalArrangement = Arrangement.spacedBy(Gap.f34)) {
-                    discoveries.forEachIndexed { i, d -> DiscoveryCard(d, world, row == 1 && i == card, Modifier.weight(1f).testTag("discover-$i")) }
+            if (discoveries.isNotEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(Gap.f8)) {
+                    BasicText("Today in Tubby's Town", style = Text.body(TypeScale.s21, FontWeight.Bold))
+                    Row(Modifier.fillMaxWidth().height(96.dp), horizontalArrangement = Arrangement.spacedBy(Gap.f34)) {
+                        discoveries.forEachIndexed { i, d -> DiscoveryCard(d, world, row == 1 && i == card, Modifier.weight(1f).testTag("discover-$i")) }
+                    }
                 }
             }
+            Box(Modifier.height(26.dp)) {
+                BasicText(
+                    when {
+                        soon != null -> "Tubby is still building this land."
+                        row == -1 -> "◀ ▶ choose · OK · ▼ back to the lands"
+                        row == 1 -> "◀ ▶ choose · OK to play · ▲ back to the lands"
+                        heads.isNotEmpty() && discoveries.isNotEmpty() -> "◀ ▶ choose a land · OK to go in · ▲ who's playing · ▼ today's ideas"
+                        else -> "◀ ▶ to choose a land · OK to go in"
+                    },
+                    style = Text.muted(),
+                    maxLines = 1,
+                )
+            }
         }
-        Box(Modifier.height(26.dp)) {
-            BasicText(
-                when {
-                    soon != null -> "Tubby is still building this land."
-                    row == -1 -> "◀ ▶ choose · OK · ▼ back to the lands"
-                    row == 1 -> "◀ ▶ choose · OK to play · ▲ back to the lands"
-                    heads.isNotEmpty() && discoveries.isNotEmpty() -> "◀ ▶ choose a land · OK to go in · ▲ who's playing · ▼ today's ideas"
-                    else -> "◀ ▶ to choose a land · OK to go in"
-                },
-                style = Text.muted(),
-                maxLines = 1,
-            )
-        }
+        FestiveFrame(festive?.decor.orEmpty())
     }
 }
 

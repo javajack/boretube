@@ -112,6 +112,7 @@ fun LearnApp(
                 onClass = { screen = Screen.Class },
                 onSettings = { screen = Screen.Settings },
                 onStickers = { screen = Screen.Stickers },
+                festive = com.rakesh.boretube.learn.core.Seasons.of(today()),
                 hello = Cheer.greeting(hour(), today(), state.mastered.lastOrNull()?.takeIf { world.catalog.skill(it) != null }?.let { world.title(it) }),
                 onDiscover = { d ->
                     if (d.skill == null) { nonce++; sounds.play(Sfx.run_start); screen = Screen.Run(d.land, nonce) } else play(d.skill)

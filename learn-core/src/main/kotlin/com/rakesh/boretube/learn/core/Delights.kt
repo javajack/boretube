@@ -51,26 +51,89 @@ object Cheer {
     const val DYK_EVERY = 3
 }
 
-/** Festivals and seasons Tubby notices. Moving festivals use a dated table (update it yearly). */
+/**
+ * Festivals and seasons Tubby notices (spec P2b §8). A festival shows for a
+ * window of days around it (not one day), so a child who plays the day
+ * before or after still sees the town dressed up, and the table only needs a
+ * look once every few years. Moving festivals are dated through
+ * [COVERED_UNTIL]; a test fails a year before that runs out.
+ */
 object Seasons {
-    data class Theme(val id: String, val line: String, val pic: String)
+    /** Decorations the town draws for a theme. */
+    enum class Decor { toran, bunting, diyas, puffs, kites, balloons, snow, twinkles, lanterns }
 
-    private val DIWALI = listOf("2025-10-20", "2026-11-08", "2027-10-29").map(LocalDate::parse)
-    private val HOLI = listOf("2026-03-04", "2027-03-22").map(LocalDate::parse)
+    data class Theme(val id: String, val line: String, val pic: String, val decor: Set<Decor> = emptySet())
 
+    /** A festival on [dates]: shown from [before] days ahead until [after] days after each (or until [until]'s date). */
+    private class Festival(val theme: Theme, val dates: List<LocalDate>, val before: Int, val after: Int, val until: List<LocalDate>? = null) {
+        fun covers(day: LocalDate): Boolean = dates.withIndex().any { (k, d) ->
+            val end = until?.getOrNull(k) ?: d
+            !day.isBefore(d.minusDays(before.toLong())) && !day.isAfter(end.plusDays(after.toLong()))
+        }
+    }
+
+    private fun d(vararg s: String) = s.map(LocalDate::parse)
+
+    /** The last year the moving dates below cover. */
+    const val COVERED_UNTIL = 2031
+
+    /**
+     * The main day of each moving festival, 2026–2031 (India, New Delhi):
+     * drikpanchang.com cross-checked with calendarlabs and the Government of
+     * India holiday lists (2027); 2029–2031 from drikpanchang. Eid dates are
+     * the expected ones (±1 day with the moon sighting; the window absorbs
+     * it). Research of 2026-10-30.
+     */
+    private val DATES: Map<String, List<LocalDate>> = mapOf(
+        "sankranti" to d("2026-01-14", "2027-01-14", "2028-01-15", "2029-01-14", "2030-01-14", "2031-01-15"),
+        "holi" to d("2026-03-04", "2027-03-22", "2028-03-11", "2029-03-01", "2030-03-20", "2031-03-09"),
+        "eidfitr" to d("2026-03-21", "2027-03-10", "2028-02-27", "2029-02-15", "2030-02-05", "2031-01-25"),
+        "eidadha" to d("2026-05-28", "2027-05-17", "2028-05-06", "2029-04-25", "2030-04-14", "2031-04-03"),
+        "rakhi" to d("2026-08-28", "2027-08-17", "2028-08-05", "2029-08-23", "2030-08-13", "2031-08-02"),
+        "janmashtami" to d("2026-09-04", "2027-08-25", "2028-08-13", "2029-09-01", "2030-08-21", "2031-08-09"),
+        "ganesh" to d("2026-09-14", "2027-09-04", "2028-08-23", "2029-09-11", "2030-09-01", "2031-09-20"),
+        "onam" to d("2026-08-26", "2027-09-12", "2028-09-01", "2029-08-22", "2030-09-09", "2031-08-30"),
+        "navratri" to d("2026-10-11", "2027-09-30", "2028-09-19", "2029-10-08", "2030-09-28", "2031-10-17"),
+        "dussehra" to d("2026-10-20", "2027-10-09", "2028-09-27", "2029-10-16", "2030-10-06", "2031-10-25"),
+        "diwali" to d("2026-11-08", "2027-10-29", "2028-10-17", "2029-11-05", "2030-10-26", "2031-11-14"),
+        "gurpurab" to d("2026-11-24", "2027-11-14", "2028-11-02", "2029-11-21", "2030-11-10", "2031-11-28"),
+    )
+
+    private val MOVING = listOf(
+        Festival(Theme("diwali", "Happy Diwali! Tubby lit a row of diyas.", "diya", setOf(Decor.diyas, Decor.toran, Decor.twinkles)), DATES.getValue("diwali"), 2, 2),
+        Festival(Theme("holi", "Happy Holi! So many colours!", "pichkari", setOf(Decor.puffs)), DATES.getValue("holi"), 1, 2),
+        Festival(Theme("navratri", "Navratri! Nine nights of garba and dandiya.", "drum", setOf(Decor.toran, Decor.twinkles)), DATES.getValue("navratri"), 0, 0, DATES.getValue("dussehra").map { it.minusDays(1) }),
+        Festival(Theme("dussehra", "Happy Dussehra! Good wins over bad.", "flower", setOf(Decor.toran)), DATES.getValue("dussehra"), 0, 1),
+        Festival(Theme("ganesh", "Ganpati Bappa Morya! Happy Ganesh Chaturthi.", "ladoo", setOf(Decor.toran)), DATES.getValue("ganesh"), 1, 3),
+        Festival(Theme("eidfitr", "Eid Mubarak! Sweet seviyan today.", "lantern", setOf(Decor.lanterns, Decor.twinkles)), DATES.getValue("eidfitr"), 1, 2),
+        Festival(Theme("eidadha", "Eid Mubarak! Time with family and friends.", "lantern", setOf(Decor.lanterns, Decor.twinkles)), DATES.getValue("eidadha"), 1, 2),
+        Festival(Theme("rakhi", "Happy Raksha Bandhan! Tie a rakhi with love.", "giftbox", setOf(Decor.toran)), DATES.getValue("rakhi"), 1, 0),
+        Festival(Theme("janmashtami", "Happy Janmashtami! Makhan for little Krishna.", "flute", setOf(Decor.toran)), DATES.getValue("janmashtami"), 1, 1),
+        Festival(Theme("onam", "Happy Onam! A flower pookalam for you.", "rangoli", setOf(Decor.toran)), DATES.getValue("onam"), 2, 1),
+        Festival(Theme("gurpurab", "Happy Gurpurab! Tubby lit lamps for Guru Nanak.", "diya", setOf(Decor.diyas)), DATES.getValue("gurpurab"), 1, 1),
+        Festival(Theme("sankranti", "Happy Makar Sankranti and Pongal! Kites up!", "kite", setOf(Decor.kites)), DATES.getValue("sankranti"), 1, 1),
+    )
+
+    /** Same date every year: (month-day, days before, days after). */
     private val FIXED = listOf(
-        MonthDay.of(1, 1) to Theme("newyear", "Happy New Year!", "star"),
-        MonthDay.of(1, 26) to Theme("republic", "Happy Republic Day!", "star"),
-        MonthDay.of(8, 15) to Theme("independence", "Happy Independence Day!", "kite"),
-        MonthDay.of(10, 2) to Theme("gandhi", "It's Gandhi Jayanti today.", "flower"),
-        MonthDay.of(11, 14) to Theme("children", "Happy Children's Day!", "balloon"),
-        MonthDay.of(12, 25) to Theme("christmas", "Merry Christmas!", "star"),
+        Triple(MonthDay.of(12, 31), 0, 1) to Theme("newyear", "Happy New Year!", "balloon", setOf(Decor.balloons)),
+        Triple(MonthDay.of(1, 26), 1, 0) to Theme("republic", "Happy Republic Day!", "star", setOf(Decor.bunting)),
+        Triple(MonthDay.of(8, 15), 1, 0) to Theme("independence", "Happy Independence Day!", "kite", setOf(Decor.bunting, Decor.kites)),
+        Triple(MonthDay.of(10, 2), 0, 0) to Theme("gandhi", "It's Gandhi Jayanti today.", "flower"),
+        Triple(MonthDay.of(11, 14), 0, 0) to Theme("children", "Happy Children's Day!", "balloon", setOf(Decor.balloons)),
+        Triple(MonthDay.of(12, 25), 2, 1) to Theme("christmas", "Merry Christmas!", "star", setOf(Decor.snow, Decor.twinkles)),
     )
 
     fun of(day: LocalDate): Theme? {
-        if (DIWALI.any { kotlin.math.abs(it.toEpochDay() - day.toEpochDay()) <= 2 }) return Theme("diwali", "Happy Diwali! Tubby lit a diya.", "diya")
-        if (HOLI.any { kotlin.math.abs(it.toEpochDay() - day.toEpochDay()) <= 1 }) return Theme("holi", "Happy Holi! So many colours!", "pichkari")
-        FIXED.firstOrNull { it.first == MonthDay.from(day) }?.let { return it.second }
+        // Two windows can overlap (Onam and Ganesh in 2028): the one whose main day is nearest wins.
+        MOVING.filter { it.covers(day) }.minByOrNull { f -> f.dates.minOf { kotlin.math.abs(it.toEpochDay() - day.toEpochDay()) } }?.let { return it.theme }
+        for ((w, theme) in FIXED) {
+            val (md, before, after) = w
+            for (y in listOf(day.year - 1, day.year, day.year + 1)) {
+                val at = md.atYear(y)
+                if (!day.isBefore(at.minusDays(before.toLong())) && !day.isAfter(at.plusDays(after.toLong()))) return theme
+            }
+        }
         return when (day.monthValue) {
             7, 8 -> Theme("monsoon", "Rainy days! Shall we learn inside?", "rain")
             12, 1 -> Theme("winter", "Brrr, it's chilly! Let's warm up our brains.", "sweater")
@@ -78,6 +141,11 @@ object Seasons {
             else -> null
         }
     }
+
+    /** The moving festivals' dates, by id (tests check the table). */
+    internal val table: Map<String, List<LocalDate>> get() = DATES
+    internal val ids: Set<String> get() = DATES.keys
+
 }
 
 /** Friendly names for a skill's tiers. */

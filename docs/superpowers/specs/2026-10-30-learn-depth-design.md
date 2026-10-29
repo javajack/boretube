@@ -136,3 +136,19 @@ All strings use **Indian/British English**: colour, centre, metre, -ise, maths, 
 - **"Today in Tubby's Town"** (▼ from the lands): three cards from `Discover.today`, the same all day and rotating daily:
   - practice that's due always leads;
   - then, spread across lands: a land not visited yet, a Streak run never tried (or "beat your best"), a skill new for this class, a peek at the next class, and "remember this one?" for a mastered skill.
+
+## 9. Festivals (the user, 2026-10-30)
+
+"Animate screens for festivals for a few days, not one fixed day, so it's easy to maintain; research the next 5 years."
+
+- `Seasons` (learn-core `Delights.kt`) shows each festival for a window around its main day, such as Diwali from Dhanteras to Bhai Dooj, or Navratri from night 1 to Dussehra. Where windows overlap, the nearest main day wins.
+- Moving dates run from 2026 to 2031 (`COVERED_UNTIL`): drikpanchang.com (New Delhi), cross-checked with calendarlabs and the Government of India's 2027 holiday lists. Eid dates are the expected ones (±1 day); the window absorbs that.
+- `FestivalsTest` fails from 2030 onward, so the table gets its next five years with a year to spare.
+- **The town dresses up (`ui/Festive.kt`).** A slow backdrop moves behind the cards and garlands and lamps sit in the margins. They never cover a card or a word.
+  - Diwali: diyas, a toran and twinkles.
+  - Holi: colour puffs.
+  - Sankranti and Independence Day: kites, with bunting for Independence Day.
+  - Navratri, Ganesh, Onam, Rakhi and Janmashtami: a marigold toran.
+  - Eid: lanterns and twinkles.
+  - Christmas: snow and twinkles.
+  - New Year and Children's Day: balloons.

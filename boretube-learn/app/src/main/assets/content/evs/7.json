@@ -4,8 +4,8 @@
  "grade": 7,
  "version": 1,
  "reviewed": {
-  "by": "",
-  "at": ""
+  "by": "parent (approved 2026-10-29, to be revised)",
+  "at": "2026-10-29"
  },
  "skills": [
   {
@@ -160,6 +160,150 @@
      ],
      "answer": 0,
      "explain": "Leaves are the plant's food factories."
+    },
+    {
+     "id": "pz0",
+     "q": "Plants take in water through their ___.",
+     "options": [
+      "roots",
+      "leaves",
+      "flowers",
+      "fruits"
+     ],
+     "answer": 0,
+     "explain": "Roots soak up water from the soil."
+    },
+    {
+     "id": "pz1",
+     "q": "Which gas do we breathe out that plants use?",
+     "options": [
+      "carbon dioxide",
+      "oxygen",
+      "nitrogen",
+      "steam"
+     ],
+     "answer": 0,
+     "explain": "Plants use the carbon dioxide we breathe out."
+    },
+    {
+     "id": "pz2",
+     "q": "Leaves of most plants are ___.",
+     "options": [
+      "green",
+      "blue",
+      "black",
+      "white"
+     ],
+     "answer": 0,
+     "explain": "Chlorophyll makes leaves green."
+    },
+    {
+     "id": "pz3",
+     "q": "Plants that make their own food are ___.",
+     "options": [
+      "autotrophs",
+      "parasites",
+      "insects",
+      "animals"
+     ],
+     "answer": 0,
+     "explain": "Autotrophs make their own food."
+    },
+    {
+     "id": "pz4",
+     "q": "Animals that cannot make food are ___.",
+     "options": [
+      "heterotrophs",
+      "autotrophs",
+      "plants",
+      "algae"
+     ],
+     "answer": 0,
+     "explain": "Heterotrophs depend on others for food."
+    },
+    {
+     "id": "pz5",
+     "q": "Lichen is a partnership of algae and ___.",
+     "options": [
+      "fungus",
+      "fish",
+      "rock",
+      "insect"
+     ],
+     "answer": 0,
+     "explain": "Algae and fungus live together as lichen."
+    },
+    {
+     "id": "pz6",
+     "q": "Bean plants add ___ to the soil.",
+     "options": [
+      "nitrogen",
+      "plastic",
+      "salt",
+      "oil"
+     ],
+     "answer": 0,
+     "explain": "Bacteria in bean roots add nitrogen."
+    },
+    {
+     "id": "pz7",
+     "q": "Which one is a parasite plant?",
+     "options": [
+      "cuscuta",
+      "mango",
+      "rose",
+      "wheat"
+     ],
+     "answer": 0,
+     "explain": "Cuscuta takes food from other plants."
+    },
+    {
+     "id": "pz8",
+     "q": "Bread mould is a kind of ___.",
+     "options": [
+      "fungus",
+      "plant",
+      "insect",
+      "seed"
+     ],
+     "answer": 0,
+     "explain": "Mould on bread is a fungus."
+    },
+    {
+     "id": "pz9",
+     "q": "Desert plants have spines instead of ___.",
+     "options": [
+      "leaves",
+      "roots",
+      "stems",
+      "seeds"
+     ],
+     "answer": 0,
+     "explain": "Spines save water in the desert."
+    },
+    {
+     "id": "pz10",
+     "q": "Plants make food mostly during the ___.",
+     "options": [
+      "day",
+      "night",
+      "evening",
+      "dawn"
+     ],
+     "answer": 0,
+     "explain": "Plants need sunlight to make food."
+    },
+    {
+     "id": "pz11",
+     "q": "Starch turns blue-black with ___.",
+     "options": [
+      "iodine",
+      "water",
+      "salt",
+      "milk"
+     ],
+     "answer": 0,
+     "explain": "Iodine shows that starch is present."
     }
    ]
   },
@@ -315,6 +459,150 @@
      ],
      "answer": 0,
      "explain": "Heating ice turns it into water."
+    },
+    {
+     "id": "hx0",
+     "q": "Which one is a good conductor of heat?",
+     "options": [
+      "copper",
+      "rubber",
+      "wood",
+      "paper"
+     ],
+     "answer": 0,
+     "explain": "Copper passes heat very quickly."
+    },
+    {
+     "id": "hx1",
+     "q": "Which one is an insulator?",
+     "options": [
+      "plastic",
+      "iron",
+      "copper",
+      "steel"
+     ],
+     "answer": 0,
+     "explain": "Plastic does not pass heat easily."
+    },
+    {
+     "id": "hx2",
+     "q": "Heat moves through a metal spoon by ___.",
+     "options": [
+      "conduction",
+      "radiation",
+      "convection",
+      "magic"
+     ],
+     "answer": 0,
+     "explain": "Heat passes along solids by conduction."
+    },
+    {
+     "id": "hx3",
+     "q": "Hot water rising in a pot is ___.",
+     "options": [
+      "convection",
+      "conduction",
+      "radiation",
+      "freezing"
+     ],
+     "answer": 0,
+     "explain": "Warm water rises in convection currents."
+    },
+    {
+     "id": "hx4",
+     "q": "We feel the sun's heat by ___.",
+     "options": [
+      "radiation",
+      "conduction",
+      "convection",
+      "touch"
+     ],
+     "answer": 0,
+     "explain": "The sun's heat reaches us by radiation."
+    },
+    {
+     "id": "hx5",
+     "q": "At night, a land breeze blows from ___.",
+     "options": [
+      "land to sea",
+      "sea to land",
+      "hill to hill",
+      "town to town"
+     ],
+     "answer": 0,
+     "explain": "At night land cools faster, so air moves out."
+    },
+    {
+     "id": "hx6",
+     "q": "Water boils at ___.",
+     "options": [
+      "100 °C",
+      "50 °C",
+      "0 °C",
+      "37 °C"
+     ],
+     "answer": 0,
+     "explain": "Water boils at 100 degrees Celsius."
+    },
+    {
+     "id": "hx7",
+     "q": "Water freezes at ___.",
+     "options": [
+      "0 °C",
+      "100 °C",
+      "37 °C",
+      "50 °C"
+     ],
+     "answer": 0,
+     "explain": "Water freezes at 0 degrees Celsius."
+    },
+    {
+     "id": "hx8",
+     "q": "Dark clothes take in ___ heat.",
+     "options": [
+      "more",
+      "less",
+      "no",
+      "cold"
+     ],
+     "answer": 0,
+     "explain": "Dark colours soak up more heat."
+    },
+    {
+     "id": "hx9",
+     "q": "A clinical thermometer checks ___.",
+     "options": [
+      "body temperature",
+      "room size",
+      "weight",
+      "height"
+     ],
+     "answer": 0,
+     "explain": "A clinical thermometer measures body temperature."
+    },
+    {
+     "id": "hx10",
+     "q": "Cooking pots have metal bottoms to ___ heat.",
+     "options": [
+      "conduct",
+      "block",
+      "freeze",
+      "waste"
+     ],
+     "answer": 0,
+     "explain": "Metal passes the stove's heat to the food."
+    },
+    {
+     "id": "hx11",
+     "q": "A woollen blanket keeps us ___.",
+     "options": [
+      "warm",
+      "wet",
+      "cold",
+      "sticky"
+     ],
+     "answer": 0,
+     "explain": "Wool traps warm air close to us."
     }
    ]
   }

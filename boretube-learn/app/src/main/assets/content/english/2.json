@@ -4,8 +4,8 @@
  "grade": 2,
  "version": 1,
  "reviewed": {
-  "by": "",
-  "at": ""
+  "by": "parent (approved 2026-10-29, to be revised)",
+  "at": "2026-10-29"
  },
  "skills": [
   {
@@ -161,6 +161,222 @@
      ],
      "answer": 0,
      "explain": "Hard and soft are opposites."
+    },
+    {
+     "id": "tall-short",
+     "q": "What is the opposite of tall?",
+     "options": [
+      "short",
+      "big",
+      "long",
+      "high"
+     ],
+     "answer": 0,
+     "explain": "Tall and short are opposites."
+    },
+    {
+     "id": "near-far",
+     "q": "What is the opposite of near?",
+     "options": [
+      "far",
+      "close",
+      "next",
+      "by"
+     ],
+     "answer": 0,
+     "explain": "Near and far are opposites."
+    },
+    {
+     "id": "early-late",
+     "q": "What is the opposite of early?",
+     "options": [
+      "late",
+      "soon",
+      "first",
+      "now"
+     ],
+     "answer": 0,
+     "explain": "Early and late are opposites."
+    },
+    {
+     "id": "heavy-light",
+     "q": "What is the opposite of heavy?",
+     "options": [
+      "light",
+      "big",
+      "full",
+      "hard"
+     ],
+     "answer": 0,
+     "explain": "Heavy and light are opposites."
+    },
+    {
+     "id": "clean-dirty",
+     "q": "What is the opposite of clean?",
+     "options": [
+      "dirty",
+      "neat",
+      "fresh",
+      "wet"
+     ],
+     "answer": 0,
+     "explain": "Clean and dirty are opposites."
+    },
+    {
+     "id": "rich-poor",
+     "q": "What is the opposite of rich?",
+     "options": [
+      "poor",
+      "kind",
+      "good",
+      "big"
+     ],
+     "answer": 0,
+     "explain": "Rich and poor are opposites."
+    },
+    {
+     "id": "thick-thin",
+     "q": "What is the opposite of thick?",
+     "options": [
+      "thin",
+      "fat",
+      "wide",
+      "big"
+     ],
+     "answer": 0,
+     "explain": "Thick and thin are opposites."
+    },
+    {
+     "id": "loud-quiet",
+     "q": "What is the opposite of loud?",
+     "options": [
+      "quiet",
+      "noisy",
+      "high",
+      "big"
+     ],
+     "answer": 0,
+     "explain": "Loud and quiet are opposites."
+    },
+    {
+     "id": "sweet-sour",
+     "q": "What is the opposite of sweet?",
+     "options": [
+      "sour",
+      "nice",
+      "sugar",
+      "good"
+     ],
+     "answer": 0,
+     "explain": "Sweet and sour are opposites."
+    },
+    {
+     "id": "push-pull",
+     "q": "What is the opposite of push?",
+     "options": [
+      "pull",
+      "press",
+      "shove",
+      "hit"
+     ],
+     "answer": 0,
+     "explain": "Push and pull are opposites."
+    },
+    {
+     "id": "give-take",
+     "q": "What is the opposite of give?",
+     "options": [
+      "take",
+      "send",
+      "hand",
+      "share"
+     ],
+     "answer": 0,
+     "explain": "Give and take are opposites."
+    },
+    {
+     "id": "laugh-cry",
+     "q": "What is the opposite of laugh?",
+     "options": [
+      "cry",
+      "smile",
+      "grin",
+      "joke"
+     ],
+     "answer": 0,
+     "explain": "Laugh and cry are opposites."
+    },
+    {
+     "id": "win-lose",
+     "q": "What is the opposite of win?",
+     "options": [
+      "lose",
+      "play",
+      "score",
+      "beat"
+     ],
+     "answer": 0,
+     "explain": "Win and lose are opposites."
+    },
+    {
+     "id": "first-last",
+     "q": "What is the opposite of first?",
+     "options": [
+      "last",
+      "one",
+      "start",
+      "top"
+     ],
+     "answer": 0,
+     "explain": "First and last are opposites."
+    },
+    {
+     "id": "good-bad",
+     "q": "What is the opposite of good?",
+     "options": [
+      "bad",
+      "nice",
+      "kind",
+      "fine"
+     ],
+     "answer": 0,
+     "explain": "Good and bad are opposites."
+    },
+    {
+     "id": "young-old",
+     "q": "What is the opposite of young?",
+     "options": [
+      "old",
+      "small",
+      "little",
+      "new"
+     ],
+     "answer": 0,
+     "explain": "Young and old are opposites."
+    },
+    {
+     "id": "come-go",
+     "q": "What is the opposite of come?",
+     "options": [
+      "go",
+      "walk",
+      "run",
+      "arrive"
+     ],
+     "answer": 0,
+     "explain": "Come and go are opposites."
+    },
+    {
+     "id": "inside-outside",
+     "q": "What is the opposite of inside?",
+     "options": [
+      "outside",
+      "within",
+      "into",
+      "in"
+     ],
+     "answer": 0,
+     "explain": "Inside and outside are opposites."
     }
    ]
   },
@@ -317,6 +533,198 @@
      ],
      "answer": 0,
      "explain": "For more than one, add s: cups."
+    },
+    {
+     "id": "bird",
+     "q": "One bird, two ___?",
+     "options": [
+      "birds",
+      "bird",
+      "birdes",
+      "birdz"
+     ],
+     "answer": 0,
+     "explain": "For more than one, add s: birds."
+    },
+    {
+     "id": "cow",
+     "q": "One cow, two ___?",
+     "options": [
+      "cows",
+      "cow",
+      "cowes",
+      "cowz"
+     ],
+     "answer": 0,
+     "explain": "For more than one, add s: cows."
+    },
+    {
+     "id": "car",
+     "q": "One car, two ___?",
+     "options": [
+      "cars",
+      "car",
+      "cares",
+      "carz"
+     ],
+     "answer": 0,
+     "explain": "For more than one, add s: cars."
+    },
+    {
+     "id": "bag",
+     "q": "One bag, two ___?",
+     "options": [
+      "bags",
+      "bag",
+      "bages",
+      "bagz"
+     ],
+     "answer": 0,
+     "explain": "For more than one, add s: bags."
+    },
+    {
+     "id": "hat",
+     "q": "One hat, two ___?",
+     "options": [
+      "hats",
+      "hat",
+      "hates",
+      "hatz"
+     ],
+     "answer": 0,
+     "explain": "For more than one, add s: hats."
+    },
+    {
+     "id": "toy",
+     "q": "One toy, two ___?",
+     "options": [
+      "toys",
+      "toy",
+      "toies",
+      "toyz"
+     ],
+     "answer": 0,
+     "explain": "For more than one, add s: toys."
+    },
+    {
+     "id": "fox",
+     "q": "One fox, two ___?",
+     "options": [
+      "foxes",
+      "foxs",
+      "fox",
+      "foxies"
+     ],
+     "answer": 0,
+     "explain": "Words ending in x add es: foxes."
+    },
+    {
+     "id": "glass",
+     "q": "One glass, two ___?",
+     "options": [
+      "glasses",
+      "glasss",
+      "glass",
+      "glassies"
+     ],
+     "answer": 0,
+     "explain": "Words ending in s add es: glasses."
+    },
+    {
+     "id": "bench",
+     "q": "One bench, two ___?",
+     "options": [
+      "benches",
+      "benchs",
+      "bench",
+      "benchies"
+     ],
+     "answer": 0,
+     "explain": "Words ending in ch add es: benches."
+    },
+    {
+     "id": "brush",
+     "q": "One brush, two ___?",
+     "options": [
+      "brushes",
+      "brushs",
+      "brush",
+      "brushies"
+     ],
+     "answer": 0,
+     "explain": "Words ending in sh add es: brushes."
+    },
+    {
+     "id": "baby",
+     "q": "One baby, two ___?",
+     "options": [
+      "babies",
+      "babys",
+      "baby",
+      "babyes"
+     ],
+     "answer": 0,
+     "explain": "Change y to i and add es: babies."
+    },
+    {
+     "id": "lady",
+     "q": "One lady, two ___?",
+     "options": [
+      "ladies",
+      "ladys",
+      "lady",
+      "ladyes"
+     ],
+     "answer": 0,
+     "explain": "Change y to i and add es: ladies."
+    },
+    {
+     "id": "child",
+     "q": "One child, two ___?",
+     "options": [
+      "children",
+      "childs",
+      "child",
+      "childes"
+     ],
+     "answer": 0,
+     "explain": "One child, many children."
+    },
+    {
+     "id": "man",
+     "q": "One man, two ___?",
+     "options": [
+      "men",
+      "mans",
+      "man",
+      "manes"
+     ],
+     "answer": 0,
+     "explain": "One man, many men."
+    },
+    {
+     "id": "tooth",
+     "q": "One tooth, two ___?",
+     "options": [
+      "teeth",
+      "tooths",
+      "tooth",
+      "toothes"
+     ],
+     "answer": 0,
+     "explain": "One tooth, many teeth."
+    },
+    {
+     "id": "foot",
+     "q": "One foot, two ___?",
+     "options": [
+      "feet",
+      "foots",
+      "foot",
+      "footes"
+     ],
+     "answer": 0,
+     "explain": "One foot, two feet."
     }
    ]
   }

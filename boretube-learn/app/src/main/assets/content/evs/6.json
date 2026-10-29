@@ -4,8 +4,8 @@
  "grade": 6,
  "version": 1,
  "reviewed": {
-  "by": "",
-  "at": ""
+  "by": "parent (approved 2026-10-29, to be revised)",
+  "at": "2026-10-29"
  },
  "skills": [
   {
@@ -161,6 +161,150 @@
      ],
      "answer": 0,
      "explain": "Water is needed by living things but is not alive."
+    },
+    {
+     "id": "lw0",
+     "q": "Which one is living?",
+     "options": [
+      "earthworm",
+      "stone",
+      "pencil",
+      "glass"
+     ],
+     "answer": 0,
+     "explain": "An earthworm moves, eats and grows."
+    },
+    {
+     "id": "lw1",
+     "q": "Which one is non-living?",
+     "options": [
+      "bicycle",
+      "cow",
+      "rose",
+      "ant"
+     ],
+     "answer": 0,
+     "explain": "A bicycle does not grow or eat."
+    },
+    {
+     "id": "lw2",
+     "q": "Living things get rid of ___.",
+     "options": [
+      "waste",
+      "paint",
+      "metal",
+      "plastic"
+     ],
+     "answer": 0,
+     "explain": "Living things remove waste from their bodies."
+    },
+    {
+     "id": "lw3",
+     "q": "Which one is living?",
+     "options": [
+      "grass",
+      "sand",
+      "cloud",
+      "brick"
+     ],
+     "answer": 0,
+     "explain": "Grass grows and needs water."
+    },
+    {
+     "id": "lw4",
+     "q": "Which one is non-living?",
+     "options": [
+      "fire",
+      "bird",
+      "tree",
+      "snake"
+     ],
+     "answer": 0,
+     "explain": "Fire moves but does not grow or breathe."
+    },
+    {
+     "id": "lw5",
+     "q": "Plants make their own ___.",
+     "options": [
+      "food",
+      "water",
+      "soil",
+      "air"
+     ],
+     "answer": 0,
+     "explain": "Plants make food using sunlight."
+    },
+    {
+     "id": "lw6",
+     "q": "A hen's egg can become a ___.",
+     "options": [
+      "chick",
+      "stone",
+      "seed",
+      "plant"
+     ],
+     "answer": 0,
+     "explain": "A chick hatches from a hen's egg."
+    },
+    {
+     "id": "lw7",
+     "q": "Which one can breathe?",
+     "options": [
+      "frog",
+      "chair",
+      "cup",
+      "stone"
+     ],
+     "answer": 0,
+     "explain": "A frog breathes, so it is living."
+    },
+    {
+     "id": "lw8",
+     "q": "Which one is non-living?",
+     "options": [
+      "cloud",
+      "fish",
+      "tree",
+      "cat"
+     ],
+     "answer": 0,
+     "explain": "A cloud moves but is not alive."
+    },
+    {
+     "id": "lw9",
+     "q": "Living things die after their ___.",
+     "options": [
+      "lifespan",
+      "painting",
+      "washing",
+      "cooking"
+     ],
+     "answer": 0,
+     "explain": "Every living thing has a lifespan."
+    },
+    {
+     "id": "lw10",
+     "q": "A tadpole grows into a ___.",
+     "options": [
+      "frog",
+      "fish",
+      "snake",
+      "bird"
+     ],
+     "answer": 0,
+     "explain": "A tadpole slowly changes into a frog."
+    },
+    {
+     "id": "lw11",
+     "q": "Which one feels hungry?",
+     "options": [
+      "puppy",
+      "robot",
+      "doll",
+      "car"
+     ],
+     "answer": 0,
+     "explain": "A puppy is living, so it gets hungry."
     }
    ]
   },
@@ -317,6 +461,150 @@
      ],
      "answer": 0,
      "explain": "Our body needs lots of water."
+    },
+    {
+     "id": "nf0",
+     "q": "Fish and meat are rich in ___.",
+     "options": [
+      "protein",
+      "sugar",
+      "fibre",
+      "salt"
+     ],
+     "answer": 0,
+     "explain": "Fish and meat have lots of protein."
+    },
+    {
+     "id": "nf1",
+     "q": "Bread and potatoes give us ___.",
+     "options": [
+      "energy",
+      "bones",
+      "nails",
+      "hair"
+     ],
+     "answer": 0,
+     "explain": "Bread and potatoes are rich in carbohydrates."
+    },
+    {
+     "id": "nf2",
+     "q": "Lemons and amla are rich in vitamin ___.",
+     "options": [
+      "C",
+      "A",
+      "D",
+      "K"
+     ],
+     "answer": 0,
+     "explain": "Citrus fruits and amla have vitamin C."
+    },
+    {
+     "id": "nf3",
+     "q": "Sunlight helps our body make vitamin ___.",
+     "options": [
+      "D",
+      "A",
+      "B",
+      "C"
+     ],
+     "answer": 0,
+     "explain": "Our skin makes vitamin D in sunlight."
+    },
+    {
+     "id": "nf4",
+     "q": "Leafy vegetables are rich in ___.",
+     "options": [
+      "iron",
+      "fat",
+      "sugar",
+      "salt"
+     ],
+     "answer": 0,
+     "explain": "Spinach and greens have iron."
+    },
+    {
+     "id": "nf5",
+     "q": "Which food has a lot of fibre?",
+     "options": [
+      "fruits",
+      "sugar",
+      "butter",
+      "oil"
+     ],
+     "answer": 0,
+     "explain": "Fruits and vegetables are rich in fibre."
+    },
+    {
+     "id": "nf6",
+     "q": "Too little vitamin C can cause ___.",
+     "options": [
+      "scurvy",
+      "cold",
+      "fever",
+      "cough"
+     ],
+     "answer": 0,
+     "explain": "Scurvy makes gums bleed without vitamin C."
+    },
+    {
+     "id": "nf7",
+     "q": "Nuts and oils are rich in ___.",
+     "options": [
+      "fat",
+      "fibre",
+      "water",
+      "starch"
+     ],
+     "answer": 0,
+     "explain": "Nuts and oils give us fats."
+    },
+    {
+     "id": "nf8",
+     "q": "Milk and curd give us ___.",
+     "options": [
+      "calcium",
+      "iron",
+      "sugar",
+      "fibre"
+     ],
+     "answer": 0,
+     "explain": "Milk products are rich in calcium."
+    },
+    {
+     "id": "nf9",
+     "q": "Which meal is the most balanced?",
+     "options": [
+      "a thali",
+      "chips",
+      "sweets",
+      "cola"
+     ],
+     "answer": 0,
+     "explain": "A thali of dal, rice and sabzi has many nutrients."
+    },
+    {
+     "id": "nf10",
+     "q": "Water helps our body remove ___.",
+     "options": [
+      "waste",
+      "bones",
+      "muscles",
+      "teeth"
+     ],
+     "answer": 0,
+     "explain": "Water carries waste out of the body."
+    },
+    {
+     "id": "nf11",
+     "q": "Fried food has too much ___.",
+     "options": [
+      "fat",
+      "fibre",
+      "vitamin",
+      "water"
+     ],
+     "answer": 0,
+     "explain": "Frying adds lots of fat to food."
     }
    ]
   }

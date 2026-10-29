@@ -4,8 +4,8 @@
  "grade": 4,
  "version": 1,
  "reviewed": {
-  "by": "",
-  "at": ""
+  "by": "parent (approved 2026-10-29, to be revised)",
+  "at": "2026-10-29"
  },
  "skills": [
   {
@@ -160,6 +160,150 @@
      ],
      "answer": 0,
      "explain": "The zebra crossing is the safe place to cross."
+    },
+    {
+     "id": "tv0",
+     "q": "Which one has two wheels?",
+     "options": [
+      "bicycle",
+      "bus",
+      "car",
+      "truck"
+     ],
+     "answer": 0,
+     "explain": "A bicycle has two wheels."
+    },
+    {
+     "id": "tv1",
+     "q": "Which one carries many goods by road?",
+     "options": [
+      "truck",
+      "kite",
+      "boat",
+      "cycle"
+     ],
+     "answer": 0,
+     "explain": "A truck carries heavy goods by road."
+    },
+    {
+     "id": "tv2",
+     "q": "Which one runs on electricity under cities?",
+     "options": [
+      "metro",
+      "boat",
+      "cart",
+      "plane"
+     ],
+     "answer": 0,
+     "explain": "A metro train runs under many cities."
+    },
+    {
+     "id": "tv3",
+     "q": "Which one is the fastest?",
+     "options": [
+      "plane",
+      "bus",
+      "cycle",
+      "cart"
+     ],
+     "answer": 0,
+     "explain": "A plane is the fastest of these."
+    },
+    {
+     "id": "tv4",
+     "q": "Which one is rowed with oars?",
+     "options": [
+      "boat",
+      "bus",
+      "car",
+      "train"
+     ],
+     "answer": 0,
+     "explain": "A small boat is rowed with oars."
+    },
+    {
+     "id": "tv5",
+     "q": "Which one carries sick people quickly?",
+     "options": [
+      "ambulance",
+      "truck",
+      "tractor",
+      "cart"
+     ],
+     "answer": 0,
+     "explain": "An ambulance rushes sick people to hospital."
+    },
+    {
+     "id": "tv6",
+     "q": "Which one helps farmers in fields?",
+     "options": [
+      "tractor",
+      "plane",
+      "ship",
+      "metro"
+     ],
+     "answer": 0,
+     "explain": "A tractor pulls tools in the fields."
+    },
+    {
+     "id": "tv7",
+     "q": "We should wear a ___ on a bike.",
+     "options": [
+      "helmet",
+      "cap",
+      "scarf",
+      "crown"
+     ],
+     "answer": 0,
+     "explain": "A helmet keeps our head safe."
+    },
+    {
+     "id": "tv8",
+     "q": "In a car, we should wear a ___.",
+     "options": [
+      "seat belt",
+      "necklace",
+      "watch",
+      "ring"
+     ],
+     "answer": 0,
+     "explain": "A seat belt keeps us safe."
+    },
+    {
+     "id": "tv9",
+     "q": "Yellow traffic light means ___.",
+     "options": [
+      "wait",
+      "run",
+      "go fast",
+      "turn"
+     ],
+     "answer": 0,
+     "explain": "Yellow means wait and get ready."
+    },
+    {
+     "id": "tv10",
+     "q": "Which one does not need roads?",
+     "options": [
+      "plane",
+      "bus",
+      "car",
+      "truck"
+     ],
+     "answer": 0,
+     "explain": "A plane flies through the sky."
+    },
+    {
+     "id": "tv11",
+     "q": "Which one is pulled by horses?",
+     "options": [
+      "tonga",
+      "metro",
+      "scooter",
+      "van"
+     ],
+     "answer": 0,
+     "explain": "A tonga is a cart pulled by a horse."
     }
    ]
   },
@@ -316,6 +460,150 @@
      ],
      "answer": 0,
      "explain": "An ostrich is a bird that cannot fly."
+    },
+    {
+     "id": "ag0",
+     "q": "Which animal lays eggs?",
+     "options": [
+      "duck",
+      "dog",
+      "goat",
+      "horse"
+     ],
+     "answer": 0,
+     "explain": "A duck lays eggs."
+    },
+    {
+     "id": "ag1",
+     "q": "Which animal lays eggs?",
+     "options": [
+      "snake",
+      "cow",
+      "cat",
+      "lion"
+     ],
+     "answer": 0,
+     "explain": "Most snakes lay eggs."
+    },
+    {
+     "id": "ag2",
+     "q": "Which animal feeds milk to its babies?",
+     "options": [
+      "dog",
+      "hen",
+      "fish",
+      "frog"
+     ],
+     "answer": 0,
+     "explain": "A dog feeds its puppies milk."
+    },
+    {
+     "id": "ag3",
+     "q": "Which animal eats only plants?",
+     "options": [
+      "deer",
+      "tiger",
+      "lion",
+      "eagle"
+     ],
+     "answer": 0,
+     "explain": "A deer eats grass and leaves."
+    },
+    {
+     "id": "ag4",
+     "q": "Which animal eats only plants?",
+     "options": [
+      "elephant",
+      "lion",
+      "wolf",
+      "shark"
+     ],
+     "answer": 0,
+     "explain": "An elephant eats plants only."
+    },
+    {
+     "id": "ag5",
+     "q": "Which animal hunts other animals?",
+     "options": [
+      "tiger",
+      "cow",
+      "rabbit",
+      "deer"
+     ],
+     "answer": 0,
+     "explain": "A tiger hunts for its food."
+    },
+    {
+     "id": "ag6",
+     "q": "Which animal eats both plants and animals?",
+     "options": [
+      "bear",
+      "cow",
+      "goat",
+      "deer"
+     ],
+     "answer": 0,
+     "explain": "A bear eats fruits and fish."
+    },
+    {
+     "id": "ag7",
+     "q": "Which one is an insect?",
+     "options": [
+      "butterfly",
+      "crow",
+      "frog",
+      "fish"
+     ],
+     "answer": 0,
+     "explain": "A butterfly is an insect with six legs."
+    },
+    {
+     "id": "ag8",
+     "q": "Which one is an insect?",
+     "options": [
+      "bee",
+      "bat",
+      "snake",
+      "rat"
+     ],
+     "answer": 0,
+     "explain": "A bee is an insect."
+    },
+    {
+     "id": "ag9",
+     "q": "How many legs does a spider have?",
+     "options": [
+      "eight",
+      "six",
+      "four",
+      "two"
+     ],
+     "answer": 0,
+     "explain": "A spider has eight legs."
+    },
+    {
+     "id": "ag10",
+     "q": "Which animal has a pouch?",
+     "options": [
+      "kangaroo",
+      "cow",
+      "dog",
+      "cat"
+     ],
+     "answer": 0,
+     "explain": "A kangaroo carries its baby in a pouch."
+    },
+    {
+     "id": "ag11",
+     "q": "Which animal sleeps hanging upside down?",
+     "options": [
+      "bat",
+      "cow",
+      "hen",
+      "dog"
+     ],
+     "answer": 0,
+     "explain": "A bat sleeps hanging upside down."
     }
    ]
   }

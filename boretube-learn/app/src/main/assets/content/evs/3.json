@@ -4,8 +4,8 @@
  "grade": 3,
  "version": 1,
  "reviewed": {
-  "by": "",
-  "at": ""
+  "by": "parent (approved 2026-10-29, to be revised)",
+  "at": "2026-10-29"
  },
  "skills": [
   {
@@ -161,6 +161,150 @@
      ],
      "answer": 0,
      "explain": "Closing the tap saves water."
+    },
+    {
+     "id": "x0",
+     "q": "Water from a well is ___ water.",
+     "options": [
+      "ground",
+      "sea",
+      "rain",
+      "salt"
+     ],
+     "answer": 0,
+     "explain": "Well water comes from under the ground."
+    },
+    {
+     "id": "x1",
+     "q": "Ice is water that has become ___.",
+     "options": [
+      "solid",
+      "gas",
+      "steam",
+      "air"
+     ],
+     "answer": 0,
+     "explain": "Ice is frozen, solid water."
+    },
+    {
+     "id": "x2",
+     "q": "We should boil water to make it ___.",
+     "options": [
+      "safe",
+      "salty",
+      "cold",
+      "sweet"
+     ],
+     "answer": 0,
+     "explain": "Boiling kills germs in water."
+    },
+    {
+     "id": "x3",
+     "q": "Puddles dry up because of the ___.",
+     "options": [
+      "sun",
+      "moon",
+      "stars",
+      "wind chime"
+     ],
+     "answer": 0,
+     "explain": "The sun's heat dries puddles."
+    },
+    {
+     "id": "x4",
+     "q": "Which one holds the most water?",
+     "options": [
+      "sea",
+      "pond",
+      "well",
+      "bucket"
+     ],
+     "answer": 0,
+     "explain": "The sea holds a huge amount of water."
+    },
+    {
+     "id": "x5",
+     "q": "Fish breathe the air in ___.",
+     "options": [
+      "water",
+      "soil",
+      "sand",
+      "rocks"
+     ],
+     "answer": 0,
+     "explain": "Fish take air from water."
+    },
+    {
+     "id": "x6",
+     "q": "A leaking tap wastes ___.",
+     "options": [
+      "water",
+      "air",
+      "light",
+      "soil"
+     ],
+     "answer": 0,
+     "explain": "A dripping tap wastes water."
+    },
+    {
+     "id": "x7",
+     "q": "Rain is collected in ___ harvesting.",
+     "options": [
+      "rainwater",
+      "sunlight",
+      "wind",
+      "soil"
+     ],
+     "answer": 0,
+     "explain": "Rainwater harvesting saves rain for later."
+    },
+    {
+     "id": "x8",
+     "q": "Water is needed to grow ___.",
+     "options": [
+      "crops",
+      "rocks",
+      "metals",
+      "plastic"
+     ],
+     "answer": 0,
+     "explain": "Farmers need water to grow crops."
+    },
+    {
+     "id": "x9",
+     "q": "Which season brings the most rain?",
+     "options": [
+      "monsoon",
+      "winter",
+      "spring",
+      "summer"
+     ],
+     "answer": 0,
+     "explain": "The monsoon brings heavy rain."
+    },
+    {
+     "id": "x10",
+     "q": "Muddy water can be cleaned by ___.",
+     "options": [
+      "filtering",
+      "freezing",
+      "shaking",
+      "colouring"
+     ],
+     "answer": 0,
+     "explain": "A filter traps the mud."
+    },
+    {
+     "id": "x11",
+     "q": "Clouds are made of tiny drops of ___.",
+     "options": [
+      "water",
+      "milk",
+      "oil",
+      "sand"
+     ],
+     "answer": 0,
+     "explain": "Clouds are tiny water drops floating in air."
     }
    ]
   },
@@ -317,6 +461,150 @@
      ],
      "answer": 0,
      "explain": "Hens lay eggs."
+    },
+    {
+     "id": "fe0",
+     "q": "Which one comes from plants?",
+     "options": [
+      "wheat",
+      "egg",
+      "fish",
+      "milk"
+     ],
+     "answer": 0,
+     "explain": "Wheat grows in fields."
+    },
+    {
+     "id": "fe1",
+     "q": "Which one comes from animals?",
+     "options": [
+      "egg",
+      "rice",
+      "apple",
+      "dal"
+     ],
+     "answer": 0,
+     "explain": "Eggs come from hens."
+    },
+    {
+     "id": "fe2",
+     "q": "Sugar comes from ___.",
+     "options": [
+      "sugarcane",
+      "milk",
+      "salt",
+      "rice"
+     ],
+     "answer": 0,
+     "explain": "Sugar is made from sugarcane."
+    },
+    {
+     "id": "fe3",
+     "q": "Ghee is made from ___.",
+     "options": [
+      "milk",
+      "wheat",
+      "oil",
+      "rice"
+     ],
+     "answer": 0,
+     "explain": "Ghee is made from milk."
+    },
+    {
+     "id": "fe4",
+     "q": "Which one is a spice?",
+     "options": [
+      "turmeric",
+      "rice",
+      "milk",
+      "bread"
+     ],
+     "answer": 0,
+     "explain": "Turmeric is a yellow spice."
+    },
+    {
+     "id": "fe5",
+     "q": "Tea leaves grow on a ___.",
+     "options": [
+      "plant",
+      "cow",
+      "rock",
+      "hen"
+     ],
+     "answer": 0,
+     "explain": "Tea leaves come from tea plants."
+    },
+    {
+     "id": "fe6",
+     "q": "Which food is made from rice?",
+     "options": [
+      "idli",
+      "roti",
+      "omelette",
+      "paneer"
+     ],
+     "answer": 0,
+     "explain": "Idli batter is made from rice."
+    },
+    {
+     "id": "fe7",
+     "q": "Which one is a dry fruit?",
+     "options": [
+      "almond",
+      "mango",
+      "banana",
+      "melon"
+     ],
+     "answer": 0,
+     "explain": "Almonds are dry fruits."
+    },
+    {
+     "id": "fe8",
+     "q": "Which grain makes popcorn?",
+     "options": [
+      "corn",
+      "rice",
+      "wheat",
+      "dal"
+     ],
+     "answer": 0,
+     "explain": "Popcorn is made from corn."
+    },
+    {
+     "id": "fe9",
+     "q": "Which one should we eat less of?",
+     "options": [
+      "sweets",
+      "fruits",
+      "vegetables",
+      "dal"
+     ],
+     "answer": 0,
+     "explain": "Too many sweets harm our teeth."
+    },
+    {
+     "id": "fe10",
+     "q": "Jaggery is made from ___.",
+     "options": [
+      "sugarcane",
+      "milk",
+      "wheat",
+      "rice"
+     ],
+     "answer": 0,
+     "explain": "Jaggery is made from sugarcane juice."
+    },
+    {
+     "id": "fe11",
+     "q": "Which oil is made from coconuts?",
+     "options": [
+      "coconut oil",
+      "mustard oil",
+      "ghee",
+      "butter"
+     ],
+     "answer": 0,
+     "explain": "Coconut oil is pressed from coconuts."
     }
    ]
   }

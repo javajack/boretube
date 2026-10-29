@@ -4,8 +4,8 @@
  "grade": 4,
  "version": 1,
  "reviewed": {
-  "by": "",
-  "at": ""
+  "by": "parent (approved 2026-10-29, to be revised)",
+  "at": "2026-10-29"
  },
  "skills": [
   {
@@ -161,6 +161,198 @@
      ],
      "answer": 0,
      "explain": "Yesterday is the past: sing becomes sang."
+    },
+    {
+     "id": "swim-swam",
+     "q": "Yesterday, I ___ in the pool.",
+     "options": [
+      "swam",
+      "swim",
+      "swims",
+      "swimming"
+     ],
+     "answer": 0,
+     "explain": "Yesterday is the past: swim becomes swam."
+    },
+    {
+     "id": "read-read",
+     "q": "Yesterday, I ___ a story.",
+     "options": [
+      "read",
+      "reads",
+      "reading",
+      "readed"
+     ],
+     "answer": 0,
+     "explain": "Yesterday is the past: read becomes read."
+    },
+    {
+     "id": "buy-bought",
+     "q": "Yesterday, I ___ a pencil.",
+     "options": [
+      "bought",
+      "buy",
+      "buys",
+      "buyed"
+     ],
+     "answer": 0,
+     "explain": "Yesterday is the past: buy becomes bought."
+    },
+    {
+     "id": "sleep-slept",
+     "q": "Yesterday, I ___ early.",
+     "options": [
+      "slept",
+      "sleep",
+      "sleeps",
+      "sleeped"
+     ],
+     "answer": 0,
+     "explain": "Yesterday is the past: sleep becomes slept."
+    },
+    {
+     "id": "climb-climbed",
+     "q": "Yesterday, I ___ a tree.",
+     "options": [
+      "climbed",
+      "climb",
+      "climbs",
+      "climbing"
+     ],
+     "answer": 0,
+     "explain": "Yesterday is the past: climb becomes climbed."
+    },
+    {
+     "id": "draw-drew",
+     "q": "Yesterday, I ___ a cat.",
+     "options": [
+      "drew",
+      "draw",
+      "draws",
+      "drawed"
+     ],
+     "answer": 0,
+     "explain": "Yesterday is the past: draw becomes drew."
+    },
+    {
+     "id": "take-took",
+     "q": "Yesterday, I ___ a photo.",
+     "options": [
+      "took",
+      "take",
+      "takes",
+      "taked"
+     ],
+     "answer": 0,
+     "explain": "Yesterday is the past: take becomes took."
+    },
+    {
+     "id": "give-gave",
+     "q": "Yesterday, I ___ a gift.",
+     "options": [
+      "gave",
+      "give",
+      "gives",
+      "gived"
+     ],
+     "answer": 0,
+     "explain": "Yesterday is the past: give becomes gave."
+    },
+    {
+     "id": "come-came",
+     "q": "Yesterday, I ___ home late.",
+     "options": [
+      "came",
+      "come",
+      "comes",
+      "comed"
+     ],
+     "answer": 0,
+     "explain": "Yesterday is the past: come becomes came."
+    },
+    {
+     "id": "help-helped",
+     "q": "Yesterday, I ___ my mother.",
+     "options": [
+      "helped",
+      "help",
+      "helps",
+      "helping"
+     ],
+     "answer": 0,
+     "explain": "Yesterday is the past: help becomes helped."
+    },
+    {
+     "id": "find-found",
+     "q": "Yesterday, I ___ a coin.",
+     "options": [
+      "found",
+      "find",
+      "finds",
+      "finded"
+     ],
+     "answer": 0,
+     "explain": "Yesterday is the past: find becomes found."
+    },
+    {
+     "id": "fly-flew",
+     "q": "Yesterday, I ___ a kite.",
+     "options": [
+      "flew",
+      "fly",
+      "flies",
+      "flyed"
+     ],
+     "answer": 0,
+     "explain": "Yesterday is the past: fly becomes flew."
+    },
+    {
+     "id": "throw-threw",
+     "q": "Yesterday, I ___ a ball.",
+     "options": [
+      "threw",
+      "throw",
+      "throws",
+      "throwed"
+     ],
+     "answer": 0,
+     "explain": "Yesterday is the past: throw becomes threw."
+    },
+    {
+     "id": "dance-danced",
+     "q": "Yesterday, I ___ at a party.",
+     "options": [
+      "danced",
+      "dance",
+      "dances",
+      "dancing"
+     ],
+     "answer": 0,
+     "explain": "Yesterday is the past: dance becomes danced."
+    },
+    {
+     "id": "ride-rode",
+     "q": "Yesterday, I ___ a bicycle.",
+     "options": [
+      "rode",
+      "ride",
+      "rides",
+      "rided"
+     ],
+     "answer": 0,
+     "explain": "Yesterday is the past: ride becomes rode."
+    },
+    {
+     "id": "catch-caught",
+     "q": "Yesterday, I ___ a fish.",
+     "options": [
+      "caught",
+      "catch",
+      "catches",
+      "catched"
+     ],
+     "answer": 0,
+     "explain": "Yesterday is the past: catch becomes caught."
     }
    ]
   },
@@ -305,6 +497,182 @@
      ],
      "answer": 0,
      "explain": "Bright tells us more about the star."
+    },
+    {
+     "id": "green",
+     "q": "Which word describes? \"a green leaf\"",
+     "options": [
+      "green",
+      "a",
+      "leaf"
+     ],
+     "answer": 0,
+     "explain": "Green tells us more about the leaf."
+    },
+    {
+     "id": "fast",
+     "q": "Which word describes? \"the fast car\"",
+     "options": [
+      "fast",
+      "the",
+      "car"
+     ],
+     "answer": 0,
+     "explain": "Fast tells us more about the car."
+    },
+    {
+     "id": "round",
+     "q": "Which word describes? \"a round plate\"",
+     "options": [
+      "round",
+      "a",
+      "plate"
+     ],
+     "answer": 0,
+     "explain": "Round tells us more about the plate."
+    },
+    {
+     "id": "loud",
+     "q": "Which word describes? \"the loud drum\"",
+     "options": [
+      "loud",
+      "the",
+      "drum"
+     ],
+     "answer": 0,
+     "explain": "Loud tells us more about the drum."
+    },
+    {
+     "id": "kind",
+     "q": "Which word describes? \"a kind teacher\"",
+     "options": [
+      "kind",
+      "a",
+      "teacher"
+     ],
+     "answer": 0,
+     "explain": "Kind tells us more about the teacher."
+    },
+    {
+     "id": "dark",
+     "q": "Which word describes? \"the dark night\"",
+     "options": [
+      "dark",
+      "the",
+      "night"
+     ],
+     "answer": 0,
+     "explain": "Dark tells us more about the night."
+    },
+    {
+     "id": "heavy",
+     "q": "Which word describes? \"a heavy bag\"",
+     "options": [
+      "heavy",
+      "a",
+      "bag"
+     ],
+     "answer": 0,
+     "explain": "Heavy tells us more about the bag."
+    },
+    {
+     "id": "shiny",
+     "q": "Which word describes? \"the shiny coin\"",
+     "options": [
+      "shiny",
+      "the",
+      "coin"
+     ],
+     "answer": 0,
+     "explain": "Shiny tells us more about the coin."
+    },
+    {
+     "id": "brave",
+     "q": "Which word describes? \"a brave soldier\"",
+     "options": [
+      "brave",
+      "a",
+      "soldier"
+     ],
+     "answer": 0,
+     "explain": "Brave tells us more about the soldier."
+    },
+    {
+     "id": "long",
+     "q": "Which word describes? \"the long road\"",
+     "options": [
+      "long",
+      "the",
+      "road"
+     ],
+     "answer": 0,
+     "explain": "Long tells us more about the road."
+    },
+    {
+     "id": "sour",
+     "q": "Which word describes? \"a sour lemon\"",
+     "options": [
+      "sour",
+      "a",
+      "lemon"
+     ],
+     "answer": 0,
+     "explain": "Sour tells us more about the lemon."
+    },
+    {
+     "id": "clean",
+     "q": "Which word describes? \"the clean room\"",
+     "options": [
+      "clean",
+      "the",
+      "room"
+     ],
+     "answer": 0,
+     "explain": "Clean tells us more about the room."
+    },
+    {
+     "id": "tiny",
+     "q": "Which word describes? \"a tiny ant\"",
+     "options": [
+      "tiny",
+      "a",
+      "ant"
+     ],
+     "answer": 0,
+     "explain": "Tiny tells us more about the ant."
+    },
+    {
+     "id": "wet",
+     "q": "Which word describes? \"the wet towel\"",
+     "options": [
+      "wet",
+      "the",
+      "towel"
+     ],
+     "answer": 0,
+     "explain": "Wet tells us more about the towel."
+    },
+    {
+     "id": "busy",
+     "q": "Which word describes? \"a busy market\"",
+     "options": [
+      "busy",
+      "a",
+      "market"
+     ],
+     "answer": 0,
+     "explain": "Busy tells us more about the market."
+    },
+    {
+     "id": "funny",
+     "q": "Which word describes? \"the funny clown\"",
+     "options": [
+      "funny",
+      "the",
+      "clown"
+     ],
+     "answer": 0,
+     "explain": "Funny tells us more about the clown."
     }
    ]
   }

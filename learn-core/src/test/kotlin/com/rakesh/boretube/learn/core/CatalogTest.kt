@@ -17,7 +17,7 @@ class CatalogTest {
 
     private val pack = Pack(
         id = "english-1", subject = "english", grade = 1, reviewed = Reviewed("parent", "2026-10-29"),
-        skills = listOf(PackSkillDoc("en1.naming", "Naming words", "EN-1.07", "Aa", listOf("quickfire", "catch"), List(12) { item(it) })),
+        skills = listOf(PackSkillDoc("en1.naming", "Naming words", "EN-1.07", "Aa", listOf("quickfire", "catch"), List(24) { item(it) })),
     )
 
     @Test fun mathsCatalogKeepsTheLadder() {
@@ -95,7 +95,7 @@ class CatalogTest {
             item(5, picture = "unicorn"),
         ))))
         val errs = PackValidator.check(bad, pictures = setOf("cat"))
-        for (needle in listOf("answer index", "options repeat", "12 words", "one sentence", "unknown picture", "at least 12 items")) {
+        for (needle in listOf("answer index", "options repeat", "12 words", "one sentence", "unknown picture", "at least 24 items")) {
             assertTrue("$needle in $errs", errs.any { needle in it })
         }
         assertNotNull(PackValidator.check(pack.copy(subject = "art"), emptySet()).firstOrNull { "subject" in it })

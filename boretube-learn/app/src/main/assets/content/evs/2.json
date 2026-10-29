@@ -4,8 +4,8 @@
  "grade": 2,
  "version": 1,
  "reviewed": {
-  "by": "",
-  "at": ""
+  "by": "parent (approved 2026-10-29, to be revised)",
+  "at": "2026-10-29"
  },
  "skills": [
   {
@@ -161,6 +161,150 @@
      ],
      "answer": 0,
      "explain": "A pig lives in a sty."
+    },
+    {
+     "id": "k0",
+     "q": "Where does a tiger live?",
+     "options": [
+      "den",
+      "nest",
+      "hive",
+      "web"
+     ],
+     "answer": 0,
+     "explain": "A tiger lives in a den."
+    },
+    {
+     "id": "k1",
+     "q": "Where does a snake live?",
+     "options": [
+      "hole",
+      "nest",
+      "hive",
+      "stable"
+     ],
+     "answer": 0,
+     "explain": "A snake lives in a hole."
+    },
+    {
+     "id": "k2",
+     "q": "Where does a frog live?",
+     "options": [
+      "pond",
+      "nest",
+      "hive",
+      "stable"
+     ],
+     "answer": 0,
+     "explain": "A frog lives in a pond."
+    },
+    {
+     "id": "k3",
+     "q": "Where does a monkey live?",
+     "options": [
+      "tree",
+      "hive",
+      "web",
+      "kennel"
+     ],
+     "answer": 0,
+     "explain": "A monkey lives in a tree."
+    },
+    {
+     "id": "k4",
+     "q": "Where does a parrot live?",
+     "options": [
+      "nest",
+      "kennel",
+      "hive",
+      "sty"
+     ],
+     "answer": 0,
+     "explain": "A parrot lives in a nest."
+    },
+    {
+     "id": "k5",
+     "q": "Where does a duck live?",
+     "options": [
+      "pond",
+      "hive",
+      "web",
+      "den"
+     ],
+     "answer": 0,
+     "explain": "A duck lives in a pond."
+    },
+    {
+     "id": "k6",
+     "q": "Where does a camel live?",
+     "options": [
+      "desert",
+      "sea",
+      "pond",
+      "hive"
+     ],
+     "answer": 0,
+     "explain": "A camel lives in a desert."
+    },
+    {
+     "id": "k7",
+     "q": "Where does a whale live?",
+     "options": [
+      "sea",
+      "desert",
+      "nest",
+      "den"
+     ],
+     "answer": 0,
+     "explain": "A whale lives in a sea."
+    },
+    {
+     "id": "k8",
+     "q": "Where does a mouse live?",
+     "options": [
+      "hole",
+      "nest",
+      "hive",
+      "web"
+     ],
+     "answer": 0,
+     "explain": "A mouse lives in a hole."
+    },
+    {
+     "id": "k9",
+     "q": "Where does a sparrow live?",
+     "options": [
+      "nest",
+      "stable",
+      "den",
+      "sty"
+     ],
+     "answer": 0,
+     "explain": "A sparrow lives in a nest."
+    },
+    {
+     "id": "k10",
+     "q": "Where does a buffalo live?",
+     "options": [
+      "shed",
+      "nest",
+      "hive",
+      "web"
+     ],
+     "answer": 0,
+     "explain": "A buffalo lives in a shed."
+    },
+    {
+     "id": "k11",
+     "q": "Where does a goat live?",
+     "options": [
+      "shed",
+      "nest",
+      "web",
+      "hive"
+     ],
+     "answer": 0,
+     "explain": "A goat lives in a shed."
     }
    ]
   },
@@ -317,6 +461,150 @@
      ],
      "answer": 0,
      "explain": "A tree trunk is a big, hard stem."
+    },
+    {
+     "id": "q0",
+     "q": "We eat the leaves of ___.",
+     "options": [
+      "cabbage",
+      "carrot",
+      "potato",
+      "mango"
+     ],
+     "answer": 0,
+     "explain": "Cabbage leaves are eaten as a vegetable."
+    },
+    {
+     "id": "q1",
+     "q": "We eat the root of ___.",
+     "options": [
+      "radish",
+      "spinach",
+      "mango",
+      "peas"
+     ],
+     "answer": 0,
+     "explain": "A radish is a root we eat."
+    },
+    {
+     "id": "q2",
+     "q": "We eat the seeds of ___.",
+     "options": [
+      "peas",
+      "carrot",
+      "spinach",
+      "radish"
+     ],
+     "answer": 0,
+     "explain": "We eat the seeds of the pea plant."
+    },
+    {
+     "id": "q3",
+     "q": "We eat the flower of ___.",
+     "options": [
+      "cauliflower",
+      "carrot",
+      "potato",
+      "mango"
+     ],
+     "answer": 0,
+     "explain": "Cauliflower is a flower we eat."
+    },
+    {
+     "id": "q4",
+     "q": "Which part carries water up the plant?",
+     "options": [
+      "stem",
+      "flower",
+      "fruit",
+      "seed"
+     ],
+     "answer": 0,
+     "explain": "The stem carries water up to the leaves."
+    },
+    {
+     "id": "q5",
+     "q": "Which part has seeds inside?",
+     "options": [
+      "fruit",
+      "root",
+      "stem",
+      "leaf"
+     ],
+     "answer": 0,
+     "explain": "Fruits keep the seeds inside."
+    },
+    {
+     "id": "q6",
+     "q": "Which plant has thorns?",
+     "options": [
+      "rose",
+      "mango",
+      "grass",
+      "banana"
+     ],
+     "answer": 0,
+     "explain": "A rose plant has thorns on its stem."
+    },
+    {
+     "id": "q7",
+     "q": "Which plant is very big and strong?",
+     "options": [
+      "tree",
+      "grass",
+      "herb",
+      "creeper"
+     ],
+     "answer": 0,
+     "explain": "A tree is big with a hard trunk."
+    },
+    {
+     "id": "q8",
+     "q": "Which plant climbs on a wall?",
+     "options": [
+      "creeper",
+      "tree",
+      "shrub",
+      "grass"
+     ],
+     "answer": 0,
+     "explain": "A creeper needs support to climb."
+    },
+    {
+     "id": "q9",
+     "q": "Which plant grows in water?",
+     "options": [
+      "lotus",
+      "cactus",
+      "mango",
+      "rose"
+     ],
+     "answer": 0,
+     "explain": "A lotus grows in ponds."
+    },
+    {
+     "id": "q10",
+     "q": "Which plant grows in the desert?",
+     "options": [
+      "cactus",
+      "lotus",
+      "rice",
+      "rose"
+     ],
+     "answer": 0,
+     "explain": "A cactus can live with little water."
+    },
+    {
+     "id": "q11",
+     "q": "Which part of a plant smells sweet?",
+     "options": [
+      "flower",
+      "root",
+      "stem",
+      "seed"
+     ],
+     "answer": 0,
+     "explain": "Many flowers smell sweet."
     }
    ]
   }

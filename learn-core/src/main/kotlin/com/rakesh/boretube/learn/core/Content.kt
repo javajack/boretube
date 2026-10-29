@@ -55,7 +55,7 @@ data class Item(
 object PackValidator {
     val SUBJECTS = setOf("english", "evs")
     val FORMATS = setOf("quickfire", "catch")
-    const val MIN_ITEMS = 12
+    const val MIN_ITEMS = 24
     private val JARGON = listOf("commutative", "numerator", "denominator", "associative", "quotient", "dividend", "integer", "operand")
 
     fun check(p: Pack, pictures: Set<String>): List<String> {

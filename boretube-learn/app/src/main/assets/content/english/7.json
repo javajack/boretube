@@ -4,8 +4,8 @@
  "grade": 7,
  "version": 1,
  "reviewed": {
-  "by": "",
-  "at": ""
+  "by": "parent (approved 2026-10-29, to be revised)",
+  "at": "2026-10-29"
  },
  "skills": [
   {
@@ -160,6 +160,150 @@
      ],
      "answer": 0,
      "explain": "This evening is later today: will cook."
+    },
+    {
+     "id": "u0",
+     "q": "Right now, Ravi ___ his homework.",
+     "options": [
+      "is doing",
+      "did",
+      "will do",
+      "does"
+     ],
+     "answer": 0,
+     "explain": "Right now means it is happening: is doing."
+    },
+    {
+     "id": "u1",
+     "q": "Last Sunday, we ___ a picnic.",
+     "options": [
+      "had",
+      "have",
+      "will have",
+      "are having"
+     ],
+     "answer": 0,
+     "explain": "Last Sunday means the past: had."
+    },
+    {
+     "id": "u2",
+     "q": "Next week, the school ___.",
+     "options": [
+      "will reopen",
+      "reopened",
+      "reopens",
+      "was reopening"
+     ],
+     "answer": 0,
+     "explain": "Next week means later: will reopen."
+    },
+    {
+     "id": "u3",
+     "q": "Look, the kite ___ high!",
+     "options": [
+      "is flying",
+      "flew",
+      "will fly",
+      "flies"
+     ],
+     "answer": 0,
+     "explain": "Look means it is happening now: is flying."
+    },
+    {
+     "id": "u4",
+     "q": "Long ago, kings ___ in forts.",
+     "options": [
+      "lived",
+      "live",
+      "will live",
+      "are living"
+     ],
+     "answer": 0,
+     "explain": "Long ago means the past: lived."
+    },
+    {
+     "id": "u5",
+     "q": "Tomorrow, it ___ cold.",
+     "options": [
+      "will be",
+      "was",
+      "is",
+      "were"
+     ],
+     "answer": 0,
+     "explain": "Tomorrow means later: will be."
+    },
+    {
+     "id": "u6",
+     "q": "At the moment, she ___ tea.",
+     "options": [
+      "is drinking",
+      "drank",
+      "will drink",
+      "drinks"
+     ],
+     "answer": 0,
+     "explain": "At the moment means now: is drinking."
+    },
+    {
+     "id": "u7",
+     "q": "In 2020, I ___ five.",
+     "options": [
+      "was",
+      "am",
+      "will be",
+      "is"
+     ],
+     "answer": 0,
+     "explain": "In 2020 is the past: was."
+    },
+    {
+     "id": "u8",
+     "q": "Later today, we ___ cricket.",
+     "options": [
+      "will play",
+      "played",
+      "play",
+      "were playing"
+     ],
+     "answer": 0,
+     "explain": "Later today means the future: will play."
+    },
+    {
+     "id": "u9",
+     "q": "Hush, the baby ___!",
+     "options": [
+      "is sleeping",
+      "slept",
+      "will sleep",
+      "sleeps"
+     ],
+     "answer": 0,
+     "explain": "Hush means it is happening now: is sleeping."
+    },
+    {
+     "id": "u10",
+     "q": "Yesterday, the shop ___ early.",
+     "options": [
+      "closed",
+      "closes",
+      "will close",
+      "is closing"
+     ],
+     "answer": 0,
+     "explain": "Yesterday means the past: closed."
+    },
+    {
+     "id": "u11",
+     "q": "Soon, the mangoes ___ ripe.",
+     "options": [
+      "will be",
+      "were",
+      "was",
+      "are being"
+     ],
+     "answer": 0,
+     "explain": "Soon means later: will be."
     }
    ]
   },
@@ -303,6 +447,138 @@
      ],
      "answer": 0,
      "explain": "One bag, so we use is."
+    },
+    {
+     "id": "b0",
+     "q": "The birds ___ flying.",
+     "options": [
+      "are",
+      "is",
+      "am"
+     ],
+     "answer": 0,
+     "explain": "Birds means many, so we use are."
+    },
+    {
+     "id": "b1",
+     "q": "My father ___ tall.",
+     "options": [
+      "is",
+      "are",
+      "am"
+     ],
+     "answer": 0,
+     "explain": "Father is one person, so we use is."
+    },
+    {
+     "id": "b2",
+     "q": "They ___ my cousins.",
+     "options": [
+      "are",
+      "is",
+      "am"
+     ],
+     "answer": 0,
+     "explain": "They means many, so we use are."
+    },
+    {
+     "id": "b3",
+     "q": "The tea ___ hot.",
+     "options": [
+      "is",
+      "are",
+      "am"
+     ],
+     "answer": 0,
+     "explain": "Tea is one thing, so we use is."
+    },
+    {
+     "id": "b4",
+     "q": "I ___ in Class 7.",
+     "options": [
+      "am",
+      "is",
+      "are"
+     ],
+     "answer": 0,
+     "explain": "With I, we always use am."
+    },
+    {
+     "id": "b5",
+     "q": "These books ___ new.",
+     "options": [
+      "are",
+      "is",
+      "am"
+     ],
+     "answer": 0,
+     "explain": "These books means many, so we use are."
+    },
+    {
+     "id": "b6",
+     "q": "She ___ a good dancer.",
+     "options": [
+      "is",
+      "are",
+      "am"
+     ],
+     "answer": 0,
+     "explain": "She is one person, so we use is."
+    },
+    {
+     "id": "b7",
+     "q": "The cows ___ in the field.",
+     "options": [
+      "are",
+      "is",
+      "am"
+     ],
+     "answer": 0,
+     "explain": "Cows means many, so we use are."
+    },
+    {
+     "id": "b8",
+     "q": "Our school ___ big.",
+     "options": [
+      "is",
+      "are",
+      "am"
+     ],
+     "answer": 0,
+     "explain": "One school, so we use is."
+    },
+    {
+     "id": "b9",
+     "q": "You and Riya ___ late.",
+     "options": [
+      "are",
+      "is",
+      "am"
+     ],
+     "answer": 0,
+     "explain": "Two people means we use are."
+    },
+    {
+     "id": "b10",
+     "q": "The window ___ open.",
+     "options": [
+      "is",
+      "are",
+      "am"
+     ],
+     "answer": 0,
+     "explain": "One window, so we use is."
+    },
+    {
+     "id": "b11",
+     "q": "My shoes ___ dirty.",
+     "options": [
+      "are",
+      "is",
+      "am"
+     ],
+     "answer": 0,
+     "explain": "Shoes means many, so we use are."
     }
    ]
   }

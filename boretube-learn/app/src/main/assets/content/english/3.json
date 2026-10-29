@@ -4,8 +4,8 @@
  "grade": 3,
  "version": 1,
  "reviewed": {
-  "by": "",
-  "at": ""
+  "by": "parent (approved 2026-10-29, to be revised)",
+  "at": "2026-10-29"
  },
  "skills": [
   {
@@ -136,6 +136,166 @@
      ],
      "answer": 0,
      "explain": "Mango starts with an m sound, so we say a mango."
+    },
+    {
+     "id": "ant",
+     "q": "___ ant",
+     "options": [
+      "an",
+      "a"
+     ],
+     "answer": 0,
+     "explain": "Ant starts with a vowel sound, so we say an ant."
+    },
+    {
+     "id": "elephant",
+     "q": "___ elephant",
+     "options": [
+      "an",
+      "a"
+     ],
+     "answer": 0,
+     "explain": "Elephant starts with a vowel sound, so we say an elephant."
+    },
+    {
+     "id": "onion",
+     "q": "___ onion",
+     "options": [
+      "an",
+      "a"
+     ],
+     "answer": 0,
+     "explain": "Onion starts with a vowel sound, so we say an onion."
+    },
+    {
+     "id": "ink pen",
+     "q": "___ ink pen",
+     "options": [
+      "an",
+      "a"
+     ],
+     "answer": 0,
+     "explain": "Ink starts with a vowel sound, so we say an ink pen."
+    },
+    {
+     "id": "eagle",
+     "q": "___ eagle",
+     "options": [
+      "an",
+      "a"
+     ],
+     "answer": 0,
+     "explain": "Eagle starts with a vowel sound, so we say an eagle."
+    },
+    {
+     "id": "igloo",
+     "q": "___ igloo",
+     "options": [
+      "an",
+      "a"
+     ],
+     "answer": 0,
+     "explain": "Igloo starts with a vowel sound, so we say an igloo."
+    },
+    {
+     "id": "arm",
+     "q": "___ arm",
+     "options": [
+      "an",
+      "a"
+     ],
+     "answer": 0,
+     "explain": "Arm starts with a vowel sound, so we say an arm."
+    },
+    {
+     "id": "hour",
+     "q": "___ hour",
+     "options": [
+      "an",
+      "a"
+     ],
+     "answer": 0,
+     "explain": "Hour starts with an o sound, so we say an hour."
+    },
+    {
+     "id": "box",
+     "q": "___ box",
+     "options": [
+      "a",
+      "an"
+     ],
+     "answer": 0,
+     "explain": "Box starts with a b sound, so we say a box."
+    },
+    {
+     "id": "pen",
+     "q": "___ pen",
+     "options": [
+      "a",
+      "an"
+     ],
+     "answer": 0,
+     "explain": "Pen starts with a p sound, so we say a pen."
+    },
+    {
+     "id": "lion",
+     "q": "___ lion",
+     "options": [
+      "a",
+      "an"
+     ],
+     "answer": 0,
+     "explain": "Lion starts with an l sound, so we say a lion."
+    },
+    {
+     "id": "rose",
+     "q": "___ rose",
+     "options": [
+      "a",
+      "an"
+     ],
+     "answer": 0,
+     "explain": "Rose starts with an r sound, so we say a rose."
+    },
+    {
+     "id": "uniform",
+     "q": "___ uniform",
+     "options": [
+      "a",
+      "an"
+     ],
+     "answer": 0,
+     "explain": "Uniform starts with a y sound, so we say a uniform."
+    },
+    {
+     "id": "school",
+     "q": "___ school",
+     "options": [
+      "a",
+      "an"
+     ],
+     "answer": 0,
+     "explain": "School starts with an s sound, so we say a school."
+    },
+    {
+     "id": "girl",
+     "q": "___ girl",
+     "options": [
+      "a",
+      "an"
+     ],
+     "answer": 0,
+     "explain": "Girl starts with a g sound, so we say a girl."
+    },
+    {
+     "id": "van",
+     "q": "___ van",
+     "options": [
+      "a",
+      "an"
+     ],
+     "answer": 0,
+     "explain": "Van starts with a v sound, so we say a van."
     }
    ]
   },
@@ -292,6 +452,222 @@
      ],
      "answer": 0,
      "explain": "An action word tells what we do: throw."
+    },
+    {
+     "id": "kick",
+     "q": "Which one is an action word?",
+     "options": [
+      "kick",
+      "ball",
+      "goal",
+      "fast"
+     ],
+     "answer": 0,
+     "explain": "An action word tells what we do: kick."
+    },
+    {
+     "id": "draw",
+     "q": "Which one is an action word?",
+     "options": [
+      "draw",
+      "paper",
+      "colour",
+      "nice"
+     ],
+     "answer": 0,
+     "explain": "An action word tells what we do: draw."
+    },
+    {
+     "id": "wash",
+     "q": "Which one is an action word?",
+     "options": [
+      "wash",
+      "soap",
+      "clean",
+      "hands"
+     ],
+     "answer": 0,
+     "explain": "An action word tells what we do: wash."
+    },
+    {
+     "id": "clap",
+     "q": "Which one is an action word?",
+     "options": [
+      "clap",
+      "hands",
+      "loud",
+      "song"
+     ],
+     "answer": 0,
+     "explain": "An action word tells what we do: clap."
+    },
+    {
+     "id": "laugh",
+     "q": "Which one is an action word?",
+     "options": [
+      "laugh",
+      "joke",
+      "funny",
+      "friend"
+     ],
+     "answer": 0,
+     "explain": "An action word tells what we do: laugh."
+    },
+    {
+     "id": "cry",
+     "q": "Which one is an action word?",
+     "options": [
+      "cry",
+      "baby",
+      "tears",
+      "sad"
+     ],
+     "answer": 0,
+     "explain": "An action word tells what we do: cry."
+    },
+    {
+     "id": "push",
+     "q": "Which one is an action word?",
+     "options": [
+      "push",
+      "door",
+      "heavy",
+      "cart"
+     ],
+     "answer": 0,
+     "explain": "An action word tells what we do: push."
+    },
+    {
+     "id": "dig",
+     "q": "Which one is an action word?",
+     "options": [
+      "dig",
+      "soil",
+      "deep",
+      "garden"
+     ],
+     "answer": 0,
+     "explain": "An action word tells what we do: dig."
+    },
+    {
+     "id": "bake",
+     "q": "Which one is an action word?",
+     "options": [
+      "bake",
+      "cake",
+      "oven",
+      "warm"
+     ],
+     "answer": 0,
+     "explain": "An action word tells what we do: bake."
+    },
+    {
+     "id": "paint",
+     "q": "Which one is an action word?",
+     "options": [
+      "paint",
+      "wall",
+      "brush",
+      "blue"
+     ],
+     "answer": 0,
+     "explain": "An action word tells what we do: paint."
+    },
+    {
+     "id": "catch",
+     "q": "Which one is an action word?",
+     "options": [
+      "catch",
+      "ball",
+      "quick",
+      "net"
+     ],
+     "answer": 0,
+     "explain": "An action word tells what we do: catch."
+    },
+    {
+     "id": "fly",
+     "q": "Which one is an action word?",
+     "options": [
+      "fly",
+      "bird",
+      "sky",
+      "high"
+     ],
+     "answer": 0,
+     "explain": "An action word tells what we do: fly."
+    },
+    {
+     "id": "ride",
+     "q": "Which one is an action word?",
+     "options": [
+      "ride",
+      "bicycle",
+      "road",
+      "fast"
+     ],
+     "answer": 0,
+     "explain": "An action word tells what we do: ride."
+    },
+    {
+     "id": "carry",
+     "q": "Which one is an action word?",
+     "options": [
+      "carry",
+      "bag",
+      "heavy",
+      "box"
+     ],
+     "answer": 0,
+     "explain": "An action word tells what we do: carry."
+    },
+    {
+     "id": "listen",
+     "q": "Which one is an action word?",
+     "options": [
+      "listen",
+      "music",
+      "ears",
+      "quiet"
+     ],
+     "answer": 0,
+     "explain": "An action word tells what we do: listen."
+    },
+    {
+     "id": "shout",
+     "q": "Which one is an action word?",
+     "options": [
+      "shout",
+      "loud",
+      "voice",
+      "angry"
+     ],
+     "answer": 0,
+     "explain": "An action word tells what we do: shout."
+    },
+    {
+     "id": "hug",
+     "q": "Which one is an action word?",
+     "options": [
+      "hug",
+      "mother",
+      "warm",
+      "arms"
+     ],
+     "answer": 0,
+     "explain": "An action word tells what we do: hug."
+    },
+    {
+     "id": "drink",
+     "q": "Which one is an action word?",
+     "options": [
+      "drink",
+      "water",
+      "glass",
+      "cold"
+     ],
+     "answer": 0,
+     "explain": "An action word tells what we do: drink."
     }
    ]
   }

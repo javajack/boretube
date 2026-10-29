@@ -4,8 +4,8 @@
  "grade": 6,
  "version": 1,
  "reviewed": {
-  "by": "",
-  "at": ""
+  "by": "parent (approved 2026-10-29, to be revised)",
+  "at": "2026-10-29"
  },
  "skills": [
   {
@@ -161,6 +161,150 @@
      ],
      "answer": 0,
      "explain": "Higher than something means above."
+    },
+    {
+     "id": "pq0",
+     "q": "The milk is ___ the glass. (inside it)",
+     "options": [
+      "in",
+      "on",
+      "under",
+      "behind"
+     ],
+     "answer": 0,
+     "explain": "Inside something means in."
+    },
+    {
+     "id": "pq1",
+     "q": "The fan is ___ the bed. (higher than it)",
+     "options": [
+      "above",
+      "under",
+      "in",
+      "behind"
+     ],
+     "answer": 0,
+     "explain": "Higher than something means above."
+    },
+    {
+     "id": "pq2",
+     "q": "The bag is ___ the chair. (below it)",
+     "options": [
+      "under",
+      "on",
+      "in",
+      "above"
+     ],
+     "answer": 0,
+     "explain": "Below something means under."
+    },
+    {
+     "id": "pq3",
+     "q": "The clock is ___ the wall. (on its surface)",
+     "options": [
+      "on",
+      "under",
+      "in",
+      "behind"
+     ],
+     "answer": 0,
+     "explain": "On the surface of something means on."
+    },
+    {
+     "id": "pq4",
+     "q": "The tree is ___ the house. (at its back)",
+     "options": [
+      "behind",
+      "in",
+      "on",
+      "under"
+     ],
+     "answer": 0,
+     "explain": "At the back of something means behind."
+    },
+    {
+     "id": "pq5",
+     "q": "The park is ___ the home. (close to it)",
+     "options": [
+      "near",
+      "under",
+      "in",
+      "on"
+     ],
+     "answer": 0,
+     "explain": "Close to something means near."
+    },
+    {
+     "id": "pq6",
+     "q": "The baby is ___ the mother and father. (in the middle)",
+     "options": [
+      "between",
+      "on",
+      "under",
+      "above"
+     ],
+     "answer": 0,
+     "explain": "In the middle of two means between."
+    },
+    {
+     "id": "pq7",
+     "q": "The fish is ___ the pond. (inside it)",
+     "options": [
+      "in",
+      "on",
+      "above",
+      "behind"
+     ],
+     "answer": 0,
+     "explain": "Inside something means in."
+    },
+    {
+     "id": "pq8",
+     "q": "The cat is ___ the sofa. (on top of it)",
+     "options": [
+      "on",
+      "under",
+      "in",
+      "behind"
+     ],
+     "answer": 0,
+     "explain": "On top of something means on."
+    },
+    {
+     "id": "pq9",
+     "q": "The plane is ___ the clouds. (higher than them)",
+     "options": [
+      "above",
+      "under",
+      "in",
+      "behind"
+     ],
+     "answer": 0,
+     "explain": "Higher than something means above."
+    },
+    {
+     "id": "pq10",
+     "q": "The mouse is ___ the cupboard. (below it)",
+     "options": [
+      "under",
+      "on",
+      "in",
+      "above"
+     ],
+     "answer": 0,
+     "explain": "Below something means under."
+    },
+    {
+     "id": "pq11",
+     "q": "The car is ___ the bus. (at its back)",
+     "options": [
+      "behind",
+      "in",
+      "on",
+      "above"
+     ],
+     "answer": 0,
+     "explain": "At the back of something means behind."
     }
    ]
   },
@@ -317,6 +461,150 @@
      ],
      "answer": 0,
      "explain": "Many brothers means they."
+    },
+    {
+     "id": "pp0",
+     "q": "Sita has a cat. ___ feeds it daily.",
+     "options": [
+      "She",
+      "He",
+      "It",
+      "They"
+     ],
+     "answer": 0,
+     "explain": "Sita is a girl, so we use she."
+    },
+    {
+     "id": "pp1",
+     "q": "Raju is in Class 6. ___ likes maths.",
+     "options": [
+      "He",
+      "She",
+      "It",
+      "They"
+     ],
+     "answer": 0,
+     "explain": "Raju is a boy, so we use he."
+    },
+    {
+     "id": "pp2",
+     "q": "The cat has kittens. ___ is a good mother.",
+     "options": [
+      "It",
+      "He",
+      "She",
+      "We"
+     ],
+     "answer": 0,
+     "explain": "A cat is an animal, so we use it."
+    },
+    {
+     "id": "pp3",
+     "q": "Amit and Neha are twins. ___ were born together.",
+     "options": [
+      "They",
+      "He",
+      "She",
+      "It"
+     ],
+     "answer": 0,
+     "explain": "Two people means they."
+    },
+    {
+     "id": "pp4",
+     "q": "Mina and I are friends. ___ walk to school.",
+     "options": [
+      "We",
+      "They",
+      "She",
+      "It"
+     ],
+     "answer": 0,
+     "explain": "Mina and I means we."
+    },
+    {
+     "id": "pp5",
+     "q": "My father is a farmer. ___ grows wheat.",
+     "options": [
+      "He",
+      "She",
+      "It",
+      "They"
+     ],
+     "answer": 0,
+     "explain": "Father is a man, so we use he."
+    },
+    {
+     "id": "pp6",
+     "q": "The book is new. ___ has many pictures.",
+     "options": [
+      "It",
+      "He",
+      "She",
+      "They"
+     ],
+     "answer": 0,
+     "explain": "A book is a thing, so we use it."
+    },
+    {
+     "id": "pp7",
+     "q": "The girls are singing. ___ sing very well.",
+     "options": [
+      "They",
+      "She",
+      "It",
+      "He"
+     ],
+     "answer": 0,
+     "explain": "Many girls means they."
+    },
+    {
+     "id": "pp8",
+     "q": "Grandma is visiting. ___ brings sweets.",
+     "options": [
+      "She",
+      "He",
+      "It",
+      "They"
+     ],
+     "answer": 0,
+     "explain": "Grandma is a woman, so we use she."
+    },
+    {
+     "id": "pp9",
+     "q": "The river is wide. ___ flows to the sea.",
+     "options": [
+      "It",
+      "He",
+      "She",
+      "They"
+     ],
+     "answer": 0,
+     "explain": "A river is a thing, so we use it."
+    },
+    {
+     "id": "pp10",
+     "q": "You and I won. ___ are the champions.",
+     "options": [
+      "We",
+      "They",
+      "He",
+      "It"
+     ],
+     "answer": 0,
+     "explain": "You and I means we."
+    },
+    {
+     "id": "pp11",
+     "q": "Uncle Ravi drives a bus. ___ is a careful driver.",
+     "options": [
+      "He",
+      "She",
+      "It",
+      "They"
+     ],
+     "answer": 0,
+     "explain": "Uncle Ravi is a man, so we use he."
     }
    ]
   }

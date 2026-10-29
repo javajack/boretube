@@ -4,8 +4,8 @@
  "grade": 5,
  "version": 1,
  "reviewed": {
-  "by": "",
-  "at": ""
+  "by": "parent (approved 2026-10-29, to be revised)",
+  "at": "2026-10-29"
  },
  "skills": [
   {
@@ -148,6 +148,138 @@
      ],
      "answer": 0,
      "explain": "Air fills the whole balloon, so it is a gas."
+    },
+    {
+     "id": "sx0",
+     "q": "A brick is a ___.",
+     "options": [
+      "solid",
+      "liquid",
+      "gas"
+     ],
+     "answer": 0,
+     "explain": "A brick keeps its shape, so it is a solid."
+    },
+    {
+     "id": "sx1",
+     "q": "Honey is a ___.",
+     "options": [
+      "liquid",
+      "solid",
+      "gas"
+     ],
+     "answer": 0,
+     "explain": "Honey flows slowly, so it is a liquid."
+    },
+    {
+     "id": "sx2",
+     "q": "Oxygen is a ___.",
+     "options": [
+      "gas",
+      "solid",
+      "liquid"
+     ],
+     "answer": 0,
+     "explain": "Oxygen spreads in the air, so it is a gas."
+    },
+    {
+     "id": "sx3",
+     "q": "A spoon is a ___.",
+     "options": [
+      "solid",
+      "liquid",
+      "gas"
+     ],
+     "answer": 0,
+     "explain": "A spoon keeps its shape, so it is a solid."
+    },
+    {
+     "id": "sx4",
+     "q": "Rain water is a ___.",
+     "options": [
+      "liquid",
+      "solid",
+      "gas"
+     ],
+     "answer": 0,
+     "explain": "Rain water flows, so it is a liquid."
+    },
+    {
+     "id": "sx5",
+     "q": "The smell of food is a ___.",
+     "options": [
+      "gas",
+      "solid",
+      "liquid"
+     ],
+     "answer": 0,
+     "explain": "Smells spread through air as a gas."
+    },
+    {
+     "id": "sx6",
+     "q": "Butter in the fridge is a ___.",
+     "options": [
+      "solid",
+      "liquid",
+      "gas"
+     ],
+     "answer": 0,
+     "explain": "Cold butter keeps its shape, so it is a solid."
+    },
+    {
+     "id": "sx7",
+     "q": "Coconut water is a ___.",
+     "options": [
+      "liquid",
+      "solid",
+      "gas"
+     ],
+     "answer": 0,
+     "explain": "Coconut water can be poured, so it is a liquid."
+    },
+    {
+     "id": "sx8",
+     "q": "Air in a tyre is a ___.",
+     "options": [
+      "gas",
+      "solid",
+      "liquid"
+     ],
+     "answer": 0,
+     "explain": "Air fills the whole tyre, so it is a gas."
+    },
+    {
+     "id": "sx9",
+     "q": "Sugar is a ___.",
+     "options": [
+      "solid",
+      "liquid",
+      "gas"
+     ],
+     "answer": 0,
+     "explain": "Each grain of sugar keeps its shape, so it is a solid."
+    },
+    {
+     "id": "sx10",
+     "q": "Kerosene is a ___.",
+     "options": [
+      "liquid",
+      "solid",
+      "gas"
+     ],
+     "answer": 0,
+     "explain": "Kerosene flows, so it is a liquid."
+    },
+    {
+     "id": "sx11",
+     "q": "Water vapour is a ___.",
+     "options": [
+      "gas",
+      "solid",
+      "liquid"
+     ],
+     "answer": 0,
+     "explain": "Water vapour spreads into the air, so it is a gas."
     }
    ]
   },
@@ -304,6 +436,150 @@
      ],
      "answer": 0,
      "explain": "Seeds grow best in soil that is wet."
+    },
+    {
+     "id": "sg0",
+     "q": "Which seed do we use to make oil?",
+     "options": [
+      "mustard",
+      "mango",
+      "apple",
+      "guava"
+     ],
+     "answer": 0,
+     "explain": "Mustard seeds give us oil."
+    },
+    {
+     "id": "sg1",
+     "q": "Which seed is a spice?",
+     "options": [
+      "cumin",
+      "rice",
+      "wheat",
+      "peas"
+     ],
+     "answer": 0,
+     "explain": "Cumin seeds are used as a spice."
+    },
+    {
+     "id": "sg2",
+     "q": "Seeds of the drumstick tree spread by ___.",
+     "options": [
+      "wind",
+      "water",
+      "birds",
+      "cows"
+     ],
+     "answer": 0,
+     "explain": "Winged drumstick seeds fly on the wind."
+    },
+    {
+     "id": "sg3",
+     "q": "Coconuts can spread by floating on ___.",
+     "options": [
+      "water",
+      "air",
+      "sand",
+      "rocks"
+     ],
+     "answer": 0,
+     "explain": "A coconut can float across water."
+    },
+    {
+     "id": "sg4",
+     "q": "Some seeds stick to animals' ___.",
+     "options": [
+      "fur",
+      "teeth",
+      "eyes",
+      "horns"
+     ],
+     "answer": 0,
+     "explain": "Prickly seeds cling to animal fur."
+    },
+    {
+     "id": "sg5",
+     "q": "A young plant grows ___ first.",
+     "options": [
+      "roots",
+      "fruits",
+      "flowers",
+      "seeds"
+     ],
+     "answer": 0,
+     "explain": "A sprout pushes its root down first."
+    },
+    {
+     "id": "sg6",
+     "q": "Rice is grown in fields full of ___.",
+     "options": [
+      "water",
+      "sand",
+      "snow",
+      "stones"
+     ],
+     "answer": 0,
+     "explain": "Rice grows in flooded fields."
+    },
+    {
+     "id": "sg7",
+     "q": "Which part of a peanut do we eat?",
+     "options": [
+      "seed",
+      "root",
+      "leaf",
+      "flower"
+     ],
+     "answer": 0,
+     "explain": "A peanut is a seed."
+    },
+    {
+     "id": "sg8",
+     "q": "Which part of wheat makes flour?",
+     "options": [
+      "grain",
+      "leaf",
+      "root",
+      "stem"
+     ],
+     "answer": 0,
+     "explain": "Wheat grains are ground into flour."
+    },
+    {
+     "id": "sg9",
+     "q": "Seeds need ___ to sprout.",
+     "options": [
+      "air",
+      "darkness",
+      "salt",
+      "sugar"
+     ],
+     "answer": 0,
+     "explain": "Seeds need air, water and warmth to sprout."
+    },
+    {
+     "id": "sg10",
+     "q": "A seed kept in a dry box will ___.",
+     "options": [
+      "not sprout",
+      "sprout",
+      "melt",
+      "flower"
+     ],
+     "answer": 0,
+     "explain": "Without water, a seed will not sprout."
+    },
+    {
+     "id": "sg11",
+     "q": "Which fruit has one big seed?",
+     "options": [
+      "mango",
+      "papaya",
+      "watermelon",
+      "guava"
+     ],
+     "answer": 0,
+     "explain": "A mango has one big seed inside."
     }
    ]
   }

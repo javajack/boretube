@@ -37,4 +37,6 @@
 - [x] App: Build and Pairs screens with sounds (`build_*`, `card_*`, `pair_match`), wired into levels (tests and screenshots).
 - [x] Banks: English and EVS KG–7 plus the review pages; the validator test runs over every pack.
 - [x] App: the content repo (assets, reviewed gate), Lands from the catalogue, the picture library, Garden and Trail playable (tests and screenshots).
-- [ ] Learn 0.2.0 bundled in the phone; the user reviews the banks; the user installs; a device check.
+- [x] Learn 0.2.0 bundled in the phone. The user approved the banks as they are ("revise later"), so `tools/content/reviewed.json` marks all 16 packs.
+- [x] The corpus grew to 834 questions (24–35 per skill; validator minimum 24), for variety.
+- [ ] The user installs 0.2.0 from Better TV; device check of Pairs, Build, Garden and Trail.

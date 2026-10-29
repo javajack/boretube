@@ -20,30 +20,10 @@ REVIEW = os.path.join(HERE, "..", "..", "content", "review")
 REVIEWED = os.path.join(HERE, "reviewed.json")  # {"english-1": {"by": "...", "at": "..."}}
 
 
-def skill(sid, title, outcome, badge, formats, items):
-    return dict(id=sid, title=title, outcome=outcome, badge=badge, formats=formats, items=items)
-
-
-def it(iid, q, options, why, picture=None, fact=None):
-    d = dict(id=iid, q=q, options=options, answer=0, explain=why)
-    if picture:
-        d["picture"] = picture
-    if fact:
-        d["fact"] = fact
-    return d
+from packs_lib import first_letter, it, pic_q, picture_word, skill  # noqa: E402
 
 
 # ── English ──────────────────────────────────────────────────────────────
-
-def first_letter(word, pic, wrong):
-    return it(word, "Which letter does this start with?", [word[0].upper()] + wrong,
-              f"{word.capitalize()} starts with {word[0].upper()}: {'-'.join(word)}.", pic,
-              fact=f"{word.capitalize()} starts with {word[0].upper()}")
-
-
-def picture_word(word, wrong):
-    return it(word, "Which word is this?", [word] + wrong, f"This is a {word}.", word, fact=f"This is a {word}")
-
 
 ENGLISH = {
     0: [
@@ -273,10 +253,6 @@ ENGLISH = {
 }
 
 # ── EVS (KG–5) and Science (6–7) ─────────────────────────────────────────
-
-def pic_q(iid, q, right, wrong, why):
-    return it(iid, q, [f"pic:{right}"] + [f"pic:{w}" for w in wrong], why, fact=f"The {right}")
-
 
 EVS = {
     0: [
@@ -560,7 +536,22 @@ EVS = {
 GRADE_FILE = {0: "kg", **{g: str(g) for g in range(1, 8)}}
 
 
+def merge_extra():
+    from more import EXTRA
+    known = set()
+    for by_grade in (ENGLISH, EVS):
+        for skills in by_grade.values():
+            for s in skills:
+                known.add(s["id"])
+                for item in EXTRA.get(s["id"], []):
+                    if all(item["id"] != o["id"] for o in s["items"]):
+                        s["items"].append(item)
+    unknown = set(EXTRA) - known
+    assert not unknown, f"EXTRA names unknown skills: {unknown}"
+
+
 def write_packs():
+    merge_extra()
     reviewed = json.load(open(REVIEWED)) if os.path.exists(REVIEWED) else {}
     written = []
     for subject, by_grade in (("english", ENGLISH), ("evs", EVS)):

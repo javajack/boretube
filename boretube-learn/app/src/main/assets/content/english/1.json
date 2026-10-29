@@ -4,8 +4,8 @@
  "grade": 1,
  "version": 1,
  "reviewed": {
-  "by": "",
-  "at": ""
+  "by": "parent (approved 2026-10-29, to be revised)",
+  "at": "2026-10-29"
  },
  "skills": [
   {
@@ -161,6 +161,222 @@
      ],
      "answer": 0,
      "explain": "A naming word names a thing: bus."
+    },
+    {
+     "id": "door",
+     "q": "Which one is a naming word?",
+     "options": [
+      "door",
+      "open",
+      "tall",
+      "slowly"
+     ],
+     "answer": 0,
+     "explain": "A naming word names a thing: door."
+    },
+    {
+     "id": "apple",
+     "q": "Which one is a naming word?",
+     "options": [
+      "apple",
+      "bite",
+      "red",
+      "juicy"
+     ],
+     "answer": 0,
+     "explain": "A naming word names a thing: apple."
+    },
+    {
+     "id": "train",
+     "q": "Which one is a naming word?",
+     "options": [
+      "train",
+      "go",
+      "fast",
+      "long"
+     ],
+     "answer": 0,
+     "explain": "A naming word names a thing: train."
+    },
+    {
+     "id": "table",
+     "q": "Which one is a naming word?",
+     "options": [
+      "table",
+      "sit",
+      "wooden",
+      "near"
+     ],
+     "answer": 0,
+     "explain": "A naming word names a thing: table."
+    },
+    {
+     "id": "shoe",
+     "q": "Which one is a naming word?",
+     "options": [
+      "shoe",
+      "walk",
+      "new",
+      "tight"
+     ],
+     "answer": 0,
+     "explain": "A naming word names a thing: shoe."
+    },
+    {
+     "id": "flower",
+     "q": "Which one is a naming word?",
+     "options": [
+      "flower",
+      "smell",
+      "pretty",
+      "bloom"
+     ],
+     "answer": 0,
+     "explain": "A naming word names a thing: flower."
+    },
+    {
+     "id": "milk",
+     "q": "Which one is a naming word?",
+     "options": [
+      "milk",
+      "drink",
+      "white",
+      "cold"
+     ],
+     "answer": 0,
+     "explain": "A naming word names a thing: milk."
+    },
+    {
+     "id": "kite",
+     "q": "Which one is a naming word?",
+     "options": [
+      "kite",
+      "fly",
+      "high",
+      "colourful"
+     ],
+     "answer": 0,
+     "explain": "A naming word names a thing: kite."
+    },
+    {
+     "id": "box",
+     "q": "Which one is a naming word?",
+     "options": [
+      "box",
+      "pack",
+      "heavy",
+      "open"
+     ],
+     "answer": 0,
+     "explain": "A naming word names a thing: box."
+    },
+    {
+     "id": "lamp",
+     "q": "Which one is a naming word?",
+     "options": [
+      "lamp",
+      "glow",
+      "bright",
+      "on"
+     ],
+     "answer": 0,
+     "explain": "A naming word names a thing: lamp."
+    },
+    {
+     "id": "doll",
+     "q": "Which one is a naming word?",
+     "options": [
+      "doll",
+      "play",
+      "cute",
+      "small"
+     ],
+     "answer": 0,
+     "explain": "A naming word names a thing: doll."
+    },
+    {
+     "id": "boat",
+     "q": "Which one is a naming word?",
+     "options": [
+      "boat",
+      "row",
+      "wet",
+      "float"
+     ],
+     "answer": 0,
+     "explain": "A naming word names a thing: boat."
+    },
+    {
+     "id": "clock",
+     "q": "Which one is a naming word?",
+     "options": [
+      "clock",
+      "tick",
+      "round",
+      "late"
+     ],
+     "answer": 0,
+     "explain": "A naming word names a thing: clock."
+    },
+    {
+     "id": "cake",
+     "q": "Which one is a naming word?",
+     "options": [
+      "cake",
+      "bake",
+      "sweet",
+      "soft"
+     ],
+     "answer": 0,
+     "explain": "A naming word names a thing: cake."
+    },
+    {
+     "id": "fan",
+     "q": "Which one is a naming word?",
+     "options": [
+      "fan",
+      "spin",
+      "fast",
+      "cool"
+     ],
+     "answer": 0,
+     "explain": "A naming word names a thing: fan."
+    },
+    {
+     "id": "star",
+     "q": "Which one is a naming word?",
+     "options": [
+      "star",
+      "shine",
+      "bright",
+      "far"
+     ],
+     "answer": 0,
+     "explain": "A naming word names a thing: star."
+    },
+    {
+     "id": "hat",
+     "q": "Which one is a naming word?",
+     "options": [
+      "hat",
+      "wear",
+      "big",
+      "funny"
+     ],
+     "answer": 0,
+     "explain": "A naming word names a thing: hat."
+    },
+    {
+     "id": "bag",
+     "q": "Which one is a naming word?",
+     "options": [
+      "bag",
+      "carry",
+      "full",
+      "heavy"
+     ],
+     "answer": 0,
+     "explain": "A naming word names a thing: bag."
     }
    ]
   },
@@ -317,6 +533,222 @@
      ],
      "answer": 0,
      "explain": "Mouse and house end with the same sound."
+    },
+    {
+     "id": "hen-ten",
+     "q": "Which word rhymes with hen?",
+     "options": [
+      "ten",
+      "hat",
+      "hot",
+      "hug"
+     ],
+     "answer": 0,
+     "explain": "Hen and ten end with the same sound."
+    },
+    {
+     "id": "pig-wig",
+     "q": "Which word rhymes with pig?",
+     "options": [
+      "wig",
+      "pin",
+      "pot",
+      "peg"
+     ],
+     "answer": 0,
+     "explain": "Pig and wig end with the same sound."
+    },
+    {
+     "id": "rat-mat",
+     "q": "Which word rhymes with rat?",
+     "options": [
+      "mat",
+      "rug",
+      "rip",
+      "red"
+     ],
+     "answer": 0,
+     "explain": "Rat and mat end with the same sound."
+    },
+    {
+     "id": "bug-rug",
+     "q": "Which word rhymes with bug?",
+     "options": [
+      "rug",
+      "bag",
+      "bed",
+      "big"
+     ],
+     "answer": 0,
+     "explain": "Bug and rug end with the same sound."
+    },
+    {
+     "id": "pot-dot",
+     "q": "Which word rhymes with pot?",
+     "options": [
+      "dot",
+      "pit",
+      "pet",
+      "put"
+     ],
+     "answer": 0,
+     "explain": "Pot and dot end with the same sound."
+    },
+    {
+     "id": "fan-can",
+     "q": "Which word rhymes with fan?",
+     "options": [
+      "can",
+      "fin",
+      "fun",
+      "fog"
+     ],
+     "answer": 0,
+     "explain": "Fan and can end with the same sound."
+    },
+    {
+     "id": "cap-map",
+     "q": "Which word rhymes with cap?",
+     "options": [
+      "map",
+      "cup",
+      "cop",
+      "cub"
+     ],
+     "answer": 0,
+     "explain": "Cap and map end with the same sound."
+    },
+    {
+     "id": "hop-top",
+     "q": "Which word rhymes with hop?",
+     "options": [
+      "top",
+      "hip",
+      "hat",
+      "hen"
+     ],
+     "answer": 0,
+     "explain": "Hop and top end with the same sound."
+    },
+    {
+     "id": "sock-rock",
+     "q": "Which word rhymes with sock?",
+     "options": [
+      "rock",
+      "sack",
+      "sick",
+      "suck"
+     ],
+     "answer": 0,
+     "explain": "Sock and rock end with the same sound."
+    },
+    {
+     "id": "cook-book",
+     "q": "Which word rhymes with cook?",
+     "options": [
+      "book",
+      "cake",
+      "kick",
+      "cool"
+     ],
+     "answer": 0,
+     "explain": "Cook and book end with the same sound."
+    },
+    {
+     "id": "light-night",
+     "q": "Which word rhymes with light?",
+     "options": [
+      "night",
+      "late",
+      "lot",
+      "lit"
+     ],
+     "answer": 0,
+     "explain": "Light and night end with the same sound."
+    },
+    {
+     "id": "rain-train",
+     "q": "Which word rhymes with rain?",
+     "options": [
+      "train",
+      "run",
+      "ring",
+      "road"
+     ],
+     "answer": 0,
+     "explain": "Rain and train end with the same sound."
+    },
+    {
+     "id": "boat-coat",
+     "q": "Which word rhymes with boat?",
+     "options": [
+      "coat",
+      "boot",
+      "bat",
+      "bit"
+     ],
+     "answer": 0,
+     "explain": "Boat and coat end with the same sound."
+    },
+    {
+     "id": "wall-fall",
+     "q": "Which word rhymes with wall?",
+     "options": [
+      "fall",
+      "well",
+      "will",
+      "wool"
+     ],
+     "answer": 0,
+     "explain": "Wall and fall end with the same sound."
+    },
+    {
+     "id": "fun-run",
+     "q": "Which word rhymes with fun?",
+     "options": [
+      "run",
+      "fan",
+      "fin",
+      "fog"
+     ],
+     "answer": 0,
+     "explain": "Fun and run end with the same sound."
+    },
+    {
+     "id": "jam-ham",
+     "q": "Which word rhymes with jam?",
+     "options": [
+      "ham",
+      "jug",
+      "jet",
+      "jog"
+     ],
+     "answer": 0,
+     "explain": "Jam and ham end with the same sound."
+    },
+    {
+     "id": "nose-rose",
+     "q": "Which word rhymes with nose?",
+     "options": [
+      "rose",
+      "nest",
+      "nut",
+      "nap"
+     ],
+     "answer": 0,
+     "explain": "Nose and rose end with the same sound."
+    },
+    {
+     "id": "bake-cake",
+     "q": "Which word rhymes with bake?",
+     "options": [
+      "cake",
+      "bike",
+      "book",
+      "bark"
+     ],
+     "answer": 0,
+     "explain": "Bake and cake end with the same sound."
     }
    ]
   }

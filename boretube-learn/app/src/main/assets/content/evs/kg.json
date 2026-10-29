@@ -4,8 +4,8 @@
  "grade": 0,
  "version": 1,
  "reviewed": {
-  "by": "",
-  "at": ""
+  "by": "parent (approved 2026-10-29, to be revised)",
+  "at": "2026-10-29"
  },
  "skills": [
   {
@@ -171,6 +171,162 @@
      ],
      "answer": 0,
      "explain": "A cow eats grass.",
+     "fact": "The cow"
+    },
+    {
+     "id": "bone",
+     "q": "Which one loves a bone?",
+     "options": [
+      "pic:dog",
+      "pic:fish",
+      "pic:bird",
+      "pic:ant"
+     ],
+     "answer": 0,
+     "explain": "A dog loves to chew a bone.",
+     "fact": "The dog"
+    },
+    {
+     "id": "nest",
+     "q": "Which one builds a nest?",
+     "options": [
+      "pic:bird",
+      "pic:cow",
+      "pic:dog",
+      "pic:fish"
+     ],
+     "answer": 0,
+     "explain": "Birds build nests for their eggs.",
+     "fact": "The bird"
+    },
+    {
+     "id": "sugar",
+     "q": "Which one loves sugar?",
+     "options": [
+      "pic:ant",
+      "pic:cow",
+      "pic:fish",
+      "pic:dog"
+     ],
+     "answer": 0,
+     "explain": "Ants love sweet things like sugar.",
+     "fact": "The ant"
+    },
+    {
+     "id": "tail-swim",
+     "q": "Which one swims with its tail?",
+     "options": [
+      "pic:fish",
+      "pic:cat",
+      "pic:dog",
+      "pic:cow"
+     ],
+     "answer": 0,
+     "explain": "A fish swims by moving its tail.",
+     "fact": "The fish"
+    },
+    {
+     "id": "whiskers",
+     "q": "Which one has whiskers and says meow?",
+     "options": [
+      "pic:cat",
+      "pic:fish",
+      "pic:cow",
+      "pic:bird"
+     ],
+     "answer": 0,
+     "explain": "A cat has whiskers and says meow.",
+     "fact": "The cat"
+    },
+    {
+     "id": "horns",
+     "q": "Which one has horns?",
+     "options": [
+      "pic:cow",
+      "pic:cat",
+      "pic:fish",
+      "pic:bird"
+     ],
+     "answer": 0,
+     "explain": "A cow has two horns.",
+     "fact": "The cow"
+    },
+    {
+     "id": "wings",
+     "q": "Which one has wings?",
+     "options": [
+      "pic:bird",
+      "pic:dog",
+      "pic:fish",
+      "pic:cow"
+     ],
+     "answer": 0,
+     "explain": "A bird has wings to fly.",
+     "fact": "The bird"
+    },
+    {
+     "id": "small-line",
+     "q": "Which one walks in a line?",
+     "options": [
+      "pic:ant",
+      "pic:cow",
+      "pic:cat",
+      "pic:dog"
+     ],
+     "answer": 0,
+     "explain": "Ants walk one behind the other.",
+     "fact": "The ant"
+    },
+    {
+     "id": "wag",
+     "q": "Which one wags its tail when happy?",
+     "options": [
+      "pic:dog",
+      "pic:fish",
+      "pic:bird",
+      "pic:ant"
+     ],
+     "answer": 0,
+     "explain": "A happy dog wags its tail.",
+     "fact": "The dog"
+    },
+    {
+     "id": "pond",
+     "q": "Which one lives in a pond?",
+     "options": [
+      "pic:fish",
+      "pic:cat",
+      "pic:cow",
+      "pic:dog"
+     ],
+     "answer": 0,
+     "explain": "Fish live in ponds and rivers.",
+     "fact": "The fish"
+    },
+    {
+     "id": "mouse",
+     "q": "Which one chases mice?",
+     "options": [
+      "pic:cat",
+      "pic:cow",
+      "pic:fish",
+      "pic:bird"
+     ],
+     "answer": 0,
+     "explain": "Cats like to chase mice.",
+     "fact": "The cat"
+    },
+    {
+     "id": "bell",
+     "q": "Which one may wear a bell on its neck?",
+     "options": [
+      "pic:cow",
+      "pic:fish",
+      "pic:ant",
+      "pic:bird"
+     ],
+     "answer": 0,
+     "explain": "Many cows wear bells on their necks.",
      "fact": "The cow"
     }
    ]
@@ -338,6 +494,162 @@
      ],
      "answer": 0,
      "explain": "Our eyes blink.",
+     "fact": "The eye"
+    },
+    {
+     "id": "glasses",
+     "q": "Which one may need glasses?",
+     "options": [
+      "pic:eye",
+      "pic:ear",
+      "pic:nose",
+      "pic:hand"
+     ],
+     "answer": 0,
+     "explain": "Glasses help our eyes see clearly.",
+     "fact": "The eye"
+    },
+    {
+     "id": "listen",
+     "q": "Which one listens to a story?",
+     "options": [
+      "pic:ear",
+      "pic:eye",
+      "pic:hand",
+      "pic:tooth"
+     ],
+     "answer": 0,
+     "explain": "We listen with our ears.",
+     "fact": "The ear"
+    },
+    {
+     "id": "sneeze",
+     "q": "Which one sneezes?",
+     "options": [
+      "pic:nose",
+      "pic:ear",
+      "pic:eye",
+      "pic:hand"
+     ],
+     "answer": 0,
+     "explain": "We sneeze through our nose.",
+     "fact": "The nose"
+    },
+    {
+     "id": "clap",
+     "q": "Which one do we clap with?",
+     "options": [
+      "pic:hand",
+      "pic:nose",
+      "pic:eye",
+      "pic:ear"
+     ],
+     "answer": 0,
+     "explain": "We clap with our hands.",
+     "fact": "The hand"
+    },
+    {
+     "id": "milk-teeth",
+     "q": "Which one falls out and grows again?",
+     "options": [
+      "pic:tooth",
+      "pic:eye",
+      "pic:ear",
+      "pic:hand"
+     ],
+     "answer": 0,
+     "explain": "Milk teeth fall out and new teeth grow.",
+     "fact": "The tooth"
+    },
+    {
+     "id": "write",
+     "q": "Which one do we write with?",
+     "options": [
+      "pic:hand",
+      "pic:ear",
+      "pic:nose",
+      "pic:tooth"
+     ],
+     "answer": 0,
+     "explain": "We hold a pencil in our hand to write.",
+     "fact": "The hand"
+    },
+    {
+     "id": "read",
+     "q": "Which one do we read with?",
+     "options": [
+      "pic:eye",
+      "pic:ear",
+      "pic:nose",
+      "pic:hand"
+     ],
+     "answer": 0,
+     "explain": "We read with our eyes.",
+     "fact": "The eye"
+    },
+    {
+     "id": "bell",
+     "q": "Which one hears the school bell?",
+     "options": [
+      "pic:ear",
+      "pic:eye",
+      "pic:nose",
+      "pic:tooth"
+     ],
+     "answer": 0,
+     "explain": "Our ears hear the bell ring.",
+     "fact": "The ear"
+    },
+    {
+     "id": "food-smell",
+     "q": "Which one tells us food smells nice?",
+     "options": [
+      "pic:nose",
+      "pic:eye",
+      "pic:hand",
+      "pic:ear"
+     ],
+     "answer": 0,
+     "explain": "Our nose smells food.",
+     "fact": "The nose"
+    },
+    {
+     "id": "bite",
+     "q": "Which one bites an apple?",
+     "options": [
+      "pic:tooth",
+      "pic:hand",
+      "pic:ear",
+      "pic:eye"
+     ],
+     "answer": 0,
+     "explain": "Our teeth bite food.",
+     "fact": "The tooth"
+    },
+    {
+     "id": "shake",
+     "q": "Which one do we shake to say hello?",
+     "options": [
+      "pic:hand",
+      "pic:ear",
+      "pic:nose",
+      "pic:tooth"
+     ],
+     "answer": 0,
+     "explain": "We shake hands to say hello.",
+     "fact": "The hand"
+    },
+    {
+     "id": "sleep",
+     "q": "Which one do we close to sleep?",
+     "options": [
+      "pic:eye",
+      "pic:ear",
+      "pic:nose",
+      "pic:hand"
+     ],
+     "answer": 0,
+     "explain": "We close our eyes to sleep.",
      "fact": "The eye"
     }
    ]

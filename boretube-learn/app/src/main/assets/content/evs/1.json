@@ -4,8 +4,8 @@
  "grade": 1,
  "version": 1,
  "reviewed": {
-  "by": "",
-  "at": ""
+  "by": "parent (approved 2026-10-29, to be revised)",
+  "at": "2026-10-29"
  },
  "skills": [
   {
@@ -161,6 +161,150 @@
      ],
      "answer": 0,
      "explain": "Spinach has big green leaves we eat."
+    },
+    {
+     "id": "g0",
+     "q": "Which one is a fruit?",
+     "options": [
+      "banana",
+      "potato",
+      "onion",
+      "spinach"
+     ],
+     "answer": 0,
+     "explain": "A banana is a fruit."
+    },
+    {
+     "id": "g1",
+     "q": "Which one is a vegetable?",
+     "options": [
+      "potato",
+      "mango",
+      "grapes",
+      "apple"
+     ],
+     "answer": 0,
+     "explain": "A potato is a vegetable."
+    },
+    {
+     "id": "g2",
+     "q": "Which one is a fruit?",
+     "options": [
+      "grapes",
+      "carrot",
+      "peas",
+      "onion"
+     ],
+     "answer": 0,
+     "explain": "Grapes are small, sweet fruits."
+    },
+    {
+     "id": "g3",
+     "q": "Which one is a vegetable?",
+     "options": [
+      "peas",
+      "banana",
+      "orange",
+      "mango"
+     ],
+     "answer": 0,
+     "explain": "Peas are a green vegetable."
+    },
+    {
+     "id": "g4",
+     "q": "Which fruit is green outside and red inside?",
+     "options": [
+      "watermelon",
+      "banana",
+      "mango",
+      "lemon"
+     ],
+     "answer": 0,
+     "explain": "A watermelon is green outside and red inside."
+    },
+    {
+     "id": "g5",
+     "q": "Which vegetable is red and round?",
+     "options": [
+      "tomato",
+      "potato",
+      "peas",
+      "onion"
+     ],
+     "answer": 0,
+     "explain": "A tomato is red and round."
+    },
+    {
+     "id": "g6",
+     "q": "Which fruit grows in bunches?",
+     "options": [
+      "grapes",
+      "mango",
+      "apple",
+      "orange"
+     ],
+     "answer": 0,
+     "explain": "Grapes grow in bunches."
+    },
+    {
+     "id": "g7",
+     "q": "Which vegetable is long and green?",
+     "options": [
+      "cucumber",
+      "tomato",
+      "potato",
+      "onion"
+     ],
+     "answer": 0,
+     "explain": "A cucumber is long and green."
+    },
+    {
+     "id": "g8",
+     "q": "Which fruit has a hard shell and white inside?",
+     "options": [
+      "coconut",
+      "banana",
+      "apple",
+      "grapes"
+     ],
+     "answer": 0,
+     "explain": "A coconut has a hard shell."
+    },
+    {
+     "id": "g9",
+     "q": "Which one is a fruit?",
+     "options": [
+      "guava",
+      "cabbage",
+      "radish",
+      "onion"
+     ],
+     "answer": 0,
+     "explain": "A guava is a fruit."
+    },
+    {
+     "id": "g10",
+     "q": "Which vegetable has many layers?",
+     "options": [
+      "cabbage",
+      "mango",
+      "apple",
+      "grapes"
+     ],
+     "answer": 0,
+     "explain": "A cabbage has many leafy layers."
+    },
+    {
+     "id": "g11",
+     "q": "Which one is orange in colour?",
+     "options": [
+      "carrot",
+      "peas",
+      "cabbage",
+      "spinach"
+     ],
+     "answer": 0,
+     "explain": "A carrot is orange."
     }
    ]
   },
@@ -317,6 +461,150 @@
      ],
      "answer": 0,
      "explain": "Salt tastes salty."
+    },
+    {
+     "id": "t0",
+     "q": "We smell a flower with our ___.",
+     "options": [
+      "nose",
+      "ears",
+      "eyes",
+      "hands"
+     ],
+     "answer": 0,
+     "explain": "Our nose smells flowers."
+    },
+    {
+     "id": "t1",
+     "q": "We see colours with our ___.",
+     "options": [
+      "eyes",
+      "ears",
+      "nose",
+      "tongue"
+     ],
+     "answer": 0,
+     "explain": "Our eyes see colours."
+    },
+    {
+     "id": "t2",
+     "q": "We hear a bell with our ___.",
+     "options": [
+      "ears",
+      "eyes",
+      "nose",
+      "skin"
+     ],
+     "answer": 0,
+     "explain": "Our ears hear sounds."
+    },
+    {
+     "id": "t3",
+     "q": "Honey tastes ___.",
+     "options": [
+      "sweet",
+      "sour",
+      "salty",
+      "bitter"
+     ],
+     "answer": 0,
+     "explain": "Honey tastes sweet."
+    },
+    {
+     "id": "t4",
+     "q": "Bitter gourd tastes ___.",
+     "options": [
+      "bitter",
+      "sweet",
+      "salty",
+      "sour"
+     ],
+     "answer": 0,
+     "explain": "Bitter gourd tastes bitter."
+    },
+    {
+     "id": "t5",
+     "q": "A stone feels ___.",
+     "options": [
+      "hard",
+      "soft",
+      "wet",
+      "hot"
+     ],
+     "answer": 0,
+     "explain": "A stone feels hard."
+    },
+    {
+     "id": "t6",
+     "q": "Hot tea feels ___.",
+     "options": [
+      "hot",
+      "cold",
+      "soft",
+      "wet"
+     ],
+     "answer": 0,
+     "explain": "Tea fresh from the stove feels hot."
+    },
+    {
+     "id": "t7",
+     "q": "A whistle sounds ___.",
+     "options": [
+      "loud",
+      "soft",
+      "sweet",
+      "sour"
+     ],
+     "answer": 0,
+     "explain": "A whistle makes a loud sound."
+    },
+    {
+     "id": "t8",
+     "q": "Cotton feels ___.",
+     "options": [
+      "soft",
+      "hard",
+      "rough",
+      "sharp"
+     ],
+     "answer": 0,
+     "explain": "Cotton feels soft."
+    },
+    {
+     "id": "t9",
+     "q": "We feel touch with our ___.",
+     "options": [
+      "skin",
+      "ears",
+      "eyes",
+      "nose"
+     ],
+     "answer": 0,
+     "explain": "Our skin feels touch."
+    },
+    {
+     "id": "t10",
+     "q": "Pickle tastes ___.",
+     "options": [
+      "sour",
+      "sweet",
+      "plain",
+      "bitter"
+     ],
+     "answer": 0,
+     "explain": "Pickle tastes sour."
+    },
+    {
+     "id": "t11",
+     "q": "Chilli tastes ___.",
+     "options": [
+      "spicy",
+      "sweet",
+      "sour",
+      "plain"
+     ],
+     "answer": 0,
+     "explain": "Chilli tastes spicy hot."
     }
    ]
   }

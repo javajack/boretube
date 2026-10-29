@@ -4,8 +4,8 @@
  "grade": 5,
  "version": 1,
  "reviewed": {
-  "by": "",
-  "at": ""
+  "by": "parent (approved 2026-10-29, to be revised)",
+  "at": "2026-10-29"
  },
  "skills": [
   {
@@ -161,6 +161,198 @@
      ],
      "answer": 0,
      "explain": "Look and see mean the same."
+    },
+    {
+     "id": "end-finish",
+     "q": "Which word means the same as end?",
+     "options": [
+      "finish",
+      "start",
+      "open",
+      "begin"
+     ],
+     "answer": 0,
+     "explain": "End and finish mean the same."
+    },
+    {
+     "id": "tired-sleepy",
+     "q": "Which word means the same as tired?",
+     "options": [
+      "sleepy",
+      "fresh",
+      "awake",
+      "lively"
+     ],
+     "answer": 0,
+     "explain": "Tired and sleepy mean the same."
+    },
+    {
+     "id": "rich-wealthy",
+     "q": "Which word means the same as rich?",
+     "options": [
+      "wealthy",
+      "poor",
+      "needy",
+      "weak"
+     ],
+     "answer": 0,
+     "explain": "Rich and wealthy mean the same."
+    },
+    {
+     "id": "quiet-silent",
+     "q": "Which word means the same as quiet?",
+     "options": [
+      "silent",
+      "noisy",
+      "loud",
+      "busy"
+     ],
+     "answer": 0,
+     "explain": "Quiet and silent mean the same."
+    },
+    {
+     "id": "easy-simple",
+     "q": "Which word means the same as easy?",
+     "options": [
+      "simple",
+      "hard",
+      "tough",
+      "tricky"
+     ],
+     "answer": 0,
+     "explain": "Easy and simple mean the same."
+    },
+    {
+     "id": "near-close",
+     "q": "Which word means the same as near?",
+     "options": [
+      "close",
+      "far",
+      "away",
+      "distant"
+     ],
+     "answer": 0,
+     "explain": "Near and close mean the same."
+    },
+    {
+     "id": "sick-ill",
+     "q": "Which word means the same as sick?",
+     "options": [
+      "ill",
+      "well",
+      "fit",
+      "strong"
+     ],
+     "answer": 0,
+     "explain": "Sick and ill mean the same."
+    },
+    {
+     "id": "pretty-lovely",
+     "q": "Which word means the same as pretty?",
+     "options": [
+      "lovely",
+      "ugly",
+      "plain",
+      "dull"
+     ],
+     "answer": 0,
+     "explain": "Pretty and lovely mean the same."
+    },
+    {
+     "id": "speak-talk",
+     "q": "Which word means the same as speak?",
+     "options": [
+      "talk",
+      "listen",
+      "hear",
+      "write"
+     ],
+     "answer": 0,
+     "explain": "Speak and talk mean the same."
+    },
+    {
+     "id": "jump-leap",
+     "q": "Which word means the same as jump?",
+     "options": [
+      "leap",
+      "sit",
+      "rest",
+      "stand"
+     ],
+     "answer": 0,
+     "explain": "Jump and leap mean the same."
+    },
+    {
+     "id": "buy-purchase",
+     "q": "Which word means the same as buy?",
+     "options": [
+      "purchase",
+      "sell",
+      "lend",
+      "give"
+     ],
+     "answer": 0,
+     "explain": "Buy and purchase mean the same."
+    },
+    {
+     "id": "huge-giant",
+     "q": "Which word means the same as huge?",
+     "options": [
+      "giant",
+      "tiny",
+      "small",
+      "short"
+     ],
+     "answer": 0,
+     "explain": "Huge and giant mean the same."
+    },
+    {
+     "id": "cold-chilly",
+     "q": "Which word means the same as cold?",
+     "options": [
+      "chilly",
+      "hot",
+      "warm",
+      "sunny"
+     ],
+     "answer": 0,
+     "explain": "Cold and chilly mean the same."
+    },
+    {
+     "id": "story-tale",
+     "q": "Which word means the same as story?",
+     "options": [
+      "tale",
+      "song",
+      "poem",
+      "game"
+     ],
+     "answer": 0,
+     "explain": "Story and tale mean the same."
+    },
+    {
+     "id": "road-street",
+     "q": "Which word means the same as road?",
+     "options": [
+      "street",
+      "river",
+      "field",
+      "hill"
+     ],
+     "answer": 0,
+     "explain": "Road and street mean the same."
+    },
+    {
+     "id": "wet-damp",
+     "q": "Which word means the same as wet?",
+     "options": [
+      "damp",
+      "dry",
+      "warm",
+      "clean"
+     ],
+     "answer": 0,
+     "explain": "Wet and damp mean the same."
     }
    ]
   },
@@ -304,6 +496,138 @@
      ],
      "answer": 0,
      "explain": "It shows a strong feeling, so it ends with an exclamation mark."
+    },
+    {
+     "id": "q0",
+     "q": "Which mark ends this? \"Is it raining\"",
+     "options": [
+      "?",
+      ".",
+      "!"
+     ],
+     "answer": 0,
+     "explain": "It asks something, so it ends with a question mark."
+    },
+    {
+     "id": "q1",
+     "q": "Which mark ends this? \"The cat is sleeping\"",
+     "options": [
+      ".",
+      "?",
+      "!"
+     ],
+     "answer": 0,
+     "explain": "It tells something, so it ends with a full stop."
+    },
+    {
+     "id": "q2",
+     "q": "Which mark ends this? \"Who is your best friend\"",
+     "options": [
+      "?",
+      ".",
+      "!"
+     ],
+     "answer": 0,
+     "explain": "It asks something, so it ends with a question mark."
+    },
+    {
+     "id": "q3",
+     "q": "Which mark ends this? \"We went to the zoo\"",
+     "options": [
+      ".",
+      "?",
+      "!"
+     ],
+     "answer": 0,
+     "explain": "It tells something, so it ends with a full stop."
+    },
+    {
+     "id": "q4",
+     "q": "Which mark ends this? \"Why is the sky blue\"",
+     "options": [
+      "?",
+      ".",
+      "!"
+     ],
+     "answer": 0,
+     "explain": "It asks something, so it ends with a question mark."
+    },
+    {
+     "id": "q5",
+     "q": "Which mark ends this? \"Hurray, we won\"",
+     "options": [
+      "!",
+      "?",
+      "."
+     ],
+     "answer": 0,
+     "explain": "It shows a strong feeling, so it ends with an exclamation mark."
+    },
+    {
+     "id": "q6",
+     "q": "Which mark ends this? \"Mangoes grow on trees\"",
+     "options": [
+      ".",
+      "?",
+      "!"
+     ],
+     "answer": 0,
+     "explain": "It tells something, so it ends with a full stop."
+    },
+    {
+     "id": "q7",
+     "q": "Which mark ends this? \"When does school start\"",
+     "options": [
+      "?",
+      ".",
+      "!"
+     ],
+     "answer": 0,
+     "explain": "It asks something, so it ends with a question mark."
+    },
+    {
+     "id": "q8",
+     "q": "Which mark ends this? \"Look out, a snake\"",
+     "options": [
+      "!",
+      "?",
+      "."
+     ],
+     "answer": 0,
+     "explain": "It shows a strong feeling, so it ends with an exclamation mark."
+    },
+    {
+     "id": "q9",
+     "q": "Which mark ends this? \"I have two brothers\"",
+     "options": [
+      ".",
+      "?",
+      "!"
+     ],
+     "answer": 0,
+     "explain": "It tells something, so it ends with a full stop."
+    },
+    {
+     "id": "q10",
+     "q": "Which mark ends this? \"Do you like rice\"",
+     "options": [
+      "?",
+      ".",
+      "!"
+     ],
+     "answer": 0,
+     "explain": "It asks something, so it ends with a question mark."
+    },
+    {
+     "id": "q11",
+     "q": "Which mark ends this? \"Grandma tells us stories\"",
+     "options": [
+      ".",
+      "?",
+      "!"
+     ],
+     "answer": 0,
+     "explain": "It tells something, so it ends with a full stop."
     }
    ]
   }

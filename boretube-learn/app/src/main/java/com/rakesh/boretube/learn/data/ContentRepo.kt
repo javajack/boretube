@@ -41,7 +41,10 @@ object ContentRepo {
      */
     fun generated(assets: AssetManager): List<GenSkill> {
         val data: (String) -> String? = { name -> runCatching { assets.open("content/data/$name").bufferedReader().readText() }.getOrNull() }
-        return runCatching { Generated.skills(data) }.getOrElse { Log.w(TAG, "generated skills failed", it); emptyList() }
+        val t0 = System.nanoTime()
+        val out = runCatching { Generated.skills(data) }.getOrElse { Log.w(TAG, "generated skills failed", it); emptyList() }
+        Log.i(TAG, "generated ${out.size} skills in ${(System.nanoTime() - t0) / 1_000_000} ms")
+        return out
     }
 
     private const val TAG = "BoretubeLearnContent"

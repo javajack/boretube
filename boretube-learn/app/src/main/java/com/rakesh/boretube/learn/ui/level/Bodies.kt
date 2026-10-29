@@ -348,21 +348,22 @@ fun LearnMoment(
                     if (order != null) {
                         OrderAnswer(order, chips)
                     } else {
-                        val ans = q.answerText
+                        val ans = optionText(q.answerText)
+                        val said = optionText(q.fact)
                         val hi = SpanStyle(color = Palette.sunflowerInk, background = Palette.sunflowerSoft.copy(alpha = 0.85f * mark.value))
                         val fact = buildAnnotatedString {
-                            val at = q.fact.lastIndexOf(ans).takeIf { ans.isNotBlank() } ?: -1
+                            val at = said.lastIndexOf(ans).takeIf { ans.isNotBlank() } ?: -1
                             if (at >= 0) {
-                                append(q.fact.substring(0, at))
+                                append(said.substring(0, at))
                                 withStyle(hi) { append(ans) }
-                                append(q.fact.substring(at + ans.length))
+                                append(said.substring(at + ans.length))
                             } else {
-                                withStyle(hi) { append(q.fact) }
+                                withStyle(hi) { append(said) }
                             }
                         }
                         val size = when {
-                            q.fact.length <= 12 -> TypeScale.s89
-                            q.fact.length <= 24 -> TypeScale.s55
+                            said.length <= 12 -> TypeScale.s89
+                            said.length <= 24 -> TypeScale.s55
                             else -> TypeScale.s43
                         }
                         val bump = 1f + 0.06f * kotlin.math.sin(mark.value * kotlin.math.PI.toFloat())
@@ -389,7 +390,8 @@ fun LearnMoment(
                 )
             }
             Box(Modifier.weight(0.382f), contentAlignment = Alignment.Center) {
-                val v = q.learnVisual
+                // A picture answer is the best picture for its learn moment.
+                val v = q.learnVisual ?: q.answerText.takeIf { it.startsWith("pic:") }?.let { Visual.Picture(it.removePrefix("pic:")) }
                 val pop by animateFloatAsState(if (aha) 1f else 0.92f, spring(Spring.DampingRatioMediumBouncy), label = "visual")
                 if (v != null) QuestionVisual(v, Modifier.height(300.dp).graphicsLayer { scaleX = pop; scaleY = pop }, numbered = true)
                 else Tubby(if (aha) TubbyMood.cheer else TubbyMood.think, Modifier.width(220.dp).graphicsLayer { scaleX = pop; scaleY = pop })

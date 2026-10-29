@@ -43,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.rakesh.boretube.learn.core.Question
+import com.rakesh.boretube.learn.core.Visual
 import com.rakesh.boretube.learn.ui.Gap
 import com.rakesh.boretube.learn.ui.Motion
 import com.rakesh.boretube.learn.ui.Palette
@@ -91,11 +92,14 @@ fun TrueFalseBody(q: Question, index: Int, of: Int, followUp: Boolean, sel: Int,
                     .testTag("statement"),
                 contentAlignment = Alignment.Center,
             ) {
-                BasicText(
-                    q.prompt,
-                    style = Text.display(statementSize(q.prompt)).copy(textAlign = TextAlign.Center),
-                    maxLines = 3,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Gap.f34)) {
+                    (q.visual as? Visual.Picture)?.let { com.rakesh.boretube.learn.ui.PictureArt(it.id, Modifier.size(180.dp)) }
+                    BasicText(
+                        q.prompt,
+                        style = Text.display(statementSize(q.prompt)).copy(textAlign = TextAlign.Center),
+                        maxLines = 3,
+                    )
+                }
             }
         }
         Row(Modifier.fillMaxWidth().height(144.dp), horizontalArrangement = Arrangement.spacedBy(Gap.f34)) {
@@ -195,7 +199,15 @@ fun SortBody(q: Question, index: Int, of: Int, followUp: Boolean, placed: Int?, 
                         .testTag("sort-card"),
                     contentAlignment = Alignment.Center,
                 ) {
-                    BasicText(q.prompt, style = Text.display(questionSize(q.prompt)).copy(textAlign = TextAlign.Center), maxLines = 3)
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Gap.f8)) {
+                        val pic = (q.visual as? Visual.Picture)?.id
+                        if (pic != null) com.rakesh.boretube.learn.ui.PictureArt(pic, Modifier.size(160.dp))
+                        BasicText(
+                            q.prompt,
+                            style = Text.display(if (pic != null) TypeScale.s43 else questionSize(q.prompt)).copy(textAlign = TextAlign.Center),
+                            maxLines = 3,
+                        )
+                    }
                 }
             }
             SortBasket(rightLabel, counts.second, glow = placed == 1, side = 1, Modifier.weight(1f))
@@ -290,11 +302,7 @@ fun OrderBody(q: Question, index: Int, of: Int, followUp: Boolean, placed: List<
                                 Modifier.fillMaxSize().clip(shape).background(if (right) Palette.mint else Palette.ink).padding(Gap.f13),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                BasicText(
-                                    q.options[item],
-                                    style = Text.display(orderSize(q.options[item])).copy(color = if (right) Palette.ink else Palette.cream, textAlign = TextAlign.Center),
-                                    maxLines = 2,
-                                )
+                                OrderItem(q.options[item], if (right) Palette.ink else Palette.cream)
                             }
                             Box(
                                 Modifier.align(Alignment.TopStart).padding(Gap.f8).size(34.dp).clip(CircleShape).background(Palette.sunflower),
@@ -326,15 +334,24 @@ fun OrderBody(q: Question, index: Int, of: Int, followUp: Boolean, placed: List<
                         .testTag("order-tile-$i"),
                     contentAlignment = Alignment.Center,
                 ) {
-                    BasicText(
-                        q.options[i],
-                        style = Text.display(orderSize(q.options[i])).copy(color = if (selected) Palette.cream else Palette.ink, textAlign = TextAlign.Center),
-                        maxLines = 2,
-                    )
+                    OrderItem(q.options[i], if (selected) Palette.cream else Palette.ink)
                 }
             }
         }
         Hint("◀ ▶ pick · OK to place · Back takes one back", "▲ hear it again")
+    }
+}
+
+/** An Order tile's face: a picture with its name under it, or the words. */
+@Composable
+private fun OrderItem(item: String, ink: Color) {
+    if (item.startsWith("pic:")) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            com.rakesh.boretube.learn.ui.PictureArt(item.removePrefix("pic:"), Modifier.size(84.dp))
+            BasicText(optionText(item), style = Text.body(TypeScale.s18, FontWeight.Bold).copy(color = ink), maxLines = 1)
+        }
+    } else {
+        BasicText(item, style = Text.display(orderSize(item)).copy(color = ink, textAlign = TextAlign.Center), maxLines = 2)
     }
 }
 
@@ -365,7 +382,8 @@ fun OrderAnswer(order: List<String>, shownUpTo: Int, modifier: Modifier = Modifi
                 Box(Modifier.size(30.dp).clip(CircleShape).background(Palette.sunflower), contentAlignment = Alignment.Center) {
                     BasicText("${i + 1}", style = Text.body(TypeScale.s18, FontWeight.ExtraBold))
                 }
-                BasicText(item, style = Text.display(if (order.size >= 5 || item.length > 10) TypeScale.s21 else TypeScale.s26), maxLines = 1)
+                if (item.startsWith("pic:")) com.rakesh.boretube.learn.ui.PictureArt(item.removePrefix("pic:"), Modifier.size(44.dp))
+                BasicText(optionText(item), style = Text.display(if (order.size >= 5 || item.length > 10) TypeScale.s21 else TypeScale.s26), maxLines = 1)
             }
         }
     }

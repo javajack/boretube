@@ -115,7 +115,7 @@ fun DoneScreen(
                 }
             }
             result.toPractise?.let { q ->
-                BasicText("One to practise: ${q.fact}. It comes back in a later level.", style = Text.muted())
+                BasicText("One to practise: ${com.rakesh.boretube.learn.ui.level.optionText(q.fact)}. It comes back in a later level.", style = Text.muted())
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Gap.f34)) {
                 DoneButton("Play another", sel == 0, primary = true, Modifier.weight(1f).testTag("done-another"))

@@ -73,6 +73,7 @@ android {
         unitTests.all {
             systemProperty 'robolectric.graphicsMode', 'NATIVE'
             systemProperty 'roborazzi.test.record', 'true'
+            systemProperty 'pictures.group', (project.findProperty('group') ?: '')
         }
     }
 }

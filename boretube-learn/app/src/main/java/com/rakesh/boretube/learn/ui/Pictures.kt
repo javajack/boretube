@@ -23,7 +23,7 @@ import kotlin.math.sin
  * items name a picture by id; [ids] is what the validator accepts.
  */
 object Pictures {
-    private val art: Map<String, DrawScope.() -> Unit> = mapOf(
+    private val art: Map<String, DrawScope.() -> Unit> = mapOf<String, DrawScope.() -> Unit>(
         "sun" to { sun() }, "moon" to { moon() }, "star" to { star() }, "cloud" to { cloud() }, "rain" to { rain() },
         "tree" to { tree() }, "flower" to { flower() }, "leaf" to { leaf() }, "seed" to { seed() },
         "apple" to { apple() }, "mango" to { mango() }, "banana" to { banana() }, "carrot" to { carrot() }, "egg" to { egg() },
@@ -31,7 +31,8 @@ object Pictures {
         "ball" to { ball() }, "cup" to { cup() }, "book" to { book() }, "pencil" to { pencil() }, "house" to { house() },
         "car" to { car() }, "bus" to { bus() }, "boat" to { boat() }, "drop" to { drop() }, "fire" to { fire() },
         "eye" to { eye() }, "ear" to { ear() }, "nose" to { nose() }, "hand" to { hand() }, "tooth" to { tooth() },
-    )
+    ) + com.rakesh.boretube.learn.ui.art.animalArt + com.rakesh.boretube.learn.ui.art.natureFoodArt +
+        com.rakesh.boretube.learn.ui.art.thingsArt + com.rakesh.boretube.learn.ui.art.schoolBodyArt
 
     val ids: Set<String> get() = art.keys
 

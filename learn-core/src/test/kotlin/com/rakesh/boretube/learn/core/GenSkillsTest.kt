@@ -30,6 +30,24 @@ class GenSkillsTest {
         assertTrue(errors.take(80).joinToString("\n"), errors.isEmpty())
     }
 
+    /** Picture ids the app draws (assets/content/data/pictures.json). */
+    private val pictures: Set<String> by lazy {
+        val j = kotlinx.serialization.json.Json.parseToJsonElement(File(dir, "pictures.json").readText()) as kotlinx.serialization.json.JsonObject
+        j.filterKeys { !it.startsWith("_") }.values.flatMap { v -> (v as kotlinx.serialization.json.JsonArray).map { (it as kotlinx.serialization.json.JsonPrimitive).content } }.toSet()
+    }
+
+    @Test fun everyPictureExists() {
+        val bad = mutableListOf<String>()
+        for (s in skills()) for (q in s.all()) {
+            val ids = listOfNotNull((q.visual as? Visual.Picture)?.id, (q.learnVisual as? Visual.Picture)?.id) +
+                (q.options + q.order.orEmpty()).filter { it.startsWith("pic:") }.map { it.removePrefix("pic:") }
+            for (id in ids) if (id !in pictures) bad += "${q.key}: unknown picture $id"
+            if (Format.catch in s.formats && q.options.any { it.startsWith("pic:") }) bad += "${q.key}: Catch can't show picture options"
+            if (bad.size > 40) break
+        }
+        assertTrue(bad.joinToString("\n"), bad.isEmpty())
+    }
+
     @Test fun keysRebuildTheSameQuestion() {
         val r = Random(11)
         for (s in skills()) {

@@ -321,7 +321,8 @@ class QuizView(
             is Visual.Objects -> drawMangoes(c, v.count, cx, 320f, 260f, maxWidth = rw, numbered = true)
             is Visual.Pies -> drawPies(c, v, rx, 200f, rw)
             is Visual.Clock -> drawClock(c, v.hour, v.minute, cx, 320f, 140f)
-            null -> tubby.draw(c, TubbyMood.think, x(cx - 110f), y(200f), s(220f))
+            // Brain breaks are maths only; banks' pictures live in boretube Learn.
+            is Visual.Picture, null -> tubby.draw(c, TubbyMood.think, x(cx - 110f), y(200f), s(220f))
         }
         // Footer: the promise that it comes back, and Got it.
         body.textSize = s(21f)

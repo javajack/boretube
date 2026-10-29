@@ -42,6 +42,8 @@ data class LearnState(
     val stars: Map<String, Int> = emptyMap(),
     /** boretube Learn: skills mastered, in the order they were (one sticker each). */
     val mastered: List<String> = emptyList(),
+    /** boretube Learn: levels played per skill (format rotation). */
+    val plays: Map<String, Int> = emptyMap(),
 )
 
 /** Spaced repetition, promotion/demotion and the round mix. Pure. */

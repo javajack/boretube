@@ -11,6 +11,8 @@ sealed class Visual {
     /** Same-size pies, each shaded num/den. */
     data class Pies(val fractions: List<Pair<Int, Int>>) : Visual()
     data class Clock(val hour: Int, val minute: Int) : Visual()
+    /** A picture from the app's library, by id (written banks). */
+    data class Picture(val id: String) : Visual()
 }
 
 /**

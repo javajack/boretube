@@ -4,7 +4,7 @@ import java.time.LocalDate
 import kotlin.random.Random
 
 /** How a level plays (boretube Learn). */
-enum class Format { quickfire, catch }
+enum class Format { quickfire, catch, pairs, build }
 
 data class LevelResult(
     val state: LearnState,
@@ -25,21 +25,22 @@ data class LevelResult(
 object Levels {
     const val LEVEL_SIZE = 8
 
-    /** Clocks, pies, pictures and text answers play as Quick-fire; plain numbers suit Catch. */
-    private val QUICKFIRE_ONLY = setOf("clock", "fractions", "decimals", "count10", "biggest10")
-
-    fun formatFor(skillId: String): Format = if (skillId in QUICKFIRE_ONLY) Format.quickfire else Format.catch
+    /** The format for this play of [skillId]: its formats in rotation, one per play. */
+    fun formatFor(skillId: String, plays: Int = 0, catalog: Catalog = Catalog.MATHS): Format {
+        val f = catalog.skill(skillId)?.formats ?: return Format.quickfire
+        return f[plays.mod(f.size)]
+    }
 
     /**
      * Facts of [skillId] that are due come first, then fresh questions. Keys
      * are distinct while the skill has enough of them; a small skill repeats,
      * but never the same key twice in a row.
      */
-    fun plan(s: LearnState, skillId: String, n: Int = LEVEL_SIZE, now: Long, r: Random): List<Question> {
-        val skill = Maths.skill(skillId) ?: return emptyList()
+    fun plan(s: LearnState, skillId: String, n: Int = LEVEL_SIZE, now: Long, r: Random, catalog: Catalog = Catalog.MATHS): List<Question> {
+        val skill = catalog.skill(skillId) ?: return emptyList()
         val out = mutableListOf<Question>()
         for (f in s.facts.filter { it.dueAt <= now && it.key.startsWith("$skillId:") }.sortedBy { it.dueAt }) {
-            if (out.size < n) Maths.fromKey(f.key, r)?.let { out += it }
+            if (out.size < n) catalog.fromKey(f.key, r)?.let { out += it }
         }
         val seen = out.map { it.key }.toMutableSet()
         var tries = 0
@@ -86,9 +87,47 @@ object Levels {
         st = st.copy(
             stars = st.stars + (skillId to best),
             mastered = if (newly) st.mastered + skillId else st.mastered,
+            plays = st.plays + (skillId to (st.plays[skillId] ?: 0) + 1),
         )
         return LevelResult(st, stars, best, newly, main.firstOrNull { !it.correct }?.q, main.count { it.correct }, main.size)
     }
 
+    /** Pairs: [PAIRS] facts whose card faces (the sum and the answer) are all different. */
+    fun pairsFor(s: LearnState, skillId: String, now: Long, r: Random, catalog: Catalog = Catalog.MATHS): List<Question> {
+        val out = mutableListOf<Question>()
+        val faces = HashSet<String>()
+        var tries = 0
+        for (q in plan(s, skillId, PAIRS * 6, now, r, catalog)) {
+            if (out.size == PAIRS || tries++ > 200) break
+            val f = listOf(pairPrompt(q), q.answerText)
+            if (f.none { it in faces } && f[0] != f[1]) { out += q; faces += f }
+        }
+        val skill = catalog.skill(skillId)
+        while (out.size < PAIRS && skill != null && tries++ < 400) {
+            val q = skill.next(r)
+            val f = listOf(pairPrompt(q), q.answerText)
+            if (f.none { it in faces } && f[0] != f[1]) { out += q; faces += f }
+        }
+        return out
+    }
+
+    /** The question side of a Pairs card: "7 × 8 = ?" → "7 × 8". */
+    fun pairPrompt(q: Question): String = q.prompt.removeSuffix(" = ?").removeSuffix("= ?").trim()
+
+    /** Build: [BUILDS] different two-digit numbers to make from tens and ones (place value). */
+    fun buildTargets(s: LearnState, now: Long, r: Random): List<Question> {
+        val out = mutableListOf<Question>()
+        var tries = 0
+        for (q in plan(s, "placeValue", BUILDS * 4, now, r)) {
+            if (out.size == BUILDS || tries++ > 100) break
+            if (out.none { it.key == q.key }) out += q
+        }
+        return out
+    }
+
+    fun buildTarget(q: Question): Int = q.key.substringAfter(':').toInt()
+
+    const val PAIRS = 6
+    const val BUILDS = 5
     private const val DAY_MS = 86_400_000L
 }

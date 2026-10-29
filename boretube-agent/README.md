@@ -169,7 +169,11 @@ Validation rules:
 
 - **Never-touch.** No op writes to `android`, SystemUI, Settings, Play Store, Play Services, the agent, or the profile's `neverTouch` list. A separate never-stop set covers system, both launchers, katniss, setupwraith, Realtek/Sony input and tuner packages, and the agent; those only get HOME. Restore plans skip never-touch packages too.
 - **Build-fingerprint gate.** Low-risk watchdog ops (remove stock YouTube, speech rollback) run on any build. High-risk ops (cleanup re-apply, launcher fix) wait in `pending` until the parent approves the current `ro.build.fingerprint` (`/v1/approveBuild`). An OTA therefore never triggers a mass `pm disable` by itself.
-- **Boot-loop safe mode.** 3 boots within 15 min put the agent in **safe** mode: no enforcement, no writes, report only. Leaving safe mode by hand clears the boot history.
+- **Boot-loop safe mode.** 3 boots in a row, each after a session under 5 min of the TV's own uptime (`elapsedRealtime`, checkpointed every 30 s), put the agent in **safe** mode: no enforcement, no writes, report only. Leaving safe mode by hand clears the boot history.
+  - **Wall-clock time is never used.** After a power cut the VU3 boots at a fixed date until NTP.
+  - **A cold boot (`sys.boot.reason` = `cold`, power at the wall) is never part of a loop.** Apps can't read that property, so it is read through self-ADB once that connects.
+  - **Until the reason is known, a boot that would trip is `pendingLoop`.** Rules keep running and only high-risk writes wait. `cold` clears it; any other reason, or none within 60 s, enters safe mode.
+  - **`/v1/status` reports `bootReason`.**
 - **Modes.**
   - **paused**: enforces nothing and makes no watchdog writes.
   - **safe**: same, and instant actions are limited to unmute/restore/endBreak.

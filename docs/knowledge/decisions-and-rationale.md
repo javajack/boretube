@@ -17,3 +17,5 @@ These are recorded so future contributors and LLM agents don't re-open settled q
 | One sneaky/explicit style switch for the whole TV, not per rule | Simpler UX | Parents ask for per-rule styles |
 | Break replaces "Pause TV"; quick actions flip optimistically | Clear purpose and countdown; feels instant | — |
 | Push to `javajack/boretube`, v2 becomes `main` | Single home for app, agent, debloat and knowledge | — |
+| The phone reads the TV's own power state (ADB `mWakefulness`, Cast `isStandBy`) before it judges TV Guard *(verified 2026-10-30)* | Standby pauses TV Guard while ADB and Cast still answer, so "TV Guard silent" alone said Repair for a TV that was just off | A TV model without Cast or ADB: presence falls back to "can't say", and silence counts again |
+| TV Guard's boot-loop guard counts uptime and the boot reason, never the wall clock *(verified 2026-10-30)* | After a power cut the VU3 boots at a fixed date, so wall-clock windows tripped on ordinary power cuts | A real loop that reports `cold` (none seen) |

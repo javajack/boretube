@@ -198,6 +198,7 @@ Every current feature, mapped to where it lives now:
 1. **Always On watch.** A periodic background check (Android WorkManager, about every 15 minutes, on Wi-Fi) polls each agent TV's `/v1/status`.
    - **Notify** with a local notification when the status goes healthy → down/limited/safe. Notify **once** per incident and again on recovery ("Always On is back").
    - Notifications are opt-in, with a toggle in Settings. The platform respects battery.
+   - **TV power first (added 2026-10-30).** When TV Guard doesn't answer, the watch asks Cast whether the TV is in standby. Standby, a TV that is off at the wall (or a phone away from home), and a TV Guard still settling after a start never alert. Only an awake TV with a silent TV Guard counts: twice in a row.
 2. **End after this one.** A duration chip, "When this ends", on Pause TV. It depends on the media-session spike.
    - **Media-session path:** if the agent can read the foreground media session (title, duration, position, state):
      - The chip shows "When this ends (about N min)".

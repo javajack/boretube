@@ -77,7 +77,7 @@ Building needs **JDK 17** (Gradle 8.9). The Flutter app needs Flutter 3.41+. See
 - A **never-touch** list protects Wi-Fi setup, Google TV home (remote buttons), Live TV, inputs, Assistant, Play and Speech Services.
 - **TV Guard is cautious:**
   - After a TV software update it only does low-risk fixes until you approve the update.
-  - Three boots within 15 minutes switch it to safe mode.
+  - Three quick crash restarts in a row (each under 5 minutes of uptime) switch it to safe mode. Switching the TV off at the wall never does.
   - You can pause it, put it in safe mode, or uninstall it from the phone.
 
 ## Repo map

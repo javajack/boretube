@@ -1,0 +1,23 @@
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+rootProject.name = "boretube-learn"
+include ':app'
+
+// The learning engine, shared with TV Guard.
+includeBuild('../learn-core') {
+    dependencySubstitution {
+        substitute module('com.rakesh.boretube:learn-core') using project(':')
+    }
+}

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 320×180 TV banner: cream ground, Tubby, the three land colours. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp" android:height="180dp"
+    android:viewportWidth="320" android:viewportHeight="180">
+    <path android:fillColor="#FFF4E4" android:pathData="M0,0h320v180h-320z" />
+    <path android:fillColor="#FFE1A6" android:pathData="M0,150h107v30h-107z" />
+    <path android:fillColor="#CDEFE0" android:pathData="M107,150h106v30h-106z" />
+    <path android:fillColor="#D6E8FF" android:pathData="M213,150h107v30h-107z" />
+    <path android:strokeColor="#1C1D3A" android:strokeWidth="5" android:strokeLineCap="round" android:pathData="M144,44L134,30M176,44L186,30" />
+    <path android:fillColor="#3A8DFF" android:pathData="M132,44h56a26,26 0 0,1 26,26v28a26,26 0 0,1 -26,26h-56a26,26 0 0,1 -26,-26v-28a26,26 0 0,1 26,-26z" />
+    <path android:fillColor="#FFF8F1" android:pathData="M136,55h48a18,18 0 0,1 18,18v22a18,18 0 0,1 -18,18h-48a18,18 0 0,1 -18,-18v-22a18,18 0 0,1 18,-18z" />
+    <path android:fillColor="#1C1D3A" android:pathData="M139,80m-6,0a6,6 0 1,0 12,0a6,6 0 1,0 -12,0M181,80m-6,0a6,6 0 1,0 12,0a6,6 0 1,0 -12,0" />
+    <path android:strokeColor="#1C1D3A" android:strokeWidth="5" android:strokeLineCap="round" android:pathData="M148,94Q160,104 172,94" />
+</vector>

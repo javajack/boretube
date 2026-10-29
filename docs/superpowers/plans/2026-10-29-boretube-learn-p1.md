@@ -298,7 +298,7 @@ object Levels {
   - `@Composable fun Tubby(mood: TubbyMood, modifier: Modifier)` with `enum class TubbyMood { calm, cheer, think, asleep }`. Antennae and legs are ink on daylight grounds.
   - `sealed interface Screen { object Town; data class Land(val land: LandId); data class Level(val skillId: String); data class Done(val result: LevelResult, val skillId: String) }`
 
-- [ ] **Step 1: Write the Gradle files.** Top level: same plugin versions as the agent, plus `id 'org.jetbrains.kotlin.plugin.serialization'`. `settings.gradle` has `includeBuild('../learn-core')` with the same substitution as Task 1. `app/build.gradle`:
+- [x] **Step 1: Write the Gradle files.** Top level: same plugin versions as the agent, plus `id 'org.jetbrains.kotlin.plugin.serialization'`. `settings.gradle` has `includeBuild('../learn-core')` with the same substitution as Task 1. `app/build.gradle`:
   - signing config read from `../boretube-agent/keystore/keystore.properties` (path: `rootProject.file('../boretube-agent/keystore/' + props['storeFile'].replace('keystore/',''))`);
   - `buildFeatures { compose true }` and `composeOptions { kotlinCompilerExtensionVersion '1.5.14' }`;
   - dependencies:
@@ -307,12 +307,12 @@ object Levels {
     - tests: `junit 4.13.2`, `org.robolectric:robolectric:4.12.2`, `androidx.compose.ui:ui-test-junit4`, `androidx.compose.ui:ui-test-manifest`, `io.github.takahirom.roborazzi:roborazzi:1.26.0` and `roborazzi-compose:1.26.0`;
     - `testOptions { unitTests.includeAndroidResources = true }`.
 
-- [ ] **Step 2: Write the manifest.**
+- [x] **Step 2: Write the manifest.**
   - `<uses-feature android:name="android.software.leanback" android:required="false"/>` and touchscreen required false.
   - The application has `android:banner="@drawable/banner"`.
   - The activity is exported, with intent filters for MAIN plus LEANBACK_LAUNCHER and MAIN plus LAUNCHER, `screenOrientation="landscape"`, and the theme `@android:style/Theme.DeviceDefault.NoActionBar`.
 
-- [ ] **Step 3: Write the failing focus-ring test.**
+- [x] **Step 3: Write the failing focus-ring test.**
 
 ```kotlin
 @RunWith(RobolectricTestRunner::class)
@@ -333,11 +333,11 @@ class FocusRingTest {
 
 `FocusedKey` is a `SemanticsPropertyKey<Boolean>` that `focusRing` sets. It's for tests and accessibility.
 
-- [ ] **Step 4: Implement the tokens, theme, `focusRing` and Tubby.** `focusRing` uses `onFocusChanged` and `animateFloatAsState(if (focused) scale else 1f, tween(Motion.press))`, then `graphicsLayer { scaleX = s; scaleY = s }`. When focused, a `drawWithContent` draws a 5 dp canvas-coloured outline and then a 5 dp ink or coral outline outside the bounds. Port Tubby's geometry from `boretube-agent/.../android/Tubby.kt` (viewBox 120×110) onto a `Canvas`, with ink for the antennae and legs.
+- [x] **Step 4: Implement the tokens, theme, `focusRing` and Tubby.** `focusRing` uses `onFocusChanged` and `animateFloatAsState(if (focused) scale else 1f, tween(Motion.press))`, then `graphicsLayer { scaleX = s; scaleY = s }`. When focused, a `drawWithContent` draws a 5 dp canvas-coloured outline and then a 5 dp ink or coral outline outside the bounds. Port Tubby's geometry from `boretube-agent/.../android/Tubby.kt` (viewBox 120×110) onto a `Canvas`, with ink for the antennae and legs.
 
-- [ ] **Step 5: Run.** `./gradlew -q testReleaseUnitTest assembleRelease`. Expected: PASS, and the APK signs with cert a833b381…: `apksigner verify --print-certs`.
+- [x] **Step 5: Run.** `./gradlew -q testReleaseUnitTest assembleRelease`. Expected: PASS, and the APK signs with cert a833b381…: `apksigner verify --print-certs`.
 
-- [ ] **Step 6: Commit.** `git commit -m "boretube-learn: app shell, tokens, focus ring, Tubby"`.
+- [x] **Step 6: Commit.** `git commit -m "boretube-learn: app shell, tokens, focus ring, Tubby"`.
 
 ---
 

@@ -398,7 +398,7 @@ class ProgressStoreTest {
   - `enum class Sfx(val res: String)` with values `select`, `back`, `focus_bazaar`, `focus_garden`, `focus_trail`, `q_show`, `right_1`…`right_5`, `miss`, `learn_open`, `followup_win`, `catch_drop`, `catch_move`, `catch_right`, `catch_miss`, `star_1`…`star_3`, `level_done_bazaar`, `enter_bazaar`
   - `class SoundBank(ctx: Context, enabled: () -> Boolean)` with `fun play(s: Sfx)`, `fun right(streak: Int)` (clamped to 1..5) and `fun release()`. It's backed by `SoundPool` (maxStreams 6), with every sound loaded in `init`. A focus tick plays only if at least 120 ms have passed since the last one.
 
-- [ ] **Step 1: Write `sfx.py`.** It covers these sounds:
+- [x] **Step 1: Write `sfx.py`.** It covers these sounds:
   - a pentatonic note table: C5 523.25, D5 587.33, E5 659.25, G5 783.99, A5 880, then C6 and up;
   - `marimba(f, dur)`: a sine plus a 4× partial, with an exponential decay;
   - `bell(f)`: inharmonic partials 1, 2.76 and 5.4;
@@ -412,7 +412,7 @@ class ProgressStoreTest {
 
   It writes a WAV per sound, then runs `ffmpeg -y -i x.wav -c:a libvorbis -q:a 4 x.ogg`. Run `python3 tools/sfx.py`. Expected: 25 `.ogg` files, under 400 KB in total.
 
-- [ ] **Step 2: Write the failing catalogue test.**
+- [x] **Step 2: Write the failing catalogue test.**
 
 ```kotlin
 @RunWith(RobolectricTestRunner::class)
@@ -425,9 +425,9 @@ class SfxCatalogTest {
 }
 ```
 
-- [ ] **Step 3: Implement `Sfx` (with `companion fun right(n)`) and `SoundBank`.**
-- [ ] **Step 4: Run them and watch them pass.**
-- [ ] **Step 5: Commit.** `git commit -m "boretube-learn: core sounds (own synth) and SoundBank"`.
+- [x] **Step 3: Implement `Sfx` (with `companion fun right(n)`) and `SoundBank`.**
+- [x] **Step 4: Run them and watch them pass.**
+- [x] **Step 5: Commit.** `git commit -m "boretube-learn: core sounds (own synth) and SoundBank"`.
 
 ---
 

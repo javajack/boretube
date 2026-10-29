@@ -86,12 +86,14 @@ class BreakStateTest {
 }
 
 class SafetyGuardTest {
-    @Test fun threeBootsIn15MinEntersSafeMode() {
+    private val min = 60_000L
+
+    @Test fun threeBootsEachAfterAShortSessionEnterSafeMode() {
         var s = SafetyState()
-        s = SafetyGuard.recordBoot(s, "a", 0)
-        s = SafetyGuard.recordBoot(s, "b", 5 * 60_000L)
+        s = SafetyGuard.recordBoot(s, "a", 0, prevUpMs = 3 * 60 * min)
+        s = SafetyGuard.recordBoot(s, "b", 0, prevUpMs = 2 * min)
         assertEquals(Mode.normal, s.mode)
-        s = SafetyGuard.recordBoot(s, "c", 14 * 60_000L)
+        s = SafetyGuard.recordBoot(s, "c", 0, prevUpMs = 90_000)
         assertEquals(Mode.safe, s.mode)
         assertTrue(s.modeReason.startsWith("boot loop"))
         assertEquals(3, s.bootCount)
@@ -99,23 +101,42 @@ class SafetyGuardTest {
         assertFalse(SafetyGuard.canWrite(s, Risk.low, "fp"))
     }
 
-    @Test fun spreadOutBootsAndDuplicateBootIdsDoNotTrip() {
+    @Test fun powerCutsWithTheClockStuckAtOneDateDoNotTrip() {
+        // After a power cut the VU3 boots at 2026-05-15 12:14 until NTP: the
+        // same wall-clock minute every time. Each session lasted a while.
+        val stuck = 1_778_827_488_501L
         var s = SafetyState()
-        s = SafetyGuard.recordBoot(s, "a", 0)
-        s = SafetyGuard.recordBoot(s, "a", 1) // LOCKED_BOOT + BOOT + service restart: same boot
-        s = SafetyGuard.recordBoot(s, "a", 2)
-        s = SafetyGuard.recordBoot(s, "b", 10 * 60_000L)
-        s = SafetyGuard.recordBoot(s, "c", 16 * 60_000L) // first boot fell out of the window
+        for (id in listOf("a", "b", "c", "d")) {
+            s = SafetyGuard.recordBoot(s, id, stuck, prevUpMs = 20 * min)
+        }
+        assertEquals(Mode.normal, s.mode)
+        assertEquals(4, s.bootCount)
+    }
+
+    @Test fun aLongSessionBreaksTheRunAndDuplicateBootIdsDoNotCount() {
+        var s = SafetyState()
+        s = SafetyGuard.recordBoot(s, "a", 0, prevUpMs = min)
+        s = SafetyGuard.recordBoot(s, "a", 1, prevUpMs = 10) // LOCKED_BOOT + BOOT + service restart: same boot
+        s = SafetyGuard.recordBoot(s, "a", 2, prevUpMs = 10)
+        s = SafetyGuard.recordBoot(s, "b", 3, prevUpMs = 30 * min)
+        s = SafetyGuard.recordBoot(s, "c", 4, prevUpMs = min)
         assertEquals(Mode.normal, s.mode)
         assertEquals(3, s.bootCount)
     }
 
+    @Test fun anUnknownPreviousSessionIsNotShort() {
+        var s = SafetyState()
+        for (id in listOf("a", "b", "c")) s = SafetyGuard.recordBoot(s, id, 0, prevUpMs = null)
+        assertEquals(Mode.normal, s.mode)
+    }
+
     @Test fun leavingSafeModeClearsTheBurst() {
         var s = SafetyState()
-        for ((i, id) in listOf("a", "b", "c").withIndex()) s = SafetyGuard.recordBoot(s, id, i * 1000L)
+        for (id in listOf("a", "b", "c")) s = SafetyGuard.recordBoot(s, id, 0, prevUpMs = min)
+        assertEquals(Mode.safe, s.mode)
         s = SafetyGuard.setMode(s, Mode.normal, "phone")
         assertEquals(Mode.normal, s.mode)
-        s = SafetyGuard.recordBoot(s, "d", 4000)
+        s = SafetyGuard.recordBoot(s, "d", 0, prevUpMs = min)
         assertEquals(Mode.normal, s.mode)
     }
 

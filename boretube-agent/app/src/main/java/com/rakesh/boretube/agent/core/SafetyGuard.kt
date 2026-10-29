@@ -19,36 +19,58 @@ data class SafetyState(
     val boots: List<Long> = emptyList(),
     val lastBootId: String = "",
     val bootCount: Int = 0,
+    /** Boots in a row that followed a short session (see [SafetyGuard.recordBoot]). */
+    val shortBoots: Int = 0,
     val approvedFingerprint: String? = null,
 )
 
 /**
- * §R safety: modes, the boot-loop guard (3 boots within 15 min → safe mode) and
- * the build-fingerprint gate for high-risk watchdog writes. Pure.
+ * §R safety: modes, the boot-loop guard (3 boots in a row, each after a session
+ * under 5 min → safe mode) and the build-fingerprint gate for high-risk
+ * watchdog writes. Pure.
  */
 object SafetyGuard {
     const val BOOT_LOOP_COUNT = 3
-    const val BOOT_LOOP_WINDOW_MS = 15 * 60_000L
+
+    /** A session that ended sooner than this is part of a loop. */
+    const val SHORT_SESSION_MS = 5 * 60_000L
 
     /**
      * Records one boot (idempotent per [bootId]: BOOT_COMPLETED and
      * LOCKED_BOOT_COMPLETED and a service restart all report the same boot).
-     * Enters safe mode when [BOOT_LOOP_COUNT] boots fall within the window.
+     *
+     * [prevUpMs] is how long the previous boot stayed up (the TV's own uptime,
+     * last checkpointed), or null when unknown. Wall-clock time can't be used: after
+     * a power cut the VU3 starts at a fixed date (2026-05-15 12:14) until NTP,
+     * so every cold boot looked like the same minute (verified 2026-10-30).
+     * Enters safe mode when [BOOT_LOOP_COUNT] boots come in a row, each after
+     * a session shorter than [SHORT_SESSION_MS].
      */
-    fun recordBoot(s: SafetyState, bootId: String, now: Long): SafetyState {
+    fun recordBoot(s: SafetyState, bootId: String, now: Long, prevUpMs: Long? = null): SafetyState {
         if (bootId == s.lastBootId) return s
-        val boots = (s.boots + now).filter { now - it < BOOT_LOOP_WINDOW_MS }.takeLast(10)
-        var next = s.copy(boots = boots, lastBootId = bootId, bootCount = s.bootCount + 1)
-        if (boots.size >= BOOT_LOOP_COUNT && s.mode != Mode.safe) {
-            next = next.copy(mode = Mode.safe, modeReason = "boot loop: ${boots.size} boots in 15 min")
+        val short = prevUpMs != null && prevUpMs in 0 until SHORT_SESSION_MS
+        val run = if (short) s.shortBoots + 1 else 0
+        var next = s.copy(
+            boots = (s.boots + now).takeLast(10),
+            lastBootId = bootId,
+            bootCount = s.bootCount + 1,
+            shortBoots = run,
+        )
+        if (run + 1 >= BOOT_LOOP_COUNT && s.mode != Mode.safe) {
+            next = next.copy(mode = Mode.safe, modeReason = "boot loop: ${run + 1} boots, each within 5 min")
         }
         return next
     }
 
     fun setMode(s: SafetyState, mode: Mode, reason: String): SafetyState {
         // Leaving safe mode by hand forgets the boot burst so it doesn't re-trip at once.
-        val boots = if (s.mode == Mode.safe && mode != Mode.safe) emptyList() else s.boots
-        return s.copy(mode = mode, modeReason = reason, boots = boots)
+        val leaving = s.mode == Mode.safe && mode != Mode.safe
+        return s.copy(
+            mode = mode,
+            modeReason = reason,
+            boots = if (leaving) emptyList() else s.boots,
+            shortBoots = if (leaving) 0 else s.shortBoots,
+        )
     }
 
     fun approveBuild(s: SafetyState, fingerprint: String): SafetyState = s.copy(approvedFingerprint = fingerprint)

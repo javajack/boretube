@@ -84,6 +84,11 @@ class AgentStore(private val ctx: Context) {
         } ?: SafetyState()
         set(v) { prefs.edit().putString(K_SAFETY, AgentJson.encodeToString(SafetyState.serializer(), v)).commit() }
 
+    /** The TV's uptime (elapsedRealtime) at the last checkpoint of this boot. */
+    var upMs: Long?
+        get() = if (prefs.contains(K_UP)) prefs.getLong(K_UP, 0) else null
+        set(v) { prefs.edit().apply { if (v == null) remove(K_UP) else putLong(K_UP, v) }.apply() }
+
     var tvTime: TvTimeState
         get() = prefs.getString(K_TVTIME, null)?.let {
             runCatching { AgentJson.decodeFromString(TvTimeState.serializer(), it) }.getOrNull()
@@ -156,6 +161,7 @@ class AgentStore(private val ctx: Context) {
         private const val K_PROFILE = "profile"
         private const val K_BREAK = "break"
         private const val K_SAFETY = "safety"
+        private const val K_UP = "upMs"
         private const val K_TVTIME = "tvTime"
         private const val K_SOUND = "soundPath"
         private const val K_KEEP = "keepDisabled"

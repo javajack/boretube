@@ -172,8 +172,11 @@ class GuardController(private val ctx: Context) : AgentApi {
 
     fun start() {
         synchronized(lock) {
-            safety = SafetyGuard.recordBoot(safety, bootId(), System.currentTimeMillis())
+            // How long the previous boot stayed up: read before this boot's
+            // first checkpoint replaces it (a restart in the same boot is a no-op).
+            safety = SafetyGuard.recordBoot(safety, bootId(), System.currentTimeMillis(), store.upMs)
             store.safety = safety
+            store.upMs = SystemClock.elapsedRealtime()
         }
         if (safety.mode == Mode.safe && safety.modeReason.startsWith("boot loop")) {
             record("safeMode", "agent", "", safety.modeReason, true, "agent")
@@ -183,6 +186,8 @@ class GuardController(private val ctx: Context) : AgentApi {
         shell.ensureConnected()
         guardExec.scheduleWithFixedDelay({ safely("tick") { tick() } }, 1, 1, TimeUnit.SECONDS)
         slowExec.scheduleWithFixedDelay({ safely("housekeeping") { housekeeping() } }, 0, 5, TimeUnit.SECONDS)
+        // The boot-loop guard's clock: how long this boot has been up.
+        guardExec.scheduleWithFixedDelay({ safely("uptime") { store.upMs = SystemClock.elapsedRealtime() } }, 30, 30, TimeUnit.SECONDS)
         val router = Router({ store.token }, this)
         http = HttpServer(router).also { it.start() }
         nsd = NsdAnnouncer(ctx, store.agentId, BuildConfig.VERSION_NAME).also { it.start(HttpServer.PORT) }

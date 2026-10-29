@@ -136,3 +136,10 @@ Notes:
   - less than 60 s since waking, or a helper with uptime under 60 s → "Starting up".
   
   Only an awake, settled TV with a silent or limited helper offers Repair. The background watch asks Cast before counting a miss.
+
+## The clock after a power cut (verified 2026-10-30)
+
+- **After power is cut at the wall, the VU3 boots with its clock at a fixed date, 2026-05-15 12:14**, until NTP syncs. TV Guard's journal entry for that boot carried that time.
+- **TV Guard ≤ 1.4.1 counted boots by wall-clock time**, so three power cuts on different days all looked like the same minute. The result was "boot loop: 3 boots in 15 min" and a false safe mode.
+- **1.4.2 counts boots by the TV's own uptime** (`elapsedRealtime`, checkpointed every 30 s). Safe mode needs 3 boots in a row, each after a session shorter than 5 minutes.
+- **Never use wall-clock time for anything that has to survive a power cut on this TV.**

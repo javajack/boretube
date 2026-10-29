@@ -1,7 +1,7 @@
 {
-  "versionName": "1.4.4",
-  "versionCode": 13,
-  "sha256": "8cba5c065d49ef38fb7adbfd65bceefeda71e6099901e6f32322a7b8e3ef0907",
+  "versionName": "1.4.5",
+  "versionCode": 14,
+  "sha256": "b2baafadb726ff0beebb3f63a76e443a7126d201d8c4fdbf26dbcc2b336bee38",
   "certSha256": "a833b38182d99ad47ec945e73234b312d787136cf8ac8a4039c33e9522a58bc0",
   "signingCertSha256": "a833b38182d99ad47ec945e73234b312d787136cf8ac8a4039c33e9522a58bc0",
   "package": "com.rakesh.boretube.agent",

@@ -57,6 +57,7 @@ import com.rakesh.boretube.agent.core.Rules
 import com.rakesh.boretube.agent.core.RulesPut
 import com.rakesh.boretube.agent.core.RulesUpdate
 import com.rakesh.boretube.agent.core.SafetyGuard
+import com.rakesh.boretube.agent.core.SafetyState
 import com.rakesh.boretube.agent.core.SelfAdb
 import com.rakesh.boretube.agent.core.StatusDoc
 import com.rakesh.boretube.agent.core.TvReader
@@ -235,13 +236,37 @@ class GuardController(private val ctx: Context) : AgentApi {
         if (appBootReason != null || shellBootReason != null) return
         val r = shell.run("getprop sys.boot.reason").stdout.trim().ifEmpty { return }
         shellBootReason = r
-        val forgiven = synchronized(lock) {
-            val was = safety.mode
+        val (was, now) = synchronized(lock) {
+            val was = safety
             safety = SafetyGuard.learnBootReason(safety, r)
             store.safety = safety
-            was == Mode.safe && safety.mode == Mode.normal
+            was to safety
         }
-        if (forgiven) record("mode", "agent", "safe", "normal: $r boot, ${safety.modeReason}", true, "agent")
+        noteBootDecision(was, now, r)
+    }
+
+    /** No boot reason a minute in (self-ADB down): decide without it. */
+    private fun bootReasonTimeout() {
+        if (SystemClock.elapsedRealtime() - startedElapsed < BOOT_REASON_WAIT_MS) return
+        val (was, now) = synchronized(lock) {
+            if (!safety.pendingLoop) return
+            val was = safety
+            safety = SafetyGuard.bootReasonUnknown(safety)
+            store.safety = safety
+            was to safety
+        }
+        noteBootDecision(was, now, "unknown")
+    }
+
+    private fun noteBootDecision(was: SafetyState, now: SafetyState, reason: String) {
+        when {
+            was.mode == Mode.safe && now.mode == Mode.normal ->
+                record("mode", "agent", "safe", "normal: $reason boot, ${now.modeReason}", true, "agent")
+            was.mode != Mode.safe && now.mode == Mode.safe ->
+                record("safeMode", "agent", "", "${now.modeReason} ($reason boot)", true, "agent")
+            was.pendingLoop && !now.pendingLoop ->
+                record("bootLoop", "agent", "", "not a loop: $reason boot", true, "agent")
+        }
     }
 
     private fun bootId(): String = try {
@@ -531,6 +556,7 @@ class GuardController(private val ctx: Context) : AgentApi {
         val now = System.currentTimeMillis()
         shell.ensureConnected(now)
         store.ensureExternalFiles()
+        safely("bootReasonTimeout") { bootReasonTimeout() }
         if (shell.state != SelfAdb.ok) return
         safely("bootReason") { learnBootReason() }
         heal(now, periodic = lastPeriodicHeal == 0L || now - lastPeriodicHeal >= PermissionHeal.PERIOD_MS)
@@ -893,6 +919,7 @@ class GuardController(private val ctx: Context) : AgentApi {
         private const val TAG = "BoretubeGuard"
         const val WATCHDOG_PERIOD_MS = 6 * 3600_000L
         const val QUICK_CHECK_MS = 60_000L
+        const val BOOT_REASON_WAIT_MS = 60_000L
         const val PACKAGE_SETTLE_MS = 3_000L
     }
 }

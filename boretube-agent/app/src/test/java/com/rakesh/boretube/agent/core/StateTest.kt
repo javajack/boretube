@@ -93,7 +93,7 @@ class SafetyGuardTest {
         s = SafetyGuard.recordBoot(s, "a", 0, prevUpMs = 3 * 60 * min)
         s = SafetyGuard.recordBoot(s, "b", 0, prevUpMs = 2 * min)
         assertEquals(Mode.normal, s.mode)
-        s = SafetyGuard.recordBoot(s, "c", 0, prevUpMs = 90_000)
+        s = SafetyGuard.recordBoot(s, "c", 0, prevUpMs = 90_000, bootReason = "watchdog")
         assertEquals(Mode.safe, s.mode)
         assertTrue(s.modeReason.startsWith("boot loop"))
         assertEquals(3, s.bootCount)
@@ -140,21 +140,45 @@ class SafetyGuardTest {
         assertFalse(SafetyGuard.isColdBoot(null))
     }
 
-    @Test fun aColdBootLearnedLateUndoesItsOwnTrip() {
-        // The first boot's own predecessor was short too: it trips on "b".
+    @Test fun anUnknownReasonWaitsInsteadOfFlashingSafeMode() {
+        // The VU3 hides the reason from apps: the boot that would trip waits.
         var s = SafetyState()
         for (id in listOf("a", "b")) s = SafetyGuard.recordBoot(s, id, 0, prevUpMs = min)
-        assertEquals(Mode.safe, s.mode)
-        s = SafetyGuard.learnBootReason(s, "cold")
         assertEquals(Mode.normal, s.mode)
-        assertEquals(0, s.shortBoots)
-        // Not cold: nothing changes.
-        var t = SafetyState()
-        for (id in listOf("a", "b")) t = SafetyGuard.recordBoot(t, id, 0, prevUpMs = min)
-        assertEquals(Mode.safe, SafetyGuard.learnBootReason(t, "reboot,shell").mode)
+        assertTrue(s.pendingLoop)
+        // Rules keep running; only risky clean-up writes wait.
+        assertTrue(SafetyGuard.canEnforce(s))
+        assertTrue(SafetyGuard.canWrite(s, Risk.low, "fp"))
+        assertFalse(SafetyGuard.canWrite(SafetyGuard.approveBuild(s, "fp"), Risk.high, "fp"))
+
+        // Self-ADB says it was switched on at the wall: not a loop.
+        val cold = SafetyGuard.learnBootReason(s, "cold")
+        assertEquals(Mode.normal, cold.mode)
+        assertFalse(cold.pendingLoop)
+        assertEquals(0, cold.shortBoots)
+
+        // Any other reason, or none within the wait, confirms it.
+        assertEquals(Mode.safe, SafetyGuard.learnBootReason(s, "kernel_panic").mode)
+        val unknown = SafetyGuard.bootReasonUnknown(s)
+        assertEquals(Mode.safe, unknown.mode)
+        assertTrue(unknown.modeReason.startsWith("boot loop"))
+        assertFalse(unknown.pendingLoop)
+    }
+
+    @Test fun aColdBootLearnedLateUndoesItsOwnTrip() {
+        // A trip made at the start of this boot (as 1.4.4 did) is undone.
+        val tripped = SafetyState(
+            mode = Mode.safe,
+            modeReason = "boot loop: 3 boots, each within 5 min",
+            lastBootId = "c",
+            trippedBootId = "c",
+            shortBoots = 2,
+        )
+        assertEquals(Mode.normal, SafetyGuard.learnBootReason(tripped, "cold").mode)
+        assertEquals(Mode.safe, SafetyGuard.learnBootReason(tripped, "reboot,shell").mode)
         // A trip from an earlier boot stays: switching on again doesn't clear a real loop.
-        t = SafetyGuard.recordBoot(t, "d", 0, prevUpMs = 30 * min)
-        assertEquals(Mode.safe, SafetyGuard.learnBootReason(t, "cold").mode)
+        val earlier = tripped.copy(lastBootId = "d")
+        assertEquals(Mode.safe, SafetyGuard.learnBootReason(earlier, "cold").mode)
         // A cold boot ends a run even without a trip.
         val u = SafetyGuard.recordBoot(SafetyState(), "a", 0, prevUpMs = min)
         assertEquals(1, u.shortBoots)
@@ -169,11 +193,13 @@ class SafetyGuardTest {
 
     @Test fun leavingSafeModeClearsTheBurst() {
         var s = SafetyState()
-        for (id in listOf("a", "b", "c")) s = SafetyGuard.recordBoot(s, id, 0, prevUpMs = min)
+        for (id in listOf("a", "b", "c")) {
+            s = SafetyGuard.recordBoot(s, id, 0, prevUpMs = min, bootReason = "watchdog")
+        }
         assertEquals(Mode.safe, s.mode)
         s = SafetyGuard.setMode(s, Mode.normal, "phone")
         assertEquals(Mode.normal, s.mode)
-        s = SafetyGuard.recordBoot(s, "d", 0, prevUpMs = min)
+        s = SafetyGuard.recordBoot(s, "d", 0, prevUpMs = min, bootReason = "watchdog")
         assertEquals(Mode.normal, s.mode)
     }
 

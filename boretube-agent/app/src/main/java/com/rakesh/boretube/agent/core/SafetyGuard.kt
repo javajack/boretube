@@ -23,6 +23,12 @@ data class SafetyState(
     val shortBoots: Int = 0,
     /** The boot whose start tripped the boot-loop guard, if any. */
     val trippedBootId: String = "",
+    /**
+     * This boot would trip the guard, but its boot reason isn't known yet: no
+     * high-risk writes until [SafetyGuard.learnBootReason] or
+     * [SafetyGuard.bootReasonUnknown] decides.
+     */
+    val pendingLoop: Boolean = false,
     val approvedFingerprint: String? = null,
 )
 
@@ -63,32 +69,36 @@ object SafetyGuard {
         val cold = isColdBoot(bootReason)
         val short = !cold && prevUpMs != null && prevUpMs in 0 until SHORT_SESSION_MS
         val run = if (short) s.shortBoots + 1 else 0
-        var next = s.copy(
+        val next = s.copy(
             boots = (s.boots + now).takeLast(10),
             lastBootId = bootId,
             bootCount = s.bootCount + 1,
             shortBoots = run,
+            pendingLoop = false,
         )
-        if (run + 1 >= BOOT_LOOP_COUNT && s.mode != Mode.safe) {
-            next = next.copy(
-                mode = Mode.safe,
-                modeReason = "boot loop: ${run + 1} boots, each within 5 min",
-                trippedBootId = bootId,
-            )
-        }
-        return next
+        if (run + 1 < BOOT_LOOP_COUNT || s.mode == Mode.safe) return next
+        // Unknown reason (apps can't read it on the VU3): wait for self-ADB
+        // rather than flash safe mode on a parent's power cut.
+        return if (bootReason == null) next.copy(pendingLoop = true) else trip(next)
     }
+
+    private fun trip(s: SafetyState): SafetyState = s.copy(
+        mode = Mode.safe,
+        modeReason = "boot loop: ${s.shortBoots + 1} boots, each within 5 min",
+        trippedBootId = s.lastBootId,
+        pendingLoop = false,
+    )
 
     /**
      * The boot reason learned late (apps can't read `sys.boot.reason`; self-ADB
-     * can, once connected): a cold boot ends the run, and undoes a boot-loop
-     * trip made by this same boot.
+     * can, once connected). A cold boot ends the run (and undoes a trip made by
+     * this same boot); anything else confirms a pending loop.
      */
     fun learnBootReason(s: SafetyState, reason: String?): SafetyState {
-        if (!isColdBoot(reason)) return s
+        if (!isColdBoot(reason)) return if (s.pendingLoop) trip(s) else s
         val tripped = s.mode == Mode.safe && s.trippedBootId == s.lastBootId &&
             s.modeReason.startsWith("boot loop")
-        if (!tripped) return s.copy(shortBoots = 0)
+        if (!tripped) return s.copy(shortBoots = 0, pendingLoop = false)
         return s.copy(
             mode = Mode.normal,
             modeReason = "switched on at the wall, not a loop",
@@ -97,6 +107,9 @@ object SafetyGuard {
             trippedBootId = "",
         )
     }
+
+    /** The reason never came (self-ADB down): a pending loop counts after all. */
+    fun bootReasonUnknown(s: SafetyState): SafetyState = if (s.pendingLoop) trip(s) else s
 
     /** `sys.boot.reason` says power was just applied. */
     fun isColdBoot(reason: String?): Boolean =
@@ -130,6 +143,7 @@ object SafetyGuard {
      */
     fun canWrite(s: SafetyState, risk: Risk, currentFingerprint: String?): Boolean = when {
         s.mode != Mode.normal -> false
+        s.pendingLoop && risk == Risk.high -> false
         risk == Risk.low -> true
         else -> buildApproved(s, currentFingerprint)
     }

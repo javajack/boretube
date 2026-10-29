@@ -144,5 +144,6 @@ Notes:
 - **1.4.2 counts boots by the TV's own uptime** (`elapsedRealtime`, checkpointed every 30 s). Safe mode needs 3 boots in a row, each after a session shorter than 5 minutes.
 - **`sys.boot.reason` tells a power cut from a restart:** `cold` after power at the wall, `reboot,shell` after `adb reboot`. `persist.sys.boot.reason.history` keeps the last few, with the reset clock (`cold,1514764820` is 2018-01-01).
 - **1.4.2 still tripped** when the TV was switched off at the wall every minute or two. **1.4.3 never counts a cold boot as part of a loop.** It reports the reason as `bootReason` in `/v1/status`.
-- **An app can't read `sys.boot.reason` on the VU3**: 1.4.3 reported `bootReason: null`. **1.4.4 reads it through self-ADB** once that connects, and undoes a boot-loop trip made by that same cold boot.
+- **An app can't read `sys.boot.reason` on the VU3**: 1.4.3 reported `bootReason: null`. **1.4.4 reads it through self-ADB** once that connects, and undoes a boot-loop trip made by that same cold boot. Seen on the TV: three quick power cuts, then safe mode for about 5 s, then normal.
+- **1.4.5 doesn't flash safe mode.** A boot that would trip with an unknown reason waits as `pendingLoop`: rules keep running and only high-risk clean-up writes wait. Self-ADB's `cold` clears it. Any other reason, or no answer within 60 s, enters safe mode.
 - **Never use wall-clock time for anything that has to survive a power cut on this TV.**

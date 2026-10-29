@@ -353,7 +353,7 @@ class FocusRingTest {
   - `data class LearnSettings(val grade: Int = 1, val lang: String = "en", val sounds: Boolean = true, val music: Boolean = true, val set: Boolean = false)`
   - `class SettingsStore(prefs: SharedPreferences)` with `get(): LearnSettings` and `put(LearnSettings)`.
 
-- [ ] **Step 1: Write the failing tests.**
+- [x] **Step 1: Write the failing tests.**
 
 ```kotlin
 class ProgressStoreTest {
@@ -378,10 +378,10 @@ class ProgressStoreTest {
 }
 ```
 
-- [ ] **Step 2: Run them and watch them fail.**
-- [ ] **Step 3: Implement.** Use `Json { ignoreUnknownKeys = true; encodeDefaults = true }`.
-- [ ] **Step 4: Run them and watch them pass.**
-- [ ] **Step 5: Commit.** `git commit -m "boretube-learn: progress store with backup, settings"`.
+- [x] **Step 2: Run them and watch them fail.**
+- [x] **Step 3: Implement.** Use `Json { ignoreUnknownKeys = true; encodeDefaults = true }`.
+- [x] **Step 4: Run them and watch them pass.**
+- [x] **Step 5: Commit.** `git commit -m "boretube-learn: progress store with backup, settings"`.
 
 ---
 

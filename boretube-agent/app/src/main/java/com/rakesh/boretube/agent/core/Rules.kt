@@ -57,6 +57,8 @@ data class Rules(
     val stockYouTubeAllowed: Boolean = false,
     /** Optional (agent 1.1.0+): Shorts detection and enforcement. Absent = off. */
     val shorts: ShortsRules? = null,
+    /** Optional (agent 1.4.0+): brain breaks. Absent = off. */
+    val learning: LearningRules? = null,
 ) {
     fun toJson(): String = AgentJson.encodeToString(serializer(), this)
 
@@ -84,6 +86,7 @@ data class Rules(
             require(it.perDay in 0..1000) { "shorts.perDay must be 0..1000" }
             require(it.cooldownMin == null || it.cooldownMin in 1..120) { "shorts.cooldownMin must be 1..120" }
         }
+        learning?.validate()
     }
 
     companion object {

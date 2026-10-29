@@ -8,6 +8,7 @@ import com.rakesh.boretube.agent.core.BreakState
 import com.rakesh.boretube.agent.core.DeviceProfile
 import com.rakesh.boretube.agent.core.EndAfterState
 import com.rakesh.boretube.agent.core.Journal
+import com.rakesh.boretube.agent.core.LearnState
 import com.rakesh.boretube.agent.core.Rules
 import com.rakesh.boretube.agent.core.SafetyState
 import com.rakesh.boretube.agent.core.ShortsCount
@@ -121,6 +122,13 @@ class AgentStore(private val ctx: Context) {
         get() = prefs.getLong(K_COOLDOWN, 0).takeIf { it > 0 }
         set(v) { prefs.edit().apply { if (v == null) remove(K_COOLDOWN) else putLong(K_COOLDOWN, v) }.commit() }
 
+    /** Brain breaks: the child's rung, missed facts and this week (1.4.0+). */
+    var learnState: LearnState
+        get() = prefs.getString(K_LEARN, null)?.let {
+            runCatching { AgentJson.decodeFromString(LearnState.serializer(), it) }.getOrNull()
+        } ?: LearnState()
+        set(v) { prefs.edit().putString(K_LEARN, AgentJson.encodeToString(LearnState.serializer(), v)).apply() }
+
     var lastWatchdogAt: Long
         get() = prefs.getLong(K_LAST_WD, 0)
         set(v) { prefs.edit().putLong(K_LAST_WD, v).apply() }
@@ -155,6 +163,7 @@ class AgentStore(private val ctx: Context) {
         private const val K_END_AFTER = "endAfter"
         private const val K_SHORTS = "shortsCount"
         private const val K_COOLDOWN = "cooldownUntil"
+        private const val K_LEARN = "learnState"
 
         fun randomHex(bytes: Int): String {
             val b = ByteArray(bytes)

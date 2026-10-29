@@ -58,6 +58,8 @@ data class MediaOutcome(
     val endAfterFired: String? = null,
     val endAfterBreakMin: Int = EndAfter.DEFAULT_BREAK_MIN,
     val notes: List<MediaNote> = emptyList(),
+    /** Brain breaks on hopping (1.4.0+): open a brain break over this package instead of closing it. */
+    val brainBreak: String? = null,
 )
 
 /**
@@ -108,6 +110,9 @@ class MediaGuard(
         val sr = rules.shorts ?: ShortsRules()
         val explicit = rules.style == "explicit"
         var close: Decision.CloseApp? = null
+        var brainBreak: String? = null
+        // Brain breaks on hopping replace the shorts/hopping action while learning is on.
+        val quizOnHop = rules.learning?.let { it.enabled && it.trigger == "hopping" } == true
         // A running cool-down ends when it expires, or when the parent switched cool-down off.
         cooldownUntil?.let { until ->
             // (A cool-down further away than the longest allowed means the wall clock jumped back.)
@@ -131,7 +136,12 @@ class MediaGuard(
                         "; ${s.titles.take(5).joinToString(" | ")}",
                 )
             }
-            if (sr.mode == "cooldown" && canEnforce && cooldownUntil == null) {
+            if (quizOnHop && canEnforce) {
+                brainBreak = pkg
+                notes += MediaNote("brainBreak", pkg, s.kind, "opening a brain break")
+                detector.reset(pkg)
+            }
+            if (!quizOnHop && sr.mode == "cooldown" && canEnforce && cooldownUntil == null) {
                 val min = sr.cooldownMinutes
                 val until = nowWall + min * 60_000L
                 cooldownUntil = until
@@ -149,7 +159,7 @@ class MediaGuard(
                 "budget" -> if (shortsCount.overBudget(today, sr.perDay)) "shortsBudget" else null
                 else -> null
             }
-            if (block != null && canEnforce) {
+            if (!quizOnHop && block != null && canEnforce) {
                 val card = when {
                     !explicit -> null
                     s.kind == "hopping" && block == "shortsBlock" -> Card(HOP_TITLE, null, HOP_SUB, CardMood.calm)
@@ -200,7 +210,7 @@ class MediaGuard(
                 watcher.clear()
             }
         }
-        return MediaOutcome(primary, close, fired, ea.breakMin, notes)
+        return MediaOutcome(primary, close, fired, ea.breakMin, notes, brainBreak)
     }
 
     fun arm(snap: MediaSnapshot, foreground: String?, nowWall: Long, capMin: Int?, breakMin: Int?): ActionResult {

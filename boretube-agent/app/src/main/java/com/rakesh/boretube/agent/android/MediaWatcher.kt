@@ -41,7 +41,7 @@ class MediaWatcher(private val ctx: Context, private val shell: Shell) {
     @Volatile var snapshot: MediaSnapshot = MediaSnapshot.NONE
         private set
 
-    private var controllers: List<MediaController> = emptyList()
+    @Volatile private var controllers: List<MediaController> = emptyList()
     private val callbacks = HashMap<MediaController, MediaController.Callback>()
     private var sessionsListener: MediaSessionManager.OnActiveSessionsChangedListener? = null
     private var lastDump = 0L
@@ -124,6 +124,20 @@ class MediaWatcher(private val ctx: Context, private val shell: Shell) {
             try { c.registerCallback(cb, handler); callbacks[c] = cb } catch (_: Exception) {}
         }
         refresh()
+    }
+
+    /**
+     * Pauses or plays [pkg]'s session through its transport controls (brain
+     * breaks). False without listener access or without that session.
+     */
+    fun transport(pkg: String, play: Boolean): Boolean {
+        val c = controllers.firstOrNull { it.packageName == pkg } ?: return false
+        return try {
+            if (play) c.transportControls.play() else c.transportControls.pause()
+            true
+        } catch (_: Exception) {
+            false
+        }
     }
 
     /** Callback path: publish a fresh snapshot right away (the tick picks it up within 1 s). */

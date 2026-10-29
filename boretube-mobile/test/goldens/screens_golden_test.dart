@@ -595,6 +595,57 @@ void main() {
     await shot(tester, 'routines_shorts$sfx');
   });
 
+  both('Routines · Brain breaks', (tester, dark, sfx) async {
+    final now = DateTime(2026, 10, 29, 17, 30);
+    final env = await TestEnv.create(tvs: [adbSony]);
+    final rules = goldenRules(now).copyWith(
+      learning: const LearningRule(
+        enabled: true,
+        grade: 3,
+        lang: LearnLang.enHi,
+        trigger: LearnTrigger.hopping,
+      ),
+    );
+    final link = guardLink();
+    await pumpScreen(
+      tester,
+      const ShellScreen(),
+      dark: dark,
+      size: const Size(360, 1500),
+      overrides: [
+        ...env.overrides(now: playing, probeCaps: adbSony.capabilities),
+        ...guardOverrides(
+          AgentLink(
+            AgentLinkKind.up,
+            lastOk: link.lastOk,
+            status: const AgentStatus(
+              agentId: 'agent-1',
+              version: '1.4.0',
+              learning: AgentLearning(
+                enabled: true,
+                trigger: LearnTrigger.hopping,
+                grade: 3,
+                skill: 'Tables of 2, 3, 4, 5 and 10',
+                voice: 'ok',
+                weekBreaks: 4,
+                weekRight: 9,
+                weekLearned: 3,
+                stronger: 'Tables of 2, 3, 4, 5 and 10',
+              ),
+            ),
+          ),
+        ),
+        rulesProvider.overrideWith((ref) async => rules),
+        rulesClockProvider.overrideWithValue(() => now),
+        routinesFocusProvider.overrideWith((ref) => 'learning'),
+      ],
+    );
+    await settle(tester);
+    await tester.tap(find.byKey(const Key('tab-Routines')));
+    await settle(tester);
+    await shot(tester, 'routines_learning$sfx');
+  });
+
   both('Better TV · health with Always On', (tester, dark, sfx) async {
     final env = await TestEnv.create(tvs: [adbSony]);
     await pumpScreen(

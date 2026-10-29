@@ -6,7 +6,6 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RadialGradient
-import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.Typeface
 import android.text.Layout
@@ -37,10 +36,7 @@ class TvCardView(ctx: Context) : View(ctx) {
         strokeCap = Paint.Cap.ROUND
         strokeJoin = Paint.Join.ROUND
     }
-    private val zPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        typeface = Typeface.create("sans-serif", Typeface.BOLD)
-        color = CREAM
-    }
+    private val tubby = Tubby()
     private val kickerPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
         typeface = Typeface.create("sans-serif", Typeface.BOLD)
         color = SUNFLOWER_SOFT
@@ -185,73 +181,7 @@ class TvCardView(ctx: Context) : View(ctx) {
         c.drawText(footText, 0, footText.length, textLeft + icon + 14f * u, base, footPaint)
     }
 
-    private fun drawTubby(c: Canvas, mood: CardMood) {
-        val k = tubbyScale
-        c.save()
-        c.translate(tubbyLeft, tubbyTop)
-        c.scale(k, k)
-        // Antennae and legs in cream: they must read on the navy background.
-        stroke.color = CREAM
-        stroke.strokeWidth = 5f
-        c.drawLine(44f, 14f, 34f, 2f, stroke)
-        c.drawLine(76f, 14f, 86f, 2f, stroke)
-        fill.color = when (mood) {
-            CardMood.asleep -> SUNFLOWER
-            CardMood.calm -> SKY
-            CardMood.guard -> MINT
-        }
-        c.drawRoundRect(BODY, 26f, 26f, fill)
-        fill.color = if (mood == CardMood.asleep) SCREEN_NIGHT else CREAM
-        c.drawRoundRect(SCREEN, 18f, 18f, fill)
-        when (mood) {
-            CardMood.asleep -> {
-                stroke.color = CREAM
-                stroke.strokeWidth = 4.5f
-                c.drawPath(SLEEP_EYES, stroke)
-                stroke.strokeWidth = 4f
-                c.drawPath(SLEEP_MOUTH, stroke)
-            }
-            CardMood.calm -> {
-                eyes(c)
-                stroke.color = INK
-                stroke.strokeWidth = 5f
-                c.drawPath(SMILE, stroke)
-                fill.color = CORAL
-                fill.alpha = (0.55f * 255).toInt()
-                c.drawCircle(33f, 64f, 5f, fill)
-                c.drawCircle(87f, 64f, 5f, fill)
-                fill.alpha = 255
-            }
-            CardMood.guard -> {
-                eyes(c)
-                stroke.color = INK
-                stroke.strokeWidth = 5f
-                c.drawLine(50f, 65f, 70f, 65f, stroke)
-                fill.color = INK
-                c.drawPath(GUARD_SHIELD, fill)
-                stroke.color = MINT
-                stroke.strokeWidth = 3.5f
-                c.drawPath(GUARD_CHECK, stroke)
-            }
-        }
-        fill.color = CREAM
-        c.drawRoundRect(LEG_L, 4f, 4f, fill)
-        c.drawRoundRect(LEG_R, 4f, 4f, fill)
-        c.restore()
-        if (mood == CardMood.asleep) {
-            // The "z z", drawn unscaled so the glyphs rasterise at their real size.
-            zPaint.textSize = 14f * k
-            c.drawText("z", tubbyLeft + 88f * k, tubbyTop + 42f * k, zPaint)
-            zPaint.textSize = 10f * k
-            c.drawText("z", tubbyLeft + 96f * k, tubbyTop + 33f * k, zPaint)
-        }
-    }
-
-    private fun eyes(c: Canvas) {
-        fill.color = INK
-        c.drawCircle(45f, 50f, 6f, fill)
-        c.drawCircle(75f, 50f, 6f, fill)
-    }
+    private fun drawTubby(c: Canvas, mood: CardMood) = tubby.draw(c, TubbyMood.of(mood), tubbyLeft, tubbyTop, 120f * tubbyScale)
 
     private class Dot(val x: Float, val y: Float, val r: Float, val color: Int, val alpha: Float)
 
@@ -263,12 +193,7 @@ class TvCardView(ctx: Context) : View(ctx) {
         private val NAVY_DARK = Color.parseColor("#15162E")
         private val CREAM = Color.parseColor("#FFF8F1")
         private val SUNFLOWER_SOFT = Color.parseColor("#FFD27A")
-        private val SUNFLOWER = Color.parseColor("#FFB020")
-        private val SKY = Color.parseColor("#3A8DFF")
         private val MINT = Color.parseColor("#1FBF8F")
-        private val CORAL = Color.parseColor("#FF6B4A")
-        private val INK = Color.parseColor("#1C1D3A")
-        private val SCREEN_NIGHT = Color.parseColor("#2A2B4D")
         private val LAVENDER = Color.parseColor("#D8D9F2")
         private val MUTED = Color.parseColor("#A9AACB")
 
@@ -284,26 +209,6 @@ class TvCardView(ctx: Context) : View(ctx) {
             Dot(430f, 668f, 3f, CREAM, 0.4f),
         )
 
-        // Tubby, viewBox 0 0 120 110.
-        private val BODY = RectF(6f, 14f, 114f, 94f)
-        private val SCREEN = RectF(18f, 25f, 102f, 83f)
-        private val LEG_L = RectF(32f, 94f, 42f, 106f)
-        private val LEG_R = RectF(78f, 94f, 88f, 106f)
-        private val SLEEP_EYES = Path().apply {
-            moveTo(38f, 52f); quadTo(45f, 58f, 52f, 52f) // M38 52 Q45 58 52 52
-            moveTo(68f, 52f); quadTo(75f, 58f, 82f, 52f) // M68 52 Q75 58 82 52
-        }
-        private val SLEEP_MOUTH = Path().apply { moveTo(54f, 68f); quadTo(60f, 71f, 66f, 68f) }
-        private val SMILE = Path().apply { moveTo(48f, 64f); quadTo(60f, 74f, 72f, 64f) }
-        /** M96 60 l14 5 v10 c0 8-6 13-14 15-8-2-14-7-14-15 V65z */
-        private val GUARD_SHIELD = Path().apply {
-            moveTo(96f, 60f); lineTo(110f, 65f); lineTo(110f, 75f)
-            cubicTo(110f, 83f, 104f, 88f, 96f, 90f)
-            cubicTo(88f, 88f, 82f, 83f, 82f, 75f)
-            lineTo(82f, 65f); close()
-        }
-        /** M90 76 l4 4 8-8 */
-        private val GUARD_CHECK = Path().apply { moveTo(90f, 76f); lineTo(94f, 80f); lineTo(102f, 72f) }
         /** Footer icon, viewBox 24: M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z */
         private val SHIELD = Path().apply {
             moveTo(12f, 3f); lineTo(20f, 6f); lineTo(20f, 12f)

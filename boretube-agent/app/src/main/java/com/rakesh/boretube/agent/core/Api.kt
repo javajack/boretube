@@ -54,6 +54,8 @@ data class StatusDoc(
     val media: MediaDoc? = null,
     val endAfter: EndAfterDoc = EndAfterDoc(false),
     val shorts: ShortsDoc = ShortsDoc("off", 0),
+    /** Agent 1.4.0+: brain breaks. */
+    val learning: LearningDoc = LearningDoc(false),
 )
 
 @Serializable
@@ -69,7 +71,7 @@ data class ActionRequest(
     val mood: String? = null,
 ) {
     fun validate(): String? = when (action) {
-        "mute", "unmute", "stop", "bore", "restore", "endBreak", "cancelEndAfter" -> null
+        "mute", "unmute", "stop", "bore", "restore", "endBreak", "cancelEndAfter", "brainBreak", "endBrainBreak" -> null
         "previewCard" -> if (mood != null && CardMood.entries.none { it.name == mood }) "previewCard mood must be asleep|calm|guard" else null
         "endAfter" -> when {
             capMin != null && capMin !in 1..1440 -> "endAfter capMin must be 1..1440"

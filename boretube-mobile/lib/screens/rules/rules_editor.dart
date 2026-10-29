@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../agent/agent_client.dart';
+import '../../agent/agent_installer.dart' show compareVersions;
 import '../../providers/agent_providers.dart';
 import '../../providers/now_playing.dart';
 import '../../providers/tv_providers.dart';
@@ -17,6 +18,7 @@ import '../../ui/learn.dart';
 import '../../ui/tokens.dart';
 import '../home/home_logic.dart';
 import '../tab_header.dart';
+import 'brain_breaks.dart';
 import 'day_ribbon.dart';
 import 'presets.dart';
 import 'tv_says_no.dart';
@@ -103,6 +105,7 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
     _focusing = false;
     ref.read(routinesFocusProvider.notifier).state = null;
     if (id == 'shorts' && mounted) _openShorts();
+    if (id == 'learning' && mounted) _openLearning();
   }
 
   bool get _dirty => jsonEncode(_draft.toJson()) != jsonEncode(_base.toJson());
@@ -348,6 +351,9 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
       for (final o in r.overrides)
         if (o.activeAt(now)) o,
     ];
+    final learning = ref.watch(
+      agentStatusProvider.select((l) => l.up ? l.status!.learning : null),
+    );
     return RowList(
       children: [
         ListRow(
@@ -394,6 +400,16 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
               : '${today.todayCount} today',
           value: hoppingLabel(r.shortsRule),
           onTap: _openShorts,
+        ),
+        ListRow(
+          key: const Key('rules-learning'),
+          icon: Icons.school_rounded,
+          title: 'Brain breaks',
+          subtitle: learning == null || learning.weekBreaks == 0
+              ? null
+              : '${learning.weekBreaks} this week',
+          value: brainBreaksLabel(r.learningRule),
+          onTap: _openLearning,
         ),
         ListRow(
           key: const Key('rules-sound'),
@@ -633,6 +649,64 @@ class _RulesEditorState extends ConsumerState<RulesEditor> {
         ),
         _shortsBody,
       );
+
+  Future<void> _openLearning() => _open(
+        'learning',
+        'Brain breaks',
+        lead: (_) => const Text(
+          'A short maths quiz over the video. Nobody gets stuck.',
+        ),
+        (c, r) {
+          final live = ref.read(agentStatusProvider);
+          final st = live.up ? live.status : null;
+          final supported =
+              st == null || compareVersions(st.version, brainBreaksAgent) >= 0;
+          final saved = _base.learningRule;
+          final String? note;
+          if (_dirty) {
+            note = 'Save your changes first, then try it.';
+          } else if (!saved.enabled) {
+            note = 'Turn it on and save, then try it.';
+          } else {
+            note = null;
+          }
+          return [
+            BrainBreaksEditor(
+              rule: r.learningRule,
+              supported: supported,
+              status: st?.learning,
+              // Back to Off on a TV that never had it: leave it absent.
+              onChanged: (l) => _edit(
+                (d) => !l.enabled && _base.learning == null
+                    ? d.copyWith(clearLearning: true)
+                    : d.copyWith(learning: l),
+              ),
+              onTry: note == null ? () => _tryBrainBreak(c) : null,
+              tryNote: note,
+            ),
+          ];
+        },
+      );
+
+  Future<void> _tryBrainBreak(BuildContext c) async {
+    final client = ref.read(agentClientProvider);
+    if (client == null) return;
+    unawaited(HapticFeedback.lightImpact());
+    try {
+      final res = await client.action(
+        const AgentAction(AgentActionKind.brainBreak),
+      );
+      if (!c.mounted) return;
+      showStatusSnack(
+        c,
+        res.ok ? 'Brain break on the TV ✓' : 'Not now: ${res.detail}.',
+        ok: res.ok,
+      );
+      unawaited(ref.read(agentStatusProvider.notifier).refresh());
+    } on AgentException catch (e) {
+      if (c.mounted) showStatusSnack(c, 'Not sent: ${e.message}.', ok: false);
+    }
+  }
 
   List<Widget> _shortsBody(BuildContext c, AgentRules r) {
     final text = Theme.of(c).textTheme;

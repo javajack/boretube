@@ -224,3 +224,67 @@ class CardTest {
         assertNotNull(ActionRequest("previewCard", mood = "angry").validate())
     }
 }
+
+class BrainBreakTriggerTest {
+    private var t = 9_000_000L
+    private var wall = Instant.parse("2026-10-29T10:00:00Z").toEpochMilli()
+
+    private fun step(g: MediaGuard, r: Rules, title: String): MediaOutcome {
+        val snap = MediaSnapshot(
+            MediaSource.listener,
+            listOf(MediaSample(SMART, MediaTrack(SMART, title, "C", 20_000), PlayState.playing, 0, 1f, t)),
+        )
+        return g.step(snap, SMART, t, wall, "2026-10-29", r, true).also { t += 1_000; wall += 1_000 }
+    }
+
+    private fun shorts(g: MediaGuard, r: Rules) = (1..3).flatMap { i -> (1..9).map { step(g, r, "Short $i") } }
+
+    @Test fun hoppingOpensABrainBreakInsteadOfACooldown() {
+        val r = Rules(style = "explicit", shorts = ShortsRules("cooldown"), learning = LearningRules(enabled = true, trigger = "hopping"))
+        val g = MediaGuard(zone = ZoneOffset.UTC)
+        val out = shorts(g, r)
+        assertEquals(listOf(SMART), out.mapNotNull { it.brainBreak })
+        assertTrue("no close", out.all { it.close == null })
+        assertNull("no cool-down", g.cooldownUntil)
+        assertTrue(out.flatMap { it.notes }.any { it.op == "brainBreak" })
+    }
+
+    @Test fun learningOffOrManualKeepsTheShortsRule() {
+        for (l in listOf(null, LearningRules(enabled = false, trigger = "hopping"), LearningRules(enabled = true, trigger = "manual"))) {
+            val g = MediaGuard(zone = ZoneOffset.UTC)
+            val out = shorts(g, Rules(style = "explicit", shorts = ShortsRules("cooldown"), learning = l))
+            assertTrue("$l", out.all { it.brainBreak == null })
+            assertNotNull("$l", g.cooldownUntil)
+        }
+    }
+
+    @Test fun gateRefusesWithAReason() {
+        val on = LearningRules(enabled = true)
+        assertNull(BrainBreakGate.refuse(on, Mode.normal, false, false, false, true))
+        assertEquals("brain breaks are off", BrainBreakGate.refuse(null, Mode.normal, false, false, false, true))
+        assertEquals("brain breaks are off", BrainBreakGate.refuse(LearningRules(), Mode.normal, false, false, false, true))
+        assertEquals("agent paused", BrainBreakGate.refuse(on, Mode.paused, false, false, false, true))
+        assertEquals("a brain break is already on screen", BrainBreakGate.refuse(on, Mode.normal, false, false, true, true))
+        assertEquals("a break is running", BrainBreakGate.refuse(on, Mode.normal, true, false, false, true))
+        assertEquals("a video cool-down is running", BrainBreakGate.refuse(on, Mode.normal, false, true, false, true))
+        assertEquals("no overlay permission", BrainBreakGate.refuse(on, Mode.normal, false, false, false, false))
+    }
+
+    @Test fun playClockCountsOnlyPlayingTime() {
+        val c = PlayClock()
+        c.step(true, 0)
+        c.step(true, 1_000)
+        c.step(false, 2_000)
+        c.step(true, 3_000)
+        // An agent asleep for a minute counts as 5 s.
+        assertEquals(7_000L, c.step(true, 63_000))
+        c.reset()
+        assertEquals(1_000L, c.step(true, 64_000))
+    }
+
+    @Test fun statusCarriesLearning() {
+        val doc = LearningDoc(true, showing = true, trigger = "every", grade = 3, skill = "Money", voice = "ok", week = WeekDoc(2, 5, 1), stronger = "Money", playedMin = 12)
+        val json = AgentJson.encodeToString(LearningDoc.serializer(), doc)
+        assertEquals(doc, AgentJson.decodeFromString(LearningDoc.serializer(), json))
+    }
+}

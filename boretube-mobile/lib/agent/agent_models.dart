@@ -254,6 +254,78 @@ class AgentEndAfter {
       };
 }
 
+/// `status.learning` (1.4.0+): brain breaks on the TV.
+class AgentLearning {
+  final bool enabled;
+
+  /// A brain break is on the TV screen right now.
+  final bool showing;
+  final LearnTrigger trigger;
+  final int? grade;
+
+  /// The skill the child is on (e.g. "Tables of 6, 7, 8 and 9").
+  final String? skill;
+
+  /// ok | noHindi | unavailable | off | starting | untested
+  final String voice;
+  final int weekBreaks;
+  final int weekRight;
+  final int weekLearned;
+
+  /// The skill with the most right answers this week.
+  final String? stronger;
+
+  /// [LearnTrigger.every]: minutes of video since the last brain break.
+  final int? playedMin;
+
+  const AgentLearning({
+    this.enabled = false,
+    this.showing = false,
+    this.trigger = LearnTrigger.manual,
+    this.grade,
+    this.skill,
+    this.voice = 'off',
+    this.weekBreaks = 0,
+    this.weekRight = 0,
+    this.weekLearned = 0,
+    this.stronger,
+    this.playedMin,
+  });
+
+  factory AgentLearning.fromJson(Map<String, dynamic> j) {
+    final w = _map(j['week']);
+    return AgentLearning(
+      enabled: _bool(j['enabled']),
+      showing: _bool(j['showing']),
+      trigger: _enum(LearnTrigger.values, j['trigger'], LearnTrigger.manual),
+      grade: AgentMedia._optInt(j['grade']),
+      skill: AgentMedia._opt(j['skill']),
+      voice: j['voice'] == null ? 'off' : _str(j['voice']),
+      weekBreaks: _int(w['breaks']),
+      weekRight: _int(w['right']),
+      weekLearned: _int(w['learned']),
+      stronger: AgentMedia._opt(j['stronger']),
+      playedMin: AgentMedia._optInt(j['playedMin']),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'enabled': enabled,
+        'showing': showing,
+        'trigger': trigger.name,
+        if (grade != null) 'grade': grade,
+        if (skill != null) 'skill': skill,
+        'voice': voice,
+        'week': {
+          'breaks': weekBreaks,
+          'right': weekRight,
+          'learned': weekLearned,
+        },
+        if (stronger != null) 'stronger': stronger,
+        if (playedMin != null) 'playedMin': playedMin,
+      };
+}
+
 /// What the TV does about Shorts and video hopping (`rules.shorts.mode`).
 /// [cooldown] (agent 1.3.0+) closes the video apps for
 /// `rules.shorts.cooldownMin` minutes; [budget] is still read but no longer
@@ -351,6 +423,9 @@ class AgentStatus {
   /// Today's Shorts (1.1.0+), or null from an older agent.
   final AgentShorts? shorts;
 
+  /// Brain breaks (1.4.0+); null on older agents.
+  final AgentLearning? learning;
+
   const AgentStatus({
     required this.agentId,
     required this.version,
@@ -376,6 +451,7 @@ class AgentStatus {
     this.media,
     this.endAfter = const AgentEndAfter(),
     this.shorts,
+    this.learning,
   });
 
   /// The health entry [id], if the agent reports it.
@@ -427,6 +503,9 @@ class AgentStatus {
         endAfter: AgentEndAfter.fromJson(_map(j['endAfter'])),
         shorts:
             j['shorts'] is Map ? AgentShorts.fromJson(_map(j['shorts'])) : null,
+        learning: j['learning'] is Map
+            ? AgentLearning.fromJson(_map(j['learning']))
+            : null,
       );
 
   Map<String, dynamic> toJson() => {
@@ -454,6 +533,7 @@ class AgentStatus {
         if (media != null) 'media': media!.toJson(),
         if (endAfter.armed) 'endAfter': endAfter.toJson(),
         if (shorts != null) 'shorts': shorts!.toJson(),
+        if (learning != null) 'learning': learning!.toJson(),
       };
 }
 
@@ -672,6 +752,103 @@ class ShortsRule {
       );
 }
 
+/// When a brain break opens (`rules.learning.trigger`).
+enum LearnTrigger { manual, hopping, every }
+
+/// Question language: English, Hindi, or English text with a Hindi voice.
+enum LearnLang { en, hi, enHi }
+
+/// `rules.learning` (agent 1.4.0+): brain breaks, a short maths quiz over
+/// the video. Absent means off; [extra] keeps fields this app doesn't know.
+class LearningRule {
+  final bool enabled;
+
+  /// CBSE class: 0 = KG … [maxGrade].
+  final int grade;
+  final LearnLang lang;
+
+  /// Read questions aloud.
+  final bool voice;
+  final int perBreak;
+  final LearnTrigger trigger;
+
+  /// [LearnTrigger.every]: minutes of video between brain breaks.
+  final int everyMin;
+  final Map<String, dynamic> extra;
+
+  static const maxGrade = 7;
+  static const minPerBreak = 1;
+  static const maxPerBreak = 5;
+  static const minEveryMin = 5;
+  static const maxEveryMin = 240;
+
+  const LearningRule({
+    this.enabled = false,
+    this.grade = 1,
+    this.lang = LearnLang.en,
+    this.voice = true,
+    this.perBreak = 3,
+    this.trigger = LearnTrigger.manual,
+    this.everyMin = 30,
+    this.extra = const {},
+  });
+
+  static const _known = {
+    'enabled',
+    'grade',
+    'lang',
+    'voice',
+    'perBreak',
+    'trigger',
+    'everyMin',
+  };
+
+  factory LearningRule.fromJson(Map<String, dynamic> j) => LearningRule(
+        enabled: _bool(j['enabled']),
+        grade: _int(j['grade'], 1).clamp(0, maxGrade),
+        lang: _enum(LearnLang.values, j['lang'], LearnLang.en),
+        voice: j['voice'] == null || _bool(j['voice']),
+        perBreak: _int(j['perBreak'], 3).clamp(minPerBreak, maxPerBreak),
+        trigger: _enum(LearnTrigger.values, j['trigger'], LearnTrigger.manual),
+        everyMin: _int(j['everyMin'], 30).clamp(minEveryMin, maxEveryMin),
+        extra: {
+          for (final e in j.entries)
+            if (!_known.contains(e.key)) e.key: e.value,
+        },
+      );
+
+  Map<String, dynamic> toJson() => {
+        ...extra,
+        'enabled': enabled,
+        'grade': grade,
+        'lang': lang.name,
+        'voice': voice,
+        'perBreak': perBreak,
+        'trigger': trigger.name,
+        'everyMin': everyMin,
+      };
+
+  LearningRule copyWith({
+    bool? enabled,
+    int? grade,
+    LearnLang? lang,
+    bool? voice,
+    int? perBreak,
+    LearnTrigger? trigger,
+    int? everyMin,
+  }) =>
+      LearningRule(
+        enabled: enabled ?? this.enabled,
+        grade: grade ?? this.grade,
+        lang: lang ?? this.lang,
+        voice: voice ?? this.voice,
+        perBreak: perBreak ?? this.perBreak,
+        trigger: trigger ?? this.trigger,
+        everyMin: everyMin ?? this.everyMin,
+        extra: extra,
+      );
+}
+
 enum OverrideKind { allowApp, muteUntil, breakUntil }
 
 class RuleOverride {
@@ -721,6 +898,9 @@ class AgentRules {
   /// The Shorts rule; null when the TV has none (written back absent).
   final ShortsRule? shorts;
 
+  /// Brain breaks; null when the TV has none (written back absent).
+  final LearningRule? learning;
+
   /// Top-level fields this app doesn't know; written back on PUT.
   final Map<String, dynamic> extra;
 
@@ -736,11 +916,15 @@ class AgentRules {
     this.overrides = const [],
     this.stockYouTubeAllowed = false,
     this.shorts,
+    this.learning,
     this.extra = const {},
   });
 
   /// The Shorts rule in force (off when absent).
   ShortsRule get shortsRule => shorts ?? const ShortsRule();
+
+  /// Brain breaks as set (off when absent).
+  LearningRule get learningRule => learning ?? const LearningRule();
 
   DateTime? get updatedAtTime => parseAgentTime(updatedAt);
 
@@ -756,6 +940,7 @@ class AgentRules {
     'overrides',
     'stockYouTubeAllowed',
     'shorts',
+    'learning',
   };
 
   /// Whether [j] looks like a rules document (vs. an error body).
@@ -777,6 +962,9 @@ class AgentRules {
         stockYouTubeAllowed: _bool(j['stockYouTubeAllowed']),
         shorts:
             j['shorts'] is Map ? ShortsRule.fromJson(_map(j['shorts'])) : null,
+        learning: j['learning'] is Map
+            ? LearningRule.fromJson(_map(j['learning']))
+            : null,
         extra: {
           for (final e in j.entries)
             if (!_known.contains(e.key)) e.key: e.value,
@@ -796,6 +984,7 @@ class AgentRules {
         'overrides': [for (final o in overrides) o.toJson()],
         'stockYouTubeAllowed': stockYouTubeAllowed,
         if (shorts != null) 'shorts': shorts!.toJson(),
+        if (learning != null) 'learning': learning!.toJson(),
       };
 
   AgentRules copyWith({
@@ -813,6 +1002,10 @@ class AgentRules {
 
     /// Drops [shorts] (back to "absent", which means off).
     bool clearShorts = false,
+    LearningRule? learning,
+
+    /// Drops [learning] (back to "absent", which means off).
+    bool clearLearning = false,
   }) =>
       AgentRules(
         version: version ?? this.version,
@@ -826,6 +1019,7 @@ class AgentRules {
         overrides: overrides ?? this.overrides,
         stockYouTubeAllowed: stockYouTubeAllowed ?? this.stockYouTubeAllowed,
         shorts: clearShorts ? null : shorts ?? this.shorts,
+        learning: clearLearning ? null : learning ?? this.learning,
         extra: extra,
       );
 }
@@ -845,7 +1039,11 @@ enum AgentActionKind {
 
   /// Start a break when the foreground video ends (1.1.0+).
   endAfter,
-  cancelEndAfter;
+  cancelEndAfter,
+
+  /// Open a brain break on the TV now / close it (1.4.0+).
+  brainBreak,
+  endBrainBreak;
 
   /// The wire name (`break` is a Dart keyword).
   String get wire => this == startBreak ? 'break' : name;

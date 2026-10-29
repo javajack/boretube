@@ -19,6 +19,8 @@ import com.rakesh.boretube.agent.core.ActionRequest
 import com.rakesh.boretube.agent.core.ActionResult
 import com.rakesh.boretube.agent.core.AgentApi
 import com.rakesh.boretube.agent.core.BreakDoc
+import com.rakesh.boretube.agent.core.BrainBreakGate
+import com.rakesh.boretube.agent.core.BrainBreakSession
 import com.rakesh.boretube.agent.core.BreakState
 import com.rakesh.boretube.agent.core.Card
 import com.rakesh.boretube.agent.core.CardMood
@@ -27,8 +29,13 @@ import com.rakesh.boretube.agent.core.Decision
 import com.rakesh.boretube.agent.core.DeviceProfile
 import com.rakesh.boretube.agent.core.HealthItem
 import com.rakesh.boretube.agent.core.JournalEntry
+import com.rakesh.boretube.agent.core.LearnState
+import com.rakesh.boretube.agent.core.Learner
+import com.rakesh.boretube.agent.core.LearningDoc
+import com.rakesh.boretube.agent.core.Maths
 import com.rakesh.boretube.agent.core.MediaGuard
 import com.rakesh.boretube.agent.core.MediaOutcome
+import com.rakesh.boretube.agent.core.MediaSnapshot
 import com.rakesh.boretube.agent.core.Mode
 import com.rakesh.boretube.agent.core.NowDoc
 import com.rakesh.boretube.agent.core.Observed
@@ -36,6 +43,10 @@ import com.rakesh.boretube.agent.core.OpExecutor
 import com.rakesh.boretube.agent.core.PackageGuard
 import com.rakesh.boretube.agent.core.PermissionHeal
 import com.rakesh.boretube.agent.core.PermissionState
+import com.rakesh.boretube.agent.core.PlayClock
+import com.rakesh.boretube.agent.core.PlayState
+import com.rakesh.boretube.agent.core.Question
+import com.rakesh.boretube.agent.core.QuizScreen
 import com.rakesh.boretube.agent.core.RestorePlan
 import com.rakesh.boretube.agent.core.RestorePlanner
 import com.rakesh.boretube.agent.core.RestoreRequest
@@ -56,6 +67,7 @@ import com.rakesh.boretube.agent.core.WatchdogInput
 import com.rakesh.boretube.agent.core.WatchdogPlan
 import com.rakesh.boretube.agent.core.WatchdogReport
 import com.rakesh.boretube.agent.core.WatchdogRequest
+import com.rakesh.boretube.agent.core.WeekDoc
 import java.io.File
 import java.time.Instant
 import java.time.LocalDate
@@ -65,6 +77,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.random.Random
 
 /**
  * The agent's brain: owns state, runs the 1 s enforcement loop, the watchdog,
@@ -92,6 +105,34 @@ class GuardController(private val ctx: Context) : AgentApi {
     private val tvTime = TvTimeCounter(store.tvTime)
     /** Shorts + end-after-this-one; touched on the guard thread only (status reads volatile fields). */
     private val mediaGuard = MediaGuard(store.shortsCount, store.endAfter, store.cooldownUntil)
+    /** Brain breaks: the learner (guarded by [lock]), the window, the `every` play clock (guard thread). */
+    private var learn: LearnState = store.learnState
+    private val playClock = PlayClock()
+    private val bbOpen = AtomicBoolean(false)
+    @Volatile private var bbPkg: String? = null
+    @Volatile private var bbTrigger = ""
+    private val brainBreak = BrainBreakWindow(ctx, object : BrainBreakWindow.Host {
+        override fun answered(q: Question, correct: Boolean, ms: Long) {
+            synchronized(lock) {
+                learn = Learner.record(learn, q, correct, ms, System.currentTimeMillis(), LocalDate.now())
+                store.learnState = learn
+            }
+        }
+
+        override fun closed(done: QuizScreen.Done?, summary: String, why: String) {
+            if (done != null) synchronized(lock) {
+                learn = Learner.roundDone(learn, done.learned, LocalDate.now())
+                store.learnState = learn
+            }
+            record("brainBreak", bbTrigger, if (done != null) "done" else why, summary, done != null || why == "phone", "agent")
+            val pkg = bbPkg
+            bbPkg = null
+            playClock.reset()
+            bbOpen.set(false)
+            // After the window is gone, so a fallback key event reaches the app.
+            guardExec.schedule({ safely("resume") { media(pkg, play = true) } }, 300, TimeUnit.MILLISECONDS)
+        }
+    })
     private val fingerprint: String = Build.FINGERPRINT
     private var skewMs: Long? = null
     private val startedElapsed = SystemClock.elapsedRealtime()
@@ -143,6 +184,7 @@ class GuardController(private val ctx: Context) : AgentApi {
     }
 
     fun stop() {
+        brainBreak.shutdown()
         unregisterListeners()
         media.stop()
         http?.stop()
@@ -275,6 +317,74 @@ class GuardController(private val ctx: Context) : AgentApi {
             if (!guard.isHome(d.pkg)) apply(d.copy(forceStop = !guard.isStopProtected(d.pkg)), now, guard, p)
         }
         out.endAfterFired?.let { startBreak(now, out.endAfterBreakMin, "endAfter ${it}") }
+        out.brainBreak?.let { startBrainBreak("hopping", it).let { res -> if (!res.ok) record("brainBreak", "hopping", "not opened", res.detail, true, "rule") } }
+        val lr = r.learning
+        if (lr != null && lr.enabled && lr.trigger == "every" && canEnforce) {
+            val f = out.followed
+            val playing = !bbOpen.get() && f != null && f.state == PlayState.playing && f.pkg in MediaSnapshot.COOLDOWN_PACKAGES
+            if (playClock.step(playing, SystemClock.elapsedRealtime()) >= lr.everyMin * 60_000L) {
+                val res = startBrainBreak("every", f?.pkg)
+                // Refused (a break, a cool-down…): wait another full interval rather than retry every second.
+                if (!res.ok) { playClock.reset(); record("brainBreak", "every", "not opened", res.detail, true, "rule") }
+            }
+        }
+    }
+
+    /**
+     * Opens a brain break over the video (guard thread): pauses the followed
+     * session, plans the round from the child's state and shows the quiz.
+     */
+    private fun startBrainBreak(trigger: String, pkgHint: String?): ActionResult {
+        val now = System.currentTimeMillis()
+        val (r, b, s) = synchronized(lock) { Triple(rules, breakState, safety) }
+        BrainBreakGate.refuse(
+            r.learning, s.mode,
+            breakActive = b.breakEndsAt?.let { it > now } == true,
+            cooldownRunning = mediaGuard.cooldownUntil?.let { it > now } == true,
+            showing = bbOpen.get(),
+            overlayAllowed = brainBreak.allowed(),
+        )?.let { return ActionResult(false, it) }
+        if (!bbOpen.compareAndSet(false, true)) return ActionResult(false, "a brain break is already on screen")
+        val lr = r.learning!!
+        val (questions, skill) = synchronized(lock) {
+            learn = Learner.forGrade(learn, lr.grade)
+            store.learnState = learn
+            Learner.plan(learn, lr.perBreak, now, Random.Default) to Maths.LADDER[learn.rung].title
+        }
+        val pkg = pkgHint ?: mediaGuard.followed?.takeIf { it.state == PlayState.playing }?.pkg
+        bbPkg = pkg
+        bbTrigger = trigger
+        media(pkg, play = false)
+        brainBreak.open(BrainBreakSession(questions) { Maths.easierThan(it, Random.Default) }, lr.lang, lr.voice)
+        record("brainBreak", trigger, pkg ?: "no video", "opened: ${questions.size} questions, $skill", true, "agent")
+        return ActionResult(true, "brain break on the TV: ${questions.size} questions")
+    }
+
+    /** Pauses or plays [pkg]'s video: media-session transport controls, else a media key over self-ADB. */
+    private fun media(pkg: String?, play: Boolean) {
+        if (pkg == null) return
+        if (media.transport(pkg, play)) return
+        if (shell.state == SelfAdb.ok) {
+            try { shell.run("input keyevent ${if (play) 126 else 127}", urgent = true) } catch (_: Exception) {}
+        }
+    }
+
+    private fun learningDoc(r: Rules): LearningDoc {
+        val lr = r.learning ?: return LearningDoc(false)
+        val l = synchronized(lock) { learn }
+        val today = LocalDate.now()
+        val wk = l.week.takeIf { it.week == Learner.weekOf(today) }
+        return LearningDoc(
+            enabled = lr.enabled,
+            showing = bbOpen.get(),
+            trigger = lr.trigger,
+            grade = lr.grade,
+            skill = Maths.LADDER.getOrNull(Learner.forGrade(l, lr.grade).rung)?.title,
+            voice = if (!lr.voice) "off" else brainBreak.voiceStatus,
+            week = WeekDoc(wk?.breaks ?: 0, wk?.right ?: 0, wk?.learned ?: 0),
+            stronger = Learner.stronger(l, today),
+            playedMin = if (lr.trigger == "every") (playClock.playedMs / 60_000).toInt() else null,
+        )
     }
 
     /** Starts a break (the `break` action and end-after-this-one). Enforced right away in normal mode. */
@@ -562,6 +672,11 @@ class GuardController(private val ctx: Context) : AgentApi {
                 record("muteFor", "${req.minutes} min", "", "until ${Instant.ofEpochMilli(b.muteEndsAt!!)}", true, "agent")
                 ActionResult(true, "muted until ${Instant.ofEpochMilli(b.muteEndsAt)}$paused")
             }
+            "brainBreak" -> startBrainBreak("phone", null)
+            "endBrainBreak" -> {
+                if (!bbOpen.get()) ActionResult(true, "no brain break on screen")
+                else { brainBreak.close("phone"); ActionResult(true, "brain break closed") }
+            }
             else -> ActionResult(false, "unknown action")
         }
     }
@@ -621,6 +736,7 @@ class GuardController(private val ctx: Context) : AgentApi {
             media = mediaGuard.mediaDoc(SystemClock.elapsedRealtime()),
             endAfter = mediaGuard.endAfterDoc(),
             shorts = mediaGuard.shortsDoc(r, LocalDate.now().toString(), now),
+            learning = learningDoc(r),
         )
     }
 
@@ -646,6 +762,7 @@ class GuardController(private val ctx: Context) : AgentApi {
             p
         }
         record("mode", "agent", prev.name, mode.name, true, "agent")
+        if (mode != Mode.normal && bbOpen.get()) brainBreak.close("agent ${mode.name}")
         if (mode == Mode.normal) shell.kick()
         return ActionResult(true, "mode ${mode.name}")
     }

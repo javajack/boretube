@@ -15,7 +15,7 @@ object LevelPlan {
         now: Long,
         random: Random,
         catalog: Catalog = Catalog.MATHS,
-        format: Format = Levels.formatFor(skillId, state.plays[skillId] ?: 0, catalog),
+        format: Format = Levels.formatFor(skillId, state, catalog),
     ): List<Question> {
         val n = if (format == Format.order) ORDER_SIZE else Levels.LEVEL_SIZE
         val plan = Levels.plan(state, skillId, n, now, random, catalog, format)

@@ -49,6 +49,12 @@ The user asked for:
 | **order** | press tiles first to last; each gets a number; Back undoes | `order` = items in order, 3–5 items |
 | **sort** | one card at a time drops in; ← left basket, → right basket; 8 cards | 2 options, the same pair across the level |
 
+**Mix (the user, 2026-10-30):** Sort and Order take more doing with a remote, so they're a treat, not the diet:
+- a skill's first play is always plain (quick-fire, catch, pairs, true or false);
+- Sort and Order come at most every 3rd play, and every 4th in KG and Class 1;
+- they're never twice running, and never right after one went badly (1 star → `LearnState.easyNext`);
+- every generated skill must have a plain template (GenChecks).
+
 Odd one out, fill the gap, compare (> < =), missing letter and story problems are question *kinds* inside quickfire. Each is styled by its prompt, not a new screen.
 
 **Streak run** (one per land, on the land screen):

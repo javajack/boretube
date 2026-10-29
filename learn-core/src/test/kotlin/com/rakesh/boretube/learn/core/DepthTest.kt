@@ -109,3 +109,46 @@ class DepthTest {
         assertTrue(Runs.next(Run("garden", tier = 3), listOf(skill), Random(9))!!.order == null)
     }
 }
+
+/** Sort and Order are a treat, not the diet (the user, 2026-10-30). */
+class FormatMixTest {
+    private val skill = GenSkill(
+        id = "en9.mix", grade = 2, subject = "english", title = "Mix", badge = "M",
+        templates = listOf(
+            Template("q", 1, intArrayOf(3)) { p, r -> gq("Q$p", Opt.of("a${p[0]}", listOf("b", "c"), r)!!, "Because.") },
+            Template("t", 1, intArrayOf(3), Format.truefalse) { p, _ -> gq("T${p[0]}", Opt.trueFalse(true), "Because.") },
+            Template("s", 2, intArrayOf(3), Format.sort) { p, _ -> gq("S${p[0]}", Opt.baskets("L", "R", true), "Because.") },
+            Template("o", 2, intArrayOf(1), Format.order) { _, r -> gq("O", listOf("a", "b", "c").shuffled(r) to 0, "Because.", order = listOf("a", "b", "c")) },
+        ),
+    )
+    private val catalog = Catalog(listOf(skill))
+
+    private fun formats(grade: Int, n: Int = 24) = (0 until n).map { Levels.formatFor(skill.id, LearnState(grade = grade, plays = mapOf(skill.id to it)), catalog) }
+
+    @Test fun plainFirstSpecialAtMostEveryThirdNeverTwiceRunning() {
+        val f = formats(3)
+        assertTrue(f.first() !in Levels.SPECIAL)
+        assertTrue(f.count { it in Levels.SPECIAL } <= f.size / 3)
+        assertTrue(f.zipWithNext().none { (a, b) -> a in Levels.SPECIAL && b in Levels.SPECIAL })
+        assertTrue(Format.sort in f && Format.order in f && Format.quickfire in f && Format.truefalse in f)
+    }
+
+    @Test fun youngerChildrenGetThemLessOften() {
+        assertTrue(formats(0).count { it in Levels.SPECIAL } <= 24 / 4)
+        assertTrue(formats(0).count { it in Levels.SPECIAL } < formats(3).count { it in Levels.SPECIAL })
+    }
+
+    @Test fun aBadSortLevelMakesTheNextOnePlain() {
+        val at = LearnState(grade = 3, plays = mapOf(skill.id to 2))
+        assertTrue(Levels.formatFor(skill.id, at, catalog) in Levels.SPECIAL)
+        val qs = Levels.plan(at, skill.id, 6, 0, Random(1), catalog, Format.sort)
+        val res = Levels.finish(at, skill.id, qs.map { Answered(it, 1 - it.answer, false, 2000, false) }, LocalDate.of(2026, 10, 30), catalog = catalog, format = Format.sort)
+        assertTrue(skill.id in res.state.easyNext)
+        // Its next special turn comes round plain.
+        val later = res.state.copy(plays = mapOf(skill.id to 5))
+        assertTrue(Levels.formatFor(skill.id, later, catalog) !in Levels.SPECIAL)
+        // A plain level clears it.
+        val plain = Levels.finish(later, skill.id, emptyList(), LocalDate.of(2026, 10, 30), catalog = catalog, format = Format.quickfire)
+        assertTrue(skill.id !in plain.state.easyNext)
+    }
+}

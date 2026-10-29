@@ -105,7 +105,8 @@ fun LearnApp(
             is Screen.Level -> LevelScreen(
                 s.skillId, state, settings, sounds, speaker, random, now(), world.catalog,
                 onDone = { answers ->
-                    val r = Levels.finish(state, s.skillId, answers, today(), now(), world.catalog)
+                    val played = Levels.formatFor(s.skillId, state, world.catalog)
+                    val r = Levels.finish(state, s.skillId, answers, today(), now(), world.catalog, played)
                     state = r.state
                     progress.save(state)
                     screen = Screen.Done(r, s.skillId)

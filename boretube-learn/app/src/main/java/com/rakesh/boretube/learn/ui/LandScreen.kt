@@ -122,7 +122,7 @@ fun LandScreen(
             ProgressBar(if (progress.total == 0) 0f else progress.mastered / progress.total.toFloat(), Palette.sunflower)
             BasicText("${progress.mastered} of ${progress.total} skills · ${path.sumOf { state.stars[it] ?: 0 }} stars", style = Text.body(TypeScale.s21))
             Spacer(Modifier.weight(1f))
-            selected?.let { LevelCard(it, state.stars[it] ?: 0, state.plays[it] ?: 0, state.tiers[it] ?: 1, world) }
+            selected?.let { LevelCard(it, state.stars[it] ?: 0, state, state.tiers[it] ?: 1, world) }
             if (onRun != null) RunButton(onRunButton, state.bestRuns[land.id.name] ?: 0)
             BasicText(if (onRun != null) "◀ ▶ walk the path · ▼ streak run · OK to play" else "◀ ▶ walk the path · OK to play", style = Text.muted(TypeScale.s18), maxLines = 1)
         }
@@ -196,13 +196,13 @@ private fun PathNode(id: String, done: Boolean, current: Boolean, selected: Bool
 }
 
 @Composable
-private fun LevelCard(id: String, best: Int, plays: Int, tier: Int, world: World) {
+private fun LevelCard(id: String, best: Int, state: LearnState, tier: Int, world: World) {
     Column(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(Radii.r21)).background(Palette.cream).padding(horizontal = Gap.f21, vertical = Gap.f21),
         verticalArrangement = Arrangement.spacedBy(Gap.f8),
     ) {
         BasicText(world.title(id), style = Text.display(TypeScale.s34), maxLines = 2)
-        val line = when (Levels.formatFor(id, plays, world.catalog)) {
+        val line = when (Levels.formatFor(id, state, world.catalog)) {
             Format.catch -> "Catch · ${Levels.LEVEL_SIZE} questions"
             Format.pairs -> "Pairs · ${Levels.PAIRS} to match"
             Format.build -> "Build · ${Levels.BUILDS} numbers"

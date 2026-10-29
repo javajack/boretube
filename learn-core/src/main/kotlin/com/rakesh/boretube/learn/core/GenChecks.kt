@@ -81,6 +81,8 @@ object GenChecks {
         }
         if (n < MIN_QUESTIONS) e += "${s.id}: only $n questions (needs $MIN_QUESTIONS)"
         if (tiers.size < 2) e += "${s.id}: needs at least 2 tiers (has $tiers)"
+        // Sort and Order are treats; every skill needs a plain format to play most of the time.
+        if (s.formats.all { it in Levels.SPECIAL }) e += "${s.id}: needs a quickfire or truefalse template, not only sort/order"
         if (Format.sort in s.formats && s.all(r).none { it.options.size == 2 && it.order == null }) e += "${s.id}: sort format but no 2-option questions"
         if (Format.order in s.formats && s.all(r).none { it.order != null }) e += "${s.id}: order format but no order questions"
         if (Format.truefalse in s.formats && s.all(r).none { it.options == listOf("True", "False") }) e += "${s.id}: truefalse format but no True/False questions"

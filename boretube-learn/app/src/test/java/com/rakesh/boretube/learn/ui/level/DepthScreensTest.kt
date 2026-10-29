@@ -92,10 +92,12 @@ class DepthScreensTest {
     private fun start(kind: Format) {
         val sk = skill(kind)
         val catalog = Catalog(listOf(sk))
+        // Sort and Order come round on a skill's third play (never the first).
+        val state = LearnState(grade = 3, plays = if (kind in com.rakesh.boretube.learn.core.Levels.SPECIAL) mapOf(sk.id to 2) else emptyMap())
         rule.setContent {
             CompositionLocalProvider(LocalUptime provides { clock }) {
                 DesignFrame {
-                    LevelScreen(sk.id, LearnState(grade = 3), LearnSettings(grade = 3, set = true), sounds, Speaker.Silent, Random(3), now, catalog,
+                    LevelScreen(sk.id, state, LearnSettings(grade = 3, set = true), sounds, Speaker.Silent, Random(3), now, catalog,
                         onDone = { done = it }, onLeave = {})
                 }
             }

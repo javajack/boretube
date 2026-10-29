@@ -48,6 +48,8 @@ data class LearnState(
     val tiers: Map<String, Int> = emptyMap(),
     /** boretube Learn: the longest streak run per land. */
     val bestRuns: Map<String, Int> = emptyMap(),
+    /** boretube Learn: skills whose last Sort or Order level went badly; their next level is plain. */
+    val easyNext: Set<String> = emptySet(),
 )
 
 /** Spaced repetition, promotion/demotion and the round mix. Pure. */

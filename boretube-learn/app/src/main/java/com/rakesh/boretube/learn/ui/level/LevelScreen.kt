@@ -52,7 +52,7 @@ fun LevelScreen(
     onDone: (List<Answered>) -> Unit,
     onLeave: () -> Unit,
 ) {
-    val format = remember(skillId) { Levels.formatFor(skillId, state.plays[skillId] ?: 0, catalog) }
+    val format = remember(skillId) { Levels.formatFor(skillId, state, catalog) }
     when (format) {
         Format.pairs -> PairsLevel(skillId, state, sounds, random, now, catalog, onDone, onLeave)
         Format.build -> BuildLevel(state, sounds, speaker, settings, random, now, onDone, onLeave)

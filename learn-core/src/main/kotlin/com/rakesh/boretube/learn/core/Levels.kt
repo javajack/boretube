@@ -39,6 +39,27 @@ object Levels {
         return f[plays.mod(f.size)]
     }
 
+    /** Formats that take more doing with a remote (spec P2b §2): a treat now and then, never the diet. */
+    val SPECIAL = setOf(Format.sort, Format.order)
+
+    /**
+     * The format for the child's next play of [skillId]. A skill's first play
+     * is always a plain format (quick-fire, catch, pairs, true or false);
+     * Sort and Order come at most every third play (every fourth in KG and
+     * Class 1), never twice running, and not right after one went badly
+     * ([LearnState.easyNext]).
+     */
+    fun formatFor(skillId: String, s: LearnState, catalog: Catalog = Catalog.MATHS): Format {
+        val f = catalog.skill(skillId)?.formats ?: return Format.quickfire
+        val plays = s.plays[skillId] ?: 0
+        val plain = f.filter { it !in SPECIAL }
+        val special = f.filter { it in SPECIAL }
+        if (special.isEmpty() || plain.isEmpty()) return f[plays.mod(f.size)]
+        val every = if (s.grade in 0..1) 4 else 3
+        val turn = plays % every == every - 1 && skillId !in s.easyNext
+        return if (turn) special[(plays / every).mod(special.size)] else plain[(plays - plays / every).mod(plain.size)]
+    }
+
     /**
      * Facts of [skillId] that are due come first, then fresh questions. Keys
      * are distinct while the skill has enough of them; a small skill repeats,
@@ -124,6 +145,8 @@ object Levels {
         today: LocalDate,
         now: Long = today.toEpochDay() * DAY_MS,
         catalog: Catalog = Catalog.MATHS,
+        /** The format played: a bad Sort or Order level makes the next one plain. */
+        format: Format? = null,
     ): LevelResult {
         var st = s
         for (a in results) st = Learner.record(st, a.q, a.correct, a.ms, now, today)
@@ -138,6 +161,11 @@ object Levels {
             tiers = catalog.skill(skillId)?.tiers?.takeIf { it > 1 }?.let { max ->
                 st.tiers + (skillId to nextTier(tierOf(st, skillId), stars, max))
             } ?: st.tiers,
+            easyNext = when {
+                format in SPECIAL && stars <= 1 -> st.easyNext + skillId
+                format != null && format !in SPECIAL -> st.easyNext - skillId
+                else -> st.easyNext
+            },
         )
         return LevelResult(st, stars, best, newly, main.firstOrNull { !it.correct }?.q, main.count { it.correct }, main.size)
     }

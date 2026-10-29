@@ -15,7 +15,8 @@ import kotlin.random.Random
 class ContentPacksTest {
     private val dir = File("src/main/assets/content")
     private val json = Json { ignoreUnknownKeys = true }
-    private val packs = dir.walk().filter { it.extension == "json" }.map { json.decodeFromString(Pack.serializer(), it.readText()) }.toList()
+    // content/data holds the generators' tables, not packs.
+    private val packs = dir.walk().filter { it.extension == "json" && it.parentFile.name != "data" }.map { json.decodeFromString(Pack.serializer(), it.readText()) }.toList()
 
     @Test fun everyPackIsValid() {
         assertEquals(16, packs.size)

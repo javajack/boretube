@@ -37,7 +37,7 @@ import kotlin.random.Random
 class GardenTrailTest {
     @get:Rule val rule = createComposeRule()
     private val json = Json { ignoreUnknownKeys = true }
-    private val packs: List<Pack> = File("src/main/assets/content").walk().filter { it.extension == "json" }
+    private val packs: List<Pack> = File("src/main/assets/content").walk().filter { it.extension == "json" && it.parentFile.name != "data" }
         .map { json.decodeFromString(Pack.serializer(), it.readText()) }.toList()
     private val world = World.of(packs)
     private val now = 1_800_000_000_000L

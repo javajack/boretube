@@ -96,7 +96,7 @@ String _agentDetail(HealthCheck c) => switch (c.status) {
           ? 'Hands off: watching only, changing nothing'
           : 'Paused by you',
       HealthStatus.fail => 'Not answering. Repair usually fixes it',
-      HealthStatus.unknown => 'Checking…',
+      HealthStatus.unknown => c.detail.isEmpty ? 'Checking…' : c.detail,
     };
 
 /// Technical words that may leak from detail strings.

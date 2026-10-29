@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../agent/agent_models.dart';
 import '../../ops/health.dart';
 import '../../providers/agent_providers.dart';
+import '../../providers/now_playing.dart';
 import '../../providers/tv_providers.dart';
+import '../../tv/presence.dart';
 import '../../ui/components.dart';
 import '../../ui/controls.dart';
 import '../../ui/tokens.dart';
@@ -38,17 +40,31 @@ HealthStatus _fromAgent(AgentHealthStatus s) => switch (s) {
     };
 
 /// Always On's own checks (and an "is it running" line) as health rows.
-List<HealthCheck> agentHealthChecks(AgentLink link) {
+///
+/// A silent helper only fails while the TV is awake and settled: asleep,
+/// unreachable or just woken, it can't say either way (as the card).
+List<HealthCheck> agentHealthChecks(
+  AgentLink link, {
+  TvPresence presence = TvPresence.on,
+}) {
   if (!link.installed) return const [];
   final s = link.status;
   final up = link.up;
+  final quiet = !up && link.kind != AgentLinkKind.authFailed
+      ? switch (presence) {
+          TvPresence.asleep => 'Sleeping with the TV',
+          TvPresence.unreachable => 'Can\'t reach the TV right now',
+          TvPresence.waking => 'Starting up with the TV…',
+          TvPresence.checking || TvPresence.on => null,
+        }
+      : null;
   return [
     HealthCheck(
       id: 'agent',
       title: 'Always On',
       status: up
           ? (s!.mode == AgentMode.normal ? HealthStatus.ok : HealthStatus.warn)
-          : link.kind == AgentLinkKind.checking
+          : link.kind == AgentLinkKind.checking || quiet != null
               ? HealthStatus.unknown
               : HealthStatus.fail,
       detail: up
@@ -57,9 +73,10 @@ List<HealthCheck> agentHealthChecks(AgentLink link) {
               AgentMode.paused => 'Paused',
               AgentMode.safe => 'Safe mode: reporting only',
             }
-          : link.kind == AgentLinkKind.checking
-              ? 'Checking…'
-              : 'Not answering',
+          : quiet ??
+              (link.kind == AgentLinkKind.checking
+                  ? 'Checking…'
+                  : 'Not answering'),
     ),
     if (up)
       for (final h in s!.health)
@@ -76,7 +93,8 @@ List<HealthCheck> agentHealthChecks(AgentLink link) {
 /// the phone's are still loading.
 List<HealthCheck>? mergedHealth(WidgetRef ref) {
   final link = ref.watch(agentStatusProvider);
-  final agent = agentHealthChecks(link);
+  final agent =
+      agentHealthChecks(link, presence: ref.watch(tvPresenceProvider));
   if (!ref.watch(activeHasAdbProvider)) return agent;
   final phone = ref.watch(healthProvider);
   if (phone.isLoading && !phone.hasValue) return null;

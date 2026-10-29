@@ -7,6 +7,7 @@ import 'package:boretube_mobile/screens/better_tv_tab.dart';
 import 'package:boretube_mobile/screens/tv/clean_tv.dart';
 import 'package:boretube_mobile/screens/tv/health_copy.dart';
 import 'package:boretube_mobile/screens/tv/health_section.dart';
+import 'package:boretube_mobile/tv/presence.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -295,6 +296,29 @@ void main() {
       await tester.tap(find.byKey(const Key('health-technical')));
       await settle(tester);
       expect(find.text('20/22 disabled (pending: a, b)'), findsOneWidget);
+    });
+
+    test('a silent Always On only fails while the TV is awake', () {
+      const down = AgentLink(AgentLinkKind.down);
+      HealthCheck row(TvPresence p) =>
+          agentHealthChecks(down, presence: p).first;
+      expect(row(TvPresence.on).status, HealthStatus.fail);
+      for (final (p, words) in [
+        (TvPresence.asleep, 'Sleeping with the TV'),
+        (TvPresence.unreachable, 'Can\'t reach the TV right now'),
+        (TvPresence.waking, 'Starting up with the TV…'),
+      ]) {
+        expect(row(p).status, HealthStatus.unknown, reason: '$p');
+        expect(healthLook(row(p)).detail, words);
+      }
+      // A rejected phone is a real problem whatever the TV is doing.
+      expect(
+        agentHealthChecks(
+          const AgentLink(AgentLinkKind.authFailed),
+          presence: TvPresence.asleep,
+        ).first.status,
+        HealthStatus.fail,
+      );
     });
 
     test('Always On checks get parent titles', () {

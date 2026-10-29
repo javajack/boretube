@@ -360,6 +360,10 @@ Future<NowPlaying?> readNowPlaying({
   );
 }
 
+/// When each TV last answered in this run of the app. Survives the
+/// provider rebuilding (foreground, settings), unlike its state.
+final _seenThisRun = <String, DateTime>{};
+
 final nowPlayingProvider =
     StateNotifierProvider<NowPlayingNotifier, NowPlaying>((ref) {
   final addr = ref.watch(activeTvAddressProvider);
@@ -368,7 +372,14 @@ final nowPlayingProvider =
   final ops = ref.watch(tvOpsProvider).valueOrNull;
   final cast = ref.watch(tvServiceProvider);
   final tv = ref.read(activeTvProvider);
-  final initial = NowPlaying(loading: true, lastSeen: tv?.lastSeen);
+  // Saved lastSeen lags by up to 10 minutes; this run's is exact.
+  final saved = tv?.lastSeen;
+  final mem = addr == null ? null : _seenThisRun[addr.id];
+  final initial = NowPlaying(
+    loading: true,
+    lastSeen:
+        mem != null && (saved == null || mem.isAfter(saved)) ? mem : saved,
+  );
   if (addr == null) {
     return NowPlayingNotifier(
       fetch: null,
@@ -385,6 +396,7 @@ final nowPlayingProvider =
     initial: initial,
     onUnreachable: () => ref.read(relocatorProvider).relocateActive(),
     onSeen: (seen) {
+      _seenThisRun[addr.id] = seen;
       // Persist lastSeen at most every 10 minutes.
       final last = persisted;
       if (last != null && seen.difference(last).inMinutes < 10) return;

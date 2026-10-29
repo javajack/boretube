@@ -447,7 +447,7 @@ class SfxCatalogTest {
   - `@Composable fun TownScreen(state: LearnState, settings: LearnSettings, sounds: SoundBank, onLand: (LandId) -> Unit)`
   - `@Composable fun LandScreen(land: LandInfo, state: LearnState, settings: LearnSettings, sounds: SoundBank, onPlay: (String) -> Unit, onBack: () -> Unit)`
 
-- [ ] **Step 1: Write the failing tests.**
+- [x] **Step 1: Write the failing tests.**
 
 ```kotlin
 @RunWith(RobolectricTestRunner::class) @Config(qualifiers = "w1280dp-h720dp-xhdpi")
@@ -476,13 +476,13 @@ class TownScreenTest {
 
 `FakeSounds` is a `SoundBank` stand-in. Make `SoundBank` an interface `Sounds` with the real `SoundPoolSounds`.
 
-- [ ] **Step 2: Run them and watch them fail.**
-- [ ] **Step 3: Implement both screens to match the mocks.**
+- [x] **Step 2: Run them and watch them fail.**
+- [x] **Step 3: Implement both screens to match the mocks.**
   - **Town:** 3 equal cards, 440 tall, radius 34. Each has a scene 250 tall, the name in Bricolage 34, the subject line, and "Next: …". The header has Tubby, "Tubby's Town" at 43, and the greeting by time of day ("Good morning!", "Good afternoon!", "Good evening!"). Garden and Trail show "New levels coming soon", stay focusable, and on OK say "Coming soon" with a gentle `back` sound instead of entering.
   - **Land:** the left panel is 470 dp wide; the dotted path is a Canvas cubic through node centres; nodes are 89 dp. Styles: done nodes are sunflower with a ✓ and stars, the current node is coral at 1.15 scale, open nodes are cream with a hairline.
   - Focus plays `focus_<land>` and OK plays `select`.
-- [ ] **Step 4: Run the tests and look at the screenshots.** Open `src/test/screenshots/*.png` and compare them with the mock artboards; fix any mismatch before you go on.
-- [ ] **Step 5: Commit.** `git commit -m "boretube-learn: Tubby's Town and the Number Bazaar path"`.
+- [x] **Step 4: Run the tests and look at the screenshots.** Open `src/test/screenshots/*.png` and compare them with the mock artboards; fix any mismatch before you go on.
+- [x] **Step 5: Commit.** `git commit -m "boretube-learn: Tubby's Town and the Number Bazaar path"`.
 
 ---
 

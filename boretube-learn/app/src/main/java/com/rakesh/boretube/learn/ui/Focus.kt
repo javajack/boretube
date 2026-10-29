@@ -26,6 +26,42 @@ val FocusedKey = SemanticsPropertyKey<Boolean>("BtFocused")
 var SemanticsPropertyReceiver.btFocused by FocusedKey
 
 /**
+ * The same ring, driven by screen state (screens keep one "selected" index and
+ * take the remote keys themselves, see [remote]).
+ */
+fun Modifier.selectedRing(
+    selected: Boolean,
+    shape: Shape,
+    primary: Boolean = false,
+    scale: Float = 1.04f,
+    gap: androidx.compose.ui.graphics.Color = Palette.canvas,
+): Modifier = composed {
+    val s by animateFloatAsState(if (selected) scale else 1f, tween(Motion.press), label = "select")
+    this
+        .semantics { btFocused = selected }
+        .graphicsLayer { scaleX = s; scaleY = s }
+        .drawWithContent {
+            drawContent()
+            if (selected) rings(shape, primary, gap)
+        }
+}
+
+private fun androidx.compose.ui.graphics.drawscope.ContentDrawScope.rings(
+    shape: Shape,
+    primary: Boolean,
+    gap: androidx.compose.ui.graphics.Color,
+) {
+    val ring = 5.dp.toPx()
+    for ((i, color) in listOf(gap, if (primary) Palette.coral else Palette.ink).withIndex()) {
+        val grow = ring * (i + 0.5f) * 2f
+        val outline = shape.createOutline(Size(size.width + grow, size.height + grow), layoutDirection, this)
+        translate(-grow / 2f, -grow / 2f) {
+            drawOutline(outline, color, style = Stroke(width = ring))
+        }
+    }
+}
+
+/**
  * The one focus look (spec §5): the focused item grows to [scale] over
  * [Motion.press] ms and gets two rings outside its [shape]: a 5 dp gap in the
  * canvas colour, then a 5 dp ink ring (coral for the screen's primary).
@@ -45,14 +81,6 @@ fun Modifier.focusRing(
         .graphicsLayer { scaleX = s; scaleY = s }
         .drawWithContent {
             drawContent()
-            if (!focused) return@drawWithContent
-            val ring = 5.dp.toPx()
-            for ((i, color) in listOf(gap, if (primary) Palette.coral else Palette.ink).withIndex()) {
-                val grow = ring * (i + 0.5f) * 2f
-                val outline = shape.createOutline(Size(size.width + grow, size.height + grow), layoutDirection, this)
-                translate(-grow / 2f, -grow / 2f) {
-                    drawOutline(outline, color, style = Stroke(width = ring))
-                }
-            }
+            if (focused) rings(shape, primary, gap)
         }
 }

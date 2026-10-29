@@ -32,6 +32,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.rakesh.boretube.learn.core.LearnState
 import com.rakesh.boretube.learn.data.LearnSettings
 import com.rakesh.boretube.learn.sound.Sfx
@@ -275,7 +276,7 @@ private fun DiscoveryCard(d: Discovery, world: World, selected: Boolean, modifie
             when {
                 d.skill == null -> com.rakesh.boretube.learn.ui.level.Flame(2, Modifier.size(34.dp))
                 badge != null && badge in Pictures.ids -> PictureArt(badge, Modifier.size(38.dp))
-                else -> BasicText(badge ?: "?", style = Text.display(TypeScale.s21), maxLines = 1)
+                else -> FitText(badge ?: "?", Text.display(TypeScale.s21), Modifier.fillMaxSize(), maxLines = 1, min = 13.sp, circle = true)
             }
         }
         Column(Modifier.weight(1f)) {

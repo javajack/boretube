@@ -35,6 +35,7 @@ import com.rakesh.boretube.learn.core.Levels
 import com.rakesh.boretube.learn.core.Question
 import com.rakesh.boretube.learn.sound.Sfx
 import com.rakesh.boretube.learn.sound.Sounds
+import com.rakesh.boretube.learn.ui.FitText
 import com.rakesh.boretube.learn.ui.Gap
 import com.rakesh.boretube.learn.ui.LocalUptime
 import com.rakesh.boretube.learn.ui.Palette
@@ -192,7 +193,7 @@ private fun Card(card: PairCard, selected: Boolean, up: Boolean, matched: Boolea
     ) {
         if (showFace) {
             if (card.face.startsWith("pic:")) PictureArt(card.face.removePrefix("pic:"), Modifier.size(96.dp))
-            else BasicText(card.face, style = Text.display(if (card.face.length > 6) TypeScale.s34 else TypeScale.s43), maxLines = 1)
+            else FitText(card.face, Text.display(TypeScale.s43), Modifier.fillMaxSize().padding(Gap.f13), maxLines = 2)
             if (matched) Box(Modifier.align(Alignment.TopEnd).padding(Gap.f13)) { BasicText("✓", style = Text.display(TypeScale.s26).copy(color = Palette.mintInk)) }
         } else {
             CardBack(Modifier.size(55.dp))

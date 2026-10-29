@@ -181,7 +181,7 @@ private fun PathNode(id: String, done: Boolean, current: Boolean, selected: Bool
             when {
                 done && !current -> BasicText("✓", style = Text.display(TypeScale.s26))
                 badge in Pictures.ids -> PictureArt(badge, Modifier.size(55.dp))
-                else -> BasicText(badge, style = Text.display(TypeScale.s26).copy(color = if (current) Palette.card else Palette.ink))
+                else -> FitText(badge, Text.display(TypeScale.s26).copy(color = if (current) Palette.card else Palette.ink), Modifier.fillMaxSize(), maxLines = 1, min = TypeScale.s18, circle = true)
             }
         }
         if (stars > 0) StarRow(stars, size = 18.dp) else Spacer(Modifier.height(18.dp))

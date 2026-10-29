@@ -47,6 +47,7 @@ import com.rakesh.boretube.learn.sound.Sfx
 import com.rakesh.boretube.learn.sound.Sounds
 import com.rakesh.boretube.learn.speech.Speaker
 import com.rakesh.boretube.learn.speech.safeSay
+import com.rakesh.boretube.learn.ui.FitText
 import com.rakesh.boretube.learn.ui.Gap
 import com.rakesh.boretube.learn.ui.LocalUptime
 import com.rakesh.boretube.learn.ui.Palette
@@ -182,7 +183,7 @@ private fun RunHeader(q: Question, run: Run, landName: String) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Gap.f4)) {
             BasicText("Streak run · $landName", style = Text.body(TypeScale.s21, FontWeight.Bold).copy(color = Palette.coralInk))
-            BasicText(q.prompt, style = Text.display(questionSize(q.prompt)), maxLines = if (q.prompt.length > 40) 3 else 1)
+            FitText(q.prompt, Text.display(questionSize(q.prompt)), Modifier.fillMaxWidth(), maxLines = 3, min = TypeScale.s26, align = androidx.compose.ui.text.style.TextAlign.Start)
         }
         Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(Gap.f8)) {
             val pop = remember { Animatable(1f) }

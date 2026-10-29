@@ -58,6 +58,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import com.rakesh.boretube.learn.core.Question
 import com.rakesh.boretube.learn.core.Visual
+import com.rakesh.boretube.learn.ui.FitText
 import com.rakesh.boretube.learn.ui.Gap
 import com.rakesh.boretube.learn.ui.Motion
 import com.rakesh.boretube.learn.ui.Palette
@@ -95,7 +96,7 @@ internal fun Header(q: Question, index: Int, of: Int, followUp: Boolean, sub: St
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Gap.f4)) {
             if (followUp) BasicText("Now try this one", style = Text.body(TypeScale.s21, FontWeight.Bold).copy(color = Palette.coralInk))
-            BasicText(prompt, style = Text.display(questionSize(prompt)), maxLines = if (prompt.length > 40) 3 else 1)
+            FitText(prompt, Text.display(questionSize(prompt)), Modifier.fillMaxWidth(), maxLines = 3, min = TypeScale.s26, align = androidx.compose.ui.text.style.TextAlign.Start)
             sub?.let { BasicText(it, style = Text.muted()) }
         }
         Column(Modifier.width(320.dp).padding(top = Gap.f21), horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(Gap.f8)) {
@@ -143,6 +144,7 @@ fun QuickFireBody(
     val pies = (q.visual as? Visual.Pies)?.fractions
     // All-picture options get big tiles and a light highlight, so dark animals stay visible.
     val pictures = q.options.all { it.startsWith("pic:") }
+    val fit = androidx.compose.runtime.remember(q.key, q.options) { com.rakesh.boretube.learn.ui.FitGroup() }
     Column(
         Modifier.fillMaxSize().padding(horizontal = Safe.x, vertical = Safe.y).testTag(if (right == null) "ask" else "right"),
         verticalArrangement = Arrangement.spacedBy(Gap.f21),
@@ -193,13 +195,9 @@ fun QuickFireBody(
                         if (label.startsWith("pic:")) {
                             com.rakesh.boretube.learn.ui.PictureArt(label.removePrefix("pic:"), Modifier.size(if (pictures) 180.dp else 110.dp))
                         } else {
-                            Row(Modifier.padding(horizontal = Gap.f13), verticalAlignment = Alignment.CenterVertically) {
+                            Row(Modifier.padding(horizontal = Gap.f13, vertical = Gap.f8), verticalAlignment = Alignment.CenterVertically) {
                                 if (isRight) { Tick(ink, Modifier.size(40.dp)); Spacer(Modifier.width(Gap.f8)) }
-                                BasicText(
-                                    label,
-                                    style = Text.display(tileSize(label, pies != null)).copy(color = ink, textAlign = androidx.compose.ui.text.style.TextAlign.Center),
-                                    maxLines = if (label.length > 12) 2 else 1,
-                                )
+                                FitText(label, Text.display(if (pies != null) TypeScale.s43 else TypeScale.s55).copy(color = ink), Modifier.weight(1f, fill = false), maxLines = 2, group = fit)
                             }
                         }
                     }
@@ -218,6 +216,7 @@ fun QuickFireBody(
  */
 @Composable
 fun CatchBody(q: Question, index: Int, of: Int, followUp: Boolean, lane: Int, right: Int?) {
+    val fit = androidx.compose.runtime.remember(q.key, q.options) { com.rakesh.boretube.learn.ui.FitGroup() }
     Column(
         Modifier.fillMaxSize().padding(horizontal = Safe.x, vertical = Gap.f34).testTag(if (right == null) "ask" else "right"),
         verticalArrangement = Arrangement.spacedBy(Gap.f21),
@@ -245,10 +244,9 @@ fun CatchBody(q: Question, index: Int, of: Int, followUp: Boolean, lane: Int, ri
                             .background(if (isRight) Palette.mint else BALL_COLORS[i % BALL_COLORS.size]),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            if (isRight) Tick(Palette.ink, Modifier.size(34.dp))
-                            BasicText(label, style = Text.display(if (label.length > 3) TypeScale.s43 else TypeScale.s55), maxLines = 1)
-                        }
+                        // The answer sits inside the ball's inscribed square: never touching the curve.
+                        if (isRight) Tick(Palette.ink, Modifier.align(Alignment.TopCenter).padding(top = Gap.f13).size(26.dp))
+                        FitText(label, Text.display(TypeScale.s55), Modifier.fillMaxSize(), maxLines = 2, circle = true, group = fit)
                     }
                     if (i == lane) Basket(Modifier.align(Alignment.BottomCenter).padding(bottom = Gap.f13).testTag("basket-$i"))
                 }
@@ -258,7 +256,7 @@ fun CatchBody(q: Question, index: Int, of: Int, followUp: Boolean, lane: Int, ri
     }
 }
 
-private val BALL = 144.dp
+private val BALL = 176.dp
 private val BASKET_H = 110.dp
 private const val FALL_MS = 2_400
 private val BALL_COLORS = listOf(Palette.sunflower, Palette.trail, Palette.garden)

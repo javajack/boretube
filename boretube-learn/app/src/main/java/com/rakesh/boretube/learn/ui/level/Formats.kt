@@ -44,6 +44,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.rakesh.boretube.learn.core.Question
 import com.rakesh.boretube.learn.core.Visual
+import com.rakesh.boretube.learn.ui.FitText
 import com.rakesh.boretube.learn.ui.Gap
 import com.rakesh.boretube.learn.ui.Motion
 import com.rakesh.boretube.learn.ui.Palette
@@ -202,11 +203,7 @@ fun SortBody(q: Question, index: Int, of: Int, followUp: Boolean, placed: Int?, 
                     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Gap.f8)) {
                         val pic = (q.visual as? Visual.Picture)?.id
                         if (pic != null) com.rakesh.boretube.learn.ui.PictureArt(pic, Modifier.size(160.dp))
-                        BasicText(
-                            q.prompt,
-                            style = Text.display(if (pic != null) TypeScale.s43 else sortSize(q.prompt)).copy(textAlign = TextAlign.Center),
-                            maxLines = 3,
-                        )
+                        FitText(q.prompt, Text.display(if (pic != null) TypeScale.s43 else sortSize(q.prompt)), Modifier.widthIn(max = 420.dp), maxLines = 3)
                     }
                 }
             }
@@ -254,7 +251,7 @@ private fun SortBasket(label: String, count: Int, glow: Boolean, side: Int, modi
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 BasicText(if (side < 0) "◀" else "▶", style = Text.body(TypeScale.s26, FontWeight.Bold).copy(color = Palette.sunflowerInk))
-                BasicText(label, style = Text.display(if (label.length <= 8) TypeScale.s43 else TypeScale.s34).copy(textAlign = TextAlign.Center), maxLines = 2)
+                FitText(label, Text.display(TypeScale.s43), Modifier.fillMaxWidth().padding(horizontal = Gap.f13), maxLines = 2)
             }
         }
     }
@@ -267,6 +264,7 @@ private fun SortBasket(label: String, count: Int, glow: Boolean, side: Int, modi
  */
 @Composable
 fun OrderBody(q: Question, index: Int, of: Int, followUp: Boolean, placed: List<Int>, sel: Int, right: Boolean, wrongShake: Any?) {
+    val fit = remember(q.key, q.options) { com.rakesh.boretube.learn.ui.FitGroup() }
     val n = q.options.size
     val left = q.options.indices.filter { it !in placed }
     Column(
@@ -302,7 +300,7 @@ fun OrderBody(q: Question, index: Int, of: Int, followUp: Boolean, placed: List<
                                 Modifier.fillMaxSize().clip(shape).background(if (right) Palette.mint else Palette.ink).padding(Gap.f13),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                OrderItem(q.options[item], if (right) Palette.ink else Palette.cream)
+                                OrderItem(q.options[item], if (right) Palette.ink else Palette.cream, fit)
                             }
                             Box(
                                 Modifier.align(Alignment.TopStart).padding(Gap.f8).size(34.dp).clip(CircleShape).background(Palette.sunflower),
@@ -334,7 +332,7 @@ fun OrderBody(q: Question, index: Int, of: Int, followUp: Boolean, placed: List<
                         .testTag("order-tile-$i"),
                     contentAlignment = Alignment.Center,
                 ) {
-                    OrderItem(q.options[i], if (selected) Palette.cream else Palette.ink)
+                    OrderItem(q.options[i], if (selected) Palette.cream else Palette.ink, fit)
                 }
             }
         }
@@ -344,14 +342,14 @@ fun OrderBody(q: Question, index: Int, of: Int, followUp: Boolean, placed: List<
 
 /** An Order tile's face: a picture with its name under it, or the words. */
 @Composable
-private fun OrderItem(item: String, ink: Color) {
+private fun OrderItem(item: String, ink: Color, fit: com.rakesh.boretube.learn.ui.FitGroup) {
     if (item.startsWith("pic:")) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             com.rakesh.boretube.learn.ui.PictureArt(item.removePrefix("pic:"), Modifier.size(84.dp))
             BasicText(optionText(item), style = Text.body(TypeScale.s18, FontWeight.Bold).copy(color = ink), maxLines = 1)
         }
     } else {
-        BasicText(item, style = Text.display(orderSize(item)).copy(color = ink, textAlign = TextAlign.Center), maxLines = 2)
+        FitText(item, Text.display(TypeScale.s43).copy(color = ink), Modifier.fillMaxSize(), maxLines = 2, group = fit)
     }
 }
 

@@ -472,6 +472,11 @@ class AgentStatus {
   /// Self-ADB isn't approved, or the agent says it is limited.
   bool get isLimited => limited || selfAdb != SelfAdb.ok;
 
+  /// Started less than [settle] ago (an unknown uptime, 0, never is):
+  /// after a boot or wake it may still be reconnecting to itself.
+  bool justStarted(Duration settle) =>
+      uptimeSec > 0 && Duration(seconds: uptimeSec) < settle;
+
   factory AgentStatus.fromJson(Map<String, dynamic> j) => AgentStatus(
         agentId: _str(j['agentId']),
         version: _str(j['version']),

@@ -10,6 +10,7 @@ import 'package:boretube_mobile/screens/rules_tab.dart';
 import 'package:boretube_mobile/screens/rules/rules_editor.dart';
 import 'package:boretube_mobile/screens/tv/tv_guard_card.dart';
 import 'package:boretube_mobile/ui/components.dart';
+import 'package:boretube_mobile/providers/now_playing.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -58,6 +59,7 @@ void main() {
       WidgetTester tester,
       AgentLink link, {
       bool missing = false,
+      NowPlaying now = const NowPlaying(online: true, asleep: false),
     }) async {
       final env = await TestEnv.create(tvs: [adbSony]);
       await pumpScreen(
@@ -65,7 +67,7 @@ void main() {
         const SingleChildScrollView(child: TvGuardCard()),
         scaffold: true,
         overrides: [
-          ...env.overrides(),
+          ...env.overrides(now: now),
           ...agentOverrides(link, missing: missing),
         ],
       );
@@ -195,6 +197,47 @@ void main() {
       expect(find.byKey(const Key('tv-guard-down')), findsOneWidget);
       expect(find.text('Not answering'), findsWidgets);
       expect(find.byKey(const Key('tv-guard-repair')), findsOneWidget);
+    });
+
+    testWidgets('silent while the TV sleeps: calm, no Repair', (tester) async {
+      await pumpCard(
+        tester,
+        const AgentLink(AgentLinkKind.down),
+        now: const NowPlaying(online: true, asleep: true),
+      );
+      expect(find.byKey(const Key('tv-guard-down')), findsNothing);
+      expect(find.textContaining('Sleeping with the TV'), findsWidgets);
+      expect(find.byKey(const Key('tv-guard-repair')), findsNothing);
+    });
+
+    testWidgets('TV not answering at all: can\'t reach it, no Repair',
+        (tester) async {
+      await pumpCard(
+        tester,
+        const AgentLink(AgentLinkKind.down),
+        now: const NowPlaying(),
+      );
+      expect(find.byKey(const Key('tv-guard-down')), findsNothing);
+      expect(find.byKey(const Key('tv-guard-unreachable')), findsOneWidget);
+      expect(find.byKey(const Key('tv-guard-repair')), findsNothing);
+    });
+
+    testWidgets('limited just after waking is starting up, not Repair',
+        (tester) async {
+      await pumpCard(
+        tester,
+        AgentLink(
+          AgentLinkKind.up,
+          status: agentStatus(selfAdb: SelfAdb.needsApproval),
+        ),
+        now: NowPlaying(
+          online: true,
+          asleep: false,
+          awakeSince: DateTime.now().subtract(const Duration(seconds: 10)),
+        ),
+      );
+      expect(find.textContaining('Starting up'), findsWidgets);
+      expect(find.byKey(const Key('tv-guard-repair')), findsNothing);
     });
 
     testWidgets('TV update pending approval', (tester) async {

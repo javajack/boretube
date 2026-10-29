@@ -4,6 +4,7 @@
 // the HTTP client and the tokens saved at install.
 
 import 'dart:async';
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/widgets.dart';
@@ -16,6 +17,7 @@ import 'package:workmanager/workmanager.dart';
 import '../adb/adb_identity.dart';
 import '../agent/agent_client.dart';
 import '../agent/agent_installer.dart';
+import '../protocols/castv2_client.dart';
 import '../providers/providers.dart';
 import '../tv/tv.dart';
 import '../tv/tv_store.dart';
@@ -209,14 +211,51 @@ class WorkmanagerScheduler implements WatchScheduler {
 int alertIdFor(String tvId) =>
     1000 + tvId.codeUnits.fold<int>(0, (a, b) => (a * 31 + b) & 0xffff);
 
+/// What the TV itself says when its helper doesn't answer.
+enum TvPower {
+  awake,
+  asleep,
+
+  /// Nothing answers: no power, or this phone isn't on the TV's Wi-Fi.
+  gone,
+
+  /// It can't tell (no Cast on this TV).
+  unknown,
+}
+
+/// Asks Cast, which stays up in standby (`isStandBy`) while Android pauses
+/// TV Guard. Measured on the VU3, 2026-10-29.
+Future<TvPower> castPowerOf(Tv tv) async {
+  if (!tv.can(TvCapability.cast)) return TvPower.unknown;
+  final c = CastV2Client(host: tv.ip, port: tv.castPort);
+  try {
+    final st = await c.getStatus().timeout(const Duration(seconds: 8));
+    if (st == null) return TvPower.unknown;
+    return st['standby'] == true ? TvPower.asleep : TvPower.awake;
+  } on SocketException {
+    return TvPower.gone;
+  } on TimeoutException {
+    return TvPower.gone;
+  } catch (_) {
+    return TvPower.unknown;
+  } finally {
+    await c.disconnect();
+  }
+}
+
 /// Checks every saved TV with an Always On token once. Returns the alerts
-/// posted. Pure apart from [statusOf] and [notifier].
+/// posted. Pure apart from [statusOf], [powerOf] and [notifier].
+///
+/// A helper that doesn't answer only counts as a miss while the TV is
+/// awake (or can't say): standby and a TV that's off answer nothing, and
+/// neither is something to fix.
 Future<List<WatchAlert>> runWatchOnce({
   required SharedPreferences prefs,
   required List<Tv> tvs,
   required Future<String?> Function(String tvId) tokenFor,
   required Future<AgentStatus> Function(Tv tv, String token) statusOf,
   required AlertNotifier notifier,
+  Future<TvPower> Function(Tv tv) powerOf = castPowerOf,
   DateTime Function() clock = DateTime.now,
 }) async {
   final posted = <WatchAlert>[];
@@ -229,7 +268,11 @@ Future<List<WatchAlert>> runWatchOnce({
     } on AgentAuthException {
       obs = WatchObservation.authFailed;
     } catch (_) {
-      obs = WatchObservation.unreachable;
+      obs = switch (await powerOf(tv)) {
+        TvPower.asleep => WatchObservation.asleep,
+        TvPower.gone => WatchObservation.away,
+        TvPower.awake || TvPower.unknown => WatchObservation.unreachable,
+      };
     }
     final prev = WatchState.decode(prefs.getString(watchStateKey(tv.id)));
     final (next, alert) = watchStep(prev, obs);

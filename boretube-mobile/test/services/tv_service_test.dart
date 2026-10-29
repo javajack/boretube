@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import 'package:boretube_mobile/models/tv_status.dart';
 import 'package:boretube_mobile/protocols/castv2_client.dart';
 import 'package:boretube_mobile/protocols/dial_client.dart';
 import 'package:boretube_mobile/services/tv_service.dart';
@@ -276,5 +277,11 @@ void main() {
         expect(name, isNull);
       },
     );
+  });
+
+  test('Cast standby: isStandBy reads through to the status', () {
+    expect(TvStatus.fromJson({'standby': true}).standby, isTrue);
+    expect(TvStatus.fromJson({'standby': false}).standby, isFalse);
+    expect(TvStatus.fromJson(const {}).standby, isNull);
   });
 }

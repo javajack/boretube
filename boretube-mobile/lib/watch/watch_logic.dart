@@ -22,18 +22,37 @@ enum WatchObservation {
   /// Answers, but no longer recognises this phone.
   authFailed,
 
-  /// No answer this time (TV off, Wi-Fi blip, helper stopped).
+  /// No answer this time, though the TV itself is awake (or can't say):
+  /// the helper stopped, or a Wi-Fi blip.
   unreachable,
+
+  /// The TV is in standby (Cast says so) and Android paused the helper.
+  /// Not a fault: it picks up again when the TV wakes.
+  asleep,
+
+  /// Nothing on the TV answers: off at the wall, or the phone isn't home.
+  away,
+
+  /// Just started and still reconnecting to itself.
+  settling,
 }
 
 /// A problem worth telling the parent about, mildest first.
 enum Incident { safe, limited, down }
 
+/// How long after starting a limited helper is still settling (as
+/// `kAgentSettle` on the Always On card).
+const kWatchSettle = Duration(seconds: 60);
+
 /// The same reading as `guardStateOf` for an answering agent.
 WatchObservation classifyStatus(AgentStatus s) {
   if (s.mode == AgentMode.safe) return WatchObservation.safe;
   if (s.mode == AgentMode.paused) return WatchObservation.paused;
-  if (s.isLimited) return WatchObservation.limited;
+  if (s.isLimited) {
+    return s.justStarted(kWatchSettle)
+        ? WatchObservation.settling
+        : WatchObservation.limited;
+  }
   return WatchObservation.healthy;
 }
 
@@ -119,10 +138,16 @@ const kMissesForDown = 2;
 ///   is back", but only if an alert had gone out.
 /// - One miss is ignored as a blip; [kMissesForDown] in a row is "down".
 ///   A rejected token is down at once (it won't fix itself).
+/// - A sleeping, unplugged or settling TV says nothing either way: no
+///   alert, misses start over, and an outstanding incident stays.
 (WatchState, WatchAlert?) watchStep(WatchState prev, WatchObservation obs) {
   Incident? now;
   var failures = 0;
   switch (obs) {
+    case WatchObservation.asleep:
+    case WatchObservation.away:
+    case WatchObservation.settling:
+      return (WatchState(notified: prev.notified), null);
     case WatchObservation.healthy:
     case WatchObservation.paused:
       if (prev.notified == null) return (WatchState.initial, null);

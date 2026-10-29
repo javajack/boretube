@@ -115,3 +115,24 @@ Final state:
 - **TextToSpeech binds to `com.google.android.tts`** (the rolled-back known-good Speech Services) and reports voice `ok`. The Hindi voice hasn't been checked by ear yet.
 - **Progress survives both an agent update and a reboot:** 7 breaks, 14 right, 2 learned, and the rung on "Tables of 6, 7, 8 and 9".
 - **A round with a wrong answer journals** "2 questions: 1 right, 1 learned"; the learn screen and the easier follow-up were seen on the TV.
+
+## Power states as the phone sees them (verified 2026-10-29)
+
+Measured from the laptop while the TV went on → remote standby (2 min) → on → off at the wall → on, and once more standby (1 min) → on.
+
+| State | Ping | Open ports | ADB `dumpsys power` | Cast `RECEIVER_STATUS` | TV Guard :8790 |
+|---|---|---|---|---|---|
+| On | yes | 5555, 8008, 8009, 8790 | `mWakefulness=Awake` | no `isStandBy`, or `false` | answers |
+| Standby | yes | 5555, 8008, 8009 | `mWakefulness=Asleep` | `"isStandBy": true, "isActiveInput": false` | silent (Android pauses it) |
+| Waking | yes | as On | `Awake` at once | `isStandBy` stays true for ~5 s | back within ~4 s; self-ADB may take longer |
+| Off at the wall | no | none | — | — | — |
+
+Notes:
+- **`isStandBy` is absent until the first standby after a boot**, so treat "absent" as awake.
+- **On a cold boot, TV Guard and ADB come up first** and Cast about 18 s later.
+- **So "TV Guard silent" alone says nothing.** The phone (2.0.2) reads the TV's own state first:
+  - asleep → "Sleeping with the TV";
+  - nothing answers → "Can't reach the TV";
+  - less than 60 s since waking, or a helper with uptime under 60 s → "Starting up".
+  
+  Only an awake, settled TV with a silent or limited helper offers Repair. The background watch asks Cast before counting a miss.

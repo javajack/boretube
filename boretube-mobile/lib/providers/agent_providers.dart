@@ -11,6 +11,7 @@ import '../ops/baseline.dart';
 import '../ops/journal.dart';
 import '../ops/restore_planner.dart';
 import 'providers.dart';
+import '../tv/presence.dart';
 import 'tv_providers.dart';
 
 // ── token and client ──
@@ -181,6 +182,15 @@ final agentForActionsProvider = Provider<AgentClient?>((ref) {
 
 enum GuardState {
   on,
+
+  /// The TV is in standby: TV Guard sleeps with it (not a fault).
+  sleeping,
+
+  /// The TV just woke or TV Guard just started: still settling.
+  starting,
+
+  /// Nothing on the TV answers (off at the wall, or Wi-Fi).
+  tvUnreachable,
   limited,
   paused,
   down,
@@ -192,14 +202,37 @@ enum GuardState {
 }
 
 /// One state for the top-bar pill.
+/// TV Guard reconnects to itself after it starts; this long it may be limited.
+const kAgentSettle = Duration(seconds: 60);
+
+/// One state for the pill and the Always On card, read against the TV's own
+/// power state ([presence]): a helper that is silent because the TV sleeps,
+/// is switched off, or just woke is not a fault. Only a TV that is awake and
+/// settled, with TV Guard still silent or limited, is.
 GuardState guardStateOf({
   required AgentLink link,
   required bool onBreak,
   required bool classic,
+  TvPresence presence = TvPresence.on,
 }) {
   if (!link.installed) {
     if (onBreak) return GuardState.onBreak;
     return classic ? GuardState.classic : GuardState.notGuarded;
+  }
+  // A rejected phone never fixes itself, whatever the TV is doing.
+  if (link.kind == AgentLinkKind.authFailed) return GuardState.down;
+  if (link.kind != AgentLinkKind.up) {
+    switch (presence) {
+      case TvPresence.asleep:
+        return GuardState.sleeping;
+      case TvPresence.unreachable:
+        return GuardState.tvUnreachable;
+      case TvPresence.waking:
+        return GuardState.starting;
+      case TvPresence.checking:
+      case TvPresence.on:
+        break;
+    }
   }
   final s = link.status;
   switch (link.kind) {
@@ -216,7 +249,11 @@ GuardState guardStateOf({
   if (s!.mode == AgentMode.safe) return GuardState.safe;
   if (onBreak || s.breakState.active) return GuardState.onBreak;
   if (s.mode == AgentMode.paused) return GuardState.paused;
-  if (s.isLimited) return GuardState.limited;
+  if (s.isLimited) {
+    final settling =
+        presence == TvPresence.waking || s.justStarted(kAgentSettle);
+    return settling ? GuardState.starting : GuardState.limited;
+  }
   return GuardState.on;
 }
 

@@ -34,6 +34,9 @@ class FakeTv implements AdbShell {
   };
   int volume = 12;
   bool muted = false;
+
+  /// The screen: `Awake`, `Asleep` (standby) or `Dozing`.
+  String wakefulness = 'Awake';
   String fingerprint =
       'Sony/BRAVIA_VU3/BRAVIA_VU3:14/UKR1.240726.001/1234:user/release-keys';
 
@@ -69,6 +72,7 @@ class FakeTv implements AdbShell {
       c == PackageSnapshot.command ||
       c == TvOps.leanbackQuery ||
       c == TvOps.volumeCommand ||
+      c == TvOps.wakefulnessCommand ||
       c == TvOps.foregroundCommand ||
       c == TvOps.launcherCommand ||
       c.startsWith('dumpsys package ') ||
@@ -163,6 +167,8 @@ class FakeTv implements AdbShell {
     }
     if (c == TvOps.leanbackQuery) return _ok(leanback);
     if (c == TvOps.volumeCommand) return _ok(_volumeDump());
+    final wake = '  mWakefulness=$wakefulness\n';
+    if (c == TvOps.wakefulnessCommand) return _ok(wake);
     if (c == TvOps.foregroundCommand) {
       final f = foreground;
       return f == null

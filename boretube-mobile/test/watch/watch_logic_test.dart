@@ -8,6 +8,9 @@ const l = WatchObservation.limited;
 const s = WatchObservation.safe;
 const a = WatchObservation.authFailed;
 const u = WatchObservation.unreachable;
+const z = WatchObservation.asleep;
+const w = WatchObservation.away;
+const g = WatchObservation.settling;
 
 /// Runs [obs] from a fresh state; returns the alerts (null = none).
 List<WatchAlert?> run(List<WatchObservation> obs) {
@@ -35,10 +38,12 @@ void main() {
       SelfAdb adb = SelfAdb.ok,
       bool limited = false,
       bool onBreak = false,
+      int uptime = 0,
     }) =>
         AgentStatus(
           agentId: 'a',
           version: '1',
+          uptimeSec: uptime,
           mode: mode,
           selfAdb: adb,
           limited: limited,
@@ -54,6 +59,11 @@ void main() {
       expect(classifyStatus(st(adb: SelfAdb.needsApproval)), l);
       // Safe mode wins over limited.
       expect(classifyStatus(st(mode: AgentMode.safe, limited: true)), s);
+    });
+
+    test('limited in its first minute is still settling', () {
+      expect(classifyStatus(st(limited: true, uptime: 20)), g);
+      expect(classifyStatus(st(limited: true, uptime: 90)), l);
     });
   });
 
@@ -102,6 +112,16 @@ void main() {
 
     test('a blip during an incident keeps it open', () {
       expect(run([l, u, l, h]), [limited, null, null, back]);
+    });
+
+    test('a sleeping or unplugged TV never alerts, and misses start over', () {
+      expect(run([h, z, z, z, w, w, h]), List.filled(7, null));
+      expect(run([u, z, u, w, u, g, u]), List.filled(7, null));
+    });
+
+    test('an open incident stays open through standby, then recovers', () {
+      expect(run([u, u, z, w, h]), [null, down, null, null, back]);
+      expect(run([l, g, z, l, h]), [limited, null, null, null, back]);
     });
 
     test('corrupt state starts fresh', () {

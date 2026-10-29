@@ -5,6 +5,7 @@ import '../../agent/agent_models.dart';
 import '../../ops/journal.dart';
 import '../../providers/agent_providers.dart';
 import '../../providers/now_playing.dart';
+import '../../tv/presence.dart';
 import '../../tv/tv.dart';
 import '../../ui/components.dart';
 
@@ -74,13 +75,19 @@ class HomeProblem {
   });
 }
 
-/// What is wrong right now, if anything. Only asked while the TV is on.
+/// What is wrong right now, if anything. Only asked while the TV answers.
+///
+/// A helper that is silent while the TV sleeps, or silent or limited just
+/// after it woke, is not a problem: only an awake, settled TV can have one
+/// (a phone the helper rejects is always one).
 HomeProblem? problemOf({
   required Tv tv,
   required AgentLink link,
   AdbSessionState? adb,
+  TvPresence presence = TvPresence.on,
 }) {
   final hasAdb = tv.can(TvCapability.adb);
+  final settled = presence == TvPresence.on;
   if (adb is AdbFailed && adb.authRejected && hasAdb && !link.installed) {
     return const HomeProblem(
       title: 'The TV stopped trusting this phone',
@@ -101,6 +108,7 @@ HomeProblem? problemOf({
       fix: hasAdb ? ProblemFix.repair : ProblemFix.reconnect,
     );
   }
+  if (!settled && link.kind != AgentLinkKind.up) return null;
   if (link.kind == AgentLinkKind.down) {
     return HomeProblem(
       title: 'Always On is off right now',
@@ -142,6 +150,8 @@ HomeProblem? problemOf({
     );
   }
   if (s.isLimited) {
+    final settling = !settled || s.justStarted(kAgentSettle);
+    if (settling) return null;
     return HomeProblem(
       title: 'Always On can\'t close apps yet',
       message: 'The TV hasn\'t given its helper permission. Repair asks '

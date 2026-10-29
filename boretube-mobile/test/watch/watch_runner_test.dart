@@ -23,6 +23,9 @@ void main() {
   final answers = <String, Object?>{};
   final asked = <String>[];
 
+  /// What Cast says about each TV's power when its helper is silent.
+  final power = <String, TvPower>{};
+
   http.Client client() => MockClient((r) async {
         asked.add(r.url.host);
         expect(r.url.path, '/v1/status');
@@ -55,6 +58,7 @@ void main() {
         httpClient: c,
       ).status(),
       notifier: notifier,
+      powerOf: (tv) async => power[tv.ip] ?? TvPower.awake,
       clock: () => DateTime(2026, 10, 29, 21),
     );
   }
@@ -65,6 +69,7 @@ void main() {
     notifier = FakeAlertNotifier();
     answers.clear();
     asked.clear();
+    power.clear();
   });
 
   test('checks only TVs with Always On, and stays quiet when fine', () async {
@@ -94,6 +99,22 @@ void main() {
     // Same id: the recovery replaces the "stopped" notification.
     expect(notifier.shown.last.id, n.id);
     expect(await check(), isEmpty);
+  });
+
+  test('standby and a TV that is off stay quiet; awake and silent alerts',
+      () async {
+    answers[bedroom.ip] = status();
+    power[living.ip] = TvPower.asleep;
+    expect(await check(), isEmpty);
+    expect(await check(), isEmpty);
+    power[living.ip] = TvPower.gone;
+    expect(await check(), isEmpty);
+    expect(await check(), isEmpty);
+    expect(notifier.shown, isEmpty);
+    // Woke up, and the helper still doesn't answer: that's the real fault.
+    power[living.ip] = TvPower.awake;
+    expect(await check(), isEmpty);
+    expect(await check(), [const WatchAlert.incident(Incident.down)]);
   });
 
   test('limited, safe and a rejected token each get their own words', () async {

@@ -117,11 +117,20 @@ void main() {
       expect(sh.lanes, ['urgent']);
     });
 
-    test('status parses foreground and volume from one reply', () async {
+    test('status parses foreground, volume and the screen from one reply',
+        () async {
       final st = await ops.status();
       expect(st.foreground, 'org.smarttube.stable');
       expect(st.volume!.level, 12);
+      expect(st.awake, isTrue);
       expect(tv.log, [TvOps.statusCommand]);
+    });
+
+    test('standby reads as not awake', () async {
+      tv.wakefulness = 'Asleep';
+      expect((await ops.status()).awake, isFalse);
+      tv.wakefulness = 'Dozing';
+      expect((await ops.status()).awake, isFalse);
     });
   });
 

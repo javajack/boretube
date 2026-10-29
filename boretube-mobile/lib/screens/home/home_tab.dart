@@ -16,6 +16,7 @@ import '../../providers/now_playing.dart';
 import '../../providers/nudges.dart';
 import '../../providers/tv_providers.dart';
 import '../../providers/ui_providers.dart';
+import '../../tv/presence.dart';
 import '../../tv/tv.dart';
 import '../../ui/celebrate.dart';
 import '../../ui/components.dart';
@@ -478,8 +479,14 @@ class _HomeTabState extends ConsumerState<HomeTab> {
     final supported = supportedActions(tv);
     final online = now.online;
     final offline = !online && !now.loading;
+    final presence = ref.watch(tvPresenceProvider);
+    final asleep = presence == TvPresence.asleep;
+    // Standby answers, but there's nothing to control until it wakes.
+    final dim = offline || asleep;
     final level = protectionOf(tv, link);
-    final problem = online ? problemOf(tv: tv, link: link, adb: adb) : null;
+    final problem = online
+        ? problemOf(tv: tv, link: link, adb: adb, presence: presence)
+        : null;
     final degraded = link.kind == AgentLinkKind.down ||
         link.kind == AgentLinkKind.authFailed;
     final muted = now.muted == true || brk.active;
@@ -531,15 +538,19 @@ class _HomeTabState extends ConsumerState<HomeTab> {
     // Each part keeps its words together, so a wrap only ever falls at a
     // " · " (never an orphaned "pm").
     final sentence = offline
-        ? 'Controls come back when it\'s on'
-        : parts.map((p) => p.replaceAll(' ', '\u00A0')).join(' · ');
+        ? 'It may be off at the wall, or the Wi-Fi\u00A0is\u00A0down'
+        : asleep
+            ? 'Controls come back when it\'s on'
+            : parts.map((p) => p.replaceAll(' ', '\u00A0')).join(' · ');
     final sentenceTone = offline
-        ? Tone.idle
-        : (problem?.serious ?? false)
-            ? Tone.bad
-            : now.muted == true
-                ? Tone.warn
-                : Tone.ok;
+        ? Tone.warn
+        : asleep
+            ? Tone.idle
+            : (problem?.serious ?? false)
+                ? Tone.bad
+                : now.muted == true
+                    ? Tone.warn
+                    : Tone.ok;
 
     // Today.
     final stops = stopsToday(activity, t);
@@ -617,7 +628,7 @@ class _HomeTabState extends ConsumerState<HomeTab> {
 
     final pauseMinutes = ref.watch(pauseChoiceProvider);
     final chosen = pauseMinutes == 0 && untilBed == null ? 30 : pauseMinutes;
-    final canPause = supported.contains(QuickAction.takeBreak) && !offline;
+    final canPause = supported.contains(QuickAction.takeBreak) && !dim;
     final nudge = _nudge(
       tv: tv,
       link: link,
@@ -627,7 +638,7 @@ class _HomeTabState extends ConsumerState<HomeTab> {
       since: since,
       busy: _inflight.isNotEmpty ||
           brk.active ||
-          offline ||
+          dim ||
           (problem?.serious ?? false),
       problem: problem != null,
     );
@@ -845,7 +856,7 @@ class _HomeTabState extends ConsumerState<HomeTab> {
             supported: supported,
             muted: muted,
             onBreak: brk.active,
-            disabled: offline,
+            disabled: dim,
             busy: _inflight,
             blocked: _blocked,
             onQuiet: () => _run(

@@ -53,6 +53,7 @@ class TvService {
           appId: status.appId,
           appName: status.appName,
           isIdle: status.isIdle,
+          standby: status.standby,
         );
       }
       return status;

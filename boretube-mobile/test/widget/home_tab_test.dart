@@ -138,7 +138,8 @@ void main() {
     expect(find.textContaining('Sound\u00A0off'), findsOneWidget);
   });
 
-  testWidgets('offline: "is off · last seen", controls dimmed', (tester) async {
+  testWidgets('off at the wall: can\'t reach it · last seen, controls dimmed',
+      (tester) async {
     final env = await TestEnv.create(tvs: [adbSony]);
     await pumpHome(
       tester,
@@ -147,13 +148,71 @@ void main() {
         lastSeen: DateTime.now().subtract(const Duration(minutes: 7)),
       ),
     );
-    expect(find.text('Living Room TV is off'), findsOneWidget);
+    expect(find.text('Can\'t reach Living Room TV'), findsOneWidget);
     expect(find.text('Last seen 7 min ago'), findsOneWidget);
+    expect(find.textContaining('off at the wall'), findsOneWidget);
     expect(key('home-retry'), findsOneWidget);
     final pause = tester.widget<PrimaryButton>(key('action-break'));
     expect(pause.onPressed, isNull);
     final quiet = tester.widget<ActionTile>(key('action-mute'));
     expect(quiet.onTap, isNull);
+  });
+
+  group('the TV\'s own power state', () {
+    const down = AgentLink(AgentLinkKind.down);
+    final limited = AgentLink(
+      AgentLinkKind.up,
+      lastOk: DateTime.now(),
+      status: const AgentStatus(
+        agentId: 'a',
+        version: '1.4.1',
+        uptimeSec: 600,
+        limited: true,
+      ),
+    );
+
+    testWidgets('standby: calm, asleep, no Repair and no retry',
+        (tester) async {
+      final env = await TestEnv.create(tvs: [adbSony]);
+      await pumpHome(
+        tester,
+        env,
+        now: const NowPlaying(online: true, asleep: true, source: 'adb'),
+        extra: [link(down)],
+      );
+      expect(find.text('Living Room TV is asleep'), findsOneWidget);
+      expect(key('home-problem'), findsNothing);
+      expect(key('home-retry'), findsNothing);
+      final pause = tester.widget<PrimaryButton>(key('action-break'));
+      expect(pause.onPressed, isNull);
+    });
+
+    testWidgets('just woke: a limited helper is not a problem yet',
+        (tester) async {
+      final env = await TestEnv.create(tvs: [adbSony]);
+      await pumpHome(
+        tester,
+        env,
+        now: playing.withAwakeSince(
+          DateTime.now().subtract(const Duration(seconds: 10)),
+        ),
+        extra: [link(limited)],
+      );
+      expect(key('home-problem'), findsNothing);
+    });
+
+    testWidgets('awake and settled: limited and silent are real problems',
+        (tester) async {
+      final env = await TestEnv.create(tvs: [adbSony]);
+      await pumpHome(tester, env, extra: [link(limited)]);
+      expect(find.text('Always On can\'t close apps yet'), findsOneWidget);
+    });
+
+    testWidgets('awake and settled, helper silent: Reconnect', (tester) async {
+      final env = await TestEnv.create(tvs: [adbSony]);
+      await pumpHome(tester, env, extra: [link(down)]);
+      expect(find.text('Always On is off right now'), findsOneWidget);
+    });
   });
 
   group('paused hero', () {

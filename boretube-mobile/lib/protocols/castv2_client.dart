@@ -288,6 +288,7 @@ class CastV2Client {
       'app_id': '',
       'app_name': '',
       'idle': true,
+      if (status['isStandBy'] is bool) 'standby': status['isStandBy'],
     };
 
     if (apps.isNotEmpty) {

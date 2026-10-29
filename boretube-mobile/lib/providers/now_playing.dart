@@ -6,6 +6,7 @@ import '../discovery/discovery_service.dart';
 import '../ops/tv_ops.dart';
 import '../services/lock_service.dart';
 import '../services/tv_service.dart';
+import '../tv/presence.dart';
 import '../tv/tv.dart';
 import '../tv/tv_store.dart';
 import 'providers.dart';
@@ -30,6 +31,14 @@ class NowPlaying {
   /// `adb` or `cast`.
   final String? source;
 
+  /// The screen is off (standby): ADB's wakefulness or Cast's isStandBy.
+  /// Null when the source can't tell.
+  final bool? asleep;
+
+  /// When the TV was seen waking (from standby, or back from unreachable);
+  /// null when it was already awake when we first looked.
+  final DateTime? awakeSince;
+
   const NowPlaying({
     this.loading = false,
     this.online = false,
@@ -40,6 +49,8 @@ class NowPlaying {
     this.muted,
     this.lastSeen,
     this.source,
+    this.asleep,
+    this.awakeSince,
   });
 
   static const initial = NowPlaying(loading: true);
@@ -64,6 +75,23 @@ class NowPlaying {
         muted: identical(muted, _keep) ? this.muted : muted as bool?,
         lastSeen: lastSeen,
         source: source,
+        asleep: asleep,
+        awakeSince: awakeSince,
+      );
+
+  /// The same reading, with [awakeSince] set.
+  NowPlaying withAwakeSince(DateTime? since) => NowPlaying(
+        loading: loading,
+        online: online,
+        id: id,
+        appName: appName,
+        isHome: isHome,
+        volume: volume,
+        muted: muted,
+        lastSeen: lastSeen,
+        source: source,
+        asleep: asleep,
+        awakeSince: since,
       );
 
   /// Puts back the fields that differ between [before] and [applied],
@@ -172,6 +200,7 @@ class NowPlayingNotifier extends StateNotifier<NowPlaying> {
   final Duration settleDelay;
   final void Function()? onUnreachable;
   final void Function(DateTime seen)? onSeen;
+  final DateTime Function() clock;
   Timer? _timer;
   Timer? _settle;
   bool _busy = false;
@@ -187,6 +216,7 @@ class NowPlayingNotifier extends StateNotifier<NowPlaying> {
     this.settleDelay = const Duration(milliseconds: 300),
     this.onUnreachable,
     this.onSeen,
+    this.clock = DateTime.now,
   }) : super(initial) {
     if (fetch == null) {
       state = initial.offline();
@@ -202,7 +232,8 @@ class NowPlayingNotifier extends StateNotifier<NowPlaying> {
         interval = const Duration(days: 1),
         settleDelay = Duration.zero,
         onUnreachable = null,
-        onSeen = null;
+        onSeen = null,
+        clock = DateTime.now;
 
   /// True while an action holds the poll.
   bool get held => _holds > 0;
@@ -250,7 +281,7 @@ class NowPlayingNotifier extends StateNotifier<NowPlaying> {
         // An action changed the picture mid-read: this reading predates
         // it. The refresh after the action will reconcile.
         if (epoch != _epoch || _holds > 0) return;
-        state = r;
+        state = r.withAwakeSince(_awakeSince(state, r));
         onSeen?.call(r.lastSeen ?? DateTime.now());
       } else {
         _fail();
@@ -260,6 +291,15 @@ class NowPlayingNotifier extends StateNotifier<NowPlaying> {
     } finally {
       _busy = false;
     }
+  }
+
+  /// Waking is a change we saw: asleep or unreachable before, awake now.
+  /// Awake on the very first reading means "since before we looked" (null).
+  DateTime? _awakeSince(NowPlaying before, NowPlaying r) {
+    if (r.asleep == true) return null;
+    if (before.loading) return null;
+    if (before.online && before.asleep != true) return before.awakeSince;
+    return clock();
   }
 
   void _fail() {
@@ -299,6 +339,7 @@ Future<NowPlaying?> readNowPlaying({
         muted: v?.muted,
         lastSeen: clock(),
         source: 'adb',
+        asleep: st.awake == null ? null : !st.awake!,
       );
     } catch (_) {
       // Fall back to Cast.
@@ -315,6 +356,7 @@ Future<NowPlaying?> readNowPlaying({
     muted: status.muted,
     lastSeen: clock(),
     source: 'cast',
+    asleep: status.standby,
   );
 }
 
@@ -430,3 +472,9 @@ final classicLockActiveProvider = StreamProvider<bool>((ref) {
   });
   return out.stream;
 });
+
+/// The active TV's power state (on, waking, asleep, unreachable), from the
+/// now-playing poll; re-read on every poll, so "waking" expires by itself.
+final tvPresenceProvider = Provider<TvPresence>(
+  (ref) => presenceOf(ref.watch(nowPlayingProvider), DateTime.now()),
+);

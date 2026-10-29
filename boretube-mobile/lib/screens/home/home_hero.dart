@@ -148,8 +148,11 @@ class HomeHero extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
     final off = !now.online && !now.loading;
+    // Standby still answers, but there's nothing on to show or control.
+    final asleep = now.online && !now.loading && now.asleep == true;
+    final dim = off || asleep;
     final muted = now.muted == true;
-    final m = off || now.loading ? null : media;
+    final m = dim || now.loading ? null : media;
     final app = now.appName.isEmpty ? null : now.appName;
     final String caption;
     final String title;
@@ -169,11 +172,16 @@ class HomeHero extends StatelessWidget {
       title = tvName;
       detail = 'One moment';
     } else if (off) {
+      // Standby still answers, so silence means no power or no Wi-Fi.
       caption = 'Not answering';
-      title = '$tvName is off';
+      title = 'Can\'t reach $tvName';
       detail = now.lastSeen == null
-          ? 'Is it on, and on this Wi-Fi?'
+          ? 'Is it plugged in, and on this Wi-Fi?'
           : 'Last seen ${_seen(context, now.lastSeen!)}';
+    } else if (asleep) {
+      caption = 'Standby';
+      title = '$tvName is asleep';
+      detail = 'Wake it with the remote';
     } else {
       caption = now.isHome ? 'Nothing playing' : 'Watching now';
       title = now.isHome
@@ -205,7 +213,7 @@ class HomeHero extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: Fonts.bricolage(
-                m == null && !off ? TypeSize.title : TypeSize.headline,
+                m == null && !dim ? TypeSize.title : TypeSize.headline,
                 height: TypeSize.tightLeading,
                 color: bt.ink,
               ),
@@ -222,7 +230,7 @@ class HomeHero extends StatelessWidget {
           const SizedBox(height: Gap.f8),
           Row(
             children: [
-              if (!off && !now.loading) ...[
+              if (!dim && !now.loading) ...[
                 Icon(
                   muted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
                   size: Sizes.iconSmall,
@@ -258,11 +266,11 @@ class HomeHero extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             stops: const [0, Phi.major],
-            colors: [off ? bt.wash : bt.skyTint, bt.surface],
+            colors: [dim ? bt.wash : bt.skyTint, bt.surface],
           ),
           borderRadius: Radii.hero,
           border: Border.all(
-            color: off || dark ? bt.border : bt.skyTint,
+            color: dim || dark ? bt.border : bt.skyTint,
             width: Sizes.hairline,
           ),
         ),
@@ -279,7 +287,7 @@ class HomeHero extends StatelessWidget {
                   children: [
                     Expanded(
                       flex: Phi.minorFlex,
-                      child: TvIllustration(now: now, off: off || now.loading),
+                      child: TvIllustration(now: now, off: dim || now.loading),
                     ),
                     const SizedBox(width: Gap.related),
                     Expanded(flex: Phi.majorFlex, child: heroText),
@@ -304,7 +312,7 @@ class HomeHero extends StatelessWidget {
                   duration: Motion.of(context, Motion.sheet),
                   switchInCurve: Motion.enter,
                   switchOutCurve: Motion.exit,
-                  child: armed != null && !off
+                  child: armed != null && !dim
                       ? _ArmedBand(
                           key: const Key('end-after-armed'),
                           armed: armed!,

@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../agent/agent_client.dart';
 import '../../agent/agent_installer.dart';
 import '../../providers/agent_providers.dart';
+import '../../providers/now_playing.dart';
 import '../../providers/tv_providers.dart';
 import '../../ui/components.dart';
 import '../../ui/learn.dart';
@@ -474,9 +475,20 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
     final link = widget.link;
     final s = link.status;
     final bt = context.bt;
-    final state = guardStateOf(link: link, onBreak: false, classic: false);
+    final presence = ref.watch(tvPresenceProvider);
+    final state = guardStateOf(
+      link: link,
+      onBreak: false,
+      classic: false,
+      presence: presence,
+    );
     final (label, _) = guardLook(state);
     final down = state == GuardState.down;
+    // The TV is asleep, waking, or out of reach: nothing to fix, and nothing
+    // the buttons could reach.
+    final quiet = state == GuardState.sleeping ||
+        state == GuardState.starting ||
+        state == GuardState.tvUnreachable;
     final mode = s?.mode;
     final busy = _busy != null;
     final update = ref.watch(agentUpdateProvider);
@@ -486,22 +498,33 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
       GuardState.paused => (bt.sun, Icons.pause_rounded),
       GuardState.limited => (bt.sun, Icons.gpp_maybe_rounded),
       GuardState.checking => (_inkButtonBorder, Icons.shield_outlined),
+      GuardState.sleeping => (_inkButtonBorder, Icons.bedtime_rounded),
+      GuardState.starting => (_inkButtonBorder, Icons.hourglass_top_rounded),
+      GuardState.tvUnreachable => (bt.sun, Icons.wifi_off_rounded),
       _ => (bt.mint, Icons.verified_user_rounded),
     };
-    final line = s == null
-        ? (down
-            ? link.kind == AgentLinkKind.authFailed
-                ? 'Doesn\'t recognise this phone'
-                : 'Not answering'
-            : 'Checking…')
-        : switch (state) {
-            GuardState.on || GuardState.onBreak => 'Guarding your routines · '
-                'up ${_uptime(s.uptimeSec)}',
-            GuardState.paused => 'Paused by you · routines on hold',
-            GuardState.safe => 'Hands off · watching, changing nothing',
-            GuardState.limited => 'Running, but can\'t close apps yet',
-            _ => label,
-          };
+    final line = quiet
+        ? switch (state) {
+            GuardState.sleeping => 'Sleeping with the TV · back when it\'s on',
+            GuardState.starting => 'Starting up with the TV…',
+            _ => 'Can\'t reach the TV right now',
+          }
+        : s == null
+            ? (down
+                ? link.kind == AgentLinkKind.authFailed
+                    ? 'Doesn\'t recognise this phone'
+                    : 'Not answering'
+                : 'Checking…')
+            : switch (state) {
+                GuardState.on ||
+                GuardState.onBreak =>
+                  'Guarding your routines · '
+                      'up ${_uptime(s.uptimeSec)}',
+                GuardState.paused => 'Paused by you · routines on hold',
+                GuardState.safe => 'Hands off · watching, changing nothing',
+                GuardState.limited => 'Running, but can\'t close apps yet',
+                _ => label,
+              };
     final oldMedia = s != null &&
         update != null &&
         compareVersions(s.version, '1.1.0') < 0 &&
@@ -517,13 +540,23 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
               ? 'It doesn\'t recognise this phone. Repair pairs them again.'
               : 'Routines may not be running. Repair usually fixes it.',
         ),
-      if (s != null && s.selfAdb == SelfAdb.needsApproval)
+      if (state == GuardState.tvUnreachable)
+        _InkLine(
+          key: const Key('tv-guard-unreachable'),
+          color: bt.sun,
+          icon: Icons.wifi_off_rounded,
+          text: 'It may be off at the wall, or the Wi-Fi is down. Routines '
+              'run again once the TV is back.',
+        ),
+      if (quiet)
+        const SizedBox.shrink()
+      else if (s != null && s.selfAdb == SelfAdb.needsApproval)
         _InkLine(
           color: bt.sun,
           icon: Icons.tv_rounded,
           text: 'On the TV, choose "Always allow" so it can close apps.',
         )
-      else if (s != null && s.isLimited)
+      else if (s != null && state == GuardState.limited)
         _InkLine(
           key: const Key('tv-guard-limited'),
           color: bt.sun,
@@ -592,7 +625,9 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
     ];
 
     final buttons = <Widget>[
-      if (mode == AgentMode.normal)
+      if (quiet)
+        ...[]
+      else if (mode == AgentMode.normal)
         _InkButton(
           key: const Key('tv-guard-pause'),
           label: 'Pause',
@@ -615,7 +650,7 @@ class _InstalledCardState extends ConsumerState<_InstalledCard> {
           onPressed:
               busy ? null : () => runAgentSetup(context, ref, repair: true),
         ),
-      if (s != null)
+      if (s != null && !quiet)
         _InkButton(
           key: const Key('tv-guard-checks'),
           label: 'Check now',

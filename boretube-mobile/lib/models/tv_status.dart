@@ -5,12 +5,17 @@ class TvStatus {
   final String appName;
   final bool isIdle;
 
+  /// Cast's `isStandBy`: the screen is off. Null when the TV didn't say
+  /// (Google TV only sends it once it has been in standby).
+  final bool? standby;
+
   const TvStatus({
     required this.volume,
     required this.muted,
     required this.appId,
     required this.appName,
     required this.isIdle,
+    this.standby,
   });
 
   factory TvStatus.fromJson(Map<String, dynamic> json) {
@@ -20,6 +25,7 @@ class TvStatus {
       appId: json['app_id'] as String? ?? '',
       appName: json['app_name'] as String? ?? '',
       isIdle: json['idle'] as bool? ?? true,
+      standby: json['standby'] as bool?,
     );
   }
 

@@ -265,6 +265,9 @@ class TvSwitcher extends ConsumerWidget {
 /// Words and tone for each Always On state (used by the Always On card).
 (String, Tone) guardLook(GuardState s) => switch (s) {
       GuardState.on => ('Always On', Tone.ok),
+      GuardState.sleeping => ('Sleeping with the TV', Tone.idle),
+      GuardState.starting => ('Starting up…', Tone.idle),
+      GuardState.tvUnreachable => ('Can\'t reach the TV', Tone.warn),
       GuardState.limited => ('Limited', Tone.warn),
       GuardState.paused => ('Paused', Tone.warn),
       GuardState.down => ('Not answering', Tone.bad),

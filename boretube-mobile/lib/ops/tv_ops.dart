@@ -455,14 +455,27 @@ class TvOps {
         parseTopResumed((await _sh(foregroundCommand, urgent: urgent)).stdout),
       );
 
-  /// Foreground app and volume in one round trip (the now-playing poll).
-  static const statusCommand = '$foregroundCommand; echo ---; $volumeCommand';
+  /// The screen: `mWakefulness=Awake`, or `Asleep`/`Dozing` in standby.
+  static const wakefulnessCommand = 'dumpsys power | grep -m1 mWakefulness=';
 
-  Future<({String? foreground, VolumeState? volume})> status() async {
+  /// Null when the reply doesn't say.
+  static bool? parseAwake(String out) {
+    final m = RegExp(r'mWakefulness=(\w+)').firstMatch(out);
+    return m == null ? null : m.group(1) == 'Awake';
+  }
+
+  /// Foreground app, volume and the screen in one round trip (the
+  /// now-playing poll).
+  static const statusCommand =
+      '$foregroundCommand; echo ---; $volumeCommand; echo ---; $wakefulnessCommand';
+
+  Future<({String? foreground, VolumeState? volume, bool? awake})>
+      status() async {
     final parts = _sections((await _sh(statusCommand)).stdout);
     return (
       foreground: _seeForeground(parseTopResumed(_at(parts, 0))),
       volume: _seeVolume(parseVolume(_at(parts, 1))),
+      awake: parseAwake(_at(parts, 2)),
     );
   }
 

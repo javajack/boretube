@@ -27,6 +27,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import com.rakesh.boretube.learn.core.Chest
 import com.rakesh.boretube.learn.core.LevelResult
 import com.rakesh.boretube.learn.sound.Sfx
 import com.rakesh.boretube.learn.sound.Sounds
@@ -46,6 +47,13 @@ fun DoneScreen(
     onTown: () -> Unit,
     /** A perfect level sometimes earns a golden star: a surprise, never a goal. */
     golden: Boolean = result.total > 0 && result.right == result.total && result.state.plays.values.sum() % 3 == 0,
+    /** The picture on this skill's mastery sticker (null: the peacock). */
+    sticker: String? = null,
+    /** "Magnets: you're now a Ranger!" when the tier went up. */
+    rankUp: String? = null,
+    /** This week's treasure chest, and whether it opened with this level. */
+    chest: Chest.Status? = null,
+    chestOpenedNow: Boolean = false,
 ) {
     var shown by remember { mutableIntStateOf(0) }
     var gold by remember { mutableStateOf(false) }
@@ -63,6 +71,10 @@ fun DoneScreen(
             gold = true
             sounds.play(Sfx.star_gold)
             delay(STAR_GAP_MS)
+        }
+        if (chestOpenedNow || rankUp != null) {
+            delay(180)
+            sounds.play(Sfx.followup_win)
         }
         sounds.play(Sfx.level_done_bazaar)
     }
@@ -106,14 +118,18 @@ fun DoneScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(Gap.f34),
                 ) {
-                    PeacockSticker(Modifier.size(144.dp))
+                    if (sticker != null && sticker in Pictures.ids) PictureArt(sticker, Modifier.size(144.dp)) else PeacockSticker(Modifier.size(144.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(Gap.f8)) {
                         BasicText("New sticker", style = Text.muted())
-                        BasicText("Peacock", style = Text.display(TypeScale.s43))
+                        BasicText(if (sticker != null && sticker in Pictures.ids) stickerName(sticker) else "Peacock", style = Text.display(TypeScale.s43))
                         BasicText("For mastering $skillTitle.", style = Text.body(TypeScale.s21))
                     }
                 }
             }
+            if (rankUp != null) {
+                BasicText(rankUp, style = Text.display(TypeScale.s34).copy(color = Palette.mintInk), modifier = Modifier.testTag("rank-up"), maxLines = 1)
+            }
+            if (chest != null) ChestRow(chest, chestOpenedNow)
             result.toPractise?.let { q ->
                 BasicText("One to practise: ${com.rakesh.boretube.learn.ui.level.optionText(q.fact)}. It comes back in a later level.", style = Text.muted())
             }
@@ -175,5 +191,44 @@ private fun GoldStar() {
     ) {
         Star(true, Modifier.size(34.dp))
         BasicText("Golden star: every one right!", style = Text.body(TypeScale.s21, androidx.compose.ui.text.font.FontWeight.Bold).copy(color = Palette.sunflowerSoft))
+    }
+}
+
+/** A sticker's name from its picture id: "pressurecooker" → "Pressurecooker", "tiger" → "Tiger". */
+fun stickerName(id: String): String = id.replaceFirstChar { it.uppercaseChar() }
+
+/** The week's treasure chest: three day-dots filling up, or the treasure that came out. */
+@Composable
+fun ChestRow(chest: Chest.Status, openedNow: Boolean, modifier: Modifier = Modifier) {
+    val shape = RoundedCornerShape(Radii.r21)
+    Row(
+        modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(if (openedNow) Palette.sunflowerSoft else Palette.card)
+            .border(1.dp, Palette.hairline, shape)
+            .padding(horizontal = Gap.f21, vertical = Gap.f13)
+            .testTag(if (chest.open) "chest-open" else "chest"),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Gap.f13),
+    ) {
+        val t = chest.treasure
+        if (chest.open && t != null && t in Pictures.ids) {
+            PictureArt(t, Modifier.size(55.dp))
+            BasicText(
+                if (openedNow) "The treasure chest opened: a ${stickerName(t).lowercase()} for your sticker book!" else "This week's chest is open. See you next week!",
+                style = Text.body(TypeScale.s21, androidx.compose.ui.text.font.FontWeight.Bold),
+                maxLines = 2,
+            )
+        } else {
+            repeat(chest.goal) { i ->
+                Box(Modifier.size(26.dp).clip(androidx.compose.foundation.shape.CircleShape).background(if (i < chest.days) Palette.coral else Palette.hairline))
+            }
+            BasicText(
+                "Treasure chest: ${chest.days} of ${chest.goal} days this week",
+                style = Text.body(TypeScale.s21, androidx.compose.ui.text.font.FontWeight.SemiBold),
+                maxLines = 1,
+            )
+        }
     }
 }

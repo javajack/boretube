@@ -24,6 +24,7 @@ import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
+import androidx.compose.ui.test.onAllNodesWithTag
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -94,6 +95,8 @@ class GardenTrailTest {
             settle()
             key(Key.DirectionCenter)
             settle(1_200)
+            // Tubby's "Did you know?" waits for OK.
+            if (rule.onAllNodesWithTag("did-you-know").fetchSemanticsNodes().isNotEmpty()) { key(Key.DirectionCenter); settle(1_200) }
         }
         assertEquals(8, done?.size)
         assertTrue(done!!.all { it.correct })

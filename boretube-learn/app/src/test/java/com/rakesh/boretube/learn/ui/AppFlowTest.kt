@@ -21,6 +21,7 @@ import com.rakesh.boretube.learn.ui.level.LevelPlan
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
+import androidx.compose.ui.test.onAllNodesWithTag
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -85,6 +86,7 @@ class AppFlowTest {
             repeat(q.answer) { key(Key.DirectionRight) }
             ok()
             settle(1_200)
+            if (rule.onAllNodesWithTag("did-you-know").fetchSemanticsNodes().isNotEmpty()) { ok(); settle(1_200) }
         }
         rule.onNodeWithText("Level done!").assertExists()
         assertEquals(3, progress.s.stars["tablesLow"])

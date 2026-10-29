@@ -12,10 +12,15 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
+import com.rakesh.boretube.learn.ui.Safe
 import com.rakesh.boretube.learn.core.Answered
 import com.rakesh.boretube.learn.core.BrainBreakSession
 import com.rakesh.boretube.learn.core.Catalog
+import com.rakesh.boretube.learn.core.Cheer
 import com.rakesh.boretube.learn.core.Format
 import com.rakesh.boretube.learn.core.LearnState
 import com.rakesh.boretube.learn.core.Levels
@@ -101,6 +106,10 @@ private fun QuizLevel(
     var tried by remember { mutableStateOf<List<String>?>(null) }
     // Sort: which basket the card went to while the "Yes!" shows.
     var sortedTo by remember { mutableStateOf<Int?>(null) }
+    // Tubby's line on a right answer: praise, a comeback on a fact missed before, or a "Did you know?".
+    val missedBefore = remember(skillId) { state.facts.map { it.key }.toSet() }
+    var rights by remember { mutableIntStateOf(0) }
+    var cheer by remember { mutableStateOf<CheerLine?>(null) }
 
     fun speak(s: QuizScreen) {
         val text = when (s) {
@@ -123,9 +132,17 @@ private fun QuizLevel(
         val next = session.answer(choice, uptime() - shownAt)
         if (next is QuizScreen.Right) {
             streak++
+            if (!ask.followUp) rights++
+            val dyk = Cheer.didYouKnow(ask.q)
+            cheer = when {
+                ask.q.key in missedBefore -> CheerLine(Cheer.COMEBACK, comeback = true)
+                !ask.followUp && dyk != null && Cheer.isDidYouKnow(rights) -> CheerLine(dyk, fact = true)
+                else -> CheerLine(Cheer.right(ask.q, streak, rights))
+            }
             if (format == Format.catch) sounds.play(Sfx.catch_right)
             if (ask.followUp) sounds.play(Sfx.followup_win) else sounds.right(streak)
             if (streak in COMBO_STEPS) sounds.play(Sfx.combo)
+            if (cheer?.comeback == true) sounds.play(Sfx.followup_win)
         } else {
             streak = 0
             sounds.play(if (format == Format.catch) Sfx.catch_miss else Sfx.miss)
@@ -168,7 +185,7 @@ private fun QuizLevel(
                 if (autoSpeak) speak(s)
             }
             is QuizScreen.Right -> {
-                delay(if (format == Format.order) ORDER_RIGHT_MS else RIGHT_MS)
+                delay(if (cheer?.fact == true) DID_YOU_KNOW_MS else if (format == Format.order) ORDER_RIGHT_MS else RIGHT_MS + CHEER_EXTRA_MS)
                 if (screen === s) show(session.next())
             }
             is QuizScreen.Learn -> {
@@ -235,6 +252,8 @@ private fun QuizLevel(
                                 else -> answer(sel)
                             }
                             is QuizScreen.Learn -> show(session.next())
+                            // "Did you know?" waits a little longer; OK moves on sooner.
+                            is QuizScreen.Right -> if (cheer?.fact == true) show(session.next())
                             // "Yes!" moves on by itself.
                             else -> {}
                         }
@@ -268,6 +287,11 @@ private fun QuizLevel(
                 is QuizScreen.Done -> {}
             }
         }
+        val line = cheer
+        if (screen is QuizScreen.Right && line != null) {
+            // Top right, under the progress bar: clear of the question's picture in the middle.
+            CheerBubble(line, Modifier.align(Alignment.TopEnd).padding(end = Safe.x, top = 140.dp))
+        }
         if (leaving) LeaveSheet(leaveSel)
     }
 }
@@ -279,3 +303,7 @@ const val MASH_MS = 1_000L
 const val RIGHT_MS = 900L
 private const val ORDER_RIGHT_MS = 1_300L
 private const val LEARN_SOUND_DELAY_MS = 260L
+/** A beat longer on "Yes!" so Tubby's line can be read. */
+private const val CHEER_EXTRA_MS = 250L
+/** A "Did you know?" stays this long unless OK moves on. */
+private const val DID_YOU_KNOW_MS = 4_500L

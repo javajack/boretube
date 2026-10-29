@@ -171,8 +171,8 @@ class SettingsOnTvTest {
             }
         }
         key(Key.DirectionUp)
-        key(Key.DirectionRight)
-        key(Key.DirectionRight)
+        // Who's playing, class, stickers, then the cog.
+        repeat(3) { key(Key.DirectionRight) }
         ok()
         rule.onNodeWithTag("settings-screen").assertExists()
         key(Key.DirectionRight) // language → हिन्दी

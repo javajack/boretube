@@ -7,7 +7,10 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.rakesh.boretube.learn.core.Cheer
+import com.rakesh.boretube.learn.core.Chest
 import com.rakesh.boretube.learn.core.Learner
+import com.rakesh.boretube.learn.core.Ranks
 import com.rakesh.boretube.learn.core.LevelResult
 import com.rakesh.boretube.learn.core.Levels
 import com.rakesh.boretube.learn.data.Player
@@ -33,7 +36,8 @@ private sealed interface Screen {
     data object Town : Screen
     data class Land(val id: LandId) : Screen
     data class Level(val skillId: String, val nonce: Int) : Screen
-    data class Done(val result: LevelResult, val skillId: String) : Screen
+    data class Done(val result: LevelResult, val skillId: String, val rankUp: String? = null, val chestOpened: Boolean = false) : Screen
+    data object Stickers : Screen
     data class Run(val land: LandId, val nonce: Int) : Screen
     data object Who : Screen
     data object Avatar : Screen
@@ -107,6 +111,8 @@ fun LearnApp(
                 onPlayers = { screen = Screen.Who }.takeIf { players != null },
                 onClass = { screen = Screen.Class },
                 onSettings = { screen = Screen.Settings },
+                onStickers = { screen = Screen.Stickers },
+                hello = Cheer.greeting(hour(), today(), state.mastered.lastOrNull()?.takeIf { world.catalog.skill(it) != null }?.let { world.title(it) }),
                 onDiscover = { d ->
                     if (d.skill == null) { nonce++; sounds.play(Sfx.run_start); screen = Screen.Run(d.land, nonce) } else play(d.skill)
                 },
@@ -189,7 +195,7 @@ fun LearnApp(
                         val day = today()
                         for (a in answers) st = Learner.record(st, a.q, a.correct, a.ms, now(), day)
                         val record = Runs.isRecord(st, run)
-                        state = Runs.finish(st, run)
+                        state = Chest.played(Runs.finish(st, run), day, TREASURES)
                         progress.save(state)
                         screen = if (answers.isEmpty()) Screen.Land(s.land) else Screen.RunDone(run, record, s.land)
                     },
@@ -205,15 +211,24 @@ fun LearnApp(
                 s.skillId, state, settings, sounds, speaker, random, now(), world.catalog,
                 onDone = { answers ->
                     val played = Levels.formatFor(s.skillId, state, world.catalog)
+                    val tierBefore = Levels.tierOf(state, s.skillId)
                     val r = Levels.finish(state, s.skillId, answers, today(), now(), world.catalog, played)
-                    state = r.state
+                    val wasOpen = Chest.status(r.state, today()).open
+                    val withChest = Chest.played(r.state, today(), TREASURES)
+                    state = withChest
                     progress.save(state)
-                    screen = Screen.Done(r, s.skillId)
+                    val rankUp = Ranks.rankUp(world.title(s.skillId), tierBefore, Levels.tierOf(withChest, s.skillId))
+                    screen = Screen.Done(r.copy(state = withChest), s.skillId, rankUp, !wasOpen && Chest.status(withChest, today()).open)
                 },
                 onLeave = { screen = Screen.Land(world.landOf(s.skillId).id) },
             )
+            Screen.Stickers -> StickerBookScreen(state, world, today(), sounds, onBack = { screen = Screen.Town })
             is Screen.Done -> DoneScreen(
                 s.result, world.title(s.skillId), sounds,
+                sticker = stickerFor(s.skillId, world),
+                rankUp = s.rankUp,
+                chest = Chest.status(s.result.state, today()),
+                chestOpenedNow = s.chestOpened,
                 onAnother = {
                     // The level the path offers next: the child's rung, or this skill again.
                     play(world.progress(state, world.landOf(s.skillId), settings.grade).next ?: s.skillId)

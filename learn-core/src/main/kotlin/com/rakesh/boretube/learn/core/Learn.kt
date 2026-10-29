@@ -50,6 +50,12 @@ data class LearnState(
     val bestRuns: Map<String, Int> = emptyMap(),
     /** boretube Learn: skills whose last Sort or Order level went badly; their next level is plain. */
     val easyNext: Set<String> = emptySet(),
+    /** boretube Learn: days (ISO) the child played, latest last (the weekly chest). */
+    val playDays: List<String> = emptyList(),
+    /** boretube Learn: ISO weeks whose treasure chest opened, matched by index with [treasures]. */
+    val chestWeeks: List<String> = emptyList(),
+    /** boretube Learn: picture ids won from treasure chests (the sticker book). */
+    val treasures: List<String> = emptyList(),
 )
 
 /** Spaced repetition, promotion/demotion and the round mix. Pure. */

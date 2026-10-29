@@ -1,7 +1,7 @@
 {
-  "versionName": "0.3.0",
-  "versionCode": 4,
-  "sha256": "493de73313c7b18d22a7d6fabd26152587f36281b26760c7066441c3c4c7757d",
+  "versionName": "0.3.1",
+  "versionCode": 5,
+  "sha256": "fc12be1343ca428ca07671260a4aa5f34641fb72ec0323b804634ef89a85deda",
   "signingCertSha256": "a833b38182d99ad47ec945e73234b312d787136cf8ac8a4039c33e9522a58bc0",
   "package": "com.rakesh.boretube.learn",
   "apk": "boretube-learn.apk"

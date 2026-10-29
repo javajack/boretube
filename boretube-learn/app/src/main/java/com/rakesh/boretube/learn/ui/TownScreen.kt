@@ -59,6 +59,10 @@ fun TownScreen(
     onPlayers: (() -> Unit)? = null,
     onClass: (() -> Unit)? = null,
     onSettings: (() -> Unit)? = null,
+    /** The sticker book (null: no button). */
+    onStickers: (() -> Unit)? = null,
+    /** Tubby's greeting (default: by the time of day). */
+    hello: String = greeting(hour),
     onDiscover: (Discovery) -> Unit = {},
     onBack: () -> Unit = {},
     onLand: (LandId) -> Unit,
@@ -73,7 +77,7 @@ fun TownScreen(
         if (soon != null) { delay(2_400); soon = null }
     }
     val stars = state.stars.values.sum()
-    val heads = listOfNotNull(onPlayers?.let { 0 }, onClass?.let { 1 }, onSettings?.let { 2 })
+    val heads = listOfNotNull(onPlayers?.let { 0 }, onClass?.let { 1 }, onStickers?.let { 3 }, onSettings?.let { 2 })
     Column(
         Modifier
             .fillMaxSize()
@@ -101,7 +105,7 @@ fun TownScreen(
                     }
                     RemoteKey.Ok -> {
                         when (row) {
-                            -1 -> { sounds.play(Sfx.select); when (top) { 0 -> onPlayers?.invoke(); 1 -> onClass?.invoke(); else -> onSettings?.invoke() } }
+                            -1 -> { sounds.play(Sfx.select); when (top) { 0 -> onPlayers?.invoke(); 1 -> onClass?.invoke(); 3 -> onStickers?.invoke(); else -> onSettings?.invoke() } }
                             1 -> discoveries.getOrNull(card)?.let { sounds.play(Sfx.select); onDiscover(it) }
                             else -> {
                                 val land = world.lands[sel]
@@ -122,7 +126,7 @@ fun TownScreen(
             Spacer(Modifier.width(Gap.f21))
             Column(Modifier.weight(1f)) {
                 BasicText("Tubby's Town", style = Text.display(TypeScale.s43))
-                BasicText(greeting(hour), style = Text.muted())
+                BasicText(hello, style = Text.muted(), maxLines = 1)
             }
             if (stars > 0) {
                 StarRow(1, 1, size = 26.dp)
@@ -141,6 +145,13 @@ fun TownScreen(
                 HeaderChip(Modifier.testTag("class"), row == -1 && top == 1) {
                     BasicText(gradeName(settings.grade), style = Text.display(TypeScale.s21).copy(color = if (row == -1 && top == 1) Palette.cream else Palette.ink))
                     BasicText("change", style = Text.body(TypeScale.s18, FontWeight.SemiBold).copy(color = if (row == -1 && top == 1) Palette.sunflowerSoft else Palette.muted))
+                }
+            }
+            if (onStickers != null) {
+                Spacer(Modifier.width(Gap.f13))
+                HeaderChip(Modifier.testTag("stickers"), row == -1 && top == 3) {
+                    // The sticker book: a sticker icon, like the cog beside it.
+                    PictureArt("giftbox", Modifier.size(34.dp).padding(start = Gap.f4))
                 }
             }
             if (onSettings != null) {

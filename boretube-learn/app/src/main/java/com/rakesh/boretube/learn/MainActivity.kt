@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import com.rakesh.boretube.learn.data.ContentRepo
+import com.rakesh.boretube.learn.data.PlayersStore
 import com.rakesh.boretube.learn.data.ProgressStore
 import com.rakesh.boretube.learn.data.SettingsStore
 import com.rakesh.boretube.learn.sound.SoundPoolSounds
@@ -24,10 +25,11 @@ class MainActivity : ComponentActivity() {
         sounds = SoundPoolSounds(this) { settings.get().sounds }
         speaker = TtsSpeaker(this)
         val progress = ProgressStore(filesDir)
+        val players = PlayersStore(getSharedPreferences("learn", Context.MODE_PRIVATE), filesDir)
         val world = World.of(ContentRepo.load(assets, includeUnreviewed = BuildConfig.DEBUG), ContentRepo.generated(assets))
         setContent {
             DesignFrame {
-                LearnApp(progress, settings, sounds, speaker, Random.Default, world = world, onExit = { finish() })
+                LearnApp(progress, settings, sounds, speaker, Random.Default, world = world, players = players, onExit = { finish() })
             }
         }
     }

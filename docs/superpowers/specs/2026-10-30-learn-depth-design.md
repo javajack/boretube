@@ -23,6 +23,8 @@ The user asked for:
 | Who reviews ~80,000 questions? | **Nobody item by item.** The user owns playing; Claude owns quality. Every question is machine-checked (§6), and generators are built from curated tables, never free text. The old "only reviewed packs ship" rule still holds for the hand-written packs. Generated skills ship when their checks pass. |
 | What does "streaks" mean? | **Both.** More skill tracks per class, *and* a Streak run: an endless run that gets harder, with milestone rewards. |
 | Look and feel | **Today's theme, tokens, Tubby and sounds are the reference.** New screens reuse them and must look at home next to Quick-fire, Pairs and Build. No generic UI. |
+| Several children on one TV | **Players** (the user, 2026-10-30). Up to 6 per install, each with an animal avatar, a class, a language and their own `progress-<id>.json`. The first player keeps `progress.json`, so the existing child carries over. Switching player or class is ▲ then OK from town. |
+| Independent of the phone | **Everything happens on the TV** (the user, 2026-10-30). Players, class, language, sounds and removing a player are all set on the TV (town header, Settings). The phone only installs and updates the app; there's no runtime link. This replaces the Learn spec's "the parent picks class and language on the phone". |
 | TV Guard | **Untouched.** The maths ladder (`Maths.LADDER`) and its rung indexes stay exactly as they are; brain breaks depend on them. New maths skills are separate generated skills used only by the Learn app. |
 
 ## 1. Model
@@ -125,3 +127,12 @@ All strings use **Indian/British English**: colour, centre, metre, -ise, maths, 
 - **The Streak run** has a flame counter, milestones at 5/10/20/30/50, and a best-run ribbon on the land.
 
 **Never:** no timers that punish, no loss aversion ("you'll lose your streak!"), no nagging to come back, no fake scarcity. Missing is always safe: the learn moment teaches, it never scolds. Reduce-motion keeps every state visible without the motion.
+
+## 8. Discovery (the user, 2026-10-30)
+
+"Make people discover the rich stuff, and resurface features and classes now and then."
+
+- **Town header:** who's playing (avatar), their class (change), Settings (a cog). ▲ reaches it from the lands.
+- **"Today in Tubby's Town"** (▼ from the lands): three cards from `Discover.today`, the same all day and rotating daily:
+  - practice that's due always leads;
+  - then, spread across lands: a land not visited yet, a Streak run never tried (or "beat your best"), a skill new for this class, a peek at the next class, and "remember this one?" for a mastered skill.

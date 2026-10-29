@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -28,13 +29,14 @@ fun LandScene(land: LandId, modifier: Modifier = Modifier) {
     Canvas(modifier) {
         val k = maxOf(size.width / 340f, size.height / 250f)
         clipRect {
-            scale(k, k, pivot = Offset.Zero) {
+            // Cover the box; a shorter card trims a little sky and a little ground.
+            translate(top = (size.height - 250f * k) * 0.55f) { scale(k, k, pivot = Offset.Zero) {
                 when (land) {
                     LandId.bazaar -> bazaar(text)
                     LandId.garden -> garden(text)
                     LandId.trail -> trail()
                 }
-            }
+            } }
         }
     }
 }

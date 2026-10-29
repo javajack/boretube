@@ -16,10 +16,10 @@ interface ProgressRepo {
     fun save(s: LearnState)
 }
 
-class ProgressStore(private val dir: File) : ProgressRepo {
-    private val file get() = File(dir, NAME)
-    private val backup get() = File(dir, "$NAME.bak")
-    private val temp get() = File(dir, "$NAME.tmp")
+class ProgressStore(private val dir: File, private val name: String = NAME) : ProgressRepo {
+    private val file get() = File(dir, name)
+    private val backup get() = File(dir, "$name.bak")
+    private val temp get() = File(dir, "$name.tmp")
 
     override fun load(): LearnState = read(file) ?: read(backup) ?: LearnState()
 

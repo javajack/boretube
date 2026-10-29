@@ -2,7 +2,7 @@ package com.rakesh.boretube.learn.data
 
 import android.content.SharedPreferences
 
-/** What the parent (or the first-run picker) chose. [set] is false until someone chose. */
+/** What was chosen on the TV (first run, Settings). [set] is false until someone chose. */
 data class LearnSettings(
     /** CBSE class: 0 = KG … 7. */
     val grade: Int = 1,

@@ -26,12 +26,12 @@ import com.rakesh.boretube.learn.data.LearnSettings
 import com.rakesh.boretube.learn.sound.Sfx
 import com.rakesh.boretube.learn.sound.Sounds
 
-private val LANGS = listOf("en" to "English", "hi" to "हिन्दी", "enHi" to "English + Hindi voice")
+internal val LANGS = listOf("en" to "English", "hi" to "हिन्दी", "enHi" to "English + Hindi voice")
 
 /**
- * The first time the app opens (no settings from the phone yet): pick the
- * class (two even rows of four), then the language. A grown-up can change
- * both later from the phone.
+ * A new player (or the first time the app opens): pick the class (two even
+ * rows of four), then the language. Both can be changed later on the TV
+ * (the town's class chip, and Settings).
  */
 @Composable
 fun FirstRunScreen(sounds: Sounds, onDone: (LearnSettings) -> Unit, onBack: () -> Unit) {

@@ -10,7 +10,10 @@ import androidx.compose.runtime.setValue
 import com.rakesh.boretube.learn.core.Learner
 import com.rakesh.boretube.learn.core.LevelResult
 import com.rakesh.boretube.learn.core.Levels
+import com.rakesh.boretube.learn.data.Player
+import com.rakesh.boretube.learn.data.PlayersRepo
 import com.rakesh.boretube.learn.data.ProgressRepo
+import com.rakesh.boretube.learn.world.Discover
 import com.rakesh.boretube.learn.data.SettingsRepo
 import com.rakesh.boretube.learn.sound.Sfx
 import com.rakesh.boretube.learn.sound.Sounds
@@ -32,6 +35,11 @@ private sealed interface Screen {
     data class Level(val skillId: String, val nonce: Int) : Screen
     data class Done(val result: LevelResult, val skillId: String) : Screen
     data class Run(val land: LandId, val nonce: Int) : Screen
+    data object Who : Screen
+    data object Avatar : Screen
+    data class NewPlayer(val pic: String) : Screen
+    data object Class : Screen
+    data object Settings : Screen
     data class RunDone(val run: com.rakesh.boretube.learn.core.Run, val record: Boolean, val land: LandId) : Screen
 }
 
@@ -47,12 +55,36 @@ fun LearnApp(
     today: () -> LocalDate = { LocalDate.now() },
     hour: () -> Int = { LocalTime.now().hour },
     world: World = World.MATHS,
+    /** The children sharing this TV (null: one child, [progress] and [settingsRepo] only). */
+    players: PlayersRepo? = null,
     onExit: () -> Unit,
 ) {
-    var settings by remember { mutableStateOf(settingsRepo.get()) }
+    var player by remember { mutableStateOf(players?.active()) }
+    var progress by remember { mutableStateOf(player?.let { players!!.progress(it.id) } ?: progress) }
+    fun settingsOf(p: Player?) = settingsRepo.get().let { b -> if (p == null) b else b.copy(grade = p.grade, lang = p.lang, set = true) }
+    var settings by remember { mutableStateOf(settingsOf(player)) }
     var state by remember { mutableStateOf(Learner.forGrade(progress.load(), settings.grade)) }
-    var screen by remember { mutableStateOf<Screen>(if (settings.set) Screen.Town else Screen.FirstRun) }
+    var screen by remember {
+        mutableStateOf<Screen>(
+            when {
+                players != null && player == null -> Screen.Avatar
+                settings.set -> Screen.Town
+                else -> Screen.FirstRun
+            },
+        )
+    }
     var nonce by remember { mutableIntStateOf(0) }
+
+    /** Plays as [p] from now on: their progress, class and language. */
+    fun become(p: Player) {
+        progress.save(state)
+        players?.setActive(p.id)
+        player = p
+        progress = players!!.progress(p.id)
+        settings = settingsOf(p)
+        state = Learner.forGrade(progress.load(), p.grade)
+        progress.save(state)
+    }
 
     fun play(skillId: String) {
         nonce++
@@ -68,10 +100,77 @@ fun LearnApp(
                 progress.save(state)
                 screen = Screen.Town
             }, onBack = onExit)
-            Screen.Town -> TownScreen(state, settings, sounds, hour(), world, onBack = onExit) { id ->
+            Screen.Town -> TownScreen(
+                state, settings, sounds, hour(), world,
+                player = player,
+                discoveries = remember(state, settings.grade) { Discover.today(state, world, settings.grade, today()) },
+                onPlayers = { screen = Screen.Who }.takeIf { players != null },
+                onClass = { screen = Screen.Class },
+                onSettings = { screen = Screen.Settings },
+                onDiscover = { d ->
+                    if (d.skill == null) { nonce++; sounds.play(Sfx.run_start); screen = Screen.Run(d.land, nonce) } else play(d.skill)
+                },
+                onBack = onExit,
+            ) { id ->
                 sounds.play(Sfx.enter_bazaar)
                 screen = Screen.Land(id)
             }
+            Screen.Who -> WhoScreen(
+                players!!.all(), player?.id,
+                stars = { id -> if (id == player?.id) state.stars.values.sum() else players.progress(id).load().stars.values.sum() },
+                sounds = sounds,
+                onPick = { id -> players.all().firstOrNull { it.id == id }?.let { if (it.id != player?.id) become(it) }; screen = Screen.Town },
+                onNew = { screen = Screen.Avatar },
+                onBack = { screen = Screen.Town },
+            )
+            Screen.Avatar -> AvatarScreen(
+                taken = players?.all()?.map { it.pic }?.toSet().orEmpty(),
+                sounds = sounds,
+                onPick = { pic -> screen = Screen.NewPlayer(pic) },
+                onBack = { screen = if (player == null) Screen.Avatar.also { onExit() } else Screen.Who },
+            )
+            is Screen.NewPlayer -> FirstRunScreen(sounds, onDone = { picked ->
+                val p = Player(players!!.newId(), s.pic, picked.grade, picked.lang)
+                players.put(p)
+                settingsRepo.put(settingsRepo.get().copy(set = true))
+                become(p)
+                screen = Screen.Town
+            }, onBack = { screen = Screen.Avatar })
+            Screen.Settings -> SettingsScreen(
+                settings, player, canRemove = (players?.all()?.size ?: 0) > 1, sounds = sounds,
+                onChange = { n ->
+                    settings = n
+                    settingsRepo.put(settingsRepo.get().copy(sounds = n.sounds, music = n.music, lang = n.lang))
+                    val p = player
+                    if (p != null && players != null) { val q = p.copy(lang = n.lang); players.put(q); player = q }
+                },
+                onRemove = {
+                    val p = player
+                    if (p != null && players != null) {
+                        players.remove(p.id)
+                        // Switch without saving: the removed player's file must stay gone.
+                        players.active()?.let { next ->
+                            player = next
+                            progress = players.progress(next.id)
+                            settings = settingsOf(next)
+                            state = Learner.forGrade(progress.load(), next.grade)
+                        }
+                    }
+                    screen = Screen.Town
+                },
+                onBack = { screen = Screen.Town },
+            )
+            Screen.Class -> ClassScreen(settings.grade, sounds, onPick = { g ->
+                if (g != settings.grade) {
+                    val p = player
+                    if (p != null && players != null) { val q = p.copy(grade = g); players.put(q); player = q }
+                    settings = settings.copy(grade = g)
+                    settingsRepo.put(settingsRepo.get().copy(grade = g))
+                    state = Learner.forGrade(state, g)
+                    progress.save(state)
+                }
+                screen = Screen.Town
+            }, onBack = { screen = Screen.Town })
             is Screen.Land -> LandScreen(
                 world.of(s.id), state, settings, sounds, world,
                 onRun = { nonce++; screen = Screen.Run(s.id, nonce) }.takeIf { world.path(world.of(s.id), settings.grade).isNotEmpty() },

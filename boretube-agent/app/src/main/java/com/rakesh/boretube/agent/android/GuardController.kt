@@ -20,7 +20,7 @@ import com.rakesh.boretube.agent.core.ActionResult
 import com.rakesh.boretube.agent.core.AgentApi
 import com.rakesh.boretube.agent.core.BreakDoc
 import com.rakesh.boretube.agent.core.BrainBreakGate
-import com.rakesh.boretube.agent.core.BrainBreakSession
+import com.rakesh.boretube.learn.core.BrainBreakSession
 import com.rakesh.boretube.agent.core.BreakState
 import com.rakesh.boretube.agent.core.Card
 import com.rakesh.boretube.agent.core.CardMood
@@ -29,10 +29,10 @@ import com.rakesh.boretube.agent.core.Decision
 import com.rakesh.boretube.agent.core.DeviceProfile
 import com.rakesh.boretube.agent.core.HealthItem
 import com.rakesh.boretube.agent.core.JournalEntry
-import com.rakesh.boretube.agent.core.LearnState
-import com.rakesh.boretube.agent.core.Learner
+import com.rakesh.boretube.learn.core.LearnState
+import com.rakesh.boretube.learn.core.Learner
 import com.rakesh.boretube.agent.core.LearningDoc
-import com.rakesh.boretube.agent.core.Maths
+import com.rakesh.boretube.learn.core.Maths
 import com.rakesh.boretube.agent.core.MediaGuard
 import com.rakesh.boretube.agent.core.MediaOutcome
 import com.rakesh.boretube.agent.core.MediaSnapshot
@@ -45,8 +45,8 @@ import com.rakesh.boretube.agent.core.PermissionHeal
 import com.rakesh.boretube.agent.core.PermissionState
 import com.rakesh.boretube.agent.core.PlayClock
 import com.rakesh.boretube.agent.core.PlayState
-import com.rakesh.boretube.agent.core.Question
-import com.rakesh.boretube.agent.core.QuizScreen
+import com.rakesh.boretube.learn.core.Question
+import com.rakesh.boretube.learn.core.QuizScreen
 import com.rakesh.boretube.agent.core.RestorePlan
 import com.rakesh.boretube.agent.core.RestorePlanner
 import com.rakesh.boretube.agent.core.RestoreRequest

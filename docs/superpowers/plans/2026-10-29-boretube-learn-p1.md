@@ -62,7 +62,7 @@
 - Produces, in package `com.rakesh.boretube.learn.core`: `Maths`, `Skill`, `Question`, `Visual`, `Fact`, `SkillStat`, `WeekLog`, `LearnState`, `Learner`, `Answered`, `QuizScreen`, `BrainBreakSession`. Their signatures are unchanged from TV Guard 1.4.1.
 - Maven coordinates: `com.rakesh.boretube:learn-core:1.0`.
 
-- [ ] **Step 1: Create the build.** Write `learn-core/settings.gradle.kts`:
+- [x] **Step 1: Create the build.** Write `learn-core/settings.gradle.kts`:
 
 ```kotlin
 rootProject.name = "learn-core"
@@ -87,9 +87,9 @@ dependencies {
 
 Copy the wrapper: `cp -r boretube-agent/gradle boretube-agent/gradlew learn-core/`.
 
-- [ ] **Step 2: Move the code.** Use `git mv` for `Maths.kt`. Create the engine `Learn.kt` in core and change the package line to `com.rakesh.boretube.learn.core`. In the agent, keep `core/Learning.kt` with the agent types, and add `import com.rakesh.boretube.learn.core.*` where needed. `LearnState` must stay `@Serializable`: the agent persists it.
+- [x] **Step 2: Move the code.** Use `git mv` for `Maths.kt`. Create the engine `Learn.kt` in core and change the package line to `com.rakesh.boretube.learn.core`. In the agent, keep `core/Learning.kt` with the agent types, and add `import com.rakesh.boretube.learn.core.*` where needed. `LearnState` must stay `@Serializable`: the agent persists it.
 
-- [ ] **Step 3: Wire it up.** Agent `settings.gradle`:
+- [x] **Step 3: Wire it up.** Agent `settings.gradle`:
 
 ```groovy
 includeBuild('../learn-core') {
@@ -99,7 +99,7 @@ includeBuild('../learn-core') {
 
 In `app/build.gradle` dependencies: `implementation 'com.rakesh.boretube:learn-core:1.0'`.
 
-- [ ] **Step 4: Run both suites.**
+- [x] **Step 4: Run both suites.**
 
 ```bash
 cd learn-core && ./gradlew -q test && cd ../boretube-agent && ./gradlew -q testReleaseUnitTest assembleRelease
@@ -107,7 +107,7 @@ cd learn-core && ./gradlew -q test && cd ../boretube-agent && ./gradlew -q testR
 
 Expected: all green. The engine tests now run in learn-core, and the agent's 153 minus the moved ones plus `LearningRulesTest` pass.
 
-- [ ] **Step 5: Commit.** `git commit -m "learn-core: the learning engine as a shared Kotlin build; TV Guard uses it"`.
+- [x] **Step 5: Commit.** `git commit -m "learn-core: the learning engine as a shared Kotlin build; TV Guard uses it"`.
 
 ---
 

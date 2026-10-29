@@ -8,7 +8,7 @@ import com.rakesh.boretube.agent.core.BreakState
 import com.rakesh.boretube.agent.core.DeviceProfile
 import com.rakesh.boretube.agent.core.EndAfterState
 import com.rakesh.boretube.agent.core.Journal
-import com.rakesh.boretube.agent.core.LearnState
+import com.rakesh.boretube.learn.core.LearnState
 import com.rakesh.boretube.agent.core.Rules
 import com.rakesh.boretube.agent.core.SafetyState
 import com.rakesh.boretube.agent.core.ShortsCount

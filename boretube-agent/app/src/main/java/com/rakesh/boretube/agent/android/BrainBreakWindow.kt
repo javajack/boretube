@@ -8,9 +8,9 @@ import android.provider.Settings
 import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.view.WindowManager
-import com.rakesh.boretube.agent.core.BrainBreakSession
-import com.rakesh.boretube.agent.core.Question
-import com.rakesh.boretube.agent.core.QuizScreen
+import com.rakesh.boretube.learn.core.BrainBreakSession
+import com.rakesh.boretube.learn.core.Question
+import com.rakesh.boretube.learn.core.QuizScreen
 import java.util.Locale
 
 /**

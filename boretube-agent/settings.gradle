@@ -14,3 +14,10 @@ dependencyResolutionManagement {
 }
 rootProject.name = "boretube-agent"
 include ':app'
+
+// The learning engine, shared with boretube Learn.
+includeBuild('../learn-core') {
+    dependencySubstitution {
+        substitute module('com.rakesh.boretube:learn-core') using project(':')
+    }
+}

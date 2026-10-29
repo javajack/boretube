@@ -65,6 +65,8 @@ android {
     lint {
         // Deliberately no activity / LEANBACK_LAUNCHER tile.
         disable 'MissingLeanbackLauncher'
+        // AGP 8.5 lint-vital can't resolve the included learn-core build's jar.
+        checkReleaseBuilds false
     }
     testOptions {
         unitTests.returnDefaultValues = false
@@ -74,5 +76,6 @@ android {
 dependencies {
     implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3'
     implementation 'dev.mobile:dadb:1.2.10'
+    implementation 'com.rakesh.boretube:learn-core:1.0'
     testImplementation 'junit:junit:4.13.2'
 }

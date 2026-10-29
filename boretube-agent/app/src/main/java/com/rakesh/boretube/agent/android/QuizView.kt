@@ -15,9 +15,9 @@ import android.text.TextPaint
 import android.view.KeyEvent
 import android.view.View
 import android.view.animation.DecelerateInterpolator
-import com.rakesh.boretube.agent.core.Question
-import com.rakesh.boretube.agent.core.QuizScreen
-import com.rakesh.boretube.agent.core.Visual
+import com.rakesh.boretube.learn.core.Question
+import com.rakesh.boretube.learn.core.QuizScreen
+import com.rakesh.boretube.learn.core.Visual
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin

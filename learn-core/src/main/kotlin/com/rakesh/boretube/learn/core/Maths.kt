@@ -1,4 +1,4 @@
-package com.rakesh.boretube.agent.core
+package com.rakesh.boretube.learn.core
 
 import kotlin.random.Random
 

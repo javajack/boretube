@@ -1,4 +1,4 @@
-package com.rakesh.boretube.agent.core
+package com.rakesh.boretube.learn.core
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -233,22 +233,6 @@ class LearnTest {
         assertTrue(done is QuizScreen.Done)
         assertTrue("answer on Done", s.answer(0, 1) === done)
         assertTrue("next on Done", s.next() === done)
-    }
-
-    @Test fun rulesValidateLearning() {
-        Rules(learning = LearningRules(enabled = true, grade = 3)).validate()
-        for (bad in listOf(LearningRules(grade = 8), LearningRules(lang = "fr"), LearningRules(perBreak = 0),
-            LearningRules(trigger = "always"), LearningRules(everyMin = 1))) {
-            try { Rules(learning = bad).validate(); fail("accepted $bad") } catch (_: IllegalArgumentException) {}
-        }
-        val back = Rules.parse(Rules(learning = LearningRules(true, 2, "enHi", false, 4, "every", 20)).toJson())
-        assertEquals(LearningRules(true, 2, "enHi", false, 4, "every", 20), back.learning)
-        assertNull(Rules.parse("{}").learning)
-    }
-
-    @Test fun actionsValidate() {
-        assertNull(ActionRequest("brainBreak").validate())
-        assertNull(ActionRequest("endBrainBreak").validate())
     }
 
     private fun BrainBreakSession.q(): Question = (screen as QuizScreen.Ask).q

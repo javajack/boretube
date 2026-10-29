@@ -572,11 +572,11 @@ class TownScreenTest {
 - Create: `ui/FirstRunScreen.kt`: Tubby, "Which class are you in?" with 8 chips in 2 rows of 4 (KG, Class 1…Class 7), then the language (3 tiles), then "Let's go!". It shows only while `!settings.set`.
 - Test: `AppFlowTest.kt`: first run → Town → Bazaar → a level → Done → Town, with an in-memory store.
 
-- [ ] **Step 1: Write the failing flow test.**
-- [ ] **Step 2: Run it and watch it fail.**
-- [ ] **Step 3: Implement.**
-- [ ] **Step 4: Run it, watch it pass, and build the release APK.** Run `./gradlew -q testReleaseUnitTest assembleRelease`, then `apksigner verify --print-certs app/build/outputs/apk/release/app-release.apk`. Expected: cert a833b381…
-- [ ] **Step 5: Commit.** `git commit -m "boretube-learn: app flow and first-run class picker"`.
+- [x] **Step 1: Write the failing flow test.**
+- [x] **Step 2: Run it and watch it fail.**
+- [x] **Step 3: Implement.**
+- [x] **Step 4: Run it, watch it pass, and build the release APK.** Run `./gradlew -q testReleaseUnitTest assembleRelease`, then `apksigner verify --print-certs app/build/outputs/apk/release/app-release.apk`. Expected: cert a833b381…
+- [x] **Step 5: Commit.** `git commit -m "boretube-learn: app flow and first-run class picker"`.
 
 ---
 

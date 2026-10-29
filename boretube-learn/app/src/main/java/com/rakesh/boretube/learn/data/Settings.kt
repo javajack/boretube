@@ -13,8 +13,13 @@ data class LearnSettings(
     val set: Boolean = false,
 )
 
-class SettingsStore(private val prefs: SharedPreferences) {
-    fun get() = LearnSettings(
+interface SettingsRepo {
+    fun get(): LearnSettings
+    fun put(s: LearnSettings)
+}
+
+class SettingsStore(private val prefs: SharedPreferences) : SettingsRepo {
+    override fun get() = LearnSettings(
         grade = prefs.getInt("grade", 1).coerceIn(0, 7),
         lang = prefs.getString("lang", "en")?.takeIf { it in LANGS } ?: "en",
         sounds = prefs.getBoolean("sounds", true),
@@ -22,7 +27,7 @@ class SettingsStore(private val prefs: SharedPreferences) {
         set = prefs.getBoolean("set", false),
     )
 
-    fun put(s: LearnSettings) {
+    override fun put(s: LearnSettings) {
         prefs.edit()
             .putInt("grade", s.grade)
             .putString("lang", s.lang)

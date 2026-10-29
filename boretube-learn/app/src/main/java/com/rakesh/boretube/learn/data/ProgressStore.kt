@@ -10,15 +10,21 @@ import java.io.File
  * loses at most the last level. Loading falls back to the backup, then to
  * empty progress; it never throws.
  */
-class ProgressStore(private val dir: File) {
+/** Where the child's progress lives (the app's file, or memory in tests). */
+interface ProgressRepo {
+    fun load(): LearnState
+    fun save(s: LearnState)
+}
+
+class ProgressStore(private val dir: File) : ProgressRepo {
     private val file get() = File(dir, NAME)
     private val backup get() = File(dir, "$NAME.bak")
     private val temp get() = File(dir, "$NAME.tmp")
 
-    fun load(): LearnState = read(file) ?: read(backup) ?: LearnState()
+    override fun load(): LearnState = read(file) ?: read(backup) ?: LearnState()
 
     @Synchronized
-    fun save(s: LearnState) {
+    override fun save(s: LearnState) {
         dir.mkdirs()
         temp.writeText(JSON.encodeToString(LearnState.serializer(), s))
         if (file.exists()) {

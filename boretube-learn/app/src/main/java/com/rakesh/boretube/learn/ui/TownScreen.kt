@@ -43,6 +43,7 @@ fun TownScreen(
     settings: LearnSettings,
     sounds: Sounds,
     hour: Int = LocalTime.now().hour,
+    onBack: () -> Unit = {},
     onLand: (LandId) -> Unit,
 ) {
     var sel by remember { mutableIntStateOf(0) }
@@ -67,6 +68,7 @@ fun TownScreen(
                         if (land.skills.isEmpty()) { sounds.play(Sfx.back); soon = land.id } else { sounds.play(Sfx.select); onLand(land.id) }
                         true
                     }
+                    RemoteKey.Back -> { onBack(); true }
                     else -> false
                 }
             }

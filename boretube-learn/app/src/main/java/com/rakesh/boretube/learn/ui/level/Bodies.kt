@@ -141,6 +141,8 @@ fun QuickFireBody(
     header: (@Composable () -> Unit)? = null,
 ) {
     val pies = (q.visual as? Visual.Pies)?.fractions
+    // All-picture options get big tiles and a light highlight, so dark animals stay visible.
+    val pictures = q.options.all { it.startsWith("pic:") }
     Column(
         Modifier.fillMaxSize().padding(horizontal = Safe.x, vertical = Safe.y).testTag(if (right == null) "ask" else "right"),
         verticalArrangement = Arrangement.spacedBy(Gap.f21),
@@ -154,7 +156,7 @@ fun QuickFireBody(
                 else -> {}
             }
         }
-        Row(Modifier.fillMaxWidth().height(if (pies != null) 233.dp else 144.dp), horizontalArrangement = Arrangement.spacedBy(Gap.f34)) {
+        Row(Modifier.fillMaxWidth().height(if (pies != null || pictures) 233.dp else 144.dp), horizontalArrangement = Arrangement.spacedBy(Gap.f34)) {
             q.options.forEachIndexed { i, label ->
                 val isRight = right != null && i == right
                 val dim = right != null && !isRight
@@ -171,6 +173,7 @@ fun QuickFireBody(
                         .background(
                             when {
                                 isRight -> Palette.mint
+                                selected && pictures -> Palette.sunflowerSoft
                                 selected -> Palette.ink
                                 else -> Palette.card
                             },
@@ -188,7 +191,7 @@ fun QuickFireBody(
                         val frac = pies?.firstOrNull { "${it.first}/${it.second}" == label }
                         if (frac != null) Pie(frac.first, frac.second, Modifier.size(110.dp), empty = if (selected) Palette.muted else Palette.hairline, line = if (selected) Palette.ink else Palette.card)
                         if (label.startsWith("pic:")) {
-                            com.rakesh.boretube.learn.ui.PictureArt(label.removePrefix("pic:"), Modifier.size(110.dp))
+                            com.rakesh.boretube.learn.ui.PictureArt(label.removePrefix("pic:"), Modifier.size(if (pictures) 180.dp else 110.dp))
                         } else {
                             Row(Modifier.padding(horizontal = Gap.f13), verticalAlignment = Alignment.CenterVertically) {
                                 if (isRight) { Tick(ink, Modifier.size(40.dp)); Spacer(Modifier.width(Gap.f8)) }
@@ -349,7 +352,8 @@ fun LearnMoment(
                         OrderAnswer(order, chips)
                     } else {
                         val ans = optionText(q.answerText)
-                        val said = optionText(q.fact)
+                        // A gap question reads best as the finished sentence: "He washes the dishes."
+                        val said = if ("___" in q.prompt && !q.answerText.startsWith("pic:")) q.prompt.replace("___", ans) else optionText(q.fact)
                         val hi = SpanStyle(color = Palette.sunflowerInk, background = Palette.sunflowerSoft.copy(alpha = 0.85f * mark.value))
                         val fact = buildAnnotatedString {
                             val at = said.lastIndexOf(ans).takeIf { ans.isNotBlank() } ?: -1
@@ -370,8 +374,8 @@ fun LearnMoment(
                         BasicText(fact, style = Text.display(size), maxLines = 2, modifier = Modifier.graphicsLayer { scaleX = bump; scaleY = bump; transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0f, 0.5f) })
                     }
                 }
-                // The why, word by word, its key words in the land's ink.
-                BasicText(
+                // The why, word by word, its key words in the land's ink (unless it only repeats the fact).
+                if (!sameWords(q.explain, if ("___" in q.prompt) q.prompt.replace("___", optionText(q.answerText)) else optionText(q.fact))) BasicText(
                     buildAnnotatedString {
                         words.forEachIndexed { k, w ->
                             if (k > 0) append(" ")
@@ -411,6 +415,12 @@ fun LearnMoment(
             ) { BasicText("Got it", style = Text.display(TypeScale.s34).copy(color = Palette.cream)) }
         }
     }
+}
+
+/** The same words, ignoring case and punctuation. */
+internal fun sameWords(a: String, b: String): Boolean {
+    fun norm(t: String) = t.lowercase().filter { it.isLetterOrDigit() || it == ' ' }.trim()
+    return norm(a) == norm(b)
 }
 
 /** Words in the why worth picking out: the answer's words and any numbers. */

@@ -124,7 +124,7 @@ fun LandScreen(
             Spacer(Modifier.weight(1f))
             selected?.let { LevelCard(it, state.stars[it] ?: 0, state, state.tiers[it] ?: 1, world) }
             if (onRun != null) RunButton(onRunButton, state.bestRuns[land.id.name] ?: 0)
-            BasicText(if (onRun != null) "◀ ▶ walk the path · ▼ streak run · OK to play" else "◀ ▶ walk the path · OK to play", style = Text.muted(TypeScale.s18), maxLines = 1)
+            BasicText(if (onRun != null) "◀ ▶ walk · OK play · ▼ streak run" else "◀ ▶ walk the path · OK to play", style = Text.muted(TypeScale.s18), maxLines = 1)
         }
         // The path and its nodes.
         Canvas(Modifier.offset(x = PANEL_W.dp).size((DESIGN_W - PANEL_W).dp, DESIGN_H.dp)) {

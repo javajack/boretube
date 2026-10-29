@@ -26,7 +26,10 @@ class MainActivity : ComponentActivity() {
         speaker = TtsSpeaker(this)
         val progress = ProgressStore(filesDir)
         val players = PlayersStore(getSharedPreferences("learn", Context.MODE_PRIVATE), filesDir)
-        val world = World.of(ContentRepo.load(assets, includeUnreviewed = BuildConfig.DEBUG), ContentRepo.generated(assets))
+        val generated = ContentRepo.generated(assets)
+        val world = World.of(ContentRepo.load(assets, includeUnreviewed = BuildConfig.DEBUG), generated.skills())
+        // The generators take seconds on a TV chip: build them while the child looks at the town.
+        Thread({ ContentRepo.warm(generated) }, "generators").apply { priority = Thread.MIN_PRIORITY }.start()
         setContent {
             DesignFrame {
                 LearnApp(progress, settings, sounds, speaker, Random.Default, world = world, players = players, onExit = { finish() })

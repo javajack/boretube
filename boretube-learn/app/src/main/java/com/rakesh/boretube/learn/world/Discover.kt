@@ -54,7 +54,8 @@ object Discover {
             s.mastered.filter { it in land.skills }.shuffled(r).firstOrNull()?.let {
                 pool += Discovery(Discovery.Kind.remember, land.id, world.title(it), "Remember this one?", it)
             }
-            if (land.skills.sumOf { s.plays[it] ?: 0 } == 0) {
+            val untouched = land.skills.none { (s.plays[it] ?: 0) > 0 || (s.stars[it] ?: 0) > 0 || s.facts.any { f -> f.key.startsWith("$it:") } }
+            if (untouched) {
                 world.progress(s, land, grade).next?.let { pool += Discovery(Discovery.Kind.visit, land.id, land.name, "Not visited yet", it) }
             }
         }

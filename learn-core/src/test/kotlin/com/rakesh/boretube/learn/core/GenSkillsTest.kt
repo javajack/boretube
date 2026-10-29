@@ -77,3 +77,31 @@ class GenSkillsTest {
         }
     }
 }
+
+/**
+ * The shipped skill index matches the generators. After changing a
+ * generator, refresh it: `./gradlew test -Pgen.subject=index --tests '*GenIndexTest*'`.
+ */
+class GenIndexTest {
+    private val dir = File("../boretube-learn/app/src/main/assets/content/data")
+    private val data: (String) -> String? = { n -> File(dir, n).takeIf { it.exists() }?.readText() }
+
+    @Test fun theShippedIndexMatchesTheGenerators() {
+        val fresh = com.rakesh.boretube.learn.core.gen.GenIndex.encode(com.rakesh.boretube.learn.core.gen.GenIndex.of(data))
+        val file = File(dir, "index.json")
+        if (System.getProperty("gen.subject") == "index") file.writeText(fresh)
+        assertTrue("index.json is stale: run ./gradlew test -Pgen.subject=index --tests '*GenIndexTest*'", file.exists() && file.readText() == fresh)
+    }
+
+    @Test fun lazySkillsBuildOnFirstUseAndMatch() {
+        val loader = com.rakesh.boretube.learn.core.gen.GenIndex.Loader(data)
+        val lazy = loader.skills()
+        assertTrue(lazy.size > 200)
+        val r = Random(3)
+        for (s in lazy.shuffled(r).take(25)) {
+            val q = s.next(r, s.tiers)
+            assertTrue(q.key.startsWith("${s.id}:"))
+            assertTrue(s.build(q.key, Random(1))!!.prompt == q.prompt)
+        }
+    }
+}

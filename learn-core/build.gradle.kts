@@ -19,4 +19,5 @@ tasks.test {
     // GenSkillsTest: -Pgen.subject=english limits it to one subject.
     systemProperty("gen.subject", (project.findProperty("gen.subject") as String?) ?: "")
     testLogging { showStandardStreams = true }
+    (project.findProperty("jfr") as String?)?.let { jvmArgs("-XX:StartFlightRecording=filename=$it,settings=profile") }
 }

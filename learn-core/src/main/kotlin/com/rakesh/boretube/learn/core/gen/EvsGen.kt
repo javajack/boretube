@@ -17,12 +17,28 @@ import kotlin.random.Random
  * means "unknown or arguable", so it is never asked; wrong options are taken
  * only from rows that are surely wrong.
  */
+/**
+ * Animal pictures only: an animal row must never show a food or a thing
+ * (the kiwi bird once borrowed the kiwi fruit's picture).
+ */
+private val ANIMAL_PICS = setOf(
+    "fish", "cat", "dog", "cow", "bird", "ant",
+    "lion", "tiger", "elephant", "monkey", "horse", "goat", "sheep", "pig", "hen", "duck", "frog", "snake", "butterfly", "bee",
+    "rabbit", "deer", "camel", "giraffe", "zebra", "bear", "owl", "parrot", "peacock", "crow", "eagle", "penguin", "turtle", "crab",
+    "snail", "spider", "mouse", "squirrel", "buffalo", "donkey", "lizard", "caterpillar", "tadpole", "chick", "puppy", "kitten", "calf",
+    "leopard", "wolf", "fox", "kangaroo", "hippo", "rhino", "crocodile", "cheetah", "panda", "koala", "gorilla", "bat", "hedgehog", "ox", "yak",
+    "sparrow", "pigeon", "kingfisher", "flamingo", "ostrich", "swan", "woodpecker", "vulture",
+    "mosquito", "housefly", "ladybird", "dragonfly", "grasshopper", "earthworm", "cockroach",
+    "octopus", "starfish", "jellyfish", "dolphin", "whale", "shark", "seahorse", "prawn",
+)
+
 object EvsGen {
     internal val json = Json { ignoreUnknownKeys = true }
 
     fun skills(data: (String) -> String?): List<GenSkill> {
         val text = data("evs.json") ?: return emptyList()
-        return EvsSkills(json.decodeFromString(EvsData.serializer(), text)).all()
+        val d = json.decodeFromString(EvsData.serializer(), text)
+        return EvsSkills(d.copy(animals = d.animals.map { a -> if (a.pic != null && a.pic !in ANIMAL_PICS) a.copy(pic = null) else a })).all()
     }
 }
 
@@ -377,7 +393,8 @@ private class EvsSkills(private val d: EvsData) {
             "farm" -> "${The(a)} is kept by people on a farm."
             else -> "${The(a)} lives in the wild, away from people."
         }
-        val wild = k.filter { it.kind == "wild" }
+        // "Wild animal" means a creature a child pictures as one (tiger, deer, eagle), not a butterfly or an ant.
+        val wild = k.filter { it.kind == "wild" && it.group in setOf("mammal", "bird", "reptile") }
         val kgWild = wild.filter { it.kg }
         s.sort("pw", 1, "Pet", "Wild", k.filter { it.kind == "pet" }.map { SO(cap(it.n), true, why(it), it.pic) } +
             kgWild.filterIndexed { i, _ -> i % 2 == 0 }.map { SO(cap(it.n), false, why(it), it.pic) })

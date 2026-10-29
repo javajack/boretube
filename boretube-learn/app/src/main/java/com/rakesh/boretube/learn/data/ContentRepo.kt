@@ -2,9 +2,8 @@ package com.rakesh.boretube.learn.data
 
 import android.content.res.AssetManager
 import android.util.Log
-import com.rakesh.boretube.learn.core.GenSkill
 import com.rakesh.boretube.learn.core.Pack
-import com.rakesh.boretube.learn.core.gen.Generated
+import com.rakesh.boretube.learn.core.gen.GenIndex
 import com.rakesh.boretube.learn.core.PackValidator
 import com.rakesh.boretube.learn.ui.Pictures
 import kotlinx.serialization.json.Json
@@ -34,17 +33,20 @@ object ContentRepo {
     }
 
     /**
-     * The generated skills (spec P2b), built from the tables in
-     * assets/content/data. Their questions are all checked by the learn-core
-     * tests, so they need no review gate; a skill that fails to build is
-     * left out.
+     * The generated skills (spec P2b), from assets/content/data. Start-up reads
+     * only the small index; each generator runs on first use, and
+     * [GenIndex.Loader.warm] (off the main thread) runs them all early. Their
+     * questions are all checked by the learn-core tests, so they need no
+     * review gate.
      */
-    fun generated(assets: AssetManager): List<GenSkill> {
-        val data: (String) -> String? = { name -> runCatching { assets.open("content/data/$name").bufferedReader().readText() }.getOrNull() }
+    fun generated(assets: AssetManager): GenIndex.Loader =
+        GenIndex.Loader { name -> runCatching { assets.open("content/data/$name").bufferedReader().readText() }.getOrNull() }
+
+    /** Builds every generator now, logging how long it took. Never throws. */
+    fun warm(loader: GenIndex.Loader) {
         val t0 = System.nanoTime()
-        val out = runCatching { Generated.skills(data) }.getOrElse { Log.w(TAG, "generated skills failed", it); emptyList() }
-        Log.i(TAG, "generated ${out.size} skills in ${(System.nanoTime() - t0) / 1_000_000} ms")
-        return out
+        runCatching { loader.warm() }.onFailure { Log.w(TAG, "generated skills failed", it) }
+        Log.i(TAG, "generators warm in ${(System.nanoTime() - t0) / 1_000_000} ms")
     }
 
     private const val TAG = "BoretubeLearnContent"

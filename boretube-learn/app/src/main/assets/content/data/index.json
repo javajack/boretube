@@ -1,0 +1,3030 @@
+[
+    {
+        "id": "mak.after",
+        "subject": "maths",
+        "grade": 0,
+        "title": "Before and after",
+        "badge": "1→2",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "order"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "mak.pattern",
+        "subject": "maths",
+        "grade": 0,
+        "title": "What comes next",
+        "badge": "●▲●",
+        "formats": [
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "mak.add5",
+        "subject": "maths",
+        "grade": 0,
+        "title": "Adding to 5",
+        "badge": "1+1",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "mak.sub5",
+        "subject": "maths",
+        "grade": 0,
+        "title": "Taking away to 5",
+        "badge": "5−1",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "mak.first",
+        "subject": "maths",
+        "grade": 0,
+        "title": "First, second, last",
+        "badge": "1st",
+        "formats": [
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "mak.bigSmall",
+        "subject": "maths",
+        "grade": 0,
+        "title": "Big and small",
+        "badge": "big",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "mak.shapes",
+        "subject": "maths",
+        "grade": 0,
+        "title": "Shapes around us",
+        "badge": "▲●",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma1.names99",
+        "subject": "maths",
+        "grade": 1,
+        "title": "Number names",
+        "badge": "one",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma1.compare",
+        "subject": "maths",
+        "grade": 1,
+        "title": "Compare to 99",
+        "badge": "<>",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "order",
+            "catch"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma1.bridge",
+        "subject": "maths",
+        "grade": 1,
+        "title": "Add by making 10",
+        "badge": "+10",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "catch",
+            "pairs"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma1.sub20",
+        "subject": "maths",
+        "grade": 1,
+        "title": "Take away to 20",
+        "badge": "13−5",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "catch",
+            "pairs"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma1.story",
+        "subject": "maths",
+        "grade": 1,
+        "title": "Story sums",
+        "badge": "+?",
+        "formats": [
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma1.skip",
+        "subject": "maths",
+        "grade": 1,
+        "title": "Skip counting",
+        "badge": "2s5s",
+        "formats": [
+            "quickfire",
+            "order",
+            "catch"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma1.tens10",
+        "subject": "maths",
+        "grade": 1,
+        "title": "10 more, 10 less",
+        "badge": "±10",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "catch"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma2.place3",
+        "subject": "maths",
+        "grade": 2,
+        "title": "Hundreds, tens, ones",
+        "badge": "HTO",
+        "formats": [
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma2.order999",
+        "subject": "maths",
+        "grade": 2,
+        "title": "Compare and order",
+        "badge": "<>",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "order"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma2.addCarry",
+        "subject": "maths",
+        "grade": 2,
+        "title": "Add with carrying",
+        "badge": "+",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "catch"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma2.subBorrow",
+        "subject": "maths",
+        "grade": 2,
+        "title": "Take away, borrowing",
+        "badge": "−",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "catch"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma2.oddEven",
+        "subject": "maths",
+        "grade": 2,
+        "title": "Odd and even",
+        "badge": "odd",
+        "formats": [
+            "sort",
+            "quickfire",
+            "catch"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma2.missing",
+        "subject": "maths",
+        "grade": 2,
+        "title": "Missing numbers",
+        "badge": "_+5",
+        "formats": [
+            "quickfire",
+            "catch",
+            "pairs"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma2.calendar",
+        "subject": "maths",
+        "grade": 2,
+        "title": "Days and months",
+        "badge": "Mon",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "order",
+            "catch"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma2.units",
+        "subject": "maths",
+        "grade": 2,
+        "title": "Which unit?",
+        "badge": "cm",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma3.num9999",
+        "subject": "maths",
+        "grade": 3,
+        "title": "Numbers to 9999",
+        "badge": "9999",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma3.addSub3",
+        "subject": "maths",
+        "grade": 3,
+        "title": "3-digit add and take",
+        "badge": "+−",
+        "formats": [
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma3.mul10",
+        "subject": "maths",
+        "grade": 3,
+        "title": "Times 10 and 100",
+        "badge": "×10",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "catch",
+            "pairs"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma3.change",
+        "subject": "maths",
+        "grade": 3,
+        "title": "Bills and change",
+        "badge": "₹",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma3.convert",
+        "subject": "maths",
+        "grade": 3,
+        "title": "Changing units",
+        "badge": "m→cm",
+        "formats": [
+            "quickfire",
+            "catch"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma3.rule",
+        "subject": "maths",
+        "grade": 3,
+        "title": "Number patterns",
+        "badge": "+3?",
+        "formats": [
+            "quickfire",
+            "catch"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma3.round",
+        "subject": "maths",
+        "grade": 3,
+        "title": "Rounding off",
+        "badge": "≈",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma3.quarter",
+        "subject": "maths",
+        "grade": 3,
+        "title": "Quarter past and to",
+        "badge": "¼",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma4.lakh",
+        "subject": "maths",
+        "grade": 4,
+        "title": "Lakhs: 1,00,000",
+        "badge": "lakh",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma4.mul2x2",
+        "subject": "maths",
+        "grade": 4,
+        "title": "2-digit × 2-digit",
+        "badge": "××",
+        "formats": [
+            "quickfire",
+            "catch"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma4.divRem",
+        "subject": "maths",
+        "grade": 4,
+        "title": "Division, remainders",
+        "badge": "r",
+        "formats": [
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma4.factors",
+        "subject": "maths",
+        "grade": 4,
+        "title": "Factors and multiples",
+        "badge": "fac",
+        "formats": [
+            "sort",
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma4.equivFrac",
+        "subject": "maths",
+        "grade": 4,
+        "title": "Equal fractions",
+        "badge": "2/4",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma4.compFrac",
+        "subject": "maths",
+        "grade": 4,
+        "title": "Bigger fraction",
+        "badge": "3/4>",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "order",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma4.time24",
+        "subject": "maths",
+        "grade": 4,
+        "title": "24-hour clock",
+        "badge": "24h",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma4.area",
+        "subject": "maths",
+        "grade": 4,
+        "title": "Area of rectangles",
+        "badge": "cm²",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma5.crore",
+        "subject": "maths",
+        "grade": 5,
+        "title": "Lakhs and crores",
+        "badge": "cr",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "order"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma5.prime",
+        "subject": "maths",
+        "grade": 5,
+        "title": "Prime or composite",
+        "badge": "pr",
+        "formats": [
+            "sort",
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma5.lcmHcf",
+        "subject": "maths",
+        "grade": 5,
+        "title": "LCM and HCF",
+        "badge": "lcm",
+        "formats": [
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma5.addFrac",
+        "subject": "maths",
+        "grade": 5,
+        "title": "Adding fractions",
+        "badge": "1/2+",
+        "formats": [
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma5.fracQty",
+        "subject": "maths",
+        "grade": 5,
+        "title": "Fraction of a number",
+        "badge": "3/5",
+        "formats": [
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma5.unitary",
+        "subject": "maths",
+        "grade": 5,
+        "title": "Unitary method",
+        "badge": "1→n",
+        "formats": [
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma5.areaPer",
+        "subject": "maths",
+        "grade": 5,
+        "title": "Area and perimeter",
+        "badge": "P,A",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma5.table",
+        "subject": "maths",
+        "grade": 5,
+        "title": "Read a table",
+        "badge": "tab",
+        "formats": [
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma6.figurate",
+        "subject": "maths",
+        "grade": 6,
+        "title": "Square and triangle",
+        "badge": "n²",
+        "formats": [
+            "sort",
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma6.divis",
+        "subject": "maths",
+        "grade": 6,
+        "title": "Divisible by 4, 8, 11",
+        "badge": "÷11",
+        "formats": [
+            "sort",
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma6.primeFac",
+        "subject": "maths",
+        "grade": 6,
+        "title": "Prime factors",
+        "badge": "2×3",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma6.perimArea",
+        "subject": "maths",
+        "grade": 6,
+        "title": "Missing sides",
+        "badge": "P=",
+        "formats": [
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma6.mixed",
+        "subject": "maths",
+        "grade": 6,
+        "title": "Mixed numbers",
+        "badge": "1½",
+        "formats": [
+            "quickfire",
+            "order"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma6.tricks",
+        "subject": "maths",
+        "grade": 6,
+        "title": "Mental maths tricks",
+        "badge": "×11",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "catch",
+            "pairs"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma6.circle",
+        "subject": "maths",
+        "grade": 6,
+        "title": "Parts of a circle",
+        "badge": "r,d",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma7.exprOrder",
+        "subject": "maths",
+        "grade": 7,
+        "title": "Brackets first",
+        "badge": "( )",
+        "formats": [
+            "quickfire",
+            "catch"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma7.decimals",
+        "subject": "maths",
+        "grade": 7,
+        "title": "Decimals: + − ×",
+        "badge": "0.5",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "order",
+            "catch"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma7.letters",
+        "subject": "maths",
+        "grade": 7,
+        "title": "Letter-numbers",
+        "badge": "3x+2",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma7.triangle",
+        "subject": "maths",
+        "grade": 7,
+        "title": "Triangle facts",
+        "badge": "△",
+        "formats": [
+            "quickfire",
+            "sort",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma7.integers",
+        "subject": "maths",
+        "grade": 7,
+        "title": "Integer operations",
+        "badge": "−3",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "catch"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma7.mean",
+        "subject": "maths",
+        "grade": 7,
+        "title": "Mean, median, mode",
+        "badge": "avg",
+        "formats": [
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "ma7.fracMul",
+        "subject": "maths",
+        "grade": 7,
+        "title": "Fractions × and ÷",
+        "badge": "×÷",
+        "formats": [
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "maths"
+    },
+    {
+        "id": "enk.letters",
+        "subject": "english",
+        "grade": 0,
+        "title": "Big and small letters",
+        "badge": "Aa",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "enk.abc",
+        "subject": "english",
+        "grade": 0,
+        "title": "ABC order",
+        "badge": "abc",
+        "formats": [
+            "quickfire",
+            "order"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "enk.starts",
+        "subject": "english",
+        "grade": 0,
+        "title": "Starts with…",
+        "badge": "b",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "enk.rhyme",
+        "subject": "english",
+        "grade": 0,
+        "title": "Rhyming words",
+        "badge": "-at",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "enk.colours",
+        "subject": "english",
+        "grade": 0,
+        "title": "Colour words",
+        "badge": "red",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "enk.opposites",
+        "subject": "english",
+        "grade": 0,
+        "title": "Opposites",
+        "badge": "↔",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 2,
+        "gen": "english"
+    },
+    {
+        "id": "enk.sight",
+        "subject": "english",
+        "grade": 0,
+        "title": "Sight words",
+        "badge": "the",
+        "formats": [
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "enk.odd",
+        "subject": "english",
+        "grade": 0,
+        "title": "Odd one out",
+        "badge": "odd",
+        "formats": [
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "enk.actions",
+        "subject": "english",
+        "grade": 0,
+        "title": "Action words",
+        "badge": "run",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 2,
+        "gen": "english"
+    },
+    {
+        "id": "enk.sequence",
+        "subject": "english",
+        "grade": 0,
+        "title": "First, next, last",
+        "badge": "123",
+        "formats": [
+            "quickfire",
+            "order"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "enk.picword",
+        "subject": "english",
+        "grade": 0,
+        "title": "Name the picture",
+        "badge": "pic",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en1.cvc",
+        "subject": "english",
+        "grade": 1,
+        "title": "Missing letter: c_t",
+        "badge": "c_t",
+        "formats": [
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en1.digraph",
+        "subject": "english",
+        "grade": 1,
+        "title": "sh, ch, th, ck",
+        "badge": "sh",
+        "formats": [
+            "quickfire",
+            "sort",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en1.plural",
+        "subject": "english",
+        "grade": 1,
+        "title": "One and more: -s",
+        "badge": "s",
+        "formats": [
+            "quickfire",
+            "sort",
+            "truefalse"
+        ],
+        "tiers": 2,
+        "gen": "english"
+    },
+    {
+        "id": "en1.aan",
+        "subject": "english",
+        "grade": 1,
+        "title": "a or an",
+        "badge": "a/an",
+        "formats": [
+            "sort",
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en1.nounverb",
+        "subject": "english",
+        "grade": 1,
+        "title": "Naming or doing?",
+        "badge": "n/v",
+        "formats": [
+            "sort",
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en1.capital",
+        "subject": "english",
+        "grade": 1,
+        "title": "Capitals, full stops",
+        "badge": "Aa.",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en1.days",
+        "subject": "english",
+        "grade": 1,
+        "title": "Days and months",
+        "badge": "Mon",
+        "formats": [
+            "quickfire",
+            "order"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en1.families",
+        "subject": "english",
+        "grade": 1,
+        "title": "Word families: -at",
+        "badge": "-at",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en1.sight",
+        "subject": "english",
+        "grade": 1,
+        "title": "Sight words 2",
+        "badge": "why",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en1.vowels",
+        "subject": "english",
+        "grade": 1,
+        "title": "Vowels: a e i o u",
+        "badge": "aei",
+        "formats": [
+            "sort",
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en2.magice",
+        "subject": "english",
+        "grade": 2,
+        "title": "Magic e: cap, cape",
+        "badge": "e",
+        "formats": [
+            "sort",
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en2.plurals",
+        "subject": "english",
+        "grade": 2,
+        "title": "Plurals: es, ies, ves",
+        "badge": "es",
+        "formats": [
+            "quickfire",
+            "sort",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en2.pronoun",
+        "subject": "english",
+        "grade": 2,
+        "title": "He, she, it, they",
+        "badge": "she",
+        "formats": [
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en2.be",
+        "subject": "english",
+        "grade": 2,
+        "title": "Is, are, am",
+        "badge": "is",
+        "formats": [
+            "sort",
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en2.pasted",
+        "subject": "english",
+        "grade": 2,
+        "title": "Past tense: -ed",
+        "badge": "ed",
+        "formats": [
+            "quickfire",
+            "sort",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en2.qwords",
+        "subject": "english",
+        "grade": 2,
+        "title": "Who, what, where?",
+        "badge": "?",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en2.compound",
+        "subject": "english",
+        "grade": 2,
+        "title": "Compound words",
+        "badge": "+",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en2.alpha",
+        "subject": "english",
+        "grade": 2,
+        "title": "ABC order of words",
+        "badge": "abc",
+        "formats": [
+            "order",
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en2.sameopp",
+        "subject": "english",
+        "grade": 2,
+        "title": "Same and opposite",
+        "badge": "=",
+        "formats": [
+            "quickfire",
+            "sort",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en2.build",
+        "subject": "english",
+        "grade": 2,
+        "title": "Make a sentence",
+        "badge": "Aa.",
+        "formats": [
+            "order",
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en3.proper",
+        "subject": "english",
+        "grade": 3,
+        "title": "Proper nouns: Delhi",
+        "badge": "Aa",
+        "formats": [
+            "sort",
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en3.adjective",
+        "subject": "english",
+        "grade": 3,
+        "title": "Describing words",
+        "badge": "red",
+        "formats": [
+            "quickfire",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en3.irrpast",
+        "subject": "english",
+        "grade": 3,
+        "title": "Past tense: went, ate",
+        "badge": "went",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en3.articles",
+        "subject": "english",
+        "grade": 3,
+        "title": "A, an or the",
+        "badge": "the",
+        "formats": [
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en3.endpunct",
+        "subject": "english",
+        "grade": 3,
+        "title": "Full stop, ? or !",
+        "badge": "?!",
+        "formats": [
+            "sort",
+            "quickfire"
+        ],
+        "tiers": 2,
+        "gen": "english"
+    },
+    {
+        "id": "en3.homophones",
+        "subject": "english",
+        "grade": 3,
+        "title": "Sea or see?",
+        "badge": "sea",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en3.prefix",
+        "subject": "english",
+        "grade": 3,
+        "title": "un-, re-, dis-",
+        "badge": "un",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en3.suffix",
+        "subject": "english",
+        "grade": 3,
+        "title": "-ful, -less, -er",
+        "badge": "ful",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en3.alpha2",
+        "subject": "english",
+        "grade": 3,
+        "title": "ABC order: 2nd letter",
+        "badge": "ab",
+        "formats": [
+            "order",
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en3.gender",
+        "subject": "english",
+        "grade": 3,
+        "title": "Lion and lioness",
+        "badge": "m/f",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 2,
+        "gen": "english"
+    },
+    {
+        "id": "en3.collective",
+        "subject": "english",
+        "grade": 3,
+        "title": "A herd of cows",
+        "badge": "herd",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 2,
+        "gen": "english"
+    },
+    {
+        "id": "en4.subjverb",
+        "subject": "english",
+        "grade": 4,
+        "title": "He runs, they run",
+        "badge": "s",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en4.tenses",
+        "subject": "english",
+        "grade": 4,
+        "title": "Past, present, future",
+        "badge": "then",
+        "formats": [
+            "quickfire",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en4.adverb",
+        "subject": "english",
+        "grade": 4,
+        "title": "How words: slowly",
+        "badge": "-ly",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en4.degrees",
+        "subject": "english",
+        "grade": 4,
+        "title": "Big, bigger, biggest",
+        "badge": "-er",
+        "formats": [
+            "quickfire",
+            "sort",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en4.synant",
+        "subject": "english",
+        "grade": 4,
+        "title": "Synonyms, antonyms",
+        "badge": "syn",
+        "formats": [
+            "quickfire",
+            "sort",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en4.possessive",
+        "subject": "english",
+        "grade": 4,
+        "title": "Riya's, the boys'",
+        "badge": "'s",
+        "formats": [
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en4.contract",
+        "subject": "english",
+        "grade": 4,
+        "title": "Short forms: don't",
+        "badge": "n't",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en4.syllables",
+        "subject": "english",
+        "grade": 4,
+        "title": "Clap the syllables",
+        "badge": "clap",
+        "formats": [
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en4.dictionary",
+        "subject": "english",
+        "grade": 4,
+        "title": "Dictionary order",
+        "badge": "a-z",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en4.senttype",
+        "subject": "english",
+        "grade": 4,
+        "title": "Kinds of sentences",
+        "badge": "?",
+        "formats": [
+            "sort",
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en5.continuous",
+        "subject": "english",
+        "grade": 5,
+        "title": "Is going, has gone",
+        "badge": "-ing",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en5.preptime",
+        "subject": "english",
+        "grade": 5,
+        "title": "In, on, at",
+        "badge": "at",
+        "formats": [
+            "quickfire",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en5.simile",
+        "subject": "english",
+        "grade": 5,
+        "title": "As busy as a bee",
+        "badge": "as",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en5.oneword",
+        "subject": "english",
+        "grade": 5,
+        "title": "One-word names",
+        "badge": "1",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 2,
+        "gen": "english"
+    },
+    {
+        "id": "en5.analogy",
+        "subject": "english",
+        "grade": 5,
+        "title": "Cat is to kitten",
+        "badge": "::",
+        "formats": [
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en5.muchmany",
+        "subject": "english",
+        "grade": 5,
+        "title": "Much or many",
+        "badge": "much",
+        "formats": [
+            "sort",
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en5.qtags",
+        "subject": "english",
+        "grade": 5,
+        "title": "Question tags",
+        "badge": "?",
+        "formats": [
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en5.nounforms",
+        "subject": "english",
+        "grade": 5,
+        "title": "Kind → kindness",
+        "badge": "ness",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en5.spelling",
+        "subject": "english",
+        "grade": 5,
+        "title": "Spell it right",
+        "badge": "abc",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en5.factopinion",
+        "subject": "english",
+        "grade": 5,
+        "title": "Fact or opinion?",
+        "badge": "F/O",
+        "formats": [
+            "sort",
+            "truefalse"
+        ],
+        "tiers": 2,
+        "gen": "english"
+    },
+    {
+        "id": "en6.pos",
+        "subject": "english",
+        "grade": 6,
+        "title": "Parts of speech",
+        "badge": "POS",
+        "formats": [
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en6.tenses",
+        "subject": "english",
+        "grade": 6,
+        "title": "Tenses: has, had, will",
+        "badge": "had",
+        "formats": [
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en6.passive",
+        "subject": "english",
+        "grade": 6,
+        "title": "Active and passive",
+        "badge": "by",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en6.reported",
+        "subject": "english",
+        "grade": 6,
+        "title": "Reported speech",
+        "badge": "said",
+        "formats": [
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en6.determiners",
+        "subject": "english",
+        "grade": 6,
+        "title": "This, that, these",
+        "badge": "this",
+        "formats": [
+            "quickfire"
+        ],
+        "tiers": 2,
+        "gen": "english"
+    },
+    {
+        "id": "en6.phrasal",
+        "subject": "english",
+        "grade": 6,
+        "title": "Phrasal verbs",
+        "badge": "up",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en6.confuse",
+        "subject": "english",
+        "grade": 6,
+        "title": "Lose or loose?",
+        "badge": "vs",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en6.errorspot",
+        "subject": "english",
+        "grade": 6,
+        "title": "Spot the mistake",
+        "badge": "oops",
+        "formats": [
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en6.wordform",
+        "subject": "english",
+        "grade": 6,
+        "title": "Noun, verb, adjective",
+        "badge": "-ion",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en6.figures",
+        "subject": "english",
+        "grade": 6,
+        "title": "Simile or metaphor?",
+        "badge": "like",
+        "formats": [
+            "sort",
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en7.clauses",
+        "subject": "english",
+        "grade": 7,
+        "title": "Main and sub clauses",
+        "badge": "cl",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en7.relative",
+        "subject": "english",
+        "grade": 7,
+        "title": "Who, which, whose",
+        "badge": "who",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en7.conditionals",
+        "subject": "english",
+        "grade": 7,
+        "title": "If it rains…",
+        "badge": "if",
+        "formats": [
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en7.reportedq",
+        "subject": "english",
+        "grade": 7,
+        "title": "Reported questions",
+        "badge": "ask",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en7.roots",
+        "subject": "english",
+        "grade": 7,
+        "title": "Roots: bio, tele",
+        "badge": "bio",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en7.figures",
+        "subject": "english",
+        "grade": 7,
+        "title": "Alliteration and more",
+        "badge": "wow",
+        "formats": [
+            "sort",
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en7.colloc",
+        "subject": "english",
+        "grade": 7,
+        "title": "Make or do? Heavy rain",
+        "badge": "do",
+        "formats": [
+            "sort",
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en7.punct",
+        "subject": "english",
+        "grade": 7,
+        "title": "Colons, ; and quotes",
+        "badge": ":",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en7.analogy",
+        "subject": "english",
+        "grade": 7,
+        "title": "Analogies: part, tool",
+        "badge": "::",
+        "formats": [
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "en7.oneword",
+        "subject": "english",
+        "grade": 7,
+        "title": "One word for many",
+        "badge": "1w",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 2,
+        "gen": "english"
+    },
+    {
+        "id": "en7.sequence",
+        "subject": "english",
+        "grade": 7,
+        "title": "Put events in order",
+        "badge": "1-5",
+        "formats": [
+            "quickfire",
+            "order"
+        ],
+        "tiers": 3,
+        "gen": "english"
+    },
+    {
+        "id": "evk.petWild",
+        "subject": "evs",
+        "grade": 0,
+        "title": "Pet, farm or wild",
+        "badge": "Pet",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "evk.whereLive",
+        "subject": "evs",
+        "grade": 0,
+        "title": "Land or water",
+        "badge": "Pond",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "evk.body",
+        "subject": "evs",
+        "grade": 0,
+        "title": "My body",
+        "badge": "Body",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "evk.fruitVeg",
+        "subject": "evs",
+        "grade": 0,
+        "title": "Fruit or vegetable",
+        "badge": "Veg",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "evk.helpers",
+        "subject": "evs",
+        "grade": 0,
+        "title": "Helpers and tools",
+        "badge": "Help",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "evk.transport",
+        "subject": "evs",
+        "grade": 0,
+        "title": "Ways to travel",
+        "badge": "Go",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "evk.weather",
+        "subject": "evs",
+        "grade": 0,
+        "title": "Weather and clothes",
+        "badge": "Sun",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "evk.sounds",
+        "subject": "evs",
+        "grade": 0,
+        "title": "Animal sounds",
+        "badge": "Moo",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "evk.habits",
+        "subject": "evs",
+        "grade": 0,
+        "title": "Good habits",
+        "badge": "Good",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "evk.bigSmall",
+        "subject": "evs",
+        "grade": 0,
+        "title": "Big and small",
+        "badge": "Big",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "order"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev1.homes",
+        "subject": "evs",
+        "grade": 1,
+        "title": "Where animals live",
+        "badge": "Nest",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev1.babies",
+        "subject": "evs",
+        "grade": 1,
+        "title": "Baby animals",
+        "badge": "Baby",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev1.goodFood",
+        "subject": "evs",
+        "grade": 1,
+        "title": "Healthy food",
+        "badge": "Yum",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev1.helperPlace",
+        "subject": "evs",
+        "grade": 1,
+        "title": "Where helpers work",
+        "badge": "Work",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev1.festivals",
+        "subject": "evs",
+        "grade": 1,
+        "title": "Festivals",
+        "badge": "Fest",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev1.seasons",
+        "subject": "evs",
+        "grade": 1,
+        "title": "Seasons",
+        "badge": "Rain",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev1.tastes",
+        "subject": "evs",
+        "grade": 1,
+        "title": "Tastes",
+        "badge": "Taste",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev1.safety",
+        "subject": "evs",
+        "grade": 1,
+        "title": "Safe or unsafe",
+        "badge": "Safe",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev1.moves",
+        "subject": "evs",
+        "grade": 1,
+        "title": "How animals move",
+        "badge": "Hop",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev1.dayNight",
+        "subject": "evs",
+        "grade": 1,
+        "title": "Day and night",
+        "badge": "Moon",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort",
+            "order"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev2.eats",
+        "subject": "evs",
+        "grade": 2,
+        "title": "Who eats what",
+        "badge": "Eat",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev2.covering",
+        "subject": "evs",
+        "grade": 2,
+        "title": "Animal coverings",
+        "badge": "Fur",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev2.legs",
+        "subject": "evs",
+        "grade": 2,
+        "title": "Count the legs",
+        "badge": "Legs",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev2.living",
+        "subject": "evs",
+        "grade": 2,
+        "title": "Living or non-living",
+        "badge": "Live",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev2.foodFrom",
+        "subject": "evs",
+        "grade": 2,
+        "title": "Food from plants",
+        "badge": "Farm",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev2.materials",
+        "subject": "evs",
+        "grade": 2,
+        "title": "What is it made of?",
+        "badge": "Make",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev2.houses",
+        "subject": "evs",
+        "grade": 2,
+        "title": "Houses we live in",
+        "badge": "Home",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev2.water",
+        "subject": "evs",
+        "grade": 2,
+        "title": "Water around us",
+        "badge": "Tap",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev2.months",
+        "subject": "evs",
+        "grade": 2,
+        "title": "Months and days",
+        "badge": "Cal",
+        "formats": [
+            "quickfire",
+            "catch",
+            "truefalse",
+            "order"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev2.plantUses",
+        "subject": "evs",
+        "grade": 2,
+        "title": "Gifts of plants",
+        "badge": "Tree",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev3.plantType",
+        "subject": "evs",
+        "grade": 3,
+        "title": "Trees, shrubs, herbs",
+        "badge": "Leaf",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev3.partEat",
+        "subject": "evs",
+        "grade": 3,
+        "title": "Plant parts we eat",
+        "badge": "Root",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev3.rawCooked",
+        "subject": "evs",
+        "grade": 3,
+        "title": "Raw or cooked",
+        "badge": "Cook",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev3.waste",
+        "subject": "evs",
+        "grade": 3,
+        "title": "Wet or dry waste",
+        "badge": "Bin",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev3.seeThrough",
+        "subject": "evs",
+        "grade": 3,
+        "title": "See-through or not",
+        "badge": "Glass",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev3.relatives",
+        "subject": "evs",
+        "grade": 3,
+        "title": "Family and relatives",
+        "badge": "Fam",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev3.eggs",
+        "subject": "evs",
+        "grade": 3,
+        "title": "Eggs or babies",
+        "badge": "Egg",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev3.festivals",
+        "subject": "evs",
+        "grade": 3,
+        "title": "Festivals of India",
+        "badge": "Mela",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev3.natural",
+        "subject": "evs",
+        "grade": 3,
+        "title": "Natural or made by us",
+        "badge": "Made",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev3.saveWater",
+        "subject": "evs",
+        "grade": 3,
+        "title": "Save water",
+        "badge": "Drop",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev4.capitals",
+        "subject": "evs",
+        "grade": 4,
+        "title": "State capitals",
+        "badge": "Map",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev4.groups",
+        "subject": "evs",
+        "grade": 4,
+        "title": "Animal groups",
+        "badge": "Zoo",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev4.beaks",
+        "subject": "evs",
+        "grade": 4,
+        "title": "Beaks and feet",
+        "badge": "Beak",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev4.dispersal",
+        "subject": "evs",
+        "grade": 4,
+        "title": "How seeds travel",
+        "badge": "Seed",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev4.keepFood",
+        "subject": "evs",
+        "grade": 4,
+        "title": "Keeping food fresh",
+        "badge": "Jar",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev4.work",
+        "subject": "evs",
+        "grade": 4,
+        "title": "Work and tools",
+        "badge": "Tool",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev4.culture",
+        "subject": "evs",
+        "grade": 4,
+        "title": "Languages and dances",
+        "badge": "Dance",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev4.waterCycle",
+        "subject": "evs",
+        "grade": 4,
+        "title": "The water cycle",
+        "badge": "Rain",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort",
+            "order"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev4.habitat",
+        "subject": "evs",
+        "grade": 4,
+        "title": "Where animals live",
+        "badge": "Wild",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev4.thenNow",
+        "subject": "evs",
+        "grade": 4,
+        "title": "Then and now",
+        "badge": "Old",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev5.foodChain",
+        "subject": "evs",
+        "grade": 5,
+        "title": "Food chains",
+        "badge": "Chain",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "order"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev5.nutrients",
+        "subject": "evs",
+        "grade": 5,
+        "title": "Food and nutrients",
+        "badge": "Fit",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev5.floatSink",
+        "subject": "evs",
+        "grade": 5,
+        "title": "Float or sink",
+        "badge": "Boat",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev5.planets",
+        "subject": "evs",
+        "grade": 5,
+        "title": "Our solar system",
+        "badge": "Sun",
+        "formats": [
+            "quickfire",
+            "catch",
+            "truefalse",
+            "order"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev5.lifeCycle",
+        "subject": "evs",
+        "grade": 5,
+        "title": "Life cycles",
+        "badge": "Grow",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "order"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev5.organs",
+        "subject": "evs",
+        "grade": 5,
+        "title": "Inside our body",
+        "badge": "Heart",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "order"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev5.energy",
+        "subject": "evs",
+        "grade": 5,
+        "title": "Energy and fuels",
+        "badge": "Power",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev5.health",
+        "subject": "evs",
+        "grade": 5,
+        "title": "Germs and health",
+        "badge": "Germ",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "ev5.magnets",
+        "subject": "evs",
+        "grade": 5,
+        "title": "Magnets",
+        "badge": "Pull",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "evs"
+    },
+    {
+        "id": "sc6.plantTypes",
+        "subject": "evs",
+        "grade": 6,
+        "title": "Plant types",
+        "badge": "Leaf",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "science"
+    },
+    {
+        "id": "sc6.nutrients",
+        "subject": "evs",
+        "grade": 6,
+        "title": "Food and nutrients",
+        "badge": "Food",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "science"
+    },
+    {
+        "id": "sc6.magnets",
+        "subject": "evs",
+        "grade": 6,
+        "title": "Magnets",
+        "badge": "Mag",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "science"
+    },
+    {
+        "id": "sc6.length",
+        "subject": "evs",
+        "grade": 6,
+        "title": "Measuring length",
+        "badge": "cm",
+        "formats": [
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "science"
+    },
+    {
+        "id": "sc6.motion",
+        "subject": "evs",
+        "grade": 6,
+        "title": "Types of motion",
+        "badge": "Move",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "science"
+    },
+    {
+        "id": "sc6.materials",
+        "subject": "evs",
+        "grade": 6,
+        "title": "Materials",
+        "badge": "Mat",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "science"
+    },
+    {
+        "id": "sc6.temperature",
+        "subject": "evs",
+        "grade": 6,
+        "title": "Temperature",
+        "badge": "Temp",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "science"
+    },
+    {
+        "id": "sc6.waterStates",
+        "subject": "evs",
+        "grade": 6,
+        "title": "States of water",
+        "badge": "H2O",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort",
+            "order"
+        ],
+        "tiers": 3,
+        "gen": "science"
+    },
+    {
+        "id": "sc6.separation",
+        "subject": "evs",
+        "grade": 6,
+        "title": "Separating mixtures",
+        "badge": "Mix",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "order"
+        ],
+        "tiers": 3,
+        "gen": "science"
+    },
+    {
+        "id": "sc6.lifeSigns",
+        "subject": "evs",
+        "grade": 6,
+        "title": "Signs of life",
+        "badge": "Life",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort",
+            "order"
+        ],
+        "tiers": 3,
+        "gen": "science"
+    },
+    {
+        "id": "sc6.resources",
+        "subject": "evs",
+        "grade": 6,
+        "title": "Nature's treasures",
+        "badge": "Eco",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "science"
+    },
+    {
+        "id": "sc6.space",
+        "subject": "evs",
+        "grade": 6,
+        "title": "Beyond Earth",
+        "badge": "Sky",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort",
+            "order"
+        ],
+        "tiers": 3,
+        "gen": "science"
+    },
+    {
+        "id": "sc7.acidBase",
+        "subject": "evs",
+        "grade": 7,
+        "title": "Acids and bases",
+        "badge": "pH",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "science"
+    },
+    {
+        "id": "sc7.indicators",
+        "subject": "evs",
+        "grade": 7,
+        "title": "Indicators",
+        "badge": "Lit",
+        "formats": [
+            "truefalse",
+            "sort",
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "science"
+    },
+    {
+        "id": "sc7.circuits",
+        "subject": "evs",
+        "grade": 7,
+        "title": "Electric circuits",
+        "badge": "Bulb",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "science"
+    },
+    {
+        "id": "sc7.metals",
+        "subject": "evs",
+        "grade": 7,
+        "title": "Metals and non-metals",
+        "badge": "Fe",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "science"
+    },
+    {
+        "id": "sc7.changes",
+        "subject": "evs",
+        "grade": 7,
+        "title": "Physical or chemical",
+        "badge": "Chem",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "science"
+    },
+    {
+        "id": "sc7.heatFlow",
+        "subject": "evs",
+        "grade": 7,
+        "title": "Heat transfer",
+        "badge": "Heat",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "science"
+    },
+    {
+        "id": "sc7.speed",
+        "subject": "evs",
+        "grade": 7,
+        "title": "Speed",
+        "badge": "km/h",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "science"
+    },
+    {
+        "id": "sc7.timePendulum",
+        "subject": "evs",
+        "grade": 7,
+        "title": "Time and pendulums",
+        "badge": "Time",
+        "formats": [
+            "quickfire"
+        ],
+        "tiers": 3,
+        "gen": "science"
+    },
+    {
+        "id": "sc7.animalLife",
+        "subject": "evs",
+        "grade": 7,
+        "title": "Animal life processes",
+        "badge": "Gut",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort",
+            "order"
+        ],
+        "tiers": 3,
+        "gen": "science"
+    },
+    {
+        "id": "sc7.plantLife",
+        "subject": "evs",
+        "grade": 7,
+        "title": "Plant life processes",
+        "badge": "Sap",
+        "formats": [
+            "quickfire",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "science"
+    },
+    {
+        "id": "sc7.light",
+        "subject": "evs",
+        "grade": 7,
+        "title": "Light and mirrors",
+        "badge": "Ray",
+        "formats": [
+            "quickfire",
+            "truefalse",
+            "sort"
+        ],
+        "tiers": 3,
+        "gen": "science"
+    },
+    {
+        "id": "sc7.earthMoon",
+        "subject": "evs",
+        "grade": 7,
+        "title": "Earth, Moon and Sun",
+        "badge": "Moon",
+        "formats": [
+            "quickfire",
+            "order",
+            "truefalse"
+        ],
+        "tiers": 3,
+        "gen": "science"
+    }
+]

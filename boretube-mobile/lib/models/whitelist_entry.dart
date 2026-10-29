@@ -31,8 +31,7 @@ class WhitelistEntry {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is WhitelistEntry && appId == other.appId;
+      identical(this, other) || other is WhitelistEntry && appId == other.appId;
 
   @override
   int get hashCode => appId.hashCode;

@@ -16,10 +16,8 @@ class CastV2Client {
   final String host;
   final int port;
 
-  static const _nsConnection =
-      'urn:x-cast:com.google.cast.tp.connection';
-  static const _nsReceiver =
-      'urn:x-cast:com.google.cast.receiver';
+  static const _nsConnection = 'urn:x-cast:com.google.cast.tp.connection';
+  static const _nsReceiver = 'urn:x-cast:com.google.cast.receiver';
 
   static const _connectTimeout = Duration(seconds: 5);
   static const _recvTimeout = Duration(seconds: 3);
@@ -194,8 +192,7 @@ class CastV2Client {
     String destinationId = 'receiver-0',
   }) {
     final msg = CastMessage(
-      protocolVersion:
-          CastMessage_ProtocolVersion.CASTV2_1_0,
+      protocolVersion: CastMessage_ProtocolVersion.CASTV2_1_0,
       sourceId: sourceId,
       destinationId: destinationId,
       namespace: namespace,
@@ -203,8 +200,7 @@ class CastV2Client {
       payloadUtf8: payload,
     );
     final msgBytes = msg.writeToBuffer();
-    final lengthPrefix = ByteData(4)
-      ..setUint32(0, msgBytes.length);
+    final lengthPrefix = ByteData(4)..setUint32(0, msgBytes.length);
     _socket!.add(lengthPrefix.buffer.asUint8List());
     _socket!.add(msgBytes);
   }
@@ -220,13 +216,11 @@ class CastV2Client {
   /// Read exactly [length] bytes from the buffered stream.
   /// Returns null on timeout or socket close.
   Future<Uint8List?> _readExactly(int length) async {
-    final deadline =
-        DateTime.now().add(_recvTimeout);
+    final deadline = DateTime.now().add(_recvTimeout);
 
     while (_buffer.length < length) {
       if (_socketDone) return null;
-      final remaining =
-          deadline.difference(DateTime.now());
+      final remaining = deadline.difference(DateTime.now());
       if (remaining.isNegative) return null;
 
       // Wait for more data or timeout
@@ -240,8 +234,7 @@ class CastV2Client {
     // Extract exactly [length] bytes from the buffer
     final allBytes = _buffer.toBytes();
     _buffer.clear();
-    final result =
-        Uint8List.fromList(allBytes.sublist(0, length));
+    final result = Uint8List.fromList(allBytes.sublist(0, length));
     // Put remaining bytes back in the buffer
     if (allBytes.length > length) {
       _buffer.add(allBytes.sublist(length));
@@ -257,8 +250,7 @@ class CastV2Client {
       final lengthBytes = await _readExactly(4);
       if (lengthBytes == null) return null;
 
-      final msgLength =
-          ByteData.sublistView(lengthBytes).getUint32(0);
+      final msgLength = ByteData.sublistView(lengthBytes).getUint32(0);
       if (msgLength > 65536) return null;
 
       // Read the protobuf message body
@@ -268,8 +260,7 @@ class CastV2Client {
       final castMsg = CastMessage.fromBuffer(msgBytes);
       if (castMsg.payloadUtf8.isNotEmpty) {
         try {
-          return jsonDecode(castMsg.payloadUtf8)
-              as Map<String, dynamic>;
+          return jsonDecode(castMsg.payloadUtf8) as Map<String, dynamic>;
         } catch (_) {
           return null;
         }
@@ -287,16 +278,12 @@ class CastV2Client {
   Map<String, dynamic> _parseStatus(
     Map<String, dynamic> resp,
   ) {
-    final status =
-        resp['status'] as Map<String, dynamic>? ?? {};
-    final vol =
-        status['volume'] as Map<String, dynamic>? ?? {};
-    final apps =
-        status['applications'] as List<dynamic>? ?? [];
+    final status = resp['status'] as Map<String, dynamic>? ?? {};
+    final vol = status['volume'] as Map<String, dynamic>? ?? {};
+    final apps = status['applications'] as List<dynamic>? ?? [];
 
     final result = <String, dynamic>{
-      'volume':
-          ((vol['level'] as num?)?.toDouble() ?? 0.0) * 100,
+      'volume': ((vol['level'] as num?)?.toDouble() ?? 0.0) * 100,
       'muted': vol['muted'] as bool? ?? false,
       'app_id': '',
       'app_name': '',
@@ -306,10 +293,8 @@ class CastV2Client {
     if (apps.isNotEmpty) {
       final app = apps[0] as Map<String, dynamic>;
       result['app_id'] = app['appId'] as String? ?? '';
-      result['app_name'] =
-          app['displayName'] as String? ?? '';
-      result['idle'] =
-          app['isIdleScreen'] as bool? ?? false;
+      result['app_name'] = app['displayName'] as String? ?? '';
+      result['idle'] = app['isIdleScreen'] as bool? ?? false;
     }
 
     return result;

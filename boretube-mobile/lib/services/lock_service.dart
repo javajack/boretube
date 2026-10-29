@@ -36,8 +36,7 @@ class BoretubeTaskHandler extends TaskHandler {
     DateTime timestamp,
     TaskStarter starter,
   ) async {
-    final configStr =
-        await FlutterForegroundTask.getData<String>(
+    final configStr = await FlutterForegroundTask.getData<String>(
       key: 'lock_config',
     );
     if (configStr == null) {
@@ -47,28 +46,22 @@ class BoretubeTaskHandler extends TaskHandler {
     }
 
     try {
-      final config =
-          jsonDecode(configStr) as Map<String, dynamic>;
+      final config = jsonDecode(configStr) as Map<String, dynamic>;
       _tvService = TvService(
         host: config['host'] as String,
         castPort: config['castPort'] as int? ?? 8009,
         dialPort: config['dialPort'] as int? ?? 8008,
       );
-      _lockApps =
-          config['lockApps'] as bool? ?? false;
-      _lockVolume =
-          config['lockVolume'] as bool? ?? false;
-      _maxVolume =
-          config['maxVolume'] as int? ?? 15;
+      _lockApps = config['lockApps'] as bool? ?? false;
+      _lockVolume = config['lockVolume'] as bool? ?? false;
+      _maxVolume = config['maxVolume'] as int? ?? 15;
 
-      final duration =
-          config['durationMinutes'] as int? ?? 60;
+      final duration = config['durationMinutes'] as int? ?? 60;
       _endTime = DateTime.now().add(
         Duration(minutes: duration),
       );
 
-      final whitelistRaw =
-          config['whitelist'] as List<dynamic>? ?? [];
+      final whitelistRaw = config['whitelist'] as List<dynamic>? ?? [];
       _whitelist = whitelistRaw
           .map(
             (s) => WhitelistEntry.fromStorageString(
@@ -88,9 +81,7 @@ class BoretubeTaskHandler extends TaskHandler {
   Future<void> onRepeatEvent(
     DateTime timestamp,
   ) async {
-    if (_tvService == null ||
-        _polling ||
-        _destroyed) {
+    if (_tvService == null || _polling || _destroyed) {
       return;
     }
     _polling = true;
@@ -125,8 +116,7 @@ class BoretubeTaskHandler extends TaskHandler {
     }
 
     // Skip network call if timer already expired
-    final status =
-        remaining > 0 ? await _tvService!.getStatus() : null;
+    final status = remaining > 0 ? await _tvService!.getStatus() : null;
 
     // Evaluate lock rules via pure decision logic
     final decision = LockDecision.evaluate(
@@ -156,8 +146,7 @@ class BoretubeTaskHandler extends TaskHandler {
         }
 
       case LockAction.capVolume:
-        final ok =
-            await _tvService!.setVolume(_maxVolume);
+        final ok = await _tvService!.setVolume(_maxVolume);
         if (ok) {
           _sendLog(
             '${decision.message}'
@@ -211,8 +200,7 @@ class BoretubeTaskHandler extends TaskHandler {
 
   int _remainingSeconds() {
     if (_endTime == null) return 0;
-    final diff =
-        _endTime!.difference(DateTime.now()).inSeconds;
+    final diff = _endTime!.difference(DateTime.now()).inSeconds;
     return diff > 0 ? diff : 0;
   }
 
@@ -226,8 +214,7 @@ class BoretubeTaskHandler extends TaskHandler {
     try {
       FlutterForegroundTask.sendDataToMain({
         'type': 'log',
-        'timestamp':
-            DateTime.now().millisecondsSinceEpoch,
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
         'message': message,
         'isStopped': message.startsWith('STOPPED'),
       });
@@ -240,25 +227,19 @@ class BoretubeTaskHandler extends TaskHandler {
 // ── UI-Side Controller ──
 
 class LockService {
-  final _logController =
-      StreamController<LogEntry>.broadcast();
-  final _remainingController =
-      StreamController<int>.broadcast();
-  final _activeController =
-      StreamController<bool>.broadcast();
+  final _logController = StreamController<LogEntry>.broadcast();
+  final _remainingController = StreamController<int>.broadcast();
+  final _activeController = StreamController<bool>.broadcast();
   final List<LogEntry> _log = [];
   bool _isActive = false;
   int _lastRemaining = 0;
   bool _disposed = false;
 
-  Stream<LogEntry> get logStream =>
-      _logController.stream;
+  Stream<LogEntry> get logStream => _logController.stream;
 
-  Stream<int> get remainingStream =>
-      _remainingController.stream;
+  Stream<int> get remainingStream => _remainingController.stream;
 
-  Stream<bool> get activeStream =>
-      _activeController.stream;
+  Stream<bool> get activeStream => _activeController.stream;
 
   List<LogEntry> get log => List.unmodifiable(_log);
   bool get isActive => _isActive;
@@ -294,10 +275,8 @@ class LockService {
     required List<WhitelistEntry> whitelist,
   }) async {
     // Request permissions
-    await FlutterForegroundTask
-        .requestNotificationPermission();
-    await FlutterForegroundTask
-        .requestIgnoreBatteryOptimization();
+    await FlutterForegroundTask.requestNotificationPermission();
+    await FlutterForegroundTask.requestIgnoreBatteryOptimization();
 
     // Save config for task handler isolate
     final config = jsonEncode({
@@ -308,9 +287,7 @@ class LockService {
       'lockVolume': lockVolume,
       'maxVolume': maxVolume,
       'durationMinutes': durationMinutes,
-      'whitelist': whitelist
-          .map((e) => e.toStorageString())
-          .toList(),
+      'whitelist': whitelist.map((e) => e.toStorageString()).toList(),
     });
     await FlutterForegroundTask.saveData(
       key: 'lock_config',
@@ -319,22 +296,17 @@ class LockService {
 
     // Configure foreground task
     FlutterForegroundTask.init(
-      androidNotificationOptions:
-          AndroidNotificationOptions(
+      androidNotificationOptions: AndroidNotificationOptions(
         channelId: 'boretube_lock',
         channelName: 'Boretube Lock Service',
-        channelDescription:
-            'Keeps lock active when phone '
+        channelDescription: 'Keeps lock active when phone '
             'is locked',
-        channelImportance:
-            NotificationChannelImportance.LOW,
+        channelImportance: NotificationChannelImportance.LOW,
         priority: NotificationPriority.LOW,
       ),
-      iosNotificationOptions:
-          const IOSNotificationOptions(),
+      iosNotificationOptions: const IOSNotificationOptions(),
       foregroundTaskOptions: ForegroundTaskOptions(
-        eventAction:
-            ForegroundTaskEventAction.repeat(
+        eventAction: ForegroundTaskEventAction.repeat(
           intervalSeconds * 1000,
         ),
         autoRunOnBoot: false,
@@ -382,11 +354,9 @@ class LockService {
         final msg = data['message'];
         if (ts is! int || msg is! String) return;
         final entry = LogEntry(
-          timestamp:
-              DateTime.fromMillisecondsSinceEpoch(ts),
+          timestamp: DateTime.fromMillisecondsSinceEpoch(ts),
           message: msg,
-          isStopped:
-              data['isStopped'] as bool? ?? false,
+          isStopped: data['isStopped'] as bool? ?? false,
         );
         _log.add(entry);
         _safeAdd(_logController, entry);

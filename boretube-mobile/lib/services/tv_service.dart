@@ -21,13 +21,10 @@ class TvService {
     this.castPort = 8009,
     this.dialPort = 8008,
     @visibleForTesting DialClient? dialClient,
-    @visibleForTesting
-    CastV2Client Function()? castFactory,
-  })  : _dialClient = dialClient ??
-            DialClient(host: host, port: dialPort),
-        _castFactory = castFactory ??
-            (() =>
-                CastV2Client(host: host, port: castPort));
+    @visibleForTesting CastV2Client Function()? castFactory,
+  })  : _dialClient = dialClient ?? DialClient(host: host, port: dialPort),
+        _castFactory =
+            castFactory ?? (() => CastV2Client(host: host, port: castPort));
 
   /// Get current TV status. Returns null if unreachable.
   ///
@@ -116,8 +113,7 @@ class TvService {
   /// Falls back to CastV2 if hardware API fails.
   Future<bool> setVolume(int percent) async {
     try {
-      final ok =
-          await _dialClient.setHardwareVolume(percent);
+      final ok = await _dialClient.setHardwareVolume(percent);
       if (ok) return true;
     } catch (e) {
       debugPrint(

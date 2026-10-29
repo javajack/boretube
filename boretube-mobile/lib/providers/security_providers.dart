@@ -17,8 +17,7 @@ final biometricAvailableProvider = FutureProvider<bool>(
   (ref) => ref.watch(biometricAuthProvider).isAvailable(),
 );
 
-final appLockProvider =
-    StateNotifierProvider<AppLockController, AppLockState>(
+final appLockProvider = StateNotifierProvider<AppLockController, AppLockState>(
   (ref) => AppLockController(
     pins: ref.watch(pinStoreProvider),
     prefs: ref.watch(sharedPrefsProvider),

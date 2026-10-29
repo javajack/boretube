@@ -56,8 +56,7 @@ class LockDecision {
     // Whitelist enforcement
     if (lockApps && !status.isIdle) {
       final appId = status.appId;
-      final allowed =
-          whitelist.any((e) => e.appId == appId);
+      final allowed = whitelist.any((e) => e.appId == appId);
       if (!allowed) {
         return LockDecision(
           LockAction.bore,
@@ -68,12 +67,8 @@ class LockDecision {
     }
 
     // Volume cap enforcement
-    if (lockVolume &&
-        !status.muted &&
-        status.volume > maxVolume) {
-      final label = status.appName.isEmpty
-          ? 'idle'
-          : status.appName;
+    if (lockVolume && !status.muted && status.volume > maxVolume) {
+      final label = status.appName.isEmpty ? 'idle' : status.appName;
       return LockDecision(
         LockAction.capVolume,
         '$label vol=${status.volume}%',
@@ -81,9 +76,7 @@ class LockDecision {
     }
 
     // All OK — build status message
-    final label = status.appName.isEmpty
-        ? 'idle'
-        : status.appName;
+    final label = status.appName.isEmpty ? 'idle' : status.appName;
     final vol = '${status.volume}%'
         '${status.muted ? ' MUTED' : ''}';
 

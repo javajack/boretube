@@ -67,8 +67,7 @@ class AdbClient implements AdbConnection {
     _socket = socket;
     _closed = Completer<void>();
     _sub = socket.listen(_onData,
-        onError: (Object e) => _incoming.addError(e),
-        onDone: _onDone);
+        onError: (Object e) => _incoming.addError(e), onDone: _onDone);
 
     _send(AdbMessage.text(
         AdbCommand.cnxn, adbVersion, adbMaxPayload, 'host::features=cmd'));
@@ -76,8 +75,7 @@ class AdbClient implements AdbConnection {
     var sentSignature = false;
     var sentPublicKey = false;
     while (true) {
-      final msg = await _next(
-          timeout: sentPublicKey ? promptTimeout : timeout);
+      final msg = await _next(timeout: sentPublicKey ? promptTimeout : timeout);
       if (msg.command == AdbCommand.cnxn) {
         deviceBanner = utf8.decode(msg.payload, allowMalformed: true);
         return;
@@ -87,8 +85,7 @@ class AdbClient implements AdbConnection {
         throw const AdbAuthPendingException(
             'TV wants TLS (wireless debugging pairing); not supported yet');
       }
-      if (msg.command != AdbCommand.auth ||
-          msg.arg0 != AdbAuthType.token) {
+      if (msg.command != AdbCommand.auth || msg.arg0 != AdbAuthType.token) {
         throw StateError('Unexpected during auth: $msg');
       }
       if (!sentSignature) {
@@ -118,8 +115,8 @@ class AdbClient implements AdbConnection {
   Future<AdbShellResult> shell(String command,
       {Duration timeout = const Duration(seconds: 30)}) async {
     const marker = '__BTEXIT:';
-    final raw = await _openAndRead(
-        'shell:$command; echo "$marker\$?"', timeout: timeout);
+    final raw = await _openAndRead('shell:$command; echo "$marker\$?"',
+        timeout: timeout);
     final i = raw.lastIndexOf(marker);
     if (i < 0) return AdbShellResult(raw, -1);
     final code = int.tryParse(raw.substring(i + marker.length).trim()) ?? -1;
@@ -189,8 +186,8 @@ class AdbClient implements AdbConnection {
     var bytes = _buffer.takeBytes();
     var offset = 0;
     while (bytes.length - offset >= adbHeaderLength) {
-      final (header, len) = AdbMessage.decodeHeader(Uint8List.sublistView(
-          bytes, offset, offset + adbHeaderLength));
+      final (header, len) = AdbMessage.decodeHeader(
+          Uint8List.sublistView(bytes, offset, offset + adbHeaderLength));
       if (bytes.length - offset - adbHeaderLength < len) break;
       final start = offset + adbHeaderLength;
       final msg = AdbMessage(header.command, header.arg0, header.arg1,

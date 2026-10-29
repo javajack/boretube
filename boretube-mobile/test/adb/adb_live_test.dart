@@ -36,6 +36,9 @@ void main() {
     print('banner=${client.deviceBanner}\nmodel=${model.stdout.trim()}\n'
         'disabled=${'package:'.allMatches(pkgs.stdout).length}');
     await client.close();
-  }, skip: tv == null || keyPath == null ? 'set BORETUBE_TV and '
-      'BORETUBE_ADBKEY' : false);
+  },
+      skip: tv == null || keyPath == null
+          ? 'set BORETUBE_TV and '
+              'BORETUBE_ADBKEY'
+          : false);
 }

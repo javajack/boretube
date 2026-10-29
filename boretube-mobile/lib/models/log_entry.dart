@@ -9,8 +9,7 @@ class LogEntry {
     this.isStopped = false,
   });
 
-  String toStorageString() =>
-      '${timestamp.millisecondsSinceEpoch}|$message';
+  String toStorageString() => '${timestamp.millisecondsSinceEpoch}|$message';
 
   factory LogEntry.fromStorageString(String s) {
     final idx = s.indexOf('|');

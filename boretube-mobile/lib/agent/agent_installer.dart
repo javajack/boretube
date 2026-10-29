@@ -291,6 +291,24 @@ bool agentUpdateAvailable(String running, AgentManifest bundled) =>
 
 // ── installer ──
 
+/// Shell commands that write [apk] to [path] on the TV in base64 chunks
+/// (raw bytes per chunk a multiple of 3, so no padding mid-file; 48 KiB of
+/// base64 per command stays under the 128 KiB single-argument limit).
+List<String> apkPushCommands(
+  Uint8List apk,
+  String path, {
+  int chunkBytes = 36 * 1024,
+}) =>
+    [
+      'rm -f $path',
+      for (var i = 0; i < apk.length; i += chunkBytes)
+        "printf %s '${base64Encode(Uint8List.sublistView(
+          apk,
+          i,
+          (i + chunkBytes).clamp(0, apk.length),
+        ))}' | base64 -d >> $path",
+    ];
+
 typedef AgentClientFactory = AgentClient Function(String token);
 
 /// Installs, repairs and removes TV Guard over ADB. Every command touches
@@ -674,15 +692,8 @@ class AgentInstaller {
       : '${(bytes / 1024).round()} KB';
 
   /// Shell commands that write [apk] to [tmpApk] in base64 chunks.
-  static List<String> pushCommands(Uint8List apk) => [
-        'rm -f $tmpApk',
-        for (var i = 0; i < apk.length; i += chunkBytes)
-          "printf %s '${base64Encode(Uint8List.sublistView(
-            apk,
-            i,
-            (i + chunkBytes).clamp(0, apk.length),
-          ))}' | base64 -d >> $tmpApk",
-      ];
+  static List<String> pushCommands(Uint8List apk) =>
+      apkPushCommands(apk, tmpApk, chunkBytes: chunkBytes);
 
   Future<_StepResult> _push(AgentBundle b) async {
     for (final c in pushCommands(b.apk)) {

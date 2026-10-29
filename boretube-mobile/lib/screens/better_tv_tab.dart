@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../ops/health.dart';
 import '../ops/tv_ops.dart';
+import '../learn/learn_installer.dart';
 import '../providers/agent_providers.dart';
+import '../providers/learn_providers.dart';
 import '../providers/tv_providers.dart';
 import '../providers/ui_providers.dart';
 import '../ui/components.dart';
@@ -88,7 +90,8 @@ class _BetterTvTabState extends ConsumerState<BetterTvTab> {
           ..invalidate(healthProvider)
           ..invalidate(stockYouTubeStateProvider)
           ..invalidate(cleanStatusProvider)
-          ..invalidate(appsProvider);
+          ..invalidate(appsProvider)
+          ..invalidate(learnDiagnosisProvider);
         await ref.read(agentStatusProvider.notifier).refresh();
       },
       child: ListView(
@@ -123,6 +126,7 @@ class _BetterTvTabState extends ConsumerState<BetterTvTab> {
                       locked: !adb,
                       onTap: () => _open(const AppsScreen()),
                     ),
+                    _LearnRow(locked: !adb),
                   ],
                 ),
                 const SizedBox(height: Gap.section),
@@ -457,6 +461,69 @@ class _AppsRow extends ConsumerWidget {
               : '$n apps · turn any of them off',
       onTap: locked ? () => context.push('/adb-guide') : onTap,
       trailing: locked ? const _UnlockTag() : null,
+    );
+  }
+}
+
+/// Tubby's Town, the learning app for the TV: install it, update it, or
+/// open it on the TV.
+class _LearnRow extends ConsumerStatefulWidget {
+  final bool locked;
+  const _LearnRow({required this.locked});
+
+  @override
+  ConsumerState<_LearnRow> createState() => _LearnRowState();
+}
+
+class _LearnRowState extends ConsumerState<_LearnRow> {
+  bool _busy = false;
+
+  Future<void> _run(LearnDiagnosis? d) async {
+    final i = ref.read(learnInstallerProvider);
+    if (i == null || _busy) return;
+    if (d?.state == LearnInstallState.current) {
+      final ok = await i.open();
+      if (mounted && !ok) {
+        showStatusSnack(context, 'Couldn\'t open it on the TV.', ok: false);
+      }
+      return;
+    }
+    setState(() => _busy = true);
+    final r = await i.install();
+    if (!mounted) return;
+    setState(() => _busy = false);
+    showStatusSnack(context, r.ok ? '${r.message} ✓' : r.message, ok: r.ok);
+    ref.invalidate(learnDiagnosisProvider);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bt = context.bt;
+    final d =
+        widget.locked ? null : ref.watch(learnDiagnosisProvider).valueOrNull;
+    final detail = switch ((widget.locked, _busy, d?.state)) {
+      (true, _, _) => 'A maths game for the TV',
+      (_, true, _) => 'Putting it on the TV…',
+      (_, _, LearnInstallState.current) => 'On the TV · open it there',
+      (_, _, LearnInstallState.updateAvailable) => 'A new version is ready',
+      _ => 'A maths game for the TV · put it on',
+    };
+    return NavRow(
+      key: const Key('better-tv-learn'),
+      icon: Icons.school_rounded,
+      tone: Tone.ok,
+      title: 'Tubby\'s Town',
+      detail: detail,
+      onTap: widget.locked
+          ? () => context.push('/adb-guide')
+          : _busy
+              ? null
+              : () => _run(d),
+      trailing: widget.locked
+          ? const _UnlockTag()
+          : _busy
+              ? DelayedSpinner(color: bt.muted)
+              : null,
     );
   }
 }

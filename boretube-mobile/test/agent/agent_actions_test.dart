@@ -68,7 +68,9 @@ void main() {
       expect((await s.bore()).via, ActionTransport.agent);
       expect((await s.setVolume(25)).via, ActionTransport.agent);
       expect((await s.restore()).via, ActionTransport.agent);
-      expect([for (final b in bodies) b['action']], [
+      expect([
+        for (final b in bodies) b['action']
+      ], [
         'mute',
         'unmute',
         'stop',
@@ -80,8 +82,7 @@ void main() {
       expect(sony.calls, isEmpty);
     });
 
-    test('break and muteFor are TV-enforced with the agent end time',
-        () async {
+    test('break and muteFor are TV-enforced with the agent end time', () async {
       final s = service();
       final b = await s.startBreak(30, now: t0);
       expect(b.via, ActionTransport.agent);

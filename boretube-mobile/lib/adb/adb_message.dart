@@ -46,8 +46,8 @@ class AdbMessage {
       : payload = payload ?? Uint8List(0);
 
   factory AdbMessage.text(int command, int arg0, int arg1, String text) =>
-      AdbMessage(command, arg0, arg1,
-          Uint8List.fromList(utf8.encode('$text\u0000')));
+      AdbMessage(
+          command, arg0, arg1, Uint8List.fromList(utf8.encode('$text\u0000')));
 
   Uint8List encode() {
     final out = Uint8List(adbHeaderLength + payload.length);
@@ -75,8 +75,8 @@ class AdbMessage {
       throw FormatException('Bad ADB magic for ${AdbCommand.name(cmd)}');
     }
     return (
-      AdbMessage(cmd, h.getUint32(4, Endian.little),
-          h.getUint32(8, Endian.little)),
+      AdbMessage(
+          cmd, h.getUint32(4, Endian.little), h.getUint32(8, Endian.little)),
       h.getUint32(12, Endian.little),
     );
   }

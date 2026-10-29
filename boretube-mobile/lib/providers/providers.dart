@@ -29,8 +29,8 @@ final tvServiceProvider = Provider<TvService?>((ref) {
 
 // ── Whitelist ──
 
-final whitelistProvider = StateNotifierProvider<
-    WhitelistNotifier, List<WhitelistEntry>>(
+final whitelistProvider =
+    StateNotifierProvider<WhitelistNotifier, List<WhitelistEntry>>(
   (ref) {
     return WhitelistNotifier(
       ref.watch(sharedPrefsProvider),
@@ -38,21 +38,17 @@ final whitelistProvider = StateNotifierProvider<
   },
 );
 
-class WhitelistNotifier
-    extends StateNotifier<List<WhitelistEntry>> {
+class WhitelistNotifier extends StateNotifier<List<WhitelistEntry>> {
   final SharedPreferences _prefs;
 
-  WhitelistNotifier(this._prefs)
-      : super(_load(_prefs));
+  WhitelistNotifier(this._prefs) : super(_load(_prefs));
 
   static List<WhitelistEntry> _load(
     SharedPreferences prefs,
   ) {
     final stored = prefs.getStringList('whitelist');
     if (stored != null && stored.isNotEmpty) {
-      return stored
-          .map(WhitelistEntry.fromStorageString)
-          .toList();
+      return stored.map(WhitelistEntry.fromStorageString).toList();
     }
     return [WhitelistEntry.backdrop];
   }
@@ -68,13 +64,11 @@ class WhitelistNotifier
   Future<void> remove(String appId) async {
     // Cannot remove Backdrop
     if (appId == 'E8C28D3C') return;
-    state =
-        state.where((e) => e.appId != appId).toList();
+    state = state.where((e) => e.appId != appId).toList();
     await _save();
   }
 
-  bool isWhitelisted(String appId) =>
-      state.any((e) => e.appId == appId);
+  bool isWhitelisted(String appId) => state.any((e) => e.appId == appId);
 
   Future<void> _save() async {
     await _prefs.setStringList(
@@ -86,8 +80,7 @@ class WhitelistNotifier
 
 // ── Lock Service ──
 
-final lockServiceProvider =
-    Provider<LockService>((ref) {
+final lockServiceProvider = Provider<LockService>((ref) {
   final service = LockService();
   service.init();
   ref.onDispose(service.dispose);

@@ -93,8 +93,7 @@ void main() {
     test(
       'returns null when no speaker/headphone target',
       () {
-        final result =
-            DialClient.parseVolumeResponse({
+        final result = DialClient.parseVolumeResponse({
           'result': [
             [
               {
@@ -155,8 +154,7 @@ void main() {
     test(
       'returns null when result key missing',
       () {
-        final result =
-            DialClient.parseVolumeResponse({
+        final result = DialClient.parseVolumeResponse({
           'id': 33,
         });
         expect(result, isNull);

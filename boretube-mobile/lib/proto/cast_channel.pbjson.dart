@@ -18,11 +18,25 @@ import 'dart:typed_data' as $typed_data;
 const CastMessage$json = {
   '1': 'CastMessage',
   '2': [
-    {'1': 'protocol_version', '3': 1, '4': 2, '5': 14, '6': '.extensions.api.cast_channel.CastMessage.ProtocolVersion', '10': 'protocolVersion'},
+    {
+      '1': 'protocol_version',
+      '3': 1,
+      '4': 2,
+      '5': 14,
+      '6': '.extensions.api.cast_channel.CastMessage.ProtocolVersion',
+      '10': 'protocolVersion'
+    },
     {'1': 'source_id', '3': 2, '4': 2, '5': 9, '10': 'sourceId'},
     {'1': 'destination_id', '3': 3, '4': 2, '5': 9, '10': 'destinationId'},
     {'1': 'namespace', '3': 4, '4': 2, '5': 9, '10': 'namespace'},
-    {'1': 'payload_type', '3': 5, '4': 2, '5': 14, '6': '.extensions.api.cast_channel.CastMessage.PayloadType', '10': 'payloadType'},
+    {
+      '1': 'payload_type',
+      '3': 5,
+      '4': 2,
+      '5': 14,
+      '6': '.extensions.api.cast_channel.CastMessage.PayloadType',
+      '10': 'payloadType'
+    },
     {'1': 'payload_utf8', '3': 6, '4': 1, '5': 9, '10': 'payloadUtf8'},
     {'1': 'payload_binary', '3': 7, '4': 1, '5': 12, '10': 'payloadBinary'},
   ],
@@ -64,15 +78,21 @@ const AuthChallenge$json = {
 };
 
 /// Descriptor for `AuthChallenge`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List authChallengeDescriptor = $convert.base64Decode(
-    'Cg1BdXRoQ2hhbGxlbmdl');
+final $typed_data.Uint8List authChallengeDescriptor =
+    $convert.base64Decode('Cg1BdXRoQ2hhbGxlbmdl');
 
 @$core.Deprecated('Use authResponseDescriptor instead')
 const AuthResponse$json = {
   '1': 'AuthResponse',
   '2': [
     {'1': 'signature', '3': 1, '4': 2, '5': 12, '10': 'signature'},
-    {'1': 'client_auth_certificate', '3': 2, '4': 2, '5': 12, '10': 'clientAuthCertificate'},
+    {
+      '1': 'client_auth_certificate',
+      '3': 2,
+      '4': 2,
+      '5': 12,
+      '10': 'clientAuthCertificate'
+    },
   ],
 };
 
@@ -85,7 +105,14 @@ final $typed_data.Uint8List authResponseDescriptor = $convert.base64Decode(
 const AuthError$json = {
   '1': 'AuthError',
   '2': [
-    {'1': 'error_type', '3': 1, '4': 2, '5': 14, '6': '.extensions.api.cast_channel.AuthError.ErrorType', '10': 'errorType'},
+    {
+      '1': 'error_type',
+      '3': 1,
+      '4': 2,
+      '5': 14,
+      '6': '.extensions.api.cast_channel.AuthError.ErrorType',
+      '10': 'errorType'
+    },
   ],
   '4': [AuthError_ErrorType$json],
 };
@@ -111,9 +138,30 @@ final $typed_data.Uint8List authErrorDescriptor = $convert.base64Decode(
 const DeviceAuthMessage$json = {
   '1': 'DeviceAuthMessage',
   '2': [
-    {'1': 'challenge', '3': 1, '4': 1, '5': 11, '6': '.extensions.api.cast_channel.AuthChallenge', '10': 'challenge'},
-    {'1': 'response', '3': 2, '4': 1, '5': 11, '6': '.extensions.api.cast_channel.AuthResponse', '10': 'response'},
-    {'1': 'error', '3': 3, '4': 1, '5': 11, '6': '.extensions.api.cast_channel.AuthError', '10': 'error'},
+    {
+      '1': 'challenge',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.extensions.api.cast_channel.AuthChallenge',
+      '10': 'challenge'
+    },
+    {
+      '1': 'response',
+      '3': 2,
+      '4': 1,
+      '5': 11,
+      '6': '.extensions.api.cast_channel.AuthResponse',
+      '10': 'response'
+    },
+    {
+      '1': 'error',
+      '3': 3,
+      '4': 1,
+      '5': 11,
+      '6': '.extensions.api.cast_channel.AuthError',
+      '10': 'error'
+    },
   ],
 };
 
@@ -124,4 +172,3 @@ final $typed_data.Uint8List deviceAuthMessageDescriptor = $convert.base64Decode(
     'MikuZXh0ZW5zaW9ucy5hcGkuY2FzdF9jaGFubmVsLkF1dGhSZXNwb25zZVIIcmVzcG9uc2USPA'
     'oFZXJyb3IYAyABKAsyJi5leHRlbnNpb25zLmFwaS5jYXN0X2NoYW5uZWwuQXV0aEVycm9yUgVl'
     'cnJvcg==');
-

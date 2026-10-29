@@ -11,8 +11,7 @@ void main() {
       );
 
       final stored = original.toStorageString();
-      final restored =
-          WhitelistEntry.fromStorageString(stored);
+      final restored = WhitelistEntry.fromStorageString(stored);
 
       expect(restored.appId, original.appId);
       expect(

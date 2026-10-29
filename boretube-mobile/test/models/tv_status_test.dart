@@ -59,8 +59,7 @@ void main() {
     });
 
     test('handles max volume', () {
-      final status =
-          TvStatus.fromJson({'volume': 100});
+      final status = TvStatus.fromJson({'volume': 100});
       expect(status.volume, 100);
     });
 

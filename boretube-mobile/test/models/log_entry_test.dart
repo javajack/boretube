@@ -11,8 +11,7 @@ void main() {
       );
 
       final stored = original.toStorageString();
-      final restored =
-          LogEntry.fromStorageString(stored);
+      final restored = LogEntry.fromStorageString(stored);
 
       expect(
         restored.timestamp.millisecondsSinceEpoch,
@@ -54,16 +53,14 @@ void main() {
     );
 
     test('fromStorageString handles no pipe', () {
-      final entry =
-          LogEntry.fromStorageString('no pipe here');
+      final entry = LogEntry.fromStorageString('no pipe here');
       expect(entry.message, 'no pipe here');
     });
 
     test(
       'fromStorageString handles invalid timestamp',
       () {
-        final entry =
-            LogEntry.fromStorageString('abc|message');
+        final entry = LogEntry.fromStorageString('abc|message');
         expect(entry.message, 'message');
         // Invalid timestamp defaults to epoch 0
         expect(
@@ -80,8 +77,7 @@ void main() {
       );
 
       final stored = original.toStorageString();
-      final restored =
-          LogEntry.fromStorageString(stored);
+      final restored = LogEntry.fromStorageString(stored);
 
       expect(
         restored.message,

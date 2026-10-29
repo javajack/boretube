@@ -49,6 +49,7 @@ flutter:
   assets:
     - assets/profiles/
     - assets/agent/
+    - assets/learn/
 
   # OFL fonts from github.com/google/fonts (licences in assets/fonts/).
   # Both are variable: FontWeight drives the wght axis.

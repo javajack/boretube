@@ -594,11 +594,11 @@ class TownScreenTest {
   - `class LearnInstaller { Future<LearnDiagnosis> diagnose(); Stream<SetupStep> install(); Future<bool> open(); }`
   - `enum LearnInstallState { missing, current, updateAvailable }` (not `LearnState`, which is the Kotlin progress type)
 
-- [ ] **Step 1: Write the failing installer tests:** the happy path; a damaged copy fails and cleans up; a signature mismatch gives plain words; diagnose reads `versionName`.
-- [ ] **Step 2: Run them and watch them fail.**
-- [ ] **Step 3: Implement it, copy the APK and write the manifest** (sha256 from `sha256sum`, cert from `apksigner`).
-- [ ] **Step 4: Run `flutter analyze` and `flutter test`; update goldens for Better TV.**
-- [ ] **Step 5: Commit.** `git commit -m "Phone: bundle boretube Learn and install it from Better TV"`.
+- [x] **Step 1: Write the failing installer tests:** the happy path; a damaged copy fails and cleans up; a signature mismatch gives plain words; diagnose reads `versionName`.
+- [x] **Step 2: Run them and watch them fail.**
+- [x] **Step 3: Implement it, copy the APK and write the manifest** (sha256 from `sha256sum`, cert from `apksigner`).
+- [x] **Step 4: Run `flutter analyze` and `flutter test`; update goldens for Better TV.**
+- [x] **Step 5: Commit.** `git commit -m "Phone: bundle boretube Learn and install it from Better TV"`.
 
 ---
 

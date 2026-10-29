@@ -106,8 +106,7 @@ class DialClient {
 
       if (response.statusCode != 200) return null;
 
-      final json = jsonDecode(response.body)
-          as Map<String, dynamic>;
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
       return parseVolumeResponse(json);
     } catch (e) {
       debugPrint(
@@ -132,8 +131,7 @@ class DialClient {
     for (final v in volumes) {
       if (v is Map<String, dynamic>) {
         final target = v['target'] as String?;
-        if (target == 'speaker' ||
-            target == 'headphone') {
+        if (target == 'speaker' || target == 'headphone') {
           return (
             volume: v['volume'] as int? ?? 0,
             muted: v['mute'] as bool? ?? false,

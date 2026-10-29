@@ -210,7 +210,7 @@ void main() {
       await settle(tester);
       expect(find.byKey(const Key('better-tv-preview')), findsOneWidget);
       expect(find.text('Unlock Home mode'), findsOneWidget);
-      expect(find.text('Unlock'), findsNWidgets(3));
+      expect(find.text('Unlock'), findsNWidgets(4));
       expect(find.byKey(const Key('health-summary')), findsNothing);
     });
 

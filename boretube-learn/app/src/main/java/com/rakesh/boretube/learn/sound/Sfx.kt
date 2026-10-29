@@ -6,6 +6,7 @@ enum class Sfx {
     select, back, focus_bazaar, focus_garden, focus_trail, enter_bazaar,
     q_show, right_1, right_2, right_3, right_4, right_5, miss, learn_open, followup_win,
     catch_drop, catch_move, catch_right, catch_miss,
+    build_ten, build_one, build_undo, build_hit, card_flip, card_back, pair_match,
     star_1, star_2, star_3, level_done_bazaar;
 
     val res: String get() = name

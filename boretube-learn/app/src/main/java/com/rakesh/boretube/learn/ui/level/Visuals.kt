@@ -39,6 +39,7 @@ fun QuestionVisual(v: Visual, modifier: Modifier = Modifier, numbered: Boolean =
         is Visual.Objects -> Mangoes(v.count, modifier, numbered)
         is Visual.Clock -> ClockFace(v.hour, v.minute, modifier.aspectRatio(1f))
         is Visual.Dots -> DotGrid(v, modifier)
+        is Visual.Picture -> com.rakesh.boretube.learn.ui.PictureArt(v.id, modifier)
         is Visual.Pies -> Row(modifier, horizontalArrangement = Arrangement.spacedBy(Gap.f34), verticalAlignment = Alignment.CenterVertically) {
             for ((a, b) in v.fractions) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Gap.f13)) {

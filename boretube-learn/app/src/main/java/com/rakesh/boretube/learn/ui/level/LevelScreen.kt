@@ -14,6 +14,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.rakesh.boretube.learn.core.Answered
 import com.rakesh.boretube.learn.core.BrainBreakSession
+import com.rakesh.boretube.learn.core.Catalog
 import com.rakesh.boretube.learn.core.Format
 import com.rakesh.boretube.learn.core.LearnState
 import com.rakesh.boretube.learn.core.Levels
@@ -32,10 +33,10 @@ import kotlinx.coroutines.delay
 import kotlin.random.Random
 
 /**
- * One level: [Levels.LEVEL_SIZE] questions on [skillId] in its format, with
- * the brain-break "pass or learn" loop (a miss → the learn moment → one
- * easier follow-up). Always reaches the end; [onDone] gets every answer.
- * Back asks first ([onLeave] only after "Leave").
+ * One level of [skillId] in the format its rotation gives this play:
+ * Quick-fire and Catch run the brain-break "pass or learn" loop
+ * ([QuizLevel]); Pairs and Build have their own boards. Every format
+ * reaches the end and hands every answer to [onDone].
  */
 @Composable
 fun LevelScreen(
@@ -46,16 +47,39 @@ fun LevelScreen(
     speaker: Speaker,
     random: Random,
     now: Long = System.currentTimeMillis(),
+    catalog: Catalog = Catalog.MATHS,
     onDone: (List<Answered>) -> Unit,
     onLeave: () -> Unit,
 ) {
-    val format = remember(skillId) { Levels.formatFor(skillId) }
-    val plan = remember(skillId) { LevelPlan.build(state, skillId, now, random) }
+    val format = remember(skillId) { Levels.formatFor(skillId, state.plays[skillId] ?: 0, catalog) }
+    when (format) {
+        Format.pairs -> PairsLevel(skillId, state, sounds, random, now, catalog, onDone, onLeave)
+        Format.build -> BuildLevel(state, sounds, speaker, settings, random, now, onDone, onLeave)
+        else -> QuizLevel(skillId, format, state, settings, sounds, speaker, random, now, catalog, onDone, onLeave)
+    }
+}
+
+/** Quick-fire and Catch: questions one by one, a miss gives the learn moment and one easier follow-up. */
+@Composable
+private fun QuizLevel(
+    skillId: String,
+    format: Format,
+    state: LearnState,
+    settings: LearnSettings,
+    sounds: Sounds,
+    speaker: Speaker,
+    random: Random,
+    now: Long,
+    catalog: Catalog,
+    onDone: (List<Answered>) -> Unit,
+    onLeave: () -> Unit,
+) {
+    val plan = remember(skillId) { LevelPlan.build(state, skillId, now, random, catalog, format) }
     if (plan.isEmpty()) {
         LaunchedEffect(Unit) { onLeave() }
         return
     }
-    val session = remember(skillId) { BrainBreakSession(plan) { LevelPlan.easier(it, random) } }
+    val session = remember(skillId) { BrainBreakSession(plan) { LevelPlan.easier(it, random, catalog, format) } }
     var screen by remember { mutableStateOf(session.screen) }
     var sel by remember { mutableIntStateOf(0) }
     var streak by remember { mutableIntStateOf(0) }

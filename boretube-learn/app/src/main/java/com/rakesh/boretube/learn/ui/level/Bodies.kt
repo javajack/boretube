@@ -118,6 +118,7 @@ fun QuickFireBody(q: Question, index: Int, of: Int, followUp: Boolean, sel: Int,
             when (val v = q.visual) {
                 is Visual.Objects -> Mangoes(v.count)
                 is Visual.Clock -> ClockFace(v.hour, v.minute, Modifier.fillMaxHeight().aspectRatio(1f))
+                is Visual.Picture -> com.rakesh.boretube.learn.ui.PictureArt(v.id, Modifier.fillMaxHeight())
                 else -> {}
             }
         }
@@ -237,7 +238,7 @@ private fun Basket(modifier: Modifier) {
 
 /** A miss: the fact with the answer picked out, what they chose, the one-line why, a picture, Got it. */
 @Composable
-fun LearnMoment(q: Question, picked: Int) {
+fun LearnMoment(q: Question, picked: Int, pickedLabel: String = "You picked ") {
     Column(
         Modifier.fillMaxSize().background(Palette.canvas).padding(horizontal = Safe.x, vertical = Safe.y).testTag("learn-moment"),
         verticalArrangement = Arrangement.spacedBy(Gap.f21),
@@ -262,7 +263,7 @@ fun LearnMoment(q: Question, picked: Int) {
                 val pick = q.options.getOrNull(picked) ?: ""
                 BasicText(
                     buildAnnotatedString {
-                        append("You picked ")
+                        append(pickedLabel)
                         withStyle(SpanStyle(textDecoration = TextDecoration.LineThrough)) { append(pick) }
                     },
                     style = Text.muted(TypeScale.s26),

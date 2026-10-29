@@ -141,6 +141,15 @@ SOUNDS = {
     "catch_move": lambda: norm(noise_sweep(0.09, 0.3, 0.6, seed=5), -22),
     "catch_right": lambda: norm(seq((0, glide(620, 160, 0.09, 0.05)), *sparkle(0.05)), -12),
     "catch_miss": lambda: norm(glide(330, 220, 0.28, 0.12) * (1 + 0.2 * np.sin(2 * np.pi * 18 * t(0.28))), -18),
+    # Build.
+    "build_ten": lambda: norm(woodblock(PENT["G4"], 0.14), -14),
+    "build_one": lambda: norm(woodblock(PENT["E6"], 0.07), -18),
+    "build_undo": lambda: norm(glide(320, 900, 0.07, 0.04), -16),
+    "build_hit": lambda: norm(seq((0, bell(PENT["C6"], 0.6, 0.8)), *sparkle(0.04)), -11),
+    # Pairs.
+    "card_flip": lambda: norm(noise_sweep(0.08, 0.2, 0.9, seed=7), -18),
+    "card_back": lambda: norm(noise_sweep(0.1, 0.8, 0.15, seed=8), -22),
+    "pair_match": lambda: norm(seq((0, bell(PENT["G5"], 0.4, 0.6)), (0.08, bell(PENT["C6"], 0.6, 0.6)), *sparkle(0.12)), -11),
     # Rewards.
     **{f"star_{n}": (lambda n=n: norm(seq((0, marimba([PENT["C6"], PENT["E6"], PENT["G6"]][n - 1], 0.5)),
                                           *sparkle(0.03)), -11)) for n in range(1, 4)},
